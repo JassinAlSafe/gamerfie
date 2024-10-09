@@ -4,6 +4,7 @@ import React from "react";
 import PlatformGameCarousels from "@/components/ui/PlatformGameCarousels";
 import { motion } from "framer-motion";
 import { LampContainer } from "@/components/ui/lamp";
+import PopularGamesSection from "@/components/PopularGamesSection";
 
 const Dashboard: React.FC = () => {
   return (
@@ -33,6 +34,9 @@ const Dashboard: React.FC = () => {
       >
         <PlatformGameCarousels />
       </motion.div>
+      <div>
+        <PopularGamesSection />
+      </div>
 
       <div className="absolute inset-0 z-0 bg-gradient-to-t from-background to-background/0 pointer-events-none" />
     </div>
