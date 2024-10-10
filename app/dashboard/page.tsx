@@ -1,9 +1,13 @@
 "use client";
 
 import React from "react";
+import Link from "next/link";
 import PlatformGameCarousels from "@/components/ui/PlatformGameCarousels";
 import { motion } from "framer-motion";
 import { LampContainer } from "@/components/ui/lamp";
+import PopularGamesSection from "@/components/PopularGamesSection";
+import { Button } from "@/components/ui/button";
+import { Library } from "lucide-react";
 
 const Dashboard: React.FC = () => {
   return (
@@ -29,10 +33,14 @@ const Dashboard: React.FC = () => {
         initial={{ opacity: 0, y: 50 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.5, duration: 0.8 }}
-        className="relative z-20 mt-[-4rem] px-4 sm:px-6 lg:px-8 "
+        className="relative z-20 mt-[-4rem] px-4 sm:px-6 lg:px-8"
       >
         <PlatformGameCarousels />
       </motion.div>
+
+      <div className="bg-transparent">
+        <PopularGamesSection />
+      </div>
 
       <div className="absolute inset-0 z-0 bg-gradient-to-t from-background to-background/0 pointer-events-none" />
     </div>

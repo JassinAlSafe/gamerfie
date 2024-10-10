@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import { Menu, X, Search } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -15,7 +15,7 @@ const FloatingHeader = () => {
   };
 
   const handleLogIn = () => {
-    router.push("/login");
+    router.push("/signin");
   };
 
   const handleSearch = (e: React.FormEvent) => {
@@ -36,7 +36,7 @@ const FloatingHeader = () => {
           </Link>
           <nav className="hidden md:flex items-center space-x-6">
             <NavLink href="/">Home</NavLink>
-            <NavLink href="/games">Games</NavLink>
+            <NavLink href="/dashboard">Games</NavLink>
             <NavLink href="/profile">Profile</NavLink>
             <NavLink href="/about">About</NavLink>
             <form onSubmit={handleSearch} className="relative">
