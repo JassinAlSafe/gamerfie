@@ -12,6 +12,9 @@ import {
   Calendar,
   Gamepad2,
   Users,
+  Eye,
+  Palette,
+  Cog,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -77,8 +80,8 @@ export default async function GamePage({ params }: { params: { id: string } }) {
           <ArrowLeft className="w-4 h-4 mr-2" />
           Back to Dashboard
         </Link>
-        <div className="flex flex-col lg:flex-row gap-8">
-          <div className="lg:w-1/3">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="lg:col-span-1">
             <Card className="bg-gray-800 border-gray-700">
               <CardContent className="p-0">
                 {game.cover ? (
@@ -114,8 +117,8 @@ export default async function GamePage({ params }: { params: { id: string } }) {
               </CardContent>
             </Card>
           </div>
-          <div className="lg:w-2/3">
-            <Card className="bg-gray-800 border-gray-700">
+          <div className="lg:col-span-2">
+            <Card className="bg-gray-800 border-gray-700 mb-8">
               <CardHeader>
                 <CardTitle className="text-4xl font-bold">
                   {game.name}
@@ -175,7 +178,7 @@ export default async function GamePage({ params }: { params: { id: string } }) {
                   </div>
                 )}
                 {game.involved_companies && (
-                  <div>
+                  <div className="mb-6">
                     <h2 className="text-xl font-semibold mb-2 flex items-center">
                       <Users className="w-5 h-5 mr-2" />
                       Companies
@@ -198,6 +201,99 @@ export default async function GamePage({ params }: { params: { id: string } }) {
                 )}
               </CardContent>
             </Card>
+            
+            <Card className="bg-gray-800 border-gray-700 mb-8">
+              <CardHeader>
+                <CardTitle className="text-2xl font-bold">Game Details</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {game.game_modes && (
+                    <div>
+                      <h3 className="text-lg font-semibold mb-2 flex items-center">
+                        <Users className="w-5 h-5 mr-2" />
+                        Game Modes
+                      </h3>
+                      <ul className="list-disc list-inside">
+                        {game.game_modes.map((mode) => (
+                          <li key={mode.id} className="text-gray-300">
+                            {mode.name}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {game.player_perspectives && (
+                    <div>
+                      <h3 className="text-lg font-semibold mb-2 flex items-center">
+                        <Eye className="w-5 h-5 mr-2" />
+                        Player Perspectives
+                      </h3>
+                      <ul className="list-disc list-inside">
+                        {game.player_perspectives.map((perspective) => (
+                          <li key={perspective.id} className="text-gray-300">
+                            {perspective.name}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {game.themes && (
+                    <div>
+                      <h3 className="text-lg font-semibold mb-2 flex items-center">
+                        <Palette className="w-5 h-5 mr-2" />
+                        Themes
+                      </h3>
+                      <div className="flex flex-wrap gap-2">
+                        {game.themes.map((theme) => (
+                          <Badge key={theme.id} variant="secondary">
+                            {theme.name}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {game.game_engines && (
+                    <div>
+                      <h3 className="text-lg font-semibold mb-2 flex items-center">
+                        <Cog className="w-5 h-5 mr-2" />
+                        Game Engines
+                      </h3>
+                      <ul className="list-disc list-inside">
+                        {game.game_engines.map((engine) => (
+                          <li key={engine.id} className="text-gray-300">
+                            {engine.name}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {game.screenshots && game.screenshots.length > 0 && (
+              <Card className="bg-gray-800 border-gray-700">
+                <CardHeader>
+                  <CardTitle className="text-2xl font-bold">Screenshots</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {game.screenshots.slice(0, 4).map((screenshot) => (
+                      <div key={screenshot.id} className="relative aspect-video rounded-lg overflow-hidden">
+                        <Image
+                          src={getHighQualityImageUrl(screenshot.url)}
+                          alt={`Screenshot of ${game.name}`}
+                          fill
+                          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                          className="object-cover"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
         </div>
       </div>

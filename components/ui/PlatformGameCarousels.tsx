@@ -6,7 +6,9 @@ import ErrorBoundary from "../ErrorBoundary";
 import LoadingSpinner from "../loadingSpinner";
 import GameCarousel from "../GameCarousel";
 import { Game } from "@/types/game";
-import { Gamepad2 } from "lucide-react";
+import { Gamepad2, Library } from "lucide-react";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
 
 interface Platform {
   id: number;
@@ -75,22 +77,30 @@ const PlatformGameCarousels: React.FC = () => {
   return (
     <div className="w-full min-h-screen py-8 px-4 md:px-8" style={{ backgroundColor: 'rgb(3, 6, 22)' }}>
       <ErrorBoundary
-      fallback={
-        <div className="text-white p-4 bg-red-500/10 rounded-lg">
-        Error loading games. Please try again later.
-        </div>
-      }
+        fallback={
+          <div className="text-white p-4 bg-red-500/10 rounded-lg">
+            Error loading games. Please try again later.
+          </div>
+        }
       >
-      <h1 className="text-4xl font-bold text-white mb-8 text-center">
-        Game Library
-      </h1>
-      <div className="space-y-12">
-        {data.platformGames.map(({ platform, games }) => (
-        <div key={platform.id} className="w-full">
-          <GameCarousel title={`${platform.name} Games`} games={games} />
+        <h1 className="text-4xl font-bold text-white mb-8 text-center">
+          Game Library
+        </h1>
+        <div className="flex justify-end mb-8">
+          <Link href="/all-games">
+            <Button size="lg" className="bg-blue-600 hover:bg-blue-700 text-white">
+              <Library className="mr-2 h-5 w-5" />
+              View All Games
+            </Button>
+          </Link>
         </div>
-        ))}
-      </div>
+        <div className="space-y-12">
+          {data.platformGames.map(({ platform, games }) => (
+            <div key={platform.id} className="w-full">
+              <GameCarousel title={`${platform.name} Games`} games={games} />
+            </div>
+          ))}
+        </div>
       </ErrorBoundary>
     </div>
   );
