@@ -1,14 +1,20 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { Menu, X, Search } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 
-const FloatingHeader = () => {
+const FloatingHeader: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [isTransparent, setIsTransparent] = useState(false);
   const router = useRouter();
+  const pathname = usePathname();
+
+  useEffect(() => {
+    setIsTransparent(pathname?.startsWith('/game/') || false);
+  }, [pathname]);
 
   const handleSignUp = () => {
     router.push("/signup");
@@ -25,7 +31,7 @@ const FloatingHeader = () => {
   };
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 transition-all duration-300 font-sans bg-transparent">
+    <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 font-sans ${isTransparent ? 'bg-transparent' : 'bg-transparent'}`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           <Link
@@ -73,7 +79,7 @@ const FloatingHeader = () => {
         </div>
       </div>
       {isMenuOpen && (
-        <div className="md:hidden bg-gray-900/95 backdrop-blur-sm">
+        <div className={`md:hidden ${isTransparent ? 'bg-gray-900/75' : 'bg-gray-900/95'} backdrop-blur-sm`}>
           <nav className="flex flex-col items-center py-4 space-y-4">
             <NavLink href="/" onClick={() => setIsMenuOpen(false)}>
               Home
@@ -124,9 +130,9 @@ const FloatingHeader = () => {
   );
 };
 
-const NavLink = ({ href, children, ...props }) => (
+const NavLink: React.FC<React.AnchorHTMLAttributes<HTMLAnchorElement>> = ({ href, children, ...props }) => (
   <Link
-    href={href}
+    href={href ?? "/"}
     className="text-white hover:text-blue-400 transition-colors duration-200"
     {...props}
   >

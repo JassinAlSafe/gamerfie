@@ -30,7 +30,7 @@ export async function fetchGames(
   limit: number
 ): Promise<Game[]> {
   const query = `
-    fields name,cover.url,first_release_date,total_rating;
+    fields name,cover.url,first_release_date,total_rating,screenshots.id;
     where platforms = ${platformId};
     sort total_rating desc;
     limit ${limit};
@@ -54,11 +54,22 @@ export async function fetchGameDetails(
   gameId: number
 ): Promise<Game | null> {
   const query = `
-    fields name,cover.url,first_release_date,genres.name,platforms.name,summary,total_rating;
+    fields name,cover.url,first_release_date,genres.name,platforms.name,summary,total_rating,screenshots.url;
     where id = ${gameId};
   `;
   const games = await fetchFromIGDB("games", query, accessToken);
   return games.length > 0 ? games[0] : null;
+}
+
+export async function fetchScreenshots(
+  accessToken: string,
+  gameIds: number[]
+): Promise<{ id: number; screenshots: { id: number; url: string }[] }[]> {
+  const query = `
+    fields id,screenshots.id,screenshots.url;
+    where id = (${gameIds.join(",")});
+  `;
+  return fetchFromIGDB("games", query, accessToken);
 }
 
 // Add any other IGDB-related functions here
