@@ -107,17 +107,19 @@ async function fetchCovers(accessToken: string, coverIds: number[]) {
     const coverResults = await Promise.all(coverPromises);
     const coverData = coverResults.flat();
     console.log(`Fetched ${coverData.length} covers`);
-    return coverData.map((cover: any) => ({
-      ...cover,
-      url: constructImageUrl(cover.image_id),
-    }));
+    return coverData.map(
+      (cover: { game: number; image_id: string; url: string }) => ({
+        ...cover,
+        url: constructImageUrl(cover.image_id),
+      })
+    );
   } catch (error) {
     console.error("Error fetching covers:", error);
     throw error;
   }
 }
 
-export async function POST(req: Request) {
+export async function POST() {
   try {
     console.log("API route started");
     const cookieStore = cookies();
@@ -127,10 +129,10 @@ export async function POST(req: Request) {
       console.log("No access token found in cookies, fetching new one");
       accessToken = await getAccessToken();
       // Set the new access token as a cookie
-      cookieStore.set("accessToken", accessToken, { 
-        httpOnly: true, 
+      cookieStore.set("accessToken", accessToken, {
+        httpOnly: true,
         secure: process.env.NODE_ENV === "production",
-        maxAge: 3600 // 1 hour
+        maxAge: 3600, // 1 hour
       });
     }
 
@@ -154,7 +156,7 @@ export async function POST(req: Request) {
     console.log("Games fetched for all platforms");
 
     const coverIds = allGames.flatMap(({ games }) =>
-      games.map((game: any) => game.cover).filter(Boolean)
+      games.map((game: { cover: number | null }) => game.cover).filter(Boolean)
     );
 
     console.log(`Total cover IDs to fetch: ${coverIds.length}`);
@@ -165,18 +167,23 @@ export async function POST(req: Request) {
 
     const platformGamesWithCovers = allGames.map(({ platform, games }) => ({
       platform,
-      games: games.map((game: any) => {
-        const gameCover = covers.find((cover: any) => cover.game === game.id);
-        if (!gameCover) {
-          console.warn(
-            `No cover found for game: ${game.name} (ID: ${game.id})`
+      games: games.map(
+        (game: { id: number; name: string; cover: number | null }) => {
+          const gameCover = covers.find(
+            (cover: { game: number; image_id: string; url: string }) =>
+              cover.game === game.id
           );
+          if (!gameCover) {
+            console.warn(
+              `No cover found for game: ${game.name} (ID: ${game.id})`
+            );
+          }
+          return {
+            ...game,
+            cover: gameCover || null,
+          };
         }
-        return {
-          ...game,
-          cover: gameCover || null,
-        };
-      }),
+      ),
     }));
 
     console.log("API route completed successfully");
@@ -192,4 +199,4 @@ export async function POST(req: Request) {
   }
 }
 
-export { getAccessToken}
+export { getAccessToken };

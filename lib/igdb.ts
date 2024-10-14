@@ -41,7 +41,7 @@ export async function fetchGames(
 export async function fetchCovers(
   accessToken: string,
   coverIds: number[]
-): Promise<any[]> {
+): Promise<{ url: string }[]> {
   const query = `
     fields url;
     where id = (${coverIds.join(",")});

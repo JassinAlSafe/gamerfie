@@ -1,5 +1,4 @@
 import React from "react";
-import { ExpandableCardDemo } from "./ui/ExpandableCards";
 import { BentoShowcase } from "./BentoShowcase";
 
 const Showcase = () => {

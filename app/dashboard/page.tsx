@@ -1,13 +1,10 @@
 "use client";
 
 import React from "react";
-import Link from "next/link";
 import PlatformGameCarousels from "@/components/ui/PlatformGameCarousels";
 import { motion } from "framer-motion";
 import { LampContainer } from "@/components/ui/lamp";
 import PopularGamesSection from "@/components/PopularGamesSection";
-import { Button } from "@/components/ui/button";
-import { Library } from "lucide-react";
 
 const Dashboard: React.FC = () => {
   return (
