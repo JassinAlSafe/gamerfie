@@ -1,7 +1,45 @@
 import axios from "axios";
-import { Game, Platform } from "@/types/game";
+import { Game, Platform, Cover, Artwork } from "@/types/game";
 
 const IGDB_API_ENDPOINT = "https://api.igdb.com/v4";
+
+export interface FetchedGame {
+  id: number;
+  name: string;
+  cover: {
+    id: number;
+    url: string;
+  } | null;
+  platforms: string[];
+  first_release_date?: number;
+  total_rating?: number;
+}
+
+export interface FetchGamesResponse {
+  games: FetchedGame[];
+  total: number;
+}
+
+export async function getAccessToken(): Promise<string> {
+  try {
+    const response = await axios.post(
+      "https://id.twitch.tv/oauth2/token",
+      new URLSearchParams({
+        client_id: process.env.NEXT_PUBLIC_TWITCH_CLIENT_ID as string,
+        client_secret: process.env.TWITCH_CLIENT_SECRET as string,
+        grant_type: "client_credentials",
+      }),
+      {
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      }
+    );
+
+    return response.data.access_token;
+  } catch (error) {
+    console.error("Error in getAccessToken:", error);
+    throw error;
+  }
+}
 
 async function fetchFromIGDB(
   endpoint: string,
@@ -33,20 +71,12 @@ async function fetchFromIGDB(
 
 export async function fetchGames(
   accessToken: string,
-  offset: number = 0,
+  page: number = 1,
   limit: number = 48,
   platformId?: number
-): Promise<
-  {
-    id: number;
-    name: string;
-    cover: { id: number; url: string } | null;
-    total_rating: number;
-    first_release_date: number;
-    platforms: { name: string }[];
-  }[]
-> {
+): Promise<FetchedGame[]> {
   try {
+    const offset = (page - 1) * limit;
     let query = `fields name,cover.url,rating,total_rating,first_release_date,platforms.name;
       where cover != null;`;
 
@@ -59,7 +89,7 @@ export async function fetchGames(
       offset ${offset};`;
 
     console.log(
-      `Fetching games with offset: ${offset}, limit: ${limit}, platform ID: ${platformId}`
+      `Fetching games with page: ${page}, limit: ${limit}, platform ID: ${platformId}`
     );
 
     const response = await axios.post(`${IGDB_API_ENDPOINT}/games`, query, {
@@ -104,9 +134,9 @@ export function ensureAbsoluteUrl(url: string): string {
 export async function fetchCovers(
   accessToken: string,
   coverIds: number[]
-): Promise<{ url: string }[]> {
+): Promise<Cover[]> {
   const query = `
-    fields url;
+    fields id,game,url;
     where id = (${coverIds.join(",")});
   `;
   console.log(`Fetching covers for cover IDs: ${coverIds}`);
@@ -139,63 +169,13 @@ export async function fetchGameDetails(
       cover: gameData.cover
         ? { id: gameData.cover.id, url: gameData.cover.url }
         : null,
-      screenshots: gameData.screenshots
-        ? gameData.screenshots.map((s: { id: number; url: string }) => ({
-            id: s.id,
-            url: s.url,
-          }))
-        : [],
-      artworks: gameData.artworks
-        ? gameData.artworks.map((a: { id: number; url: string }) => ({
-            id: a.id,
-            url: a.url,
-          }))
-        : [],
-      genres: gameData.genres
-        ? gameData.genres.map((g: { id: number; name: string }) => ({
-            id: g.id,
-            name: g.name,
-          }))
-        : [],
-      platforms: gameData.platforms
-        ? gameData.platforms.map((p: { id: number; name: string }) => ({
-            id: p.id,
-            name: p.name,
-          }))
-        : [],
-      involved_companies: gameData.involved_companies
-        ? gameData.involved_companies.map(
-            (ic: {
-              id: number;
-              company: { id: number; name: string };
-              developer: boolean;
-              publisher: boolean;
-            }) => ({
-              id: ic.id,
-              company: { id: ic.company.id, name: ic.company.name },
-              developer: ic.developer,
-              publisher: ic.publisher,
-            })
-          )
-        : [],
-      websites: gameData.websites
-        ? gameData.websites.map(
-            (w: { id: number; url: string; category: number }) => ({
-              id: w.id,
-              url: w.url,
-              category: w.category,
-            })
-          )
-        : [],
-      videos: gameData.videos
-        ? gameData.videos.map(
-            (v: { id: number; name: string; video_id: string }) => ({
-              id: v.id,
-              name: v.name,
-              video_id: v.video_id,
-            })
-          )
-        : [],
+      screenshots: gameData.screenshots,
+      artworks: gameData.artworks,
+      genres: gameData.genres,
+      platforms: gameData.platforms,
+      involved_companies: gameData.involved_companies,
+      websites: gameData.websites,
+      videos: gameData.videos,
     };
     console.log(`Processed game details:`, game);
     return game;
@@ -239,15 +219,4 @@ export async function fetchPlatformDetails(
   const platforms = await fetchFromIGDB("platforms", query, accessToken);
   console.log(`Fetched platform details:`, platforms);
   return platforms.length > 0 ? platforms[0] : null;
-}
-
-export interface FetchedGame extends Omit<Game, "platforms"> {
-  platforms: string[];
-  first_release_date?: number;
-  total_rating?: number;
-}
-
-export interface FetchGamesResponse {
-  games: FetchedGame[];
-  total: number;
 }

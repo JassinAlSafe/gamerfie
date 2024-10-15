@@ -1,11 +1,11 @@
-import React from 'react'
-import { Game } from "@/types/game"
-import { Metadata } from "next"
-import { notFound } from "next/navigation"
-import Image from "next/image"
-import Link from "next/link"
-import { getAccessToken } from "../../api/games/route"
-import { fetchGameDetails } from "@/lib/igdb"
+import React from "react";
+import { Game } from "@/types/game";
+import { Metadata } from "next";
+import { notFound } from "next/navigation";
+import Image from "next/image";
+import Link from "next/link";
+import { getAccessToken } from "../../../lib/igdb";
+import { fetchGameDetails } from "@/lib/igdb";
 import {
   Star,
   ArrowLeft,
@@ -13,23 +13,23 @@ import {
   Calendar,
   Gamepad2,
   Users,
-} from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 
 export async function generateMetadata({
   params,
 }: {
   params: { id: string };
 }): Promise<Metadata> {
-  const accessToken = await getAccessToken()
-  const game = await fetchGameDetails(accessToken, parseInt(params.id))
+  const accessToken = await getAccessToken();
+  const game = await fetchGameDetails(accessToken, parseInt(params.id));
 
   return {
-    title: game ? `${game.name} | Gamerfie` : 'Game Details',
-    description: game?.summary || 'View game details',
-  }
+    title: game ? `${game.name} | Gamerfie` : "Game Details",
+    description: game?.summary || "View game details",
+  };
 }
 
 function LoadingState() {
@@ -37,44 +37,50 @@ function LoadingState() {
     <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center">
       <div className="text-2xl font-bold">Loading game details...</div>
     </div>
-  )
+  );
 }
 
 function ErrorState({ error }: { error: Error }) {
   return (
     <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center">
-      <div className="text-2xl font-bold text-red-500">Error: {error.message}</div>
+      <div className="text-2xl font-bold text-red-500">
+        Error: {error.message}
+      </div>
     </div>
-  )
+  );
 }
 
 function GameDetails({ game }: { game: Game }) {
   const getHighQualityImageUrl = (url: string) => {
-    return url.startsWith("//") ? `https:${url.replace("/t_thumb/", "/t_1080p/")}` : url.replace("/t_thumb/", "/t_1080p/")
-  }
+    return url.startsWith("//")
+      ? `https:${url.replace("/t_thumb/", "/t_1080p/")}`
+      : url.replace("/t_thumb/", "/t_1080p/");
+  };
 
   const getWebsiteUrl = (game: Game) => {
     if (game.websites && game.websites.length > 0) {
-      const officialSite = game.websites.find((site) => site.category === 1)
-      return officialSite ? officialSite.url : game.websites[0].url
+      const officialSite = game.websites.find((site) => site.category === 1);
+      return officialSite ? officialSite.url : game.websites[0].url;
     }
-    return null
-  }
+    return null;
+  };
 
+  const websiteUrl = getWebsiteUrl(game);
 
-  const websiteUrl = getWebsiteUrl(game)
-
-  const backgroundImage = game.artworks && game.artworks.length > 0
-    ? getHighQualityImageUrl(game.artworks[0].url)
-    : game.screenshots && game.screenshots.length > 0
-    ? getHighQualityImageUrl(game.screenshots[0].url)
-    : null
+  const backgroundImage =
+    game.artworks && game.artworks.length > 0
+      ? getHighQualityImageUrl(game.artworks[0].url)
+      : game.screenshots && game.screenshots.length > 0
+      ? getHighQualityImageUrl(game.screenshots[0].url)
+      : null;
 
   return (
     <div className="min-h-screen bg-gray-900 text-white">
-      <div 
+      <div
         className="relative h-[85vh] w-full bg-cover bg-center"
-        style={{ backgroundImage: backgroundImage ? `url(${backgroundImage})` : 'none' }}
+        style={{
+          backgroundImage: backgroundImage ? `url(${backgroundImage})` : "none",
+        }}
       >
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-gray-900" />
       </div>
@@ -130,7 +136,9 @@ function GameDetails({ game }: { game: Game }) {
                   <Calendar className="w-6 h-6 mr-2" />
                   <span className="text-xl">
                     {game.first_release_date
-                      ? new Date(game.first_release_date * 1000).toLocaleDateString()
+                      ? new Date(
+                          game.first_release_date * 1000
+                        ).toLocaleDateString()
                       : "Unknown"}
                   </span>
                 </div>
@@ -153,46 +161,47 @@ function GameDetails({ game }: { game: Game }) {
                 </div>
               )}
               {game.platforms && game.platforms.length > 0 && (
-  <div className="mb-6">
-    <h2 className="text-xl font-semibold mb-2 flex items-center">
-      <Gamepad2 className="w-5 h-5 mr-2" />
-      Platforms ({game.platforms.length})
-    </h2>
-    <div className="flex flex-wrap gap-2">
-      {game.platforms.map((platform) => (
-        <Badge 
-          key={platform.id} 
-          variant="outline"
-          className="text-sm py-1 px-2 transition-colors duration-200 hover:bg-primary hover:text-primary-foreground"
-        >
-          {platform.name}
-        </Badge>
-      ))}
-    </div>
-  </div>
-)}
-              {game.involved_companies && game.involved_companies.length > 0 && (
                 <div className="mb-6">
                   <h2 className="text-xl font-semibold mb-2 flex items-center">
-                    <Users className="w-5 h-5 mr-2" />
-                    Companies
+                    <Gamepad2 className="w-5 h-5 mr-2" />
+                    Platforms ({game.platforms.length})
                   </h2>
-                  <ul className="list-disc list-inside">
-                    {game.involved_companies.map((company) => (
-                      <li key={company.id} className="text-gray-300">
-                        {company.company.name}
-                        {company.developer && company.publisher
-                          ? " (Developer & Publisher)"
-                          : company.developer
-                          ? " (Developer)"
-                          : company.publisher
-                          ? " (Publisher)"
-                          : ""}
-                      </li>
+                  <div className="flex flex-wrap gap-2">
+                    {game.platforms.map((platform) => (
+                      <Badge
+                        key={platform.id}
+                        variant="outline"
+                        className="text-sm py-1 px-2 transition-colors duration-200 hover:bg-primary hover:text-primary-foreground"
+                      >
+                        {platform.name}
+                      </Badge>
                     ))}
-                  </ul>
+                  </div>
                 </div>
               )}
+              {game.involved_companies &&
+                game.involved_companies.length > 0 && (
+                  <div className="mb-6">
+                    <h2 className="text-xl font-semibold mb-2 flex items-center">
+                      <Users className="w-5 h-5 mr-2" />
+                      Companies
+                    </h2>
+                    <ul className="list-disc list-inside">
+                      {game.involved_companies.map((company) => (
+                        <li key={company.id} className="text-gray-300">
+                          {company.company.name}
+                          {company.developer && company.publisher
+                            ? " (Developer & Publisher)"
+                            : company.developer
+                            ? " (Developer)"
+                            : company.publisher
+                            ? " (Publisher)"
+                            : ""}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
             </div>
           </div>
           {game.screenshots && game.screenshots.length > 0 && (
@@ -200,7 +209,10 @@ function GameDetails({ game }: { game: Game }) {
               <h2 className="text-2xl font-bold mb-6">Screenshots</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {game.screenshots.slice(0, 3).map((screenshot, index) => (
-                  <div key={screenshot.id} className="relative aspect-video rounded-lg overflow-hidden">
+                  <div
+                    key={screenshot.id}
+                    className="relative aspect-video rounded-lg overflow-hidden"
+                  >
                     <Image
                       src={getHighQualityImageUrl(screenshot.url)}
                       alt={`${game.name} screenshot ${index + 1}`}
@@ -216,21 +228,21 @@ function GameDetails({ game }: { game: Game }) {
         </div>
       </div>
     </div>
-  )
+  );
 }
 
 export default async function Page({ params }: { params: { id: string } }) {
   try {
-    const accessToken = await getAccessToken()
-    const game = await fetchGameDetails(accessToken, parseInt(params.id))
+    const accessToken = await getAccessToken();
+    const game = await fetchGameDetails(accessToken, parseInt(params.id));
 
     if (!game) {
-      notFound()
+      notFound();
     }
 
-    return <GameDetails game={game} />
+    return <GameDetails game={game} />;
   } catch (error) {
     console.error("Error fetching game details:", error);
-    return <ErrorState error={error as Error} />
+    return <ErrorState error={error as Error} />;
   }
 }

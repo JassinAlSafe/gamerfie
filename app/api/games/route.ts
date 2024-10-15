@@ -1,69 +1,95 @@
 import { NextResponse } from "next/server";
-import axios from "axios";
-import { fetchGames, fetchTotalGames } from "@/lib/igdb";
+import {
+  getAccessToken,
+  fetchGames,
+  fetchTotalGames,
+  FetchedGame,
+} from "@/lib/igdb";
+import { Game } from "@/types/game";
 
-export async function getAccessToken(): Promise<string> {
+interface ProcessedGame {
+  id: number;
+  name: string;
+  cover: { id: number; url: string } | null;
+  platforms: string[];
+  first_release_date?: number;
+  total_rating?: number;
+}
+
+export async function GET(request: Request) {
   try {
-    const res = await axios.post(
-      "https://id.twitch.tv/oauth2/token",
-      new URLSearchParams({
-        client_id: process.env.NEXT_PUBLIC_TWITCH_CLIENT_ID as string,
-        client_secret: process.env.TWITCH_CLIENT_SECRET as string,
-        grant_type: "client_credentials",
-      }),
-      {
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      }
-    );
+    const { searchParams } = new URL(request.url);
+    const page = parseInt(searchParams.get("page") || "1", 10);
+    const limit = parseInt(searchParams.get("limit") || "48", 10);
 
-    return res.data.access_token;
+    const accessToken = await getAccessToken();
+
+    const [games, totalGames] = await Promise.all([
+      fetchGames(accessToken, page, limit),
+      fetchTotalGames(accessToken),
+    ]);
+
+    // Process games data (e.g., formatting, filtering)
+    const processedGames: ProcessedGame[] = games.map((game: FetchedGame) => ({
+      id: game.id,
+      name: game.name,
+      cover: game.cover
+        ? {
+            id: game.cover.id,
+            url: game.cover.url.replace("t_thumb", "t_cover_big"),
+          }
+        : null,
+      platforms: Array.isArray(game.platforms)
+        ? game.platforms.map((platform) => platform.name)
+        : [],
+      first_release_date: game.first_release_date,
+      total_rating: game.total_rating,
+    }));
+
+    return NextResponse.json({ games: processedGames, total: totalGames });
   } catch (error) {
-    console.error("Error in getAccessToken:", error);
-    throw error;
+    console.error("API error:", error);
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : String(error) },
+      { status: 500 }
+    );
   }
 }
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const fetchAll = body.fetchAll === true;
-    const page = parseInt(body.page || "1", 10);
-    const limit = parseInt(body.limit || "48", 10);
-    const offset = (page - 1) * limit;
-
-    console.log(`Fetching games with offset: ${offset} and limit: ${limit}`);
+    const { page = 1, limit = 48, platformId } = body;
 
     const accessToken = await getAccessToken();
-    console.log("Access token obtained");
-
 
     const [games, totalGames] = await Promise.all([
-      fetchGames(accessToken, offset, limit),
-      fetchTotalGames(accessToken),
+      fetchGames(accessToken, page, limit, platformId),
+      fetchTotalGames(accessToken, platformId),
     ]);
 
-    const processedGames = games.map((game) => ({
-      ...game,
+    // Process games data (e.g., formatting, filtering)
+    const processedGames: ProcessedGame[] = games.map((game: FetchedGame) => ({
+      id: game.id,
+      name: game.name,
       cover: game.cover
         ? {
-            ...game.cover,
+            id: game.cover.id,
             url: game.cover.url.replace("t_thumb", "t_cover_big"),
           }
         : null,
+      platforms: Array.isArray(game.platforms)
+        ? game.platforms.map((platform) => platform.name)
+        : [],
+      first_release_date: game.first_release_date,
+      total_rating: game.total_rating,
     }));
 
-    console.log("Processed games. Sending response.");
     return NextResponse.json({ games: processedGames, total: totalGames });
   } catch (error) {
     console.error("API error:", error);
     return NextResponse.json(
-      {
-        error: (error as Error).message,
-        stack:
-          process.env.NODE_ENV === "development"
-            ? (error as Error).stack
-            : undefined,
-      },
+      { error: error instanceof Error ? error.message : String(error) },
       { status: 500 }
     );
   }
