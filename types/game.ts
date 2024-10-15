@@ -4,6 +4,11 @@ export interface Cover {
   url: string;
 }
 
+export interface Artwork {
+  id: number;
+  url: string;
+}
+
 export interface Game {
   id: number;
   name: string;
@@ -54,8 +59,27 @@ export interface Game {
     id: number;
     name: string;
   }[];
+  artworks?: Artwork[];
   screenshots?: {
     id: number;
     url: string;
   }[];
+  videos?: {
+    id: number;
+    name: string;
+    video_id: string;
+  }[];
+}
+
+export interface Platform {
+  id: number;
+  name: string;
+  abbreviation?: string;
+  alternative_name?: string;
+  category?: number;
+  generation?: number;
+  platform_family?: number;
+  slug: string;
+  summary?: string;
+  url?: string;
 }

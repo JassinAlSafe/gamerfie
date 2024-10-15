@@ -1,10 +1,12 @@
 "use client";
 
 import React from "react";
-import PlatformGameCarousels from "@/components/ui/PlatformGameCarousels";
 import { motion } from "framer-motion";
 import { LampContainer } from "@/components/ui/lamp";
 import PopularGamesSection from "@/components/PopularGamesSection";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
+import { Library } from "lucide-react";
 
 const Dashboard: React.FC = () => {
   return (
@@ -25,15 +27,24 @@ const Dashboard: React.FC = () => {
           </motion.h1>
         </LampContainer>
       </div>
+      <div className="flex justify-end mb-8">
+        <Link href="/all-games">
+          <Button
+            size="lg"
+            className="bg-blue-600 hover:bg-blue-700 text-white"
+          >
+            <Library className="mr-2 h-5 w-5" />
+            View All Games
+          </Button>
+        </Link>
+      </div>
 
       <motion.div
         initial={{ opacity: 0, y: 50 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.5, duration: 0.8 }}
         className="relative z-20 mt-[-4rem] px-4 sm:px-6 lg:px-8"
-      >
-        <PlatformGameCarousels />
-      </motion.div>
+      ></motion.div>
 
       <div className="bg-transparent">
         <PopularGamesSection />

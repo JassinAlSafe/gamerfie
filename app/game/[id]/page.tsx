@@ -12,6 +12,7 @@ import {
   ExternalLink,
   Calendar,
   Gamepad2,
+  Users,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -60,6 +61,7 @@ function GameDetails({ game }: { game: Game }) {
     return null
   }
 
+
   const websiteUrl = getWebsiteUrl(game)
 
   const backgroundImage = game.artworks && game.artworks.length > 0
@@ -69,12 +71,12 @@ function GameDetails({ game }: { game: Game }) {
     : null
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white pb-16">
+    <div className="min-h-screen bg-gray-900 text-white">
       <div 
-        className="relative h-[70vh] w-full bg-cover bg-center"
+        className="relative h-[85vh] w-full bg-cover bg-center"
         style={{ backgroundImage: backgroundImage ? `url(${backgroundImage})` : 'none' }}
       >
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent to-gray-900" />
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-gray-900" />
       </div>
       <div className="relative z-10 -mt-64 px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-16">
         <div className="max-w-7xl mx-auto">
@@ -135,7 +137,7 @@ function GameDetails({ game }: { game: Game }) {
               </div>
               <p className="text-gray-300 text-lg mb-8">{game.summary}</p>
               <Separator className="my-8" />
-              {game.genres && (
+              {game.genres && game.genres.length > 0 && (
                 <div className="mb-6">
                   <h2 className="text-xl font-semibold mb-2 flex items-center">
                     <Gamepad2 className="w-5 h-5 mr-2" />
@@ -150,22 +152,26 @@ function GameDetails({ game }: { game: Game }) {
                   </div>
                 </div>
               )}
-              {game.platforms && (
-                <div className="mb-6">
-                  <h2 className="text-xl font-semibold mb-2 flex items-center">
-                    <Gamepad2 className="w-5 h-5 mr-2" />
-                    Platforms
-                  </h2>
-                  <div className="flex flex-wrap gap-2">
-                    {game.platforms.map((platform) => (
-                      <Badge key={platform.id} variant="outline">
-                        {platform.name}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
-              {game.involved_companies && (
+              {game.platforms && game.platforms.length > 0 && (
+  <div className="mb-6">
+    <h2 className="text-xl font-semibold mb-2 flex items-center">
+      <Gamepad2 className="w-5 h-5 mr-2" />
+      Platforms ({game.platforms.length})
+    </h2>
+    <div className="flex flex-wrap gap-2">
+      {game.platforms.map((platform) => (
+        <Badge 
+          key={platform.id} 
+          variant="outline"
+          className="text-sm py-1 px-2 transition-colors duration-200 hover:bg-primary hover:text-primary-foreground"
+        >
+          {platform.name}
+        </Badge>
+      ))}
+    </div>
+  </div>
+)}
+              {game.involved_companies && game.involved_companies.length > 0 && (
                 <div className="mb-6">
                   <h2 className="text-xl font-semibold mb-2 flex items-center">
                     <Users className="w-5 h-5 mr-2" />
@@ -224,6 +230,7 @@ export default async function Page({ params }: { params: { id: string } }) {
 
     return <GameDetails game={game} />
   } catch (error) {
+    console.error("Error fetching game details:", error);
     return <ErrorState error={error as Error} />
   }
 }
