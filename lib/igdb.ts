@@ -10,7 +10,7 @@ export interface FetchedGame {
     id: number;
     url: string;
   } | null;
-  platforms: string[];
+  platforms: Platform[];
   first_release_date?: number;
   total_rating?: number;
 }
@@ -107,11 +107,12 @@ export async function fetchGames(
   }
 }
 
-export async function fetchTotalGames(accessToken: string): Promise<number> {
+export async function fetchTotalGames(accessToken: string, platformId?: number): Promise<number> {
   try {
+    const whereClause = platformId ? `where cover != null & platforms = (${platformId});` : "where cover != null;";
     const response = await axios.post(
       `${IGDB_API_ENDPOINT}/games/count`,
-      "where cover != null;",
+      whereClause,
       {
         headers: {
           "Client-ID": process.env.NEXT_PUBLIC_TWITCH_CLIENT_ID as string,
