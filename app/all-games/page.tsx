@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import LoadingSpinner from "@/components/loadingSpinner";
@@ -20,7 +20,6 @@ import { FetchGamesResponse, FetchedGame } from "@/lib/igdb";
 
 const GAMES_PER_PAGE = 48;
 
-// Helper function to ensure absolute URLs
 const ensureAbsoluteUrl = (url: string) => {
   if (url.startsWith("//")) {
     return `https:${url}`;
@@ -34,28 +33,30 @@ export default function AllGamesPage() {
   const [sortBy, setSortBy] = useState("popularity");
   const [currentPage, setCurrentPage] = useState(1);
 
+  const fetchGames = useCallback(async () => {
+    const response = await fetch("/api/games", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        page: currentPage,
+        limit: GAMES_PER_PAGE,
+        platformId: selectedPlatform !== "all" ? selectedPlatform : undefined,
+      }),
+    });
+    if (!response.ok) {
+      throw new Error("Network response was not ok");
+    }
+    return response.json();
+  }, [currentPage, selectedPlatform]);
+
   const { data, error, isLoading, isFetching } = useQuery<
     FetchGamesResponse,
     Error
   >({
     queryKey: ["allGames", currentPage, selectedPlatform],
-    queryFn: async () => {
-      const response = await fetch("/api/games", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          page: currentPage,
-          limit: GAMES_PER_PAGE,
-          platformId: selectedPlatform !== "all" ? selectedPlatform : undefined,
-        }),
-      });
-      if (!response.ok) {
-        throw new Error("Network response was not ok");
-      }
-      return response.json();
-    },
+    queryFn: fetchGames,
     staleTime: 5 * 60 * 1000,
     gcTime: 60 * 60 * 1000,
   });
@@ -98,10 +99,10 @@ export default function AllGamesPage() {
     });
   }, [filteredGames, sortBy]);
 
-  const handlePageChange = (page: number) => {
+  const handlePageChange = useCallback((page: number) => {
     setCurrentPage(page);
     window.scrollTo(0, 0);
-  };
+  }, []);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -154,30 +155,52 @@ export default function AllGamesPage() {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10 bg-gray-700 text-white"
+              aria-label="Search games"
             />
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+            <Search
+              className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+              aria-hidden="true"
+            />
           </div>
           <Select value={selectedPlatform} onValueChange={setSelectedPlatform}>
-            <SelectTrigger className="w-full md:w-[200px] bg-gray-700 text-white">
+            <SelectTrigger className="w-full md:w-[200px] bg-gray-700 text-white border-gray-600">
               <SelectValue placeholder="All Platforms" />
             </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Platforms</SelectItem>
+            <SelectContent className="bg-gray-800 border border-gray-700">
+              <SelectItem value="all" className="text-white hover:bg-gray-700">
+                All Platforms
+              </SelectItem>
               {platforms.map((platform) => (
-                <SelectItem key={platform} value={platform}>
+                <SelectItem
+                  key={platform}
+                  value={platform}
+                  className="text-white hover:bg-gray-700"
+                >
                   {platform}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
           <Select value={sortBy} onValueChange={setSortBy}>
-            <SelectTrigger className="w-full md:w-[200px] bg-gray-700 text-white">
+            <SelectTrigger className="w-full md:w-[200px] bg-gray-700 text-white border-gray-600">
               <SelectValue placeholder="Sort by" />
             </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="popularity">Top Rated</SelectItem>
-              <SelectItem value="releaseDate">New</SelectItem>
-              <SelectItem value="name">Name</SelectItem>
+            <SelectContent className="bg-gray-800 border border-gray-700">
+              <SelectItem
+                value="popularity"
+                className="text-white hover:bg-gray-700"
+              >
+                Top Rated
+              </SelectItem>
+              <SelectItem
+                value="releaseDate"
+                className="text-white hover:bg-gray-700"
+              >
+                New
+              </SelectItem>
+              <SelectItem value="name" className="text-white hover:bg-gray-700">
+                Name
+              </SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -196,7 +219,10 @@ export default function AllGamesPage() {
                   />
                 ) : (
                   <div className="absolute inset-0 bg-gray-700 flex items-center justify-center">
-                    <Gamepad2 className="w-12 h-12 text-gray-500" />
+                    <Gamepad2
+                      className="w-12 h-12 text-gray-500"
+                      aria-hidden="true"
+                    />
                   </div>
                 )}
                 <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-60 transition-opacity duration-300 flex items-center justify-center">
@@ -208,13 +234,17 @@ export default function AllGamesPage() {
             </Link>
           ))}
         </div>
-        <div className="mt-8 flex justify-center items-center space-x-2">
+        <nav
+          className="mt-8 flex justify-center items-center space-x-2"
+          aria-label="Pagination"
+        >
           <Button
             onClick={() => handlePageChange(currentPage - 1)}
             disabled={currentPage === 1 || isFetching}
             variant="outline"
             size="sm"
             className="text-white border-white hover:bg-white hover:text-gray-900"
+            aria-label="Previous page"
           >
             Previous
           </Button>
@@ -227,18 +257,22 @@ export default function AllGamesPage() {
             variant="outline"
             size="sm"
             className="text-white border-white hover:bg-white hover:text-gray-900"
+            aria-label="Next page"
           >
             Next
           </Button>
-        </div>
+        </nav>
       </ErrorBoundary>
     </div>
   );
 }
 
 const ErrorDisplay: React.FC<{ error: Error }> = ({ error }) => (
-  <div className="flex flex-col items-center justify-center min-h-screen text-white">
-    <Gamepad2 className="w-16 h-16 mb-4 text-red-500" />
+  <div
+    className="flex flex-col items-center justify-center min-h-screen text-white"
+    role="alert"
+  >
+    <Gamepad2 className="w-16 h-16 mb-4 text-red-500" aria-hidden="true" />
     <h2 className="text-2xl font-bold mb-2">Error loading game data</h2>
     <p className="text-gray-400 text-center max-w-md">{error.message}</p>
     <p className="mt-4 text-blue-400 hover:text-blue-300 cursor-pointer">
@@ -248,8 +282,11 @@ const ErrorDisplay: React.FC<{ error: Error }> = ({ error }) => (
 );
 
 const NoDataDisplay: React.FC = () => (
-  <div className="flex flex-col items-center justify-center min-h-screen text-white">
-    <Gamepad2 className="w-16 h-16 mb-4 text-gray-600" />
+  <div
+    className="flex flex-col items-center justify-center min-h-screen text-white"
+    role="alert"
+  >
+    <Gamepad2 className="w-16 h-16 mb-4 text-gray-600" aria-hidden="true" />
     <h2 className="text-2xl font-bold mb-2">No game data available</h2>
     <p className="text-gray-400">Check back later for exciting new games!</p>
   </div>
