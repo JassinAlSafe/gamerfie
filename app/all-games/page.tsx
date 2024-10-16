@@ -1,4 +1,5 @@
 "use client";
+
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import ErrorBoundary from "@/components/ErrorBoundary";
@@ -32,6 +33,7 @@ export default function AllGamesPage() {
   const [selectedPlatform, setSelectedPlatform] = useState<string>("all");
   const [sortBy, setSortBy] = useState<string>("popularity");
   const [currentPage, setCurrentPage] = useState<number>(1);
+  const [platformSearch, setPlatformSearch] = useState("");
 
   const fetchGamesData = useCallback(async () => {
     const response = await fetch(`/api/games?page=${currentPage}&limit=${GAMES_PER_PAGE}${selectedPlatform !== "all" ? `&platformId=${selectedPlatform}` : ""}`);
@@ -67,7 +69,12 @@ export default function AllGamesPage() {
   const totalGames = useMemo(() => gamesData?.total || 0, [gamesData]);
   const totalPages = useMemo(() => Math.ceil(totalGames / GAMES_PER_PAGE), [totalGames]);
 
-  const platforms = useMemo(() => platformsData || [], [platformsData]);
+  const platforms = useMemo(() => {
+    if (!platformsData) return [];
+    return platformsData.filter(platform => 
+      platform.name.toLowerCase().includes(platformSearch.toLowerCase())
+    );
+  }, [platformsData, platformSearch]);
 
   const filteredGames = useMemo(() => {
     return games.filter((game) => {
@@ -161,6 +168,15 @@ export default function AllGamesPage() {
               <SelectValue placeholder="All Platforms" />
             </SelectTrigger>
             <SelectContent className="bg-gray-800 border border-gray-700 max-h-60 overflow-y-auto">
+              <div className="p-2">
+                <Input
+                  type="text"
+                  placeholder="Search platforms..."
+                  value={platformSearch}
+                  onChange={(e) => setPlatformSearch(e.target.value)}
+                  className="mb-2"
+                />
+              </div>
               <SelectItem value="all" className="text-white hover:bg-gray-700">
                 All Platforms
               </SelectItem>
@@ -268,7 +284,7 @@ const ErrorDisplay: React.FC<{ error: Error }> = ({ error }) => (
   >
     <Gamepad2 className="w-16 h-16 mb-4 text-red-500" aria-hidden="true" />
     <h2 className="text-2xl font-bold mb-2">Error loading game data</h2>
-    <p className="text-gray-400 text-center max-w-md">{error.message}</p>
+    <p className="text-gray-400 text-center max-width-md">{error.message}</p>
     <p className="mt-4 text-blue-400 hover:text-blue-300 cursor-pointer">
       Please try refreshing the page or contact support if the problem persists.
     </p>
