@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import LoadingSpinner from "@/components/loadingSpinner";
@@ -34,6 +34,8 @@ export default function AllGamesPage() {
   const [sortBy, setSortBy] = useState<string>("popularity");
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [platformSearch, setPlatformSearch] = useState("");
+  const [isSearching, setIsSearching] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   const fetchGamesData = useCallback(async () => {
     const response = await fetch(`/api/games?page=${currentPage}&limit=${GAMES_PER_PAGE}${selectedPlatform !== "all" ? `&platformId=${selectedPlatform}` : ""}`);
@@ -103,11 +105,18 @@ export default function AllGamesPage() {
   const handlePlatformChange = useCallback((value: string) => {
     setSelectedPlatform(value);
     setCurrentPage(1);
+    setIsSearching(false);
   }, []);
 
   useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm, sortBy]);
+
+  useEffect(() => {
+    if (isSearching && searchInputRef.current) {
+      searchInputRef.current.focus();
+    }
+  }, [isSearching]);
 
   if (gamesLoading || platformsLoading) {
     return (
@@ -168,13 +177,14 @@ export default function AllGamesPage() {
               <SelectValue placeholder="All Platforms" />
             </SelectTrigger>
             <SelectContent className="bg-gray-800 border border-gray-700 max-h-60 overflow-y-auto">
-              <div className="p-2">
+              <div className="p-2 sticky top-0 bg-gray-800 z-10">
                 <Input
                   type="text"
                   placeholder="Search platforms..."
                   value={platformSearch}
                   onChange={(e) => setPlatformSearch(e.target.value)}
                   className="mb-2"
+                  onKeyDown={(e) => e.stopPropagation()}
                 />
               </div>
               <SelectItem value="all" className="text-white hover:bg-gray-700">
