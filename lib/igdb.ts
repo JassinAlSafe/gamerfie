@@ -74,7 +74,7 @@ export async function fetchGames(
   page: number,
   limit: number,
   platformId?: number,
-  offset?: number
+  offset?: number,
 ): Promise<FetchedGame[]> {
   try {
     const calculatedOffset = offset !== undefined ? offset : (page - 1) * limit;
@@ -108,9 +108,14 @@ export async function fetchGames(
   }
 }
 
-export async function fetchTotalGames(accessToken: string, platformId?: number): Promise<number> {
+export async function fetchTotalGames(
+  accessToken: string,
+  platformId?: number
+): Promise<number> {
   try {
-    const whereClause = platformId ? `where cover != null & platforms = (${platformId});` : "where cover != null;";
+    const whereClause = platformId
+      ? `where cover != null & platforms = (${platformId});`
+      : "where cover != null;";
     const response = await axios.post(
       `${IGDB_API_ENDPOINT}/games/count`,
       whereClause,
@@ -221,4 +226,23 @@ export async function fetchPlatformDetails(
   const platforms = await fetchFromIGDB("platforms", query, accessToken);
   console.log(`Fetched platform details:`, platforms);
   return platforms.length > 0 ? platforms[0] : null;
+}
+
+export async function searchGames(accessToken: string, searchTerm: string) {
+  try {
+    const query = `search "${searchTerm}"; fields name,cover.url,first_release_date,total_rating,platforms.name; limit 50;`;
+
+    const response = await axios.post(`${IGDB_API_ENDPOINT}/games`, query, {
+      headers: {
+        Accept: "application/json",
+        "Client-ID": process.env.NEXT_PUBLIC_TWITCH_CLIENT_ID!,
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+
+    return response.data;
+  } catch (error) {
+    console.error("Error in searchGames:", error);
+    throw error;
+  }
 }

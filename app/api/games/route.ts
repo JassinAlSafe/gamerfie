@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import {
   getAccessToken,
   fetchGames,
@@ -39,73 +39,30 @@ async function processGames(games: FetchedGame[]): Promise<ProcessedGame[]> {
 async function handleRequest(
   page: number,
   limit: number,
-  platformId: string | undefined
+  platformId: string | undefined,
+  searchTerm: string | undefined
 ) {
   const accessToken = await getAccessToken();
   const parsedPlatformId = platformId ? parseInt(platformId, 10) : undefined;
 
   const [games, totalGames] = await Promise.all([
-    fetchGames(accessToken, page, limit, parsedPlatformId),
-    fetchTotalGames(accessToken, parsedPlatformId),
+    fetchGames(accessToken, page, limit, parsedPlatformId, searchTerm),
+    fetchTotalGames(accessToken, parsedPlatformId, searchTerm),
   ]);
 
   const processedGames = await processGames(games);
   return { games: processedGames, total: totalGames };
 }
 
-// const fetchLimit = limit * 2;
-// let offset = (page - 1) * limit;
-
-// let allGames: FetchedGame[] = [];
-// let totalGames = 0;
-
-// while (allGames.length < limit) {
-//   const [games, total] = await Promise.all([
-//     fetchGames(accessToken, 1, fetchLimit, parsedPlatformId, offset),
-//     fetchTotalGames(accessToken, parsedPlatformId),
-//   ]);
-
-//   allGames = allGames.concat(games);
-//   totalGames = total;
-
-//   if(games.length < fetchLimit) {
-//     break;
-//   }
-
-//   offset += fetchLimit;
-// }
-
-// const processedGames = await processGames(allGames);
-
-// const paginatedGames = processedGames.slice(0, limit);
-//   return { games: paginatedGames, total: totalGames };
-// }
-
-// if (allGames.length < totalGames) {
-//   offset = allGames.length;
-// } else {
-//   break;
-// }
-// }
-
-//   const [games, totalGames] = await Promise.all([
-//     fetchGames(accessToken, page, limit, parsedPlatformId),
-//     fetchTotalGames(accessToken, parsedPlatformId),
-//   ]);
-
-//   const processedGames = await processGames(games);
-
-//   return { games: processedGames, total: totalGames };
-// }
-
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
+    const { searchParams } = request.nextUrl;
     const page = parseInt(searchParams.get("page") || "1", 10);
     const limit = parseInt(searchParams.get("limit") || "48", 10);
     const platformId = searchParams.get("platformId") || undefined;
+    const searchTerm = searchParams.get("search") || undefined;
 
-    const result = await handleRequest(page, limit, platformId);
+    const result = await handleRequest(page, limit, platformId, searchTerm);
     return NextResponse.json(result);
   } catch (error) {
     console.error("API error:", error);
@@ -119,9 +76,9 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { page = 1, limit = 48, platformId } = body;
+    const { page = 1, limit = 48, platformId, searchTerm } = body;
 
-    const result = await handleRequest(page, limit, platformId);
+    const result = await handleRequest(page, limit, platformId, searchTerm);
     return NextResponse.json(result);
   } catch (error) {
     console.error("API error:", error);
