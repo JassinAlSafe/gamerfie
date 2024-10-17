@@ -71,12 +71,13 @@ async function fetchFromIGDB(
 
 export async function fetchGames(
   accessToken: string,
-  page: number = 1,
-  limit: number = 48,
-  platformId?: number
+  page: number,
+  limit: number,
+  platformId?: number,
+  offset?: number
 ): Promise<FetchedGame[]> {
   try {
-    const offset = (page - 1) * limit;
+    const calculatedOffset = offset !== undefined ? offset : (page - 1) * limit;
     let query = `fields name,cover.url,rating,total_rating,first_release_date,platforms.name;
       where cover != null;`;
 
@@ -86,7 +87,7 @@ export async function fetchGames(
 
     query += ` sort total_rating desc;
       limit ${limit};
-      offset ${offset};`;
+      offset ${calculatedOffset};`;
 
     console.log(
       `Fetching games with page: ${page}, limit: ${limit}, platform ID: ${platformId}`

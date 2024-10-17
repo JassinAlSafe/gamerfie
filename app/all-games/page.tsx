@@ -17,6 +17,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { FetchGamesResponse, FetchedGame } from "@/lib/igdb";
+import { Platform } from "@/types/game";
 
 const GAMES_PER_PAGE = 48;
 
@@ -29,63 +30,58 @@ const ensureAbsoluteUrl = (url: string) => {
 
 export default function AllGamesPage() {
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedPlatform, setSelectedPlatform] = useState("all");
-  const [sortBy, setSortBy] = useState("popularity");
-  const [currentPage, setCurrentPage] = useState(1);
+  const [selectedPlatform, setSelectedPlatform] = useState<string>("all");
+  const [sortBy, setSortBy] = useState<string>("popularity");
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [platformSearch, setPlatformSearch] = useState("");
 
-  const fetchGames = useCallback(async () => {
-    const response = await fetch("/api/games", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        page: currentPage,
-        limit: GAMES_PER_PAGE,
-        platformId: selectedPlatform !== "all" ? selectedPlatform : undefined,
-      }),
-    });
+  const fetchGamesData = useCallback(async () => {
+    const response = await fetch(`/api/games?page=${currentPage}&limit=${GAMES_PER_PAGE}${selectedPlatform !== "all" ? `&platformId=${selectedPlatform}` : ""}`);
     if (!response.ok) {
       throw new Error("Network response was not ok");
     }
     return response.json();
   }, [currentPage, selectedPlatform]);
 
-  const { data, error, isLoading, isFetching } = useQuery<
-    FetchGamesResponse,
-    Error
-  >({
+  const fetchPlatforms = useCallback(async () => {
+    const response = await fetch('/api/platforms');
+    if (!response.ok) {
+      throw new Error("Failed to fetch platforms");
+    }
+    return response.json();
+  }, []);
+
+  const { data: gamesData, error: gamesError, isLoading: gamesLoading, isFetching: gamesFetching } = useQuery<FetchGamesResponse, Error>({
     queryKey: ["allGames", currentPage, selectedPlatform],
-    queryFn: fetchGames,
+    queryFn: fetchGamesData,
     staleTime: 5 * 60 * 1000,
     gcTime: 60 * 60 * 1000,
   });
 
-  const games = useMemo(() => data?.games || [], [data]);
-  const totalGames = useMemo(() => data?.total || 0, [data]);
-  const totalPages = useMemo(
-    () => Math.ceil(totalGames / GAMES_PER_PAGE),
-    [totalGames]
-  );
+  const { data: platformsData, error: platformsError, isLoading: platformsLoading } = useQuery<Platform[], Error>({
+    queryKey: ["platforms"],
+    queryFn: fetchPlatforms,
+    staleTime: 24 * 60 * 60 * 1000, // 24 hours
+    gcTime: 7 * 24 * 60 * 60 * 1000, // 1 week
+  });
+
+  const games = useMemo(() => gamesData?.games || [], [gamesData]);
+  const totalGames = useMemo(() => gamesData?.total || 0, [gamesData]);
+  const totalPages = useMemo(() => Math.ceil(totalGames / GAMES_PER_PAGE), [totalGames]);
 
   const platforms = useMemo(() => {
-    const platformSet = new Set<string>();
-    games.forEach((game) =>
-      game.platforms.forEach((platform) => platformSet.add(platform))
+    if (!platformsData) return [];
+    return platformsData.filter(platform => 
+      platform.name.toLowerCase().includes(platformSearch.toLowerCase())
     );
-    return Array.from(platformSet).sort();
-  }, [games]);
+  }, [platformsData, platformSearch]);
 
   const filteredGames = useMemo(() => {
     return games.filter((game) => {
-      const matchesSearch = game.name
-        .toLowerCase()
-        .includes(searchTerm.toLowerCase());
-      const matchesPlatform =
-        selectedPlatform === "all" || game.platforms.includes(selectedPlatform);
-      return matchesSearch && matchesPlatform;
+      const matchesSearch = game.name.toLowerCase().includes(searchTerm.toLowerCase());
+      return matchesSearch;
     });
-  }, [games, searchTerm, selectedPlatform]);
+  }, [games, searchTerm]);
 
   const sortedGames = useMemo(() => {
     return [...filteredGames].sort((a, b) => {
@@ -104,11 +100,16 @@ export default function AllGamesPage() {
     window.scrollTo(0, 0);
   }, []);
 
+  const handlePlatformChange = useCallback((value: string) => {
+    setSelectedPlatform(value);
+    setCurrentPage(1);
+  }, []);
+
   useEffect(() => {
     setCurrentPage(1);
-  }, [selectedPlatform, searchTerm, sortBy]);
+  }, [searchTerm, sortBy]);
 
-  if (isLoading) {
+  if (gamesLoading || platformsLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <LoadingSpinner />
@@ -116,12 +117,12 @@ export default function AllGamesPage() {
     );
   }
 
-  if (error) {
-    console.error("Error in AllGamesPage:", error);
-    return <ErrorDisplay error={error} />;
+  if (gamesError || platformsError) {
+    console.error("Error in AllGamesPage:", gamesError || platformsError);
+    return <ErrorDisplay error={gamesError || platformsError} />;
   }
 
-  if (!data || games.length === 0) {
+  if (!gamesData || games.length === 0) {
     console.warn("No game data available");
     return <NoDataDisplay />;
   }
@@ -162,21 +163,30 @@ export default function AllGamesPage() {
               aria-hidden="true"
             />
           </div>
-          <Select value={selectedPlatform} onValueChange={setSelectedPlatform}>
+          <Select value={selectedPlatform} onValueChange={handlePlatformChange}>
             <SelectTrigger className="w-full md:w-[200px] bg-gray-700 text-white border-gray-600">
               <SelectValue placeholder="All Platforms" />
             </SelectTrigger>
-            <SelectContent className="bg-gray-800 border border-gray-700">
+            <SelectContent className="bg-gray-800 border border-gray-700 max-h-60 overflow-y-auto">
+              <div className="p-2">
+                <Input
+                  type="text"
+                  placeholder="Search platforms..."
+                  value={platformSearch}
+                  onChange={(e) => setPlatformSearch(e.target.value)}
+                  className="mb-2"
+                />
+              </div>
               <SelectItem value="all" className="text-white hover:bg-gray-700">
                 All Platforms
               </SelectItem>
               {platforms.map((platform) => (
                 <SelectItem
-                  key={platform}
-                  value={platform}
+                  key={platform.id}
+                  value={platform.id.toString()}
                   className="text-white hover:bg-gray-700"
                 >
-                  {platform}
+                  {platform.name}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -240,7 +250,7 @@ export default function AllGamesPage() {
         >
           <Button
             onClick={() => handlePageChange(currentPage - 1)}
-            disabled={currentPage === 1 || isFetching}
+            disabled={currentPage === 1 || gamesFetching}
             variant="outline"
             size="sm"
             className="text-white border-white hover:bg-white hover:text-gray-900"
@@ -253,7 +263,7 @@ export default function AllGamesPage() {
           </span>
           <Button
             onClick={() => handlePageChange(currentPage + 1)}
-            disabled={currentPage === totalPages || isFetching}
+            disabled={currentPage === totalPages || gamesFetching}
             variant="outline"
             size="sm"
             className="text-white border-white hover:bg-white hover:text-gray-900"
@@ -274,7 +284,7 @@ const ErrorDisplay: React.FC<{ error: Error }> = ({ error }) => (
   >
     <Gamepad2 className="w-16 h-16 mb-4 text-red-500" aria-hidden="true" />
     <h2 className="text-2xl font-bold mb-2">Error loading game data</h2>
-    <p className="text-gray-400 text-center max-w-md">{error.message}</p>
+    <p className="text-gray-400 text-center max-width-md">{error.message}</p>
     <p className="mt-4 text-blue-400 hover:text-blue-300 cursor-pointer">
       Please try refreshing the page or contact support if the problem persists.
     </p>
