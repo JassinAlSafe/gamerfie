@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import LoadingSpinner from "@/components/loadingSpinner";
@@ -30,18 +30,30 @@ const ensureAbsoluteUrl = (url: string) => {
 
 export default function AllGamesPage() {
   const [searchTerm, setSearchTerm] = useState("");
+  const [activeSearchTerm, setActiveSearchTerm] = useState("");
   const [selectedPlatform, setSelectedPlatform] = useState<string>("all");
   const [sortBy, setSortBy] = useState<string>("popularity");
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [platformSearch, setPlatformSearch] = useState("");
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   const fetchGamesData = useCallback(async () => {
-    const response = await fetch(`/api/games?page=${currentPage}&limit=${GAMES_PER_PAGE}${selectedPlatform !== "all" ? `&platformId=${selectedPlatform}` : ""}`);
+    console.log("Fetching games with:", { currentPage, selectedPlatform, activeSearchTerm, sortBy });
+    const response = await fetch(`/api/games?page=${currentPage}&limit=${GAMES_PER_PAGE}&platformId=${selectedPlatform}&search=${encodeURIComponent(activeSearchTerm)}&sort=${sortBy}`);
     if (!response.ok) {
       throw new Error("Network response was not ok");
     }
-    return response.json();
-  }, [currentPage, selectedPlatform]);
+    const data = await response.json();
+    console.log("Fetched games data:", data);
+    return data;
+  }, [currentPage, selectedPlatform, activeSearchTerm, sortBy]);
+
+  const { data: gamesData, error: gamesError, isLoading: gamesLoading, isFetching: gamesFetching, refetch } = useQuery<FetchGamesResponse, Error>({
+    queryKey: ["allGames", currentPage, selectedPlatform, activeSearchTerm, sortBy],
+    queryFn: fetchGamesData,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 60 * 60 * 1000,
+  });
 
   const fetchPlatforms = useCallback(async () => {
     const response = await fetch('/api/platforms');
@@ -51,18 +63,11 @@ export default function AllGamesPage() {
     return response.json();
   }, []);
 
-  const { data: gamesData, error: gamesError, isLoading: gamesLoading, isFetching: gamesFetching } = useQuery<FetchGamesResponse, Error>({
-    queryKey: ["allGames", currentPage, selectedPlatform],
-    queryFn: fetchGamesData,
-    staleTime: 5 * 60 * 1000,
-    gcTime: 60 * 60 * 1000,
-  });
-
   const { data: platformsData, error: platformsError, isLoading: platformsLoading } = useQuery<Platform[], Error>({
     queryKey: ["platforms"],
     queryFn: fetchPlatforms,
-    staleTime: 24 * 60 * 60 * 1000, // 24 hours
-    gcTime: 7 * 24 * 60 * 60 * 1000, // 1 week
+    staleTime: 24 * 60 * 60 * 1000,
+    gcTime: 7 * 24 * 60 * 60 * 1000,
   });
 
   const games = useMemo(() => gamesData?.games || [], [gamesData]);
@@ -76,25 +81,6 @@ export default function AllGamesPage() {
     );
   }, [platformsData, platformSearch]);
 
-  const filteredGames = useMemo(() => {
-    return games.filter((game) => {
-      const matchesSearch = game.name.toLowerCase().includes(searchTerm.toLowerCase());
-      return matchesSearch;
-    });
-  }, [games, searchTerm]);
-
-  const sortedGames = useMemo(() => {
-    return [...filteredGames].sort((a, b) => {
-      if (sortBy === "name") {
-        return a.name.localeCompare(b.name);
-      } else if (sortBy === "releaseDate") {
-        return (b.first_release_date || 0) - (a.first_release_date || 0);
-      } else {
-        return (b.total_rating || 0) - (a.total_rating || 0);
-      }
-    });
-  }, [filteredGames, sortBy]);
-
   const handlePageChange = useCallback((page: number) => {
     setCurrentPage(page);
     window.scrollTo(0, 0);
@@ -103,11 +89,30 @@ export default function AllGamesPage() {
   const handlePlatformChange = useCallback((value: string) => {
     setSelectedPlatform(value);
     setCurrentPage(1);
+    refetch();
+  }, [refetch]);
+
+  const handleSearch = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
   }, []);
+
+  const executeSearch = useCallback(() => {
+    console.log("Executing search with term:", searchTerm);
+    setActiveSearchTerm(searchTerm);
+    setCurrentPage(1);
+  }, [searchTerm]);
+
+  const handleKeyPress = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      executeSearch();
+    }
+  }, [executeSearch]);
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, sortBy]);
+    refetch();
+  }, [activeSearchTerm, selectedPlatform, sortBy, refetch]);
 
   if (gamesLoading || platformsLoading) {
     return (
@@ -120,11 +125,6 @@ export default function AllGamesPage() {
   if (gamesError || platformsError) {
     console.error("Error in AllGamesPage:", gamesError || platformsError);
     return <ErrorDisplay error={gamesError || platformsError} />;
-  }
-
-  if (!gamesData || games.length === 0) {
-    console.warn("No game data available");
-    return <NoDataDisplay />;
   }
 
   return (
@@ -154,13 +154,16 @@ export default function AllGamesPage() {
               type="text"
               placeholder="Search games..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={handleSearch}
+              onKeyPress={handleKeyPress}
               className="pl-10 bg-gray-700 text-white"
               aria-label="Search games"
+              ref={searchInputRef}
             />
             <Search
-              className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+              className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 cursor-pointer"
               aria-hidden="true"
+              onClick={executeSearch}
             />
           </div>
           <Select value={selectedPlatform} onValueChange={handlePlatformChange}>
@@ -168,13 +171,14 @@ export default function AllGamesPage() {
               <SelectValue placeholder="All Platforms" />
             </SelectTrigger>
             <SelectContent className="bg-gray-800 border border-gray-700 max-h-60 overflow-y-auto">
-              <div className="p-2">
+              <div className="p-2 sticky top-0 bg-gray-800 z-10">
                 <Input
                   type="text"
                   placeholder="Search platforms..."
                   value={platformSearch}
                   onChange={(e) => setPlatformSearch(e.target.value)}
                   className="mb-2"
+                  onKeyDown={(e) => e.stopPropagation()}
                 />
               </div>
               <SelectItem value="all" className="text-white hover:bg-gray-700">
@@ -214,36 +218,41 @@ export default function AllGamesPage() {
             </SelectContent>
           </Select>
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-4">
-          {sortedGames.map((game: FetchedGame, index: number) => (
-            <Link href={`/game/${game.id}`} key={game.id}>
-              <div className="relative aspect-[3/4] rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 group">
-                {game.cover ? (
-                  <Image
-                    src={ensureAbsoluteUrl(game.cover.url)}
-                    alt={game.name}
-                    fill
-                    sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, (max-width: 1280px) 16vw, 12.5vw"
-                    className="object-cover transition-transform duration-300 group-hover:scale-110"
-                    priority={index === 0}
-                  />
-                ) : (
-                  <div className="absolute inset-0 bg-gray-700 flex items-center justify-center">
-                    <Gamepad2
-                      className="w-12 h-12 text-gray-500"
-                      aria-hidden="true"
+        {gamesFetching && <div className="text-white text-center my-4">Searching...</div>}
+        {games.length === 0 && !gamesFetching ? (
+          <NoDataDisplay searchTerm={searchTerm} />
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-4">
+            {games.map((game: FetchedGame, index: number) => (
+              <Link href={`/game/${game.id}`} key={game.id}>
+                <div className="relative aspect-[3/4] rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 group">
+                  {game.cover ? (
+                    <Image
+                      src={ensureAbsoluteUrl(game.cover.url)}
+                      alt={game.name}
+                      fill
+                      sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, (max-width: 1280px) 16vw, 12.5vw"
+                      className="object-cover transition-transform duration-300 group-hover:scale-110"
+                      priority={index < 8}
                     />
+                  ) : (
+                    <div className="absolute inset-0 bg-gray-700 flex items-center justify-center">
+                      <Gamepad2
+                        className="w-12 h-12 text-gray-500"
+                        aria-hidden="true"
+                      />
+                    </div>
+                  )}
+                  <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-60 transition-opacity duration-300 flex items-center justify-center">
+                    <h2 className="text-white text-sm font-semibold p-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-center">
+                      {game.name}
+                    </h2>
                   </div>
-                )}
-                <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-60 transition-opacity duration-300 flex items-center justify-center">
-                  <h2 className="text-white text-sm font-semibold p-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-center">
-                    {game.name}
-                  </h2>
                 </div>
-              </div>
-            </Link>
-          ))}
-        </div>
+              </Link>
+            ))}
+          </div>
+        )}
         <nav
           className="mt-8 flex justify-center items-center space-x-2"
           aria-label="Pagination"
@@ -291,13 +300,17 @@ const ErrorDisplay: React.FC<{ error: Error }> = ({ error }) => (
   </div>
 );
 
-const NoDataDisplay: React.FC = () => (
+const NoDataDisplay: React.FC<{ searchTerm: string }> = ({ searchTerm }) => (
   <div
-    className="flex flex-col items-center justify-center min-h-screen text-white"
+    className="flex flex-col items-center justify-center min-h-[50vh] text-white"
     role="alert"
   >
     <Gamepad2 className="w-16 h-16 mb-4 text-gray-600" aria-hidden="true" />
-    <h2 className="text-2xl font-bold mb-2">No game data available</h2>
-    <p className="text-gray-400">Check back later for exciting new games!</p>
+    <h2 className="text-2xl font-bold mb-2">No games found</h2>
+    {searchTerm ? (
+      <p className="text-gray-400">No results for "{searchTerm}". Try a different search term.</p>
+    ) : (
+      <p className="text-gray-400">No game data available. Check back later for exciting new games!</p>
+    )}
   </div>
 );
