@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Game } from "@/types/game";
 import { Metadata } from "next";
@@ -17,6 +18,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import BackButton from "./BackButton";
 
 export async function generateMetadata({
   params,
@@ -86,13 +88,7 @@ function GameDetails({ game }: { game: Game }) {
       </div>
       <div className="relative z-10 -mt-64 px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-16">
         <div className="max-w-7xl mx-auto">
-          <Link
-            href="/all-games"
-            className="inline-flex items-center text-blue-400 hover:text-blue-300 mb-6 transition-colors duration-200"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Games
-          </Link>
+          <BackButton />
           <div className="flex flex-col md:flex-row gap-12">
             <div className="md:w-1/3">
               {game.cover && (
