@@ -22,7 +22,7 @@ export function SparklesPreview() {
         }}
         className="md:text-7xl text-3xl lg:text-9xl font-bold text-center text-white relative z-20"
       >
-        Gamerfly
+        Game Vault
       </motion.h1>
       <div>
         <p className="text-xl md:text-2xl mb-8">
