@@ -8,6 +8,7 @@ import {
   IconBrandFacebook,
   IconBrandInstagram,
   IconBrandDiscord,
+  IconBrandLinkedin,
 } from "@tabler/icons-react";
 
 export function Footer() {
@@ -76,11 +77,11 @@ export function Footer() {
             <div className="flex space-x-4">
               <Button variant="ghost" size="icon" asChild>
                 <Link
-                  href="https://twitter.com/gamerfie"
+                  href="https://www.linkedin.com/company/amedesign-swe/"
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  <IconBrandTwitter className="h-5 w-5" />
+                  <IconBrandLinkedin className="h-5 w-5" />
                   <span className="sr-only">Twitter</span>
                 </Link>
               </Button>
@@ -120,7 +121,7 @@ export function Footer() {
         <Separator className="my-8" />
         <div className="flex flex-col md:flex-row justify-between items-center">
           <p className="text-sm text-muted-foreground">
-            © 2024 Gamerfie. All rights reserved.
+            © 2024 AmeDesign. All rights reserved.
           </p>
           <div className="mt-4 md:mt-0">
             <Button variant="link" asChild>
