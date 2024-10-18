@@ -1,5 +1,5 @@
 import axios from "axios";
-import { Game, Platform, Cover, Artwork } from "@/types/game";
+import { Game, Platform, Cover } from "@/types/game";
 
 const IGDB_API_ENDPOINT = "https://api.igdb.com/v4";
 
@@ -74,23 +74,28 @@ export async function fetchGames(
   page: number,
   limit: number,
   platformId?: number,
-  offset?: number,
+  searchTerm?: string,
+  offset?: number
 ): Promise<FetchedGame[]> {
   try {
     const calculatedOffset = offset !== undefined ? offset : (page - 1) * limit;
     let query = `fields name,cover.url,rating,total_rating,first_release_date,platforms.name;
-      where cover != null;`;
+      where cover != null`;
 
-    if (platformId) {
-      query += ` where platforms = ${platformId};`;
+    if (searchTerm) {
+      query += ` & name ~ *"${searchTerm}"*`;
     }
 
-    query += ` sort total_rating desc;
+    if (platformId) {
+      query += ` & platforms = ${platformId}`;
+    }
+
+    query += `; sort total_rating desc;
       limit ${limit};
       offset ${calculatedOffset};`;
 
     console.log(
-      `Fetching games with page: ${page}, limit: ${limit}, platform ID: ${platformId}`
+      `Fetching games with page: ${page}, limit: ${limit}, platform ID: ${platformId}, searchTerm: ${searchTerm}`
     );
 
     const response = await axios.post(`${IGDB_API_ENDPOINT}/games`, query, {
@@ -110,12 +115,22 @@ export async function fetchGames(
 
 export async function fetchTotalGames(
   accessToken: string,
-  platformId?: number
+  platformId?: number,
+  searchTerm?: string
 ): Promise<number> {
   try {
-    const whereClause = platformId
-      ? `where cover != null & platforms = (${platformId});`
-      : "where cover != null;";
+    let whereClause = "where cover != null";
+
+    if (platformId) {
+      whereClause += ` & platforms = (${platformId})`;
+    }
+
+    if (searchTerm) {
+      whereClause += ` & name ~ *"${searchTerm}"*`;
+    }
+
+    whereClause += ";";
+
     const response = await axios.post(
       `${IGDB_API_ENDPOINT}/games/count`,
       whereClause,
