@@ -4,6 +4,7 @@ import "./globals.css";
 import FloatingHeader from "@/components/ui/FloatingHeader";
 import Providers from "./provider";
 import { Footer } from "@/components/Footer";
+import { ThemeProvider } from "next-themes";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -31,11 +32,9 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <Providers>
-          <FloatingHeader />
-          <main>{children}</main>
-          <Footer />
-        </Providers>
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+          <Providers>{children}</Providers>
+        </ThemeProvider>
       </body>
     </html>
   );

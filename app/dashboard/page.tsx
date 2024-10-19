@@ -6,10 +6,12 @@ import { LampContainer } from "@/components/ui/lamp";
 import PopularGamesSection from "@/components/PopularGamesSection";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import DefaultLayout from "../default-layout";
 import { Library } from "lucide-react";
 
 const Dashboard: React.FC = () => {
   return (
+    <DefaultLayout>
     <div className="min-h-screen bg-gradient-to-b from-background to-background/80 overflow-hidden flex flex-col items-center justify-start relative w-full" style={{ backgroundColor: "rgb(3, 6, 22"}}>
       <div className="w-full">
         <div className="relative z-10 mb-16 w-full">
@@ -61,6 +63,7 @@ const Dashboard: React.FC = () => {
 
       <div className="absolute inset-0 z-0 bg-gradient-to-t from-background to-background/0 pointer-events-none" />
     </div>
+    </DefaultLayout>
   );
 };
 

@@ -1,20 +1,11 @@
-
 import React from "react";
 import { Game } from "@/types/game";
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Image from "next/image";
-import Link from "next/link";
 import { getAccessToken } from "../../../lib/igdb";
 import { fetchGameDetails } from "@/lib/igdb";
-import {
-  Star,
-  ArrowLeft,
-  ExternalLink,
-  Calendar,
-  Gamepad2,
-  Users,
-} from "lucide-react";
+import { Star, ExternalLink, Calendar, Gamepad2, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";

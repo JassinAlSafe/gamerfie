@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/select";
 import { FetchGamesResponse, FetchedGame } from "@/lib/igdb";
 import { Platform } from "@/types/game";
+import DefaultLayout from "../default-layout";
 
 const GAMES_PER_PAGE = 48;
 
@@ -128,7 +129,8 @@ export default function AllGamesPage() {
   }
 
   return (
-    <div className="w-full min-h-screen py-8 mt-20 px-4 md:px-8 bg-gradient-to-b from-gray-900 to-gray-800">
+    <DefaultLayout>
+    <div className="w-full min-h-screen py-8  px-4 md:px-8 bg-gradient-to-b from-gray-900 to-gray-800">
       <ErrorBoundary
         fallback={
           <div className="text-white p-4 bg-red-500/10 rounded-lg">
@@ -283,6 +285,7 @@ export default function AllGamesPage() {
         </nav>
       </ErrorBoundary>
     </div>
+    </DefaultLayout>
   );
 }
 

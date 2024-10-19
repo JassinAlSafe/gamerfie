@@ -18,7 +18,7 @@ export function TypewriterEffectSmoothDemo() {
       text: "with",
     },
     {
-      text: "Gamerfly.",
+      text: "The Vault",
       className: "text-blue-500 dark:text-blue-500",
     },
   ];
