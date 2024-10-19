@@ -33,11 +33,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-        <Providers>
-          <FloatingHeader />
-          <main>{children}</main>
-          <Footer />
-        </Providers>
+          <Providers>{children}</Providers>
         </ThemeProvider>
       </body>
     </html>

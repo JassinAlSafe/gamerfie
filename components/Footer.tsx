@@ -4,7 +4,6 @@ import { Separator } from "@/components/ui/separator";
 import { Button } from "./ui/button";
 import Link from "next/link";
 import {
-  IconBrandTwitter,
   IconBrandFacebook,
   IconBrandInstagram,
   IconBrandDiscord,
