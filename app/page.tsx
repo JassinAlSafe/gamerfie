@@ -1,6 +1,7 @@
 import Hero from "../components/Hero";
 import ShowCase from "../components/ShowCase";
 import Reviews from "../components/Reviews";
+import { ThemeProvider } from "next-themes";
 
 export default function Home() {
   return (

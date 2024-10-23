@@ -1,5 +1,6 @@
 import React from "react";
 import { BentoShowcase } from "./BentoShowcase";
+import { ThemeProvider } from "next-themes";
 
 const Showcase = () => {
   return (
