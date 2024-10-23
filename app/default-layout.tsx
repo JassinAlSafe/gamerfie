@@ -8,7 +8,7 @@ export default function DefaultLayout({
 }>) {
   return (
     <>
-      <FloatingHeader />
+
       <main>{children}</main>
       <Footer />
     </>

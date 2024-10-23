@@ -7,6 +7,7 @@ import { Footer } from "@/components/Footer";
 import { ThemeProvider } from "next-themes";
 import { createServerComponentClient } from "@supabase/auth-helpers-nextjs";
 import { cookies } from "next/headers";
+import { Toaster } from "@/components/ui/toaster";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -39,11 +40,12 @@ export default async function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+        <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
           <Providers initialSession={session}>
             <FloatingHeader session={session} />
             {children}
             <Footer />
+            <Toaster />
           </Providers>
         </ThemeProvider>
       </body>
