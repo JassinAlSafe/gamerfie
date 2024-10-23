@@ -5,6 +5,8 @@ import FloatingHeader from "@/components/ui/FloatingHeader";
 import Providers from "./provider";
 import { Footer } from "@/components/Footer";
 import { ThemeProvider } from "next-themes";
+import { createServerComponentClient } from "@supabase/auth-helpers-nextjs";
+import { cookies } from "next/headers";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -22,18 +24,27 @@ export const metadata: Metadata = {
   description: "Earn rewards for playing games",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const supabase = createServerComponentClient({ cookies });
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
   return (
     <html lang="en" suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          <Providers>{children}</Providers>
+          <Providers initialSession={session}>
+            <FloatingHeader session={session} />
+            {children}
+            <Footer />
+          </Providers>
         </ThemeProvider>
       </body>
     </html>
