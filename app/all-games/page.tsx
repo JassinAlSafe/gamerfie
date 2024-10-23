@@ -18,7 +18,6 @@ import {
 } from "@/components/ui/select";
 import { FetchGamesResponse, FetchedGame } from "@/lib/igdb";
 import { Platform } from "@/types/game";
-import DefaultLayout from "../default-layout";
 
 const GAMES_PER_PAGE = 48;
 
@@ -129,7 +128,7 @@ export default function AllGamesPage() {
   }
 
   return (
-    <DefaultLayout>
+   
     <div className="w-full min-h-screen py-8  px-4 md:px-8 bg-gradient-to-b from-gray-900 to-gray-800">
       <ErrorBoundary
         fallback={
@@ -285,7 +284,6 @@ export default function AllGamesPage() {
         </nav>
       </ErrorBoundary>
     </div>
-    </DefaultLayout>
   );
 }
 

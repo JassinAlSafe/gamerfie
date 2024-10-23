@@ -4,11 +4,18 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { Menu, X, Search } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { Session } from "@supabase/auth-helpers-nextjs";
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 
-const Header: React.FC = () => {
+interface HeaderProps {
+  session: Session | null;
+}
+
+const Header: React.FC<HeaderProps> = ({ session }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const router = useRouter();
+  const supabase = createClientComponentClient();
 
   const handleSignUp = () => {
     router.push("/signup");
@@ -22,6 +29,20 @@ const Header: React.FC = () => {
     e.preventDefault();
     // Implement search functionality here
     console.log("Searching for:", searchQuery);
+  };
+
+  const handleSignOut = async () => {
+    try {
+      const response = await fetch("/auth/signout", { method: "POST" });
+      if (response.ok) {
+        console.log("User signed out successfully");
+        router.refresh();
+      } else {
+        console.error("Sign out failed");
+      }
+    } catch (error) {
+      console.error("Error during sign out:", error);
+    }
   };
 
   return (
@@ -56,18 +77,32 @@ const Header: React.FC = () => {
                 <Search size={18} />
               </button>
             </form>
-            <button
-              onClick={handleLogIn}
-              className="text-white hover:text-blue-300 font-semibold transition duration-200"
-            >
-              Log In
-            </button>
-            <button
-              onClick={handleSignUp}
-              className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-full transition duration-200 transform hover:scale-105"
-            >
-              Sign Up
-            </button>
+            {session ? (
+              <>
+                <span>Signed in as {session.user.email}</span>
+                <button
+                  onClick={handleSignOut}
+                  className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-full transition duration-200 transform hover:scale-105"
+                >
+                  Sign Out
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  onClick={handleLogIn}
+                  className="text-white hover:text-blue-300 font-semibold transition duration-200"
+                >
+                  Log In
+                </button>
+                <button
+                  onClick={handleSignUp}
+                  className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-full transition duration-200 transform hover:scale-105"
+                >
+                  Sign Up
+                </button>
+              </>
+            )}
           </div>
           <button
             className="md:hidden text-white hover:text-blue-300 transition-colors duration-200"
@@ -107,24 +142,41 @@ const Header: React.FC = () => {
                 <Search size={18} />
               </button>
             </form>
-            <button
-              onClick={() => {
-                handleLogIn();
-                setIsMenuOpen(false);
-              }}
-              className="text-white hover:text-blue-300 font-semibold transition duration-200"
-            >
-              Log In
-            </button>
-            <button
-              onClick={() => {
-                handleSignUp();
-                setIsMenuOpen(false);
-              }}
-              className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-full transition duration-200 transform hover:scale-105 w-full max-w-xs"
-            >
-              Sign Up
-            </button>
+            {session ? (
+              <>
+                <span>Signed in as {session.user.email}</span>
+                <button
+                  onClick={() => {
+                    handleSignOut();
+                    setIsMenuOpen(false);
+                  }}
+                  className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-full transition duration-200 transform hover:scale-105 w-full max-w-xs"
+                >
+                  Sign Out
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  onClick={() => {
+                    handleLogIn();
+                    setIsMenuOpen(false);
+                  }}
+                  className="text-white hover:text-blue-300 font-semibold transition duration-200"
+                >
+                  Log In
+                </button>
+                <button
+                  onClick={() => {
+                    handleSignUp();
+                    setIsMenuOpen(false);
+                  }}
+                  className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-full transition duration-200 transform hover:scale-105 w-full max-w-xs"
+                >
+                  Sign Up
+                </button>
+              </>
+            )}
           </nav>
         </div>
       )}

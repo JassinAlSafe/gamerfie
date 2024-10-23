@@ -1,10 +1,33 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { isBefore } from "date-fns";
+import { createMiddlewareClient } from "@supabase/auth-helpers-nextjs";
 
 export async function middleware(req: NextRequest) {
   console.log("Middleware triggered for URL:", req.url);
 
+ 
+
+  // Create a response object that we can modify
+  const res = NextResponse.next();
+
+  const supabase = createMiddlewareClient({ req, res });
+
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  // List of routes that require authentication
+  const protectedRoutes = ["/profile", "/save-game", "/my-collections"];
+
+  if (protectedRoutes.some(route => req.nextUrl.pathname.startsWith(route))) {
+    // If no session and trying to access a protected route, redirect to login
+    if (!session) {
+      return NextResponse.redirect(new URL('/login', req.url));
+    }
+  }
+
+  //Handle IGBD API
   const accessToken = req.cookies.get("accessToken")?.value;
   const tokenExpiry = req.cookies.get("tokenExpiry")?.value;
 
@@ -67,5 +90,7 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: "/((?!_next|favicon.ico).*)",
+  matcher: [
+    '/((?!api|_next/static|_next/image|favicon.ico).*)',
+  ],
 };

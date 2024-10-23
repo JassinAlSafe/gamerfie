@@ -1,37 +1,56 @@
-"use client"
+"use client";
 
-import React, { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Icons } from "@/components/ui/icons"
-import Link from 'next/link'
+import { useState } from "react";
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Icons } from "@/components/ui/icons";
+import Link from "next/link";
+import GoogleSignIn from "@/components/GoogleSignin";
 
 export default function SignUpPage() {
-  const [isLoading, setIsLoading] = useState<boolean>(false)
-  const router = useRouter()
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
+  const supabase = createClientComponentClient();
 
   async function onSubmit(event: React.SyntheticEvent) {
-    event.preventDefault()
-    setIsLoading(true)
+    event.preventDefault();
+    setIsLoading(true);
+    setError(null);
 
     const target = event.target as typeof event.target & {
-      username: { value: string }
-      email: { value: string }
-      password: { value: string }
+      username: { value: string };
+      email: { value: string };
+      password: { value: string };
+    };
+
+    const username = target.username.value;
+    const email = target.email.value;
+    const password = target.password.value;
+
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: { username },
+        },
+      });
+
+      if (error) throw error;
+
+      if (data.user) {
+        console.log("User signed up successfully:", data.user);
+        router.push("/dashboard");
+      }
+    } catch (error) {
+      setError((error as Error).message);
+    } finally {
+      setIsLoading(false);
     }
-
-    const username = target.username.value
-    const email = target.email.value
-    const password = target.password.value
-
-    console.log('Signup attempt:', { username, email, password })
-
-    setTimeout(() => {
-      setIsLoading(false)
-      router.push('/dashboard')
-    }, 3000)
   }
 
   return (
@@ -39,7 +58,9 @@ export default function SignUpPage() {
       <div className="w-full max-w-[350px] space-y-6">
         <div className="flex flex-col space-y-2 text-center">
           <Icons.logo className="mx-auto h-6 w-6" />
-          <h1 className="text-2xl font-semibold tracking-tight">Create an account</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">
+            Create an account
+          </h1>
           <p className="text-sm text-muted-foreground">
             Enter your details below to create your account
           </p>
@@ -48,9 +69,7 @@ export default function SignUpPage() {
           <form onSubmit={onSubmit}>
             <div className="grid gap-2">
               <div className="grid gap-1">
-                <Label className="sr-only" htmlFor="username">
-                  Username
-                </Label>
+                <Label htmlFor="username">Username</Label>
                 <Input
                   id="username"
                   placeholder="Username"
@@ -62,9 +81,7 @@ export default function SignUpPage() {
                 />
               </div>
               <div className="grid gap-1">
-                <Label className="sr-only" htmlFor="email">
-                  Email
-                </Label>
+                <Label htmlFor="email">Email</Label>
                 <Input
                   id="email"
                   placeholder="name@example.com"
@@ -76,9 +93,7 @@ export default function SignUpPage() {
                 />
               </div>
               <div className="grid gap-1">
-                <Label className="sr-only" htmlFor="password">
-                  Password
-                </Label>
+                <Label htmlFor="password">Password</Label>
                 <Input
                   id="password"
                   placeholder="Password"
@@ -89,7 +104,7 @@ export default function SignUpPage() {
                   disabled={isLoading}
                 />
               </div>
-              <Button className="w-full" disabled={isLoading}>
+              <Button className="w-full" type="submit" disabled={isLoading}>
                 {isLoading && (
                   <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
                 )}
@@ -97,18 +112,8 @@ export default function SignUpPage() {
               </Button>
             </div>
           </form>
+          {error && <p className="text-sm text-red-500 text-center">{error}</p>}
         </div>
-        <p className="px-8 text-center text-sm text-muted-foreground">
-          By clicking continue, you agree to our{" "}
-          <Link href="/terms" className="underline underline-offset-4 hover:text-primary">
-            Terms of Service
-          </Link>{" "}
-          and{" "}
-          <Link href="/privacy" className="underline underline-offset-4 hover:text-primary">
-            Privacy Policy
-          </Link>
-          .
-        </p>
         <div className="relative">
           <div className="absolute inset-0 flex items-center">
             <span className="w-full border-t" />
@@ -119,21 +124,34 @@ export default function SignUpPage() {
             </span>
           </div>
         </div>
-        <Button variant="outline" type="button" disabled={isLoading} className="w-full">
-          {isLoading ? (
-            <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
-          ) : (
-            <Icons.login className="mr-2 h-4 w-4" />
-          )}{" "}
-          Google
-        </Button>
+        <GoogleSignIn />
+        <p className="px-8 text-center text-sm text-muted-foreground">
+          By clicking continue, you agree to our{" "}
+          <Link
+            href="/terms"
+            className="underline underline-offset-4 hover:text-primary"
+          >
+            Terms of Service
+          </Link>{" "}
+          and{" "}
+          <Link
+            href="/privacy"
+            className="underline underline-offset-4 hover:text-primary"
+          >
+            Privacy Policy
+          </Link>
+          .
+        </p>
         <p className="px-8 text-center text-sm text-muted-foreground">
           Already have an account?{" "}
-          <Link href="/login" className="underline underline-offset-4 hover:text-primary">
+          <Link
+            href="/login"
+            className="underline underline-offset-4 hover:text-primary"
+          >
             Sign in
           </Link>
         </p>
       </div>
     </div>
-  )
+  );
 }
