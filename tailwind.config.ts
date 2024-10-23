@@ -22,7 +22,7 @@ const config: Config = {
     "./app/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/**/*.{ts,tsx}",
   ],
-  darkMode: ["class", "class"],
+  darkMode: ["class"],
   theme: {
   	extend: {
   		colors: {
