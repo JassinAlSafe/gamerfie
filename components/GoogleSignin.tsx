@@ -24,14 +24,24 @@ export default function GoogleSignIn() {
       });
 
       if (error) throw error;
-    } catch (error: any) {
-      console.error("Google sign-in error:", error.message);
-      setError(error.message);
-      toast({
-        title: "Google sign-in failed",
-        description: error.message,
-        variant: "destructive",
-      });
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.error("Google sign-in error:", error.message);
+        setError(error.message);
+        toast({
+          title: "Google sign-in failed",
+          description: error.message,
+          variant: "destructive",
+        });
+      } else {
+        console.error("Google sign-in error:", error);
+        setError("An unknown error occurred");
+        toast({
+          title: "Google sign-in failed",
+          description: "An unknown error occurred",
+          variant: "destructive",
+        });
+      }
     } finally {
       setIsLoading(false);
     }
