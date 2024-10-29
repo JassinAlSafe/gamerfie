@@ -7,7 +7,7 @@ import { Footer } from "@/components/Footer";
 import { ThemeProvider } from "next-themes";
 import { createServerComponentClient } from "@supabase/auth-helpers-nextjs";
 import { cookies } from "next/headers";
-import { Toaster } from "@/components/ui/toaster";
+import { User } from "@/types/types"; // Adjust the import path as needed
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -32,20 +32,24 @@ export default async function RootLayout({
 }>) {
   const supabase = createServerComponentClient({ cookies });
   const {
-    data: { session },
-  } = await supabase.auth.getSession();
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  // Extend the Supabase user with the required properties
+  const extendedUser: User | null = user
+    ? { ...user, name: user.user_metadata?.name || 'Unknown' }
+    : null;
 
   return (
     <html lang="en" suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
-          <Providers initialSession={session}>
-            <FloatingHeader session={session} />
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+          <Providers initialSession={null} initialUser={extendedUser}>
+            <FloatingHeader user={extendedUser} />
             {children}
             <Footer />
-            <Toaster />
           </Providers>
         </ThemeProvider>
       </body>

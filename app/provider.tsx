@@ -1,19 +1,28 @@
 "use client";
 
-import { useState } from "react";
+import { useState, createContext, useContext } from "react";
 import { Session } from "@supabase/auth-helpers-nextjs";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { SessionContextProvider } from "@supabase/auth-helpers-react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
+import { User } from "@/types/types"; // Adjust the import path as needed
+
+interface ProvidersProps {
+  children: React.ReactNode;
+  initialSession: Session | null;
+  initialUser: User | null;
+}
+
+const UserContext = createContext<User | null>(null);
+
+export const useUser = () => useContext(UserContext);
 
 export default function Providers({
   children,
   initialSession,
-}: {
-  children: React.ReactNode;
-  initialSession: Session | null;
-}) {
+  initialUser,
+}: ProvidersProps) {
   const [supabase] = useState(() => createClientComponentClient());
   const [queryClient] = useState(
     () =>
@@ -32,10 +41,12 @@ export default function Providers({
       supabaseClient={supabase}
       initialSession={initialSession}
     >
-      <QueryClientProvider client={queryClient}>
-        {children}
-        <ReactQueryDevtools initialIsOpen={false} />
-      </QueryClientProvider>
+      <UserContext.Provider value={initialUser}>
+        <QueryClientProvider client={queryClient}>
+          {children}
+          <ReactQueryDevtools initialIsOpen={false} />
+        </QueryClientProvider>
+      </UserContext.Provider>
     </SessionContextProvider>
   );
 }

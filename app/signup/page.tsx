@@ -8,12 +8,23 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Icons } from "@/components/ui/icons";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import Link from "next/link";
 
 export default function SignUpPage() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
+  const [username, setUsername] = useState<string>("");
+  const [displayName, setDisplayName] = useState<string>("");
+  const [dateOfBirth, setDateOfBirth] = useState<string>("");
+  const [preferredPlatform, setPreferredPlatform] = useState<string>("");
   const router = useRouter();
   const supabase = createClientComponentClient();
   const { toast } = useToast();
@@ -23,7 +34,8 @@ export default function SignUpPage() {
     setIsLoading(true);
 
     try {
-      const { data, error } = await supabase.auth.signUp({
+      // Sign up with email and password
+      const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -31,11 +43,22 @@ export default function SignUpPage() {
         },
       });
 
-      if (error) {
-        throw error;
-      }
+      if (authError) throw authError;
 
-      if (data.user) {
+      if (authData.user) {
+        // Insert additional user data into a custom table
+        const { error: profileError } = await supabase
+          .from("user_profiles")
+          .insert({
+            user_id: authData.user.id,
+            username,
+            display_name: displayName,
+            date_of_birth: dateOfBirth,
+            preferred_platform: preferredPlatform,
+          });
+
+        if (profileError) throw profileError;
+
         toast({
           title: "Sign-up successful!",
           description: "Please check your email to confirm your account.",
@@ -66,9 +89,7 @@ export default function SignUpPage() {
         },
       });
 
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
 
       // The toast for successful Google sign-up will be shown in the callback page
     } catch (error) {
@@ -85,14 +106,15 @@ export default function SignUpPage() {
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-background">
-      <div className="w-full max-w-[350px] space-y-6">
+      <div className="w-full max-w-[450px] space-y-6 p-8">
         <div className="flex flex-col space-y-2 text-center">
           <Icons.logo className="mx-auto h-6 w-6" />
           <h1 className="text-2xl font-semibold tracking-tight">
-            Create an account
+            Create your Gamerfie account
           </h1>
           <p className="text-sm text-muted-foreground">
-            Enter your email below to create your account
+            Enter your details below to create your account and start tracking
+            your gaming journey
           </p>
         </div>
         <form onSubmit={onSubmit} className="space-y-4">
@@ -126,11 +148,70 @@ export default function SignUpPage() {
               required
             />
           </div>
+          <div className="space-y-2">
+            <Label htmlFor="username">Username</Label>
+            <Input
+              id="username"
+              placeholder="Choose a unique username"
+              type="text"
+              autoCapitalize="none"
+              autoComplete="username"
+              autoCorrect="off"
+              disabled={isLoading}
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              required
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="displayName">Display Name</Label>
+            <Input
+              id="displayName"
+              placeholder="Enter your display name"
+              type="text"
+              autoCapitalize="words"
+              autoComplete="name"
+              disabled={isLoading}
+              value={displayName}
+              onChange={(e) => setDisplayName(e.target.value)}
+              required
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="dateOfBirth">Date of Birth</Label>
+            <Input
+              id="dateOfBirth"
+              type="date"
+              disabled={isLoading}
+              value={dateOfBirth}
+              onChange={(e) => setDateOfBirth(e.target.value)}
+              required
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="preferredPlatform">Preferred Gaming Platform</Label>
+            <Select
+              disabled={isLoading}
+              onValueChange={setPreferredPlatform}
+              required
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select your preferred platform" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="pc">PC</SelectItem>
+                <SelectItem value="playstation">PlayStation</SelectItem>
+                <SelectItem value="xbox">Xbox</SelectItem>
+                <SelectItem value="nintendo">Nintendo</SelectItem>
+                <SelectItem value="mobile">Mobile</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
           <Button className="w-full" type="submit" disabled={isLoading}>
             {isLoading && (
               <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
             )}
-            Sign Up with Email
+            Create Account
           </Button>
         </form>
         <div className="relative">

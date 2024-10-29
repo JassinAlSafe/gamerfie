@@ -4,14 +4,14 @@ import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { Menu, X, Search, ChevronDown } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { Session } from "@supabase/auth-helpers-nextjs";
+import { User } from "@supabase/auth-helpers-nextjs";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 
 interface HeaderProps {
-  session: Session | null;
+  user: User | null;
 }
 
-const Header: React.FC<HeaderProps> = ({ session }) => {
+const FloatingHeader: React.FC<HeaderProps> = ({ user }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -49,8 +49,8 @@ const Header: React.FC<HeaderProps> = ({ session }) => {
   };
 
   const getUserInitial = () => {
-    if (session && session.user.email) {
-      return session.user.email[0].toUpperCase();
+    if (user && user.email) {
+      return user.email[0].toUpperCase();
     }
     return "U";
   };
@@ -108,7 +108,7 @@ const Header: React.FC<HeaderProps> = ({ session }) => {
                 <Search size={18} />
               </button>
             </form>
-            {session ? (
+            {user ? (
               <div className="relative" ref={profileMenuRef}>
                 <button
                   ref={profileButtonRef}
@@ -200,7 +200,7 @@ const Header: React.FC<HeaderProps> = ({ session }) => {
                 <Search size={18} />
               </button>
             </form>
-            {session ? (
+            {user ? (
               <div className="flex flex-col items-center space-y-4 w-full px-4">
                 <div className="bg-blue-600 rounded-full w-10 h-10 flex items-center justify-center">
                   {getUserInitial()}
@@ -272,4 +272,4 @@ const NavLink: React.FC<React.AnchorHTMLAttributes<HTMLAnchorElement>> = ({
   </Link>
 );
 
-export default Header;
+export default FloatingHeader;
