@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import BackButton from "./BackButton";
+import { AddToLibraryButton } from "@/components/add-to-library-button";
 
 export async function generateMetadata({
   params,
@@ -94,19 +95,25 @@ function GameDetails({ game }: { game: Game }) {
                   />
                 </div>
               )}
-              {websiteUrl && (
-                <Button asChild className="w-full mt-4">
-                  <a
-                    href={websiteUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center justify-center"
-                  >
-                    Visit Website
-                    <ExternalLink className="w-4 h-4 ml-2" />
-                  </a>
-                </Button>
-              )}
+              <div className="flex flex-col gap-2 mt-4">
+                {websiteUrl && (
+                  <Button asChild className="w-full">
+                    <a
+                      href={websiteUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center justify-center"
+                    >
+                      Visit Website
+                      <ExternalLink className="w-4 h-4 ml-2" />
+                    </a>
+                  </Button>
+                )}
+                <AddToLibraryButton
+                  gameId={game.id.toString()}
+                  gameName={game.name}
+                />
+              </div>
             </div>
             <div className="md:w-2/3">
               <h1 className="text-5xl font-bold mb-4">{game.name}</h1>
