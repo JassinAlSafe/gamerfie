@@ -15,7 +15,9 @@ import { Input } from "@/components/ui/input";
 import { Search, Plus, Gamepad2 } from "lucide-react";
 import toast from "react-hot-toast";
 import { Card, CardContent } from "./ui/card";
+import { ReviewsTab } from "./reviews-tab";
 
+// First, update the interfaces to include review data
 interface Game {
   id: string;
   name: string;
@@ -26,6 +28,10 @@ interface Game {
     id: number;
     name: string;
   }[];
+  review?: {
+    rating: number;
+    text: string;
+  };
 }
 
 interface UserGame {
@@ -53,13 +59,23 @@ export function GamesTab() {
       } = await supabase.auth.getUser();
       if (!user) return;
 
+      // First, fetch user games
       const { data: userGames, error: userGamesError } = await supabase
         .from("user_games")
         .select("*")
         .eq("user_id", user.id);
+
       if (userGamesError) throw userGamesError;
 
-      // Fetch game details from the server-side API route
+      // Then, fetch reviews separately
+      const { data: reviews, error: reviewsError } = await supabase
+        .from("game_reviews")
+        .select("*")
+        .eq("user_id", user.id);
+
+      if (reviewsError) throw reviewsError;
+
+      // Fetch game details and combine with reviews
       const gameDetailsPromises = userGames.map(async (ug) => {
         try {
           const response = await fetch("/api/games/details", {
@@ -73,9 +89,17 @@ export function GamesTab() {
           if (!response.ok) throw new Error("Failed to fetch game details");
 
           const gameData = await response.json();
+          const review = reviews?.find((r) => r.game_id === ug.game_id);
+
           return {
-            ...gameData[0], // Assuming the response is an array with a single game object
+            ...gameData[0],
             userStatus: ug,
+            review: review
+              ? {
+                  rating: review.rating,
+                  text: review.review_text,
+                }
+              : undefined,
           };
         } catch (error) {
           console.error(

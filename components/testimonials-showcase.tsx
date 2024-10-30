@@ -3,20 +3,17 @@
 import React from "react";
 import { InfiniteMovingCards } from "./ui/infinite-moving-cards";
 
-const Reviews = () => {
-  return <section id="Features" className="py-20 w-full">
-     <h1 className="heading text-white text-left flex mb-10">
-        <span className="text-blue-100">Reviews Feature</span>
+const TestimonialsShowcase = () => {
+  return (
+    <section id="Features" className="py-20 w-full">
+      <h1 className="heading text-white text-left flex mb-10">
+        <span className="text-blue-100">What Users Say</span>
       </h1>
-      <div className=" rounded-md flex flex-col antialiased  dark:bg-black dark:bg-grid-white/[0.05] items-center justify-center relative overflow-hidden">
-      <InfiniteMovingCards
-      items={testimonials}
-      direction="right"
-      speed="slow"
-      />
-        
+      <div className="rounded-md flex flex-col antialiased dark:bg-black dark:bg-grid-white/[0.05] items-center justify-center relative overflow-hidden">
+        <InfiniteMovingCards items={testimonials} direction="right" speed="slow" />
       </div>
-  </section>;
+    </section>
+  );
 };
 
 const testimonials = [
@@ -51,4 +48,4 @@ const testimonials = [
   },
 ];
 
-export default Reviews;
+export default TestimonialsShowcase;
