@@ -5,6 +5,7 @@ import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { GamesTab } from "@/components/games-tab";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Card,
@@ -351,19 +352,7 @@ export default function ProfilePage() {
             </TabsTrigger>
           </TabsList>
           <TabsContent value="games">
-            <Card>
-              <CardHeader>
-                <CardTitle>Your Games</CardTitle>
-                <CardDescription>
-                  Games you've played, rated, and added to your collection.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center text-muted-foreground">
-                  No games added yet.
-                </div>
-              </CardContent>
-            </Card>
+            <GamesTab />
           </TabsContent>
           {/* Add similar TabsContent components for other tabs */}
         </Tabs>
