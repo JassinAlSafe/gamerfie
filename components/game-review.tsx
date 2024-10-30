@@ -5,15 +5,16 @@ import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "./ui/textarea";
 import { Star, Edit2, Trash2 } from "lucide-react";
 import toast from "react-hot-toast";
+import { Icons } from "./ui/icons";
 
 interface GameReviewProps {
   gameId: string;
@@ -102,7 +103,7 @@ export function GameReview({
     onChange,
   }: {
     value: number;
-    onChange?: (rating: number) => void;
+    onChange?: (_rating: number) => void;
   }) => {
     return (
       <div className="flex gap-1">
