@@ -27,6 +27,7 @@ interface GameCardProps {
   rating?: number
   onStatusChange: (status: string) => void
   onRemove: () => void
+  isPriority?: boolean
 }
 
 export function GameCard({
@@ -38,6 +39,7 @@ export function GameCard({
   rating,
   onStatusChange,
   onRemove,
+  isPriority = false,
 }: GameCardProps) {
   const getHighQualityImageUrl = (url: string) => {
     return url.startsWith("//")
@@ -68,6 +70,7 @@ export function GameCard({
               src={getHighQualityImageUrl(cover.url)}
               alt={name}
               fill
+              priority={isPriority}
               className="object-cover transition-transform duration-300 group-hover:scale-105"
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
             />

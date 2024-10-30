@@ -62,15 +62,15 @@ export function GamesTab() {
       // Fetch game details from the server-side API route
       const gameDetailsPromises = userGames.map(async (ug) => {
         try {
-          const response = await fetch('/api/games/details', {
-            method: 'POST',
+          const response = await fetch("/api/games/details", {
+            method: "POST",
             headers: {
-              'Content-Type': 'application/json',
+              "Content-Type": "application/json",
             },
             body: JSON.stringify({ gameId: ug.game_id }),
           });
 
-          if (!response.ok) throw new Error('Failed to fetch game details');
+          if (!response.ok) throw new Error("Failed to fetch game details");
 
           const gameData = await response.json();
           return {
@@ -78,7 +78,10 @@ export function GamesTab() {
             userStatus: ug,
           };
         } catch (error) {
-          console.error(`Error fetching details for game ${ug.game_id}:`, error);
+          console.error(
+            `Error fetching details for game ${ug.game_id}:`,
+            error
+          );
           return {
             id: ug.game_id,
             name: `Game ${ug.game_id}`,
@@ -90,8 +93,8 @@ export function GamesTab() {
       const gamesWithDetails = await Promise.all(gameDetailsPromises);
       setGames(gamesWithDetails);
     } catch (error) {
-      console.error('Error fetching games:', error);
-      toast.error('Failed to load games');
+      console.error("Error fetching games:", error);
+      toast.error("Failed to load games");
     } finally {
       setIsLoading(false);
     }
@@ -105,26 +108,32 @@ export function GamesTab() {
       if (!user) return;
 
       const { error } = await supabase
-        .from('user_games')
+        .from("user_games")
         .update({
           status,
           updated_at: new Date().toISOString(),
         })
-        .eq('user_id', user.id)
-        .eq('game_id', gameId);
+        .eq("user_id", user.id)
+        .eq("game_id", gameId);
       if (error) throw error;
 
       setGames((prevGames) =>
         prevGames.map((game) =>
           game.id === gameId
-            ? { ...game, userStatus: { ...game.userStatus!, status: status as UserGame['status'] } }
+            ? {
+                ...game,
+                userStatus: {
+                  ...game.userStatus!,
+                  status: status as UserGame["status"],
+                },
+              }
             : game
         )
       );
-      toast.success('Game status updated');
+      toast.success("Game status updated");
     } catch (error) {
-      console.error('Error updating game status:', error);
-      toast.error('Failed to update game status');
+      console.error("Error updating game status:", error);
+      toast.error("Failed to update game status");
     }
   };
 
@@ -136,17 +145,17 @@ export function GamesTab() {
       if (!user) return;
 
       const { error } = await supabase
-        .from('user_games')
+        .from("user_games")
         .delete()
-        .eq('user_id', user.id)
-        .eq('game_id', gameId);
+        .eq("user_id", user.id)
+        .eq("game_id", gameId);
       if (error) throw error;
 
       setGames((prevGames) => prevGames.filter((game) => game.id !== gameId));
-      toast.success('Game removed from library');
+      toast.success("Game removed from library");
     } catch (error) {
-      console.error('Error removing game from library:', error);
-      toast.error('Failed to remove game from library');
+      console.error("Error removing game from library:", error);
+      toast.error("Failed to remove game from library");
     }
   };
 
@@ -219,7 +228,7 @@ export function GamesTab() {
         </Card>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {filteredGames.map((game) => (
+          {filteredGames.map((game, index) => (
             <GameCard
               key={game.id}
               id={game.id}
@@ -230,6 +239,7 @@ export function GamesTab() {
               rating={game.userStatus?.rating ?? undefined}
               onStatusChange={(status) => updateGameStatus(game.id, status)}
               onRemove={() => removeFromLibrary(game.id)}
+              isPriority={index < 4}
             />
           ))}
         </div>
