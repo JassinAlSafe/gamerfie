@@ -15,7 +15,6 @@ import { Input } from "@/components/ui/input";
 import { Search, Plus, Gamepad2 } from "lucide-react";
 import toast from "react-hot-toast";
 import { Card, CardContent } from "./ui/card";
-import { ReviewsTab } from "./reviews-tab";
 
 // First, update the interfaces to include review data
 interface Game {
@@ -264,6 +263,9 @@ export function GamesTab() {
               onStatusChange={(status) => updateGameStatus(game.id, status)}
               onRemove={() => removeFromLibrary(game.id)}
               isPriority={index < 4}
+              onReviewUpdate={function (): void {
+                throw new Error("Function not implemented.");
+              }}
             />
           ))}
         </div>
