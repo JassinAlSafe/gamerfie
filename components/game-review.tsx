@@ -133,7 +133,7 @@ export function GameReview({
     <Card>
       <CardHeader>
         <CardTitle className="flex justify-between items-center">
-          <span>Review for {gameName}</span>
+          <span>{gameName}</span>
           <div className="flex gap-2">
             {!isEditing && (rating > 0 || review) && (
               <>
