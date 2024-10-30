@@ -1,114 +1,119 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Button } from "@/components/ui/button"
-import { Icons } from "@/components/ui/icons"
-import { Upload, X } from "lucide-react"
-import toast from 'react-hot-toast'
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
+import { useState } from "react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Icons } from "@/components/ui/icons";
+import { Upload, X } from "lucide-react";
+import toast from "react-hot-toast";
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 
 interface AvatarUploadProps {
-  userId: string
-  username: string
-  currentAvatarUrl: string | null
-  onAvatarUpdate: (url: string) => void
+  userId: string;
+  username: string;
+  currentAvatarUrl: string | null;
+  onAvatarUpdate: (url: string) => void;
 }
 
-export function AvatarUpload({ userId, username, currentAvatarUrl, onAvatarUpdate }: AvatarUploadProps) {
-  const [isUploading, setIsUploading] = useState(false)
-  const supabase = createClientComponentClient()
+export function AvatarUpload({
+  userId,
+  username,
+  currentAvatarUrl,
+  onAvatarUpdate,
+}: AvatarUploadProps) {
+  const [isUploading, setIsUploading] = useState(false);
+  const supabase = createClientComponentClient();
 
   const handleUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     try {
-      setIsUploading(true)
-      const file = event.target.files?.[0]
-      if (!file) return
+      setIsUploading(true);
+      const file = event.target.files?.[0];
+      if (!file) return;
 
       // Validate file type
-      if (!file.type.startsWith('image/')) {
-        toast.error('Please upload an image file')
-        return
+      if (!file.type.startsWith("image/")) {
+        toast.error("Please upload an image file");
+        return;
       }
 
       // Validate file size (max 5MB)
       if (file.size > 5 * 1024 * 1024) {
-        toast.error('File size must be less than 5MB')
-        return
+        toast.error("File size must be less than 5MB");
+        return;
       }
 
-      const fileExt = file.name.split('.').pop()
-      const filePath = `${userId}-${Math.random()}.${fileExt}`
+      // Create a unique file name
+      const fileExt = file.name.split(".").pop();
+      const fileName = `${userId}-${Date.now()}.${fileExt}`;
 
-      // Upload to Supabase Storage
-      const { error: uploadError, data } = await supabase.storage
-        .from('avatars')
-        .upload(filePath, file)
+      // Upload the file
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from("avatars")
+        .upload(fileName, file, {
+          cacheControl: "3600",
+          upsert: false,
+        });
 
-      if (uploadError) throw uploadError
+      if (uploadError) throw uploadError;
 
-      // Get public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from('avatars')
-        .getPublicUrl(filePath)
+      // Get the public URL
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from("avatars").getPublicUrl(fileName);
 
-      // Update profile
+      // Update the profile with the new avatar URL
       const { error: updateError } = await supabase
-        .from('profiles')
+        .from("profiles")
         .update({ avatar_url: publicUrl })
-        .eq('id', userId)
+        .eq("id", userId);
 
-      if (updateError) throw updateError
-
-      onAvatarUpdate(publicUrl)
-      toast.success('Avatar updated successfully')
+      if (updateError) throw updateError;
 
       // Delete old avatar if it exists
       if (currentAvatarUrl) {
-        const oldFilePath = currentAvatarUrl.split('/').pop()
-        if (oldFilePath) {
-          await supabase.storage
-            .from('avatars')
-            .remove([oldFilePath])
+        const oldFileName = currentAvatarUrl.split("/").pop();
+        if (oldFileName) {
+          await supabase.storage.from("avatars").remove([oldFileName]);
         }
       }
+
+      onAvatarUpdate(publicUrl);
+      toast.success("Avatar updated successfully");
     } catch (error) {
-      console.error('Error uploading avatar:', error)
-      toast.error('Failed to update avatar')
+      console.error("Error uploading avatar:", error);
+      toast.error("Failed to update avatar");
     } finally {
-      setIsUploading(false)
+      setIsUploading(false);
     }
-  }
+  };
 
   const handleRemoveAvatar = async () => {
     try {
-      setIsUploading(true)
+      setIsUploading(true);
 
       if (currentAvatarUrl) {
-        const filePath = currentAvatarUrl.split('/').pop()
-        if (filePath) {
-          await supabase.storage
-            .from('avatars')
-            .remove([filePath])
+        const fileName = currentAvatarUrl.split("/").pop();
+        if (fileName) {
+          await supabase.storage.from("avatars").remove([fileName]);
         }
       }
 
       const { error: updateError } = await supabase
-        .from('profiles')
+        .from("profiles")
         .update({ avatar_url: null })
-        .eq('id', userId)
+        .eq("id", userId);
 
-      if (updateError) throw updateError
+      if (updateError) throw updateError;
 
-      onAvatarUpdate('')
-      toast.success('Avatar removed successfully')
+      onAvatarUpdate("");
+      toast.success("Avatar removed successfully");
     } catch (error) {
-      console.error('Error removing avatar:', error)
-      toast.error('Failed to remove avatar')
+      console.error("Error removing avatar:", error);
+      toast.error("Failed to remove avatar");
     } finally {
-      setIsUploading(false)
+      setIsUploading(false);
     }
-  }
+  };
 
   return (
     <div className="flex flex-col items-center gap-4">
@@ -155,5 +160,5 @@ export function AvatarUpload({ userId, username, currentAvatarUrl, onAvatarUpdat
         )}
       </div>
     </div>
-  )
+  );
 }
