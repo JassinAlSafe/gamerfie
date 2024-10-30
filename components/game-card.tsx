@@ -25,10 +25,16 @@ interface GameCardProps {
     id: number;
     name: string;
   }[];
-  status: string;
+  status: "playing" | "completed" | "want_to_play" | "dropped";
   rating?: number;
+  review?: {
+    rating: number;
+    text: string;
+  };
   onStatusChange: (status: string) => void;
   onRemove: () => void;
+  onReviewUpdate: () => void;
+
   isPriority?: boolean;
 }
 
@@ -136,8 +142,6 @@ export function GameCard({
           </Badge>
         </div>
       </Card>
-
-    
     </div>
   );
 }
