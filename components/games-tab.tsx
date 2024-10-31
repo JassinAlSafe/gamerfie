@@ -17,10 +17,11 @@ import toast from "react-hot-toast";
 import { Card, CardContent } from "./ui/card";
 import { ErrorBoundary } from "next/dist/client/components/error-boundary";
 
-// First, update the interfaces to include review data
 interface Game {
   id: string;
   name: string;
+  status: "playing" | "completed" | "want_to_play" | "dropped";
+  updated_at: string;
   cover?: {
     url: string;
   } | null;
@@ -41,6 +42,10 @@ interface UserGame {
   rating: number | null;
 }
 
+interface GamesTabProps {
+  onGamesUpdate: (games: Game[]) => void;
+}
+
 const GAMES_PER_PAGE = 12;
 
 function ErrorFallback({ error, resetErrorBoundary }) {
@@ -53,17 +58,13 @@ function ErrorFallback({ error, resetErrorBoundary }) {
   );
 }
 
-export function GamesTab() {
-  const [games, setGames] = useState<(Game & { userStatus?: UserGame })[]>([]);
+export function GamesTab({ onGamesUpdate }: GamesTabProps) {
+  const [games, setGames] = useState<Game[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [currentPage, setCurrentPage] = useState(1);
   const supabase = createClientComponentClient();
-
-  useEffect(() => {
-    fetchUserGames();
-  }, []);
 
   const fetchUserGames = useCallback(async () => {
     try {
@@ -73,7 +74,6 @@ export function GamesTab() {
       } = await supabase.auth.getUser();
       if (!user) return;
 
-      // First, fetch user games
       const { data: userGames, error: userGamesError } = await supabase
         .from("user_games")
         .select("*")
@@ -81,7 +81,6 @@ export function GamesTab() {
 
       if (userGamesError) throw userGamesError;
 
-      // Then, fetch reviews separately
       const { data: reviews, error: reviewsError } = await supabase
         .from("game_reviews")
         .select("*")
@@ -89,7 +88,6 @@ export function GamesTab() {
 
       if (reviewsError) throw reviewsError;
 
-      // Fetch game details and combine with reviews
       const gameDetailsPromises = userGames.map(async (ug) => {
         try {
           const response = await fetch("/api/games/details", {
@@ -107,7 +105,8 @@ export function GamesTab() {
 
           return {
             ...gameData[0],
-            userStatus: ug,
+            status: ug.status,
+            updated_at: ug.updated_at,
             review: review
               ? {
                   rating: review.rating,
@@ -123,20 +122,22 @@ export function GamesTab() {
           return {
             id: ug.game_id,
             name: `Game ${ug.game_id}`,
-            userStatus: ug,
+            status: ug.status,
+            updated_at: ug.updated_at,
           };
         }
       });
 
       const gamesWithDetails = await Promise.all(gameDetailsPromises);
       setGames(gamesWithDetails);
+      onGamesUpdate(gamesWithDetails);
     } catch (error) {
       console.error("Error fetching games:", error);
       toast.error("Failed to load games");
     } finally {
       setIsLoading(false);
     }
-  }, [supabase]);
+  }, [supabase, onGamesUpdate]);
 
   useEffect(() => {
     fetchUserGames();
@@ -160,26 +161,26 @@ export function GamesTab() {
           .eq("game_id", gameId);
         if (error) throw error;
 
-        setGames((prevGames) =>
-          prevGames.map((game) =>
+        setGames((prevGames) => {
+          const updatedGames = prevGames.map((game) =>
             game.id === gameId
               ? {
                   ...game,
-                  userStatus: {
-                    ...game.userStatus!,
-                    status: status as UserGame["status"],
-                  },
+                  status: status as Game["status"],
+                  updated_at: new Date().toISOString(),
                 }
               : game
-          )
-        );
+          );
+          onGamesUpdate(updatedGames);
+          return updatedGames;
+        });
         toast.success("Game status updated");
       } catch (error) {
         console.error("Error updating game status:", error);
         toast.error("Failed to update game status");
       }
     },
-    [supabase]
+    [supabase, onGamesUpdate]
   );
 
   const removeFromLibrary = useCallback(
@@ -197,14 +198,18 @@ export function GamesTab() {
           .eq("game_id", gameId);
         if (error) throw error;
 
-        setGames((prevGames) => prevGames.filter((game) => game.id !== gameId));
+        setGames((prevGames) => {
+          const updatedGames = prevGames.filter((game) => game.id !== gameId);
+          onGamesUpdate(updatedGames);
+          return updatedGames;
+        });
         toast.success("Game removed from library");
       } catch (error) {
         console.error("Error removing game from library:", error);
         toast.error("Failed to remove game from library");
       }
     },
-    [supabase]
+    [supabase, onGamesUpdate]
   );
 
   const onReviewUpdate = useCallback(
@@ -225,8 +230,8 @@ export function GamesTab() {
 
         if (error) throw error;
 
-        setGames((prevGames) =>
-          prevGames.map((game) =>
+        setGames((prevGames) => {
+          const updatedGames = prevGames.map((game) =>
             game.id === gameId
               ? {
                   ...game,
@@ -236,15 +241,17 @@ export function GamesTab() {
                   },
                 }
               : game
-          )
-        );
+          );
+          onGamesUpdate(updatedGames);
+          return updatedGames;
+        });
         toast.success("Review updated successfully");
       } catch (error) {
         console.error("Error updating review:", error);
         toast.error("Failed to update review");
       }
     },
-    [supabase]
+    [supabase, onGamesUpdate]
   );
 
   const filteredGames = useMemo(() => {
@@ -253,7 +260,7 @@ export function GamesTab() {
         .toLowerCase()
         .includes(searchQuery.toLowerCase());
       const matchesStatus =
-        statusFilter === "all" || game.userStatus?.status === statusFilter;
+        statusFilter === "all" || game.status === statusFilter;
       return matchesSearch && matchesStatus;
     });
   }, [games, searchQuery, statusFilter]);
@@ -342,7 +349,7 @@ export function GamesTab() {
                   name={game.name}
                   cover={game.cover ?? undefined}
                   platforms={game.platforms}
-                  status={game.userStatus?.status || "want_to_play"}
+                  status={game.status}
                   rating={game.review?.rating ?? undefined}
                   onStatusChange={(status) => updateGameStatus(game.id, status)}
                   onRemove={() => removeFromLibrary(game.id)}

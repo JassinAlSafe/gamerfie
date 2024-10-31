@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -44,6 +44,12 @@ interface GameStats {
   total_played: number;
   played_this_year: number;
   backlog: number;
+}
+
+interface Game {
+  id: string;
+  status: "playing" | "completed" | "want_to_play" | "dropped" | "backlog";
+  updated_at: string;
 }
 
 export default function ProfilePage() {
@@ -98,6 +104,32 @@ export default function ProfilePage() {
 
     fetchProfile();
   }, [supabase]);
+
+  const calculateGameStats = useCallback((games: Game[]): GameStats => {
+    const currentYear = new Date().getFullYear();
+    return games.reduce(
+      (stats, game) => {
+        if (game.status === "completed" || game.status === "playing") {
+          stats.total_played++;
+          if (new Date(game.updated_at).getFullYear() === currentYear) {
+            stats.played_this_year++;
+          }
+        } else if (game.status === "want_to_play") {
+          stats.backlog++;
+        }
+        return stats;
+      },
+      { total_played: 0, played_this_year: 0, backlog: 0 }
+    );
+  }, []);
+
+  const updateGameStats = useCallback(
+    (games: Game[]) => {
+      const newStats = calculateGameStats(games);
+      setGameStats(newStats);
+    },
+    [calculateGameStats]
+  );
 
   const handleAvatarUpload = async (
     event: React.ChangeEvent<HTMLInputElement>
@@ -353,7 +385,7 @@ export default function ProfilePage() {
             </TabsTrigger>
           </TabsList>
           <TabsContent value="games">
-            <GamesTab />
+            <GamesTab onGamesUpdate={updateGameStats} />
           </TabsContent>
           <TabsContent value="reviews">
             <ReviewsTab />
