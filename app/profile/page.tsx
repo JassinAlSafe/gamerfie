@@ -67,22 +67,17 @@ export default function ProfilePage() {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        // Get the current user
-        const {
-          data: { user },
-          error: userError,
-        } = await supabase.auth.getUser();
+        setIsLoading(true);
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
 
-        if (userError) {
-          throw userError;
-        }
+        if (userError) throw userError;
 
         if (!user) {
           setIsLoading(false);
           return;
         }
 
-        // Fetch the profile for the current user
+        // First, try to fetch the existing profile
         const { data, error } = await supabase
           .from("profiles")
           .select("*")
@@ -90,7 +85,29 @@ export default function ProfilePage() {
           .single();
 
         if (error) {
-          toast.error("Failed to fetch profile");
+          if (error.code === "PGRST116") {
+            // Profile doesn't exist, create a new one
+            const newProfile: Profile = {
+              id: user.id,
+              username: user.email?.split('@')[0] || 'user',
+              display_name: null,
+              bio: null,
+              avatar_url: null,
+            };
+
+            const { data: createdProfile, error: createError } = await supabase
+              .from("profiles")
+              .insert([newProfile])
+              .select()
+              .single();
+
+            if (createError) throw createError;
+
+            setProfile(createdProfile);
+            toast.success("Welcome! Your profile has been created.");
+          } else {
+            throw error;
+          }
         } else {
           setProfile(data);
         }
