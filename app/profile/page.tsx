@@ -67,8 +67,10 @@ export default function ProfilePage() {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        setIsLoading(true);
-        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        const {
+          data: { user },
+          error: userError,
+        } = await supabase.auth.getUser();
 
         if (userError) throw userError;
 
@@ -77,40 +79,24 @@ export default function ProfilePage() {
           return;
         }
 
-        // First, try to fetch the existing profile
         const { data, error } = await supabase
           .from("profiles")
           .select("*")
           .eq("id", user.id)
           .single();
 
-        if (error) {
-          if (error.code === "PGRST116") {
-            // Profile doesn't exist, create a new one
-            const newProfile: Profile = {
-              id: user.id,
-              username: user.email?.split('@')[0] || 'user',
-              display_name: null,
-              bio: null,
-              avatar_url: null,
-            };
+        if (error) throw error;
 
-            const { data: createdProfile, error: createError } = await supabase
-              .from("profiles")
-              .insert([newProfile])
-              .select()
-              .single();
+        setProfile(data);
+        // Fetch initial game stats
+        const { data: games, error: gamesError } = await supabase
+          .from("user_games")
+          .select("*")
+          .eq("user_id", user.id);
 
-            if (createError) throw createError;
+        if (gamesError) throw gamesError;
 
-            setProfile(createdProfile);
-            toast.success("Welcome! Your profile has been created.");
-          } else {
-            throw error;
-          }
-        } else {
-          setProfile(data);
-        }
+        updateGameStats(games);
       } catch (error) {
         console.error("Error fetching profile:", error);
         toast.error("Failed to fetch profile");
@@ -281,7 +267,7 @@ export default function ProfilePage() {
                   <CardTitle className="text-4xl font-bold">
                     {gameStats.played_this_year}
                   </CardTitle>
-                  <CardDescription>Played in 2024</CardDescription>
+                  <CardDescription>Played in {new Date().getFullYear()}</CardDescription>
                 </CardHeader>
               </Card>
               <Card>
@@ -407,6 +393,7 @@ export default function ProfilePage() {
           <TabsContent value="reviews">
             <ReviewsTab />
           </TabsContent>
+          {/* Add other TabsContent components for remaining tabs */}
         </Tabs>
       </div>
     </div>

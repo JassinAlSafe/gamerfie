@@ -34,19 +34,17 @@ export default function SignUpPage() {
     setIsLoading(true);
 
     try {
-      // Sign up with email and password
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
+          emailRedirectTo: `${window.location.origin}/api/auth/callback`,
         },
       });
 
       if (authError) throw authError;
 
       if (authData.user) {
-        // Insert additional user data into a custom table
         const { error: profileError } = await supabase
           .from("user_profiles")
           .insert({
@@ -85,7 +83,7 @@ export default function SignUpPage() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
+          redirectTo: `${window.location.origin}/api/auth/callback/google`,
         },
       });
 
