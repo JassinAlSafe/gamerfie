@@ -12,9 +12,10 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Gamepad2, MoreHorizontal } from "lucide-react";
-import { GameReview } from "./game-review";
 
-// Add review to the props interface
+// Remove unused GameReview import
+export type GameStatus = "playing" | "completed" | "want_to_play" | "dropped" | "backlog";
+
 interface GameCardProps {
   id: string;
   name: string;
@@ -25,15 +26,15 @@ interface GameCardProps {
     id: number;
     name: string;
   }[];
-  status: "playing" | "completed" | "want_to_play" | "dropped";
+  status: GameStatus;
   rating?: number;
   review?: {
     rating: number;
     text: string;
   };
-  onStatusChange: (status: string) => void;
+  onStatusChange: (_status: string) => void;
   onRemove: () => void;
-  onReviewUpdate: () => void;
+  onReviewUpdate: (_rating: number, _reviewText: string) => void;
 
   isPriority?: boolean;
 }

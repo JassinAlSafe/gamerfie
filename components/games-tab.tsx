@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
-import { GameCard } from "./game-card";
+import { supabase } from "@/utils/supabase-client";
+import { GameCard, type GameStatus } from "./game-card";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -15,40 +15,22 @@ import { Input } from "@/components/ui/input";
 import { Search, Plus, Gamepad2 } from "lucide-react";
 import toast from "react-hot-toast";
 import { Card, CardContent } from "./ui/card";
-import { ErrorBoundary } from "next/dist/client/components/error-boundary";
-
-interface Game {
-  id: string;
-  name: string;
-  status: "playing" | "completed" | "want_to_play" | "dropped";
-  updated_at: string;
-  cover?: {
-    url: string;
-  } | null;
-  platforms?: {
-    id: number;
-    name: string;
-  }[];
-  review?: {
-    rating: number;
-    text: string;
-  };
-}
-
-interface UserGame {
-  id: string;
-  game_id: string;
-  status: "playing" | "completed" | "want_to_play" | "dropped";
-  rating: number | null;
-}
+import { ErrorBoundary as ReactErrorBoundary } from "react-error-boundary";
+import { type Game } from "@/types";
+import { useQuery, useMutation, useQueryClient } from "react-query";
 
 interface GamesTabProps {
-  onGamesUpdate: (games: Game[]) => void;
+  onGamesUpdate: (_games: Game[]) => void;
 }
 
 const GAMES_PER_PAGE = 12;
 
-function ErrorFallback({ error, resetErrorBoundary }) {
+interface ErrorFallbackProps {
+  error: Error;
+  resetErrorBoundary: () => void;
+}
+
+function ErrorFallback({ error, resetErrorBoundary }: ErrorFallbackProps) {
   return (
     <Card className="p-6 text-center">
       <h2 className="text-xl font-bold mb-4">Oops! Something went wrong.</h2>
@@ -58,181 +40,266 @@ function ErrorFallback({ error, resetErrorBoundary }) {
   );
 }
 
+interface GameApiPlatform {
+  id: number;
+  name: string;
+}
+
+interface GameApiCover {
+  id: number;
+  url: string;
+}
+
+interface GameApiResponse {
+  id: string;
+  name: string;
+  cover?: GameApiCover;
+  platforms?: Array<GameApiPlatform | string>;
+}
+
+interface UserGame {
+  game_id: string;
+  user_id: string;
+  status: GameStatus;
+  updated_at: string;
+}
+
+interface GameReview {
+  game_id: string;
+  rating: number;
+  review_text: string;
+}
+
+const fetchGameDetails = async (gameId: string, reviews: GameReview[]) => {
+  const requestBody = { gameId: parseInt(gameId, 10) };
+  console.log("Requesting game details with payload:", requestBody);
+
+  const response = await fetch("/api/games/details", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(requestBody),
+  });
+
+  console.log("Response status:", response.status);
+  const responseBody = await response.text();
+  console.log("Response body:", responseBody);
+
+  if (!response.ok) {
+    console.error("Failed to fetch game details:", responseBody);
+    throw new Error("Failed to fetch game details");
+  }
+
+  const gameData: GameApiResponse = JSON.parse(responseBody);
+  console.log("Fetched game details:", gameData);
+
+  const review = reviews.find((r) => r.game_id === gameId);
+
+  return {
+    id: gameId,
+    name: gameData.name,
+    cover: gameData.cover ? { url: gameData.cover.url } : undefined,
+    platforms: gameData.platforms?.map((p: GameApiPlatform | string) => ({
+      id: typeof p === "string" ? parseInt(p) : p.id,
+      name: typeof p === "string" ? p : p.name,
+    })),
+    review: review
+      ? {
+          rating: review.rating,
+          text: review.review_text,
+        }
+      : undefined,
+  } as Game;
+};
+
+const fetchUserGames = async (supabase: any) => {
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+  if (userError) throw userError;
+  if (!user) return { userGames: [], reviews: [] };
+
+  console.log("Fetched user:", user);
+
+  const { data: userGames, error: userGamesError } = await supabase
+    .from("user_games")
+    .select("*")
+    .eq("user_id", user.id);
+
+  if (userGamesError) throw userGamesError;
+
+  console.log("Fetched user games:", userGames);
+
+  const { data: reviews, error: reviewsError } = await supabase
+    .from("game_reviews")
+    .select("*")
+    .eq("user_id", user.id);
+
+  if (reviewsError) throw reviewsError;
+
+  console.log("Fetched reviews:", reviews);
+
+  return { userGames, reviews };
+};
+
+interface UpdateGameStatusData {
+  gameId: string;
+  status: string;
+}
+
+interface ReviewUpdateData {
+  gameId: string;
+  rating: number;
+  reviewText: string;
+}
+
 export function GamesTab({ onGamesUpdate }: GamesTabProps) {
-  const [games, setGames] = useState<Game[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [currentPage, setCurrentPage] = useState(1);
-  const supabase = createClientComponentClient();
+  const [games, setGames] = useState<Game[]>([]);
+  const queryClient = useQueryClient();
 
-  const fetchUserGames = useCallback(async () => {
-    try {
-      setIsLoading(true);
+  const { data, isLoading, error } = useQuery<any, { message: string }>(
+    "userGames",
+    () => fetchUserGames(supabase),
+    {
+      onSuccess: (data) => {
+        const gameDetailsPromises = (data.userGames as UserGame[]).map(
+          async (ug) => {
+            try {
+              return await fetchGameDetails(
+                ug.game_id,
+                data.reviews as GameReview[]
+              );
+            } catch (error) {
+              console.error(
+                `Error fetching details for game ${ug.game_id}:`,
+                error
+              );
+              return {
+                id: ug.game_id,
+                user_id: ug.user_id,
+                name: `Game ${ug.game_id}`,
+                status: ug.status,
+                updated_at: ug.updated_at,
+              } as Game;
+            }
+          }
+        );
+
+        Promise.all(gameDetailsPromises).then((gamesWithDetails) => {
+          setGames(gamesWithDetails);
+          onGamesUpdate(gamesWithDetails);
+        });
+      },
+    }
+  );
+
+  const updateGameStatus = useMutation<
+    UpdateGameStatusData,
+    Error,
+    UpdateGameStatusData
+  >(
+    async ({ gameId, status }) => {
       const {
         data: { user },
       } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user) throw new Error("User not authenticated");
 
-      const { data: userGames, error: userGamesError } = await supabase
+      const { error } = await supabase
         .from("user_games")
-        .select("*")
-        .eq("user_id", user.id);
+        .update({
+          status,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("user_id", user.id)
+        .eq("game_id", gameId);
 
-      if (userGamesError) throw userGamesError;
-
-      const { data: reviews, error: reviewsError } = await supabase
-        .from("game_reviews")
-        .select("*")
-        .eq("user_id", user.id);
-
-      if (reviewsError) throw reviewsError;
-
-      const gameDetailsPromises = userGames.map(async (ug) => {
-        try {
-          const response = await fetch("/api/games/details", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ gameId: ug.game_id }),
-          });
-
-          if (!response.ok) throw new Error("Failed to fetch game details");
-
-          const gameData = await response.json();
-          const review = reviews?.find((r) => r.game_id === ug.game_id);
-
-          return {
-            ...gameData[0],
-            status: ug.status,
-            updated_at: ug.updated_at,
-            review: review
-              ? {
-                  rating: review.rating,
-                  text: review.review_text,
-                }
-              : undefined,
-          };
-        } catch (error) {
-          console.error(
-            `Error fetching details for game ${ug.game_id}:`,
-            error
-          );
-          return {
-            id: ug.game_id,
-            name: `Game ${ug.game_id}`,
-            status: ug.status,
-            updated_at: ug.updated_at,
-          };
-        }
-      });
-
-      const gamesWithDetails = await Promise.all(gameDetailsPromises);
-      setGames(gamesWithDetails);
-      onGamesUpdate(gamesWithDetails);
-    } catch (error) {
-      console.error("Error fetching games:", error);
-      toast.error("Failed to load games");
-    } finally {
-      setIsLoading(false);
-    }
-  }, [supabase, onGamesUpdate]);
-
-  useEffect(() => {
-    fetchUserGames();
-  }, [fetchUserGames]);
-
-  const updateGameStatus = useCallback(
-    async (gameId: string, status: string) => {
-      try {
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
-        if (!user) return;
-
-        const { error } = await supabase
-          .from("user_games")
-          .update({
-            status,
-            updated_at: new Date().toISOString(),
-          })
-          .eq("user_id", user.id)
-          .eq("game_id", gameId);
-        if (error) throw error;
-
-        setGames((prevGames) => {
-          const updatedGames = prevGames.map((game) =>
-            game.id === gameId
+      if (error) throw error;
+      return { gameId, status };
+    },
+    {
+      onSuccess: (data) => {
+        queryClient.setQueryData("userGames", (oldData: any) => {
+          const updatedGames = oldData.userGames.map((game: UserGame) =>
+            game.game_id === data.gameId
               ? {
                   ...game,
-                  status: status as Game["status"],
+                  status: data.status,
                   updated_at: new Date().toISOString(),
                 }
               : game
           );
-          onGamesUpdate(updatedGames);
-          return updatedGames;
+          return { ...oldData, userGames: updatedGames };
         });
+        queryClient.invalidateQueries("gameStats");
         toast.success("Game status updated");
-      } catch (error) {
+      },
+      onError: (error) => {
         console.error("Error updating game status:", error);
         toast.error("Failed to update game status");
-      }
-    },
-    [supabase, onGamesUpdate]
+      },
+    }
   );
 
-  const removeFromLibrary = useCallback(
-    async (gameId: string) => {
-      try {
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
-        if (!user) return;
+  const removeFromLibrary = useMutation<string, Error, string>(
+    async (gameId) => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) throw new Error("User not authenticated");
 
-        const { error } = await supabase
-          .from("user_games")
-          .delete()
-          .eq("user_id", user.id)
-          .eq("game_id", gameId);
-        if (error) throw error;
+      const { error } = await supabase
+        .from("user_games")
+        .delete()
+        .eq("user_id", user.id)
+        .eq("game_id", gameId);
 
-        setGames((prevGames) => {
-          const updatedGames = prevGames.filter((game) => game.id !== gameId);
-          onGamesUpdate(updatedGames);
-          return updatedGames;
+      if (error) throw error;
+      return gameId;
+    },
+    {
+      onSuccess: (gameId) => {
+        queryClient.setQueryData("userGames", (oldData: any) => {
+          const updatedGames = oldData.userGames.filter(
+            (game: UserGame) => game.game_id !== gameId
+          );
+          return { ...oldData, userGames: updatedGames };
         });
+        queryClient.invalidateQueries("gameStats");
         toast.success("Game removed from library");
-      } catch (error) {
+      },
+      onError: (error) => {
         console.error("Error removing game from library:", error);
         toast.error("Failed to remove game from library");
-      }
-    },
-    [supabase, onGamesUpdate]
+      },
+    }
   );
 
-  const onReviewUpdate = useCallback(
-    async (gameId: string, rating: number, reviewText: string) => {
-      try {
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
-        if (!user) return;
+  const onReviewUpdate = useMutation<ReviewUpdateData, Error, ReviewUpdateData>(
+    async ({ gameId, rating, reviewText }) => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) throw new Error("User not authenticated");
 
-        const { error } = await supabase.from("game_reviews").upsert({
-          user_id: user.id,
-          game_id: gameId,
-          rating,
-          review_text: reviewText,
-          updated_at: new Date().toISOString(),
-        });
+      const { error } = await supabase.from("game_reviews").upsert({
+        user_id: user.id,
+        game_id: gameId,
+        rating,
+        review_text: reviewText,
+        updated_at: new Date().toISOString(),
+      });
 
-        if (error) throw error;
-
-        setGames((prevGames) => {
-          const updatedGames = prevGames.map((game) =>
-            game.id === gameId
+      if (error) throw error;
+      return { gameId, rating, reviewText };
+    },
+    {
+      onSuccess: ({ gameId, rating, reviewText }) => {
+        queryClient.setQueryData("userGames", (oldData: any) => {
+          const updatedGames = oldData.userGames.map((game: UserGame) =>
+            game.game_id === gameId
               ? {
                   ...game,
                   review: {
@@ -242,16 +309,15 @@ export function GamesTab({ onGamesUpdate }: GamesTabProps) {
                 }
               : game
           );
-          onGamesUpdate(updatedGames);
-          return updatedGames;
+          return { ...oldData, userGames: updatedGames };
         });
         toast.success("Review updated successfully");
-      } catch (error) {
+      },
+      onError: (error) => {
         console.error("Error updating review:", error);
         toast.error("Failed to update review");
-      }
-    },
-    [supabase, onGamesUpdate]
+      },
+    }
   );
 
   const filteredGames = useMemo(() => {
@@ -274,20 +340,57 @@ export function GamesTab({ onGamesUpdate }: GamesTabProps) {
 
   if (isLoading) {
     return (
+      <div className="space-y-6">
+        {/* Search and filter skeleton */}
+        <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
+          <div className="flex-1 w-full md:w-auto">
+            <div className="h-10 bg-muted animate-pulse rounded-md" />
+          </div>
+          <div className="flex gap-2 w-full md:w-auto">
+            <div className="w-[180px] h-10 bg-muted animate-pulse rounded-md" />
+            <div className="w-[120px] h-10 bg-muted animate-pulse rounded-md" />
+          </div>
+        </div>
+
+        {/* Games grid skeleton */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {[...Array(GAMES_PER_PAGE)].map((_, i) => (
+            <Card key={i} className="animate-pulse">
+              <div className="aspect-[3/4] bg-muted rounded-t-lg" />
+              <CardContent className="p-4">
+                <div className="space-y-3">
+                  <div className="h-4 bg-muted rounded w-3/4" />
+                  <div className="h-4 bg-muted rounded w-1/2" />
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
       <div className="flex items-center justify-center p-8">
-        <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
+        <Card className="p-6">
+          <CardContent className="text-center">
+            <h3 className="text-lg font-semibold mb-2">Error loading games</h3>
+            <p className="text-muted-foreground">{error.message}</p>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
   return (
-    <ErrorBoundary
-      FallbackComponent={ErrorFallback}
+    <ReactErrorBoundary
+      fallbackRender={ErrorFallback}
       onReset={() => {
         setSearchQuery("");
         setStatusFilter("all");
         setCurrentPage(1);
-        fetchUserGames();
+        queryClient.invalidateQueries("userGames");
       }}
     >
       <div className="space-y-6">
@@ -351,11 +454,17 @@ export function GamesTab({ onGamesUpdate }: GamesTabProps) {
                   platforms={game.platforms}
                   status={game.status}
                   rating={game.review?.rating ?? undefined}
-                  onStatusChange={(status) => updateGameStatus(game.id, status)}
-                  onRemove={() => removeFromLibrary(game.id)}
+                  onStatusChange={(status) =>
+                    updateGameStatus.mutate({ gameId: game.id, status })
+                  }
+                  onRemove={() => removeFromLibrary.mutate(game.id)}
                   isPriority={index < 4}
                   onReviewUpdate={(rating, reviewText) =>
-                    onReviewUpdate(game.id, rating, reviewText)
+                    onReviewUpdate.mutate({
+                      gameId: game.id,
+                      rating,
+                      reviewText,
+                    })
                   }
                 />
               ))}
@@ -382,6 +491,6 @@ export function GamesTab({ onGamesUpdate }: GamesTabProps) {
           </>
         )}
       </div>
-    </ErrorBoundary>
+    </ReactErrorBoundary>
   );
 }

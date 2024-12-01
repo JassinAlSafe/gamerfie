@@ -1,19 +1,8 @@
 import axios from "axios";
 import { Game, Platform, Cover } from "@/types/game";
+import { FetchedGame } from "@/types/igdb";
 
 const IGDB_API_ENDPOINT = "https://api.igdb.com/v4";
-
-export interface FetchedGame {
-  id: number;
-  name: string;
-  cover: {
-    id: number;
-    url: string;
-  } | null;
-  platforms: Platform[];
-  first_release_date?: number;
-  total_rating?: number;
-}
 
 export interface FetchGamesResponse {
   games: FetchedGame[];
