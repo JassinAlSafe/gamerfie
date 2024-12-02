@@ -1,5 +1,8 @@
-import { AuthError } from '@supabase/supabase-js'
-import { type GameStatus } from "@/components/game-card";
+import { AuthError } from '@supabase/supabase-js';
+import { type GameStatus, type Game, type UserGame, type GameReview, type GameMutationHandlers, type UserGamesResponse, type QueryData, type GameCardProps } from './game';
+import { type TwitchTokenResponse, type TokenResult, TwitchError } from './twitch';
+import { type IGDBCover, type IGDBPlatform, type IGDBGenre, type IGDBGame, type FetchedGame, type ProcessedGame, type GameListResponse, type GameAPIError } from './igdb';
+import { type TimelineEntry } from './timeline';
 
 export function isSupabaseError(error: unknown): error is AuthError {
   return (
@@ -7,7 +10,7 @@ export function isSupabaseError(error: unknown): error is AuthError {
     error !== null &&
     'message' in error &&
     typeof (error as Record<string, unknown>).message === 'string'
-  )
+  );
 }
 
 export interface Profile {
@@ -19,22 +22,37 @@ export interface Profile {
   updated_at?: string;
 }
 
-export interface Game {
-  id: string;
-  user_id: string;
-  name: string;
-  cover?: { url: string }; // Update cover type to match GameCard prop
-  platforms?: { id: number; name: string }[]; // Update platforms type to match GameCard prop
-  status: GameStatus;  // Update to use shared GameStatus type
-  updated_at: string;
-  review?: {
-    rating: number;
-    text: string;
-  };
-}
-
 export interface GameStats {
   total_played: number;
   played_this_year: number;
   backlog: number;
 }
+
+export interface GamesPaginationProps {
+  currentPage: number;
+  totalPages: number;
+  setCurrentPage: (newPage: number) => void;
+}
+
+export {
+  GameStatus,
+  Game,
+  UserGame,
+  GameReview,
+  GameMutationHandlers,
+  UserGamesResponse,
+  QueryData,
+  GameCardProps,
+  TwitchTokenResponse,
+  TokenResult,
+  TwitchError,
+  IGDBCover,
+  IGDBPlatform,
+  IGDBGenre,
+  IGDBGame,
+  FetchedGame,
+  ProcessedGame,
+  GameListResponse,
+  GameAPIError,
+  TimelineEntry
+};

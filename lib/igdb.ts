@@ -159,27 +159,24 @@ export async function fetchCovers(
 export async function fetchGameDetails(
   accessToken: string,
   gameId: number
-): Promise<Game | null> {
+): Promise<Partial<Game>> {
   const query = `
     fields name,cover.url,first_release_date,genres.name,platforms.name,summary,storyline,total_rating,screenshots.url,artworks.url,involved_companies.company.name,involved_companies.developer,involved_companies.publisher,websites.*,videos.*;
     where id = ${gameId};
   `;
-  console.log(`Fetching game details for game ID: ${gameId}`);
-  const games = await fetchFromIGDB("games", query, accessToken);
-  console.log(`Fetched game details:`, games);
+
+  const games = await fetchFromIGDB("games", query, accessToken) as IGDBGame[];
 
   if (games.length > 0) {
     const gameData = games[0];
-    const game: Game = {
-      id: gameData.id,
+    return {
+      id: gameId.toString(),
       name: gameData.name,
+      cover: gameData.cover ? { url: gameData.cover.url } : null,
       summary: gameData.summary,
       storyline: gameData.storyline,
       total_rating: gameData.total_rating,
       first_release_date: gameData.first_release_date,
-      cover: gameData.cover
-        ? { id: gameData.cover.id, url: gameData.cover.url }
-        : null,
       screenshots: gameData.screenshots,
       artworks: gameData.artworks,
       genres: gameData.genres,
@@ -187,9 +184,11 @@ export async function fetchGameDetails(
       involved_companies: gameData.involved_companies,
       websites: gameData.websites,
       videos: gameData.videos,
+      // These fields will be filled in by the client
+      status: "want_to_play" as GameStatus, // Default status
+      user_id: "", // Will be set when adding to library
+      updated_at: new Date().toISOString(), // Current timestamp
     };
-    console.log(`Processed game details:`, game);
-    return game;
   }
   return null;
 }
@@ -249,4 +248,26 @@ export async function searchGames(accessToken: string, searchTerm: string) {
     console.error("Error in searchGames:", error);
     throw error;
   }
+}
+
+// Add a separate type for IGDB game response
+interface IGDBGame {
+  id: string;
+  name: string;
+  cover?: { id: number; url: string };
+  summary?: string;
+  storyline?: string;
+  total_rating?: number;
+  first_release_date?: number;
+  screenshots?: { id: number; url: string }[];
+  artworks?: { id: number; url: string }[];
+  genres?: { id: number; name: string }[];
+  platforms?: { id: number; name: string }[];
+  involved_companies?: {
+    company: { id: number; name: string };
+    developer: boolean;
+    publisher: boolean;
+  }[];
+  websites?: { id: number; category: number; url: string }[];
+  videos?: { id: number; name: string; video_id: string }[];
 }

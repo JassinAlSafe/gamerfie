@@ -17,13 +17,14 @@ import { AvatarUpload } from "@/components/avatar-upload";
 import { useProfile } from "@/app/hooks/use-profile";
 import { ProfileStats } from "@/components/profile-stats";
 import { QueryClient, QueryClientProvider } from "react-query";
+import { Game } from "@/types/game";
 
 const queryClient = new QueryClient();
 
 export default function ProfilePage() {
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const { profile, isLoading, gameStats, updateProfile, updateGameStats } = useProfile();
+  const { profile, isLoading, updateProfile, updateGameStats } = useProfile();
 
   const supabase = createClientComponentClient();
 
@@ -68,6 +69,14 @@ export default function ProfilePage() {
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const handleGamesUpdate = (games: Game[]) => {
+    const processedGames = games.map(game => ({
+      ...game,
+      cover: game.cover || undefined
+    }));
+    updateGameStats(processedGames);
   };
 
   if (isLoading) {
@@ -234,7 +243,7 @@ export default function ProfilePage() {
                 </TabsTrigger>
               </TabsList>
               <TabsContent value="games">
-                <GamesTab onGamesUpdate={updateGameStats} />
+                <GamesTab onGamesUpdate={handleGamesUpdate} />
               </TabsContent>
               <TabsContent value="reviews">
                 <ReviewsTab />

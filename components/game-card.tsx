@@ -12,32 +12,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Gamepad2, MoreHorizontal } from "lucide-react";
-
-// Remove unused GameReview import
-export type GameStatus = "playing" | "completed" | "want_to_play" | "dropped" | "backlog";
-
-interface GameCardProps {
-  id: string;
-  name: string;
-  cover?: {
-    url: string;
-  };
-  platforms?: {
-    id: number;
-    name: string;
-  }[];
-  status: GameStatus;
-  rating?: number;
-  review?: {
-    rating: number;
-    text: string;
-  };
-  onStatusChange: (_status: string) => void;
-  onRemove: () => void;
-  onReviewUpdate: (_rating: number, _reviewText: string) => void;
-
-  isPriority?: boolean;
-}
+import { type GameStatus } from "@/types/game";
+import { type GameCardProps } from "@/types/game-components";
 
 export function GameCard({
   id,
@@ -55,7 +31,7 @@ export function GameCard({
       : url.replace("/t_thumb/", "/t_cover_big/");
   };
 
-  const statusLabels = {
+  const statusLabels: Record<GameStatus, string> = {
     playing: "Currently Playing",
     completed: "Completed",
     want_to_play: "Want to Play",
@@ -67,7 +43,7 @@ export function GameCard({
       <Card className="group relative overflow-hidden transition-all hover:shadow-xl dark:hover:shadow-primary/10">
         <Link href={`/game/${id}`} className="relative block">
           <div className="relative aspect-[3/4] overflow-hidden">
-            {cover ? (
+            {cover?.url ? (
               <Image
                 src={getHighQualityImageUrl(cover.url)}
                 alt={name}
@@ -118,15 +94,17 @@ export function GameCard({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48">
-              {Object.entries(statusLabels).map(([value, label]) => (
-                <DropdownMenuItem
-                  key={value}
-                  onClick={() => onStatusChange(value)}
-                  className={status === value ? "bg-accent" : ""}
-                >
-                  {label}
-                </DropdownMenuItem>
-              ))}
+              {(Object.entries(statusLabels) as [GameStatus, string][]).map(
+                ([value, label]) => (
+                  <DropdownMenuItem
+                    key={value}
+                    onClick={() => onStatusChange(value)}
+                    className={status === value ? "bg-accent" : ""}
+                  >
+                    {label}
+                  </DropdownMenuItem>
+                )
+              )}
               <DropdownMenuItem className="text-destructive" onClick={onRemove}>
                 Remove from Library
               </DropdownMenuItem>
@@ -139,7 +117,7 @@ export function GameCard({
             variant="secondary"
             className="bg-black/50 text-white border-none"
           >
-            {statusLabels[status as keyof typeof statusLabels]}
+            {statusLabels[status]}
           </Badge>
         </div>
       </Card>
