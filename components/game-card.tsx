@@ -13,7 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Gamepad2, MoreHorizontal } from "lucide-react";
 import { type GameStatus } from "@/types/game";
-import { type GameCardProps } from "@/types/game-components";
+import { type GameCardProps } from "@/types/game";
 
 export function GameCard({
   id,

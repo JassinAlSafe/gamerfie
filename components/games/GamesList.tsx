@@ -1,6 +1,7 @@
 import { GameCard } from '../game-card';
-import { Game, GameStatus } from '@/types';  // Add GameStatus import
+import { Game, GameStatus } from '@/types';
 import { GameMutationHandlers } from '@/types/game';
+import { GameCardProps } from '@/types/game';
 
 interface GamesListProps {
   games: Game[];
@@ -14,11 +15,12 @@ export function GamesList({ games, mutations }: GamesListProps) {
         <GameCard
           key={game.id}
           {...game}
+          status={game.status || "want_to_play"}
           isPriority={index < 4}
-          onStatusChange={(status: GameStatus) => mutations.updateGameStatus(game.id, status)}
-          onRemove={() => mutations.removeFromLibrary(game.id)}
+          onStatusChange={(status: GameStatus) => mutations.updateGameStatus.mutate({ gameId: game.id, status })}
+          onRemove={() => mutations.removeFromLibrary.mutate(game.id)}
           onReviewUpdate={(rating: number, reviewText: string) =>
-            mutations.updateReview(game.id, rating, reviewText)
+            mutations.updateReview.mutate({ gameId: game.id, review: reviewText, rating })
           }
         />
       ))}
