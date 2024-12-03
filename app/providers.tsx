@@ -28,20 +28,21 @@ export const useUser = () => {
   return context;
 };
 
-// Create a stable QueryClient instance outside of component
+// Create a single QueryClient instance
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 5 * 60 * 1000, // 5 minutes
-      gcTime: 60 * 60 * 1000,   // 1 hour
-      retry: 1,
-      refetchOnWindowFocus: false,
-      refetchOnMount: true,
-      refetchOnReconnect: false,
+      staleTime: 5 * 60 * 1000, // Cache data for 5 minutes
+      cacheTime: 60 * 60 * 1000, // Keep unused data in cache for 1 hour
+      retry: 1, // Retry failed queries once
+      refetchOnWindowFocus: false, // Disable refetching on window focus
+      refetchOnMount: true, // Refetch on component mount
+      refetchOnReconnect: false, // Disable refetching on reconnect
     },
   },
 });
 
+// Error fallback component for ErrorBoundary
 const ErrorFallback = ({ error }: { error: Error }) => (
   <div className="flex items-center justify-center p-8">
     <div className="text-center">
@@ -51,29 +52,32 @@ const ErrorFallback = ({ error }: { error: Error }) => (
   </div>
 );
 
-const Providers = memo(({ children, initialSession, initialUser }: ProvidersProps) => {
-  const [supabase] = useState(() => createClientComponentClient());
+// Providers Component
+const Providers = memo(
+  ({ children, initialSession, initialUser }: ProvidersProps) => {
+    const [supabase] = useState(() => createClientComponentClient());
 
-  return (
-    <ReactErrorBoundary FallbackComponent={ErrorFallback}>
-      <QueryClientProvider client={queryClient}>
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          <SessionContextProvider
-            supabaseClient={supabase}
-            initialSession={initialSession}
-          >
-            <UserContext.Provider value={initialUser}>
-              {children}
-              {process.env.NODE_ENV === "development" && (
-                <ReactQueryDevtools initialIsOpen={false} />
-              )}
-            </UserContext.Provider>
-          </SessionContextProvider>
-        </ThemeProvider>
-      </QueryClientProvider>
-    </ReactErrorBoundary>
-  );
-});
+    return (
+      <ReactErrorBoundary FallbackComponent={ErrorFallback}>
+        <QueryClientProvider client={queryClient}>
+          <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+            <SessionContextProvider
+              supabaseClient={supabase}
+              initialSession={initialSession}
+            >
+              <UserContext.Provider value={initialUser}>
+                {children}
+                {process.env.NODE_ENV === "development" && (
+                  <ReactQueryDevtools initialIsOpen={false} />
+                )}
+              </UserContext.Provider>
+            </SessionContextProvider>
+          </ThemeProvider>
+        </QueryClientProvider>
+      </ReactErrorBoundary>
+    );
+  }
+);
 
 Providers.displayName = "Providers";
 export default Providers;

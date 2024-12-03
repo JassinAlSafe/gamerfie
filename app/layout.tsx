@@ -16,45 +16,39 @@ export default async function RootLayout({
   children: React.ReactNode;
 }) {
   const supabase = createServerComponentClient({ cookies });
-  
+
+  let extendedUser: User | null = null;
+
   try {
-    const { data: { user }, error } = await supabase.auth.getUser();
-    
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser();
     if (error) throw error;
 
-    const extendedUser: User | null = user
-      ? { ...user, name: user.user_metadata?.name || 'Unknown' }
+    extendedUser = user
+      ? { ...user, name: user.user_metadata?.name || "Unknown" }
       : null;
-
-    return (
-      <html lang="en" suppressHydrationWarning>
-        <body className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen`}>
-          <Providers initialSession={null} initialUser={extendedUser}>
-            <div className="flex flex-col min-h-screen">
-              <FloatingHeader user={extendedUser} />
-              <main className="flex-grow">
-                {children}
-              </main>
-              <Footer />
-            </div>
-          </Providers>
-        </body>
-      </html>
-    );
   } catch (error) {
-    // Fallback layout in case of auth error
-    return (
-      <html lang="en" suppressHydrationWarning>
-        <body className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen`}>
-          <Providers initialSession={null} initialUser={null}>
-            <div className="flex flex-col min-h-screen">
-              <FloatingHeader user={null} />
-              <main className="flex-grow">{children}</main>
-              <Footer />
-            </div>
-          </Providers>
-        </body>
-      </html>
-    );
+    console.error("Error fetching user:", error);
   }
+
+  return (
+    <html lang="en" suppressHydrationWarning>
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen`}
+      >
+        <Providers
+          initialSession={null} // Pass session data here if available
+          initialUser={extendedUser}
+        >
+          <div className="flex flex-col min-h-screen">
+            <FloatingHeader user={extendedUser} />
+            <main className="flex-grow">{children}</main>
+            <Footer />
+          </div>
+        </Providers>
+      </body>
+    </html>
+  );
 }
