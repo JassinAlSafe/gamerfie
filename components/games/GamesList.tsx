@@ -1,7 +1,6 @@
 import { GameCard } from '../game-card';
 import { Game, GameStatus } from '@/types';
 import { GameMutationHandlers } from '@/types/game';
-import { GameCardProps } from '@/types/game';
 
 interface GamesListProps {
   games: Game[];

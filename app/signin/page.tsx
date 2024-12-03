@@ -9,7 +9,7 @@ import { Icons } from "@/components/ui/icons";
 import Link from "next/link";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { useToast } from "@/hooks/use-toast";
-import { isSupabaseError } from "@/types";
+import { isSupabaseError } from "@/types/index";
 
 export default function SignInPage() {
   const [isLoading, setIsLoading] = useState(false);

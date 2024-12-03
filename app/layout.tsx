@@ -33,15 +33,15 @@ export default async function RootLayout({
     console.error("Error fetching user:", error);
   }
 
+  const initialSession = null; // ... get initial session
+  const initialUser = extendedUser; // ... get initial user
+
   return (
     <html lang="en" suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen`}
       >
-        <Providers
-          initialSession={null} // Pass session data here if available
-          initialUser={extendedUser}
-        >
+        <Providers initialSession={initialSession} initialUser={initialUser}>
           <div className="flex flex-col min-h-screen">
             <FloatingHeader user={extendedUser} />
             <main className="flex-grow">{children}</main>

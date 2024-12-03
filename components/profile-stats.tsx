@@ -1,9 +1,8 @@
 'use client';
 
 import { Card, CardHeader, CardTitle, CardDescription } from "./ui/card";
-import { useQuery, QueryClient, QueryClientProvider } from "react-query";
+import { useQuery } from "@tanstack/react-query";  // Update import
 import { supabase } from "@/utils/supabase-client";
-import { ReactNode } from "react";
 
 interface GameStats {
   total_played: number;
@@ -24,12 +23,10 @@ const calculateGameStats = (games: any[]): GameStats => {
   };
 };
 
-const queryClient = new QueryClient();
-
 export function ProfileStats() {
-  const { data: gameStats = { total_played: 0, played_this_year: 0, backlog: 0 }, isLoading } = useQuery(
-    'gameStats',
-    async () => {
+  const { data: gameStats = { total_played: 0, played_this_year: 0, backlog: 0 }, isLoading } = useQuery({
+    queryKey: ['gameStats'],
+    queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
@@ -41,15 +38,13 @@ export function ProfileStats() {
       if (error) throw error;
       return calculateGameStats(games || []);
     },
-    {
-      staleTime: 1000 * 60 * 5, // Consider data fresh for 5 minutes
-      cacheTime: 1000 * 60 * 30,
-      refetchOnWindowFocus: false,
-      refetchOnMount: false,
-      refetchOnReconnect: false,
-      suspense: true, // Enable suspense mode
-    }
-  );
+    staleTime: 1000 * 60 * 5,
+    cacheTime: 1000 * 60 * 30,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    refetchOnReconnect: false,
+    suspense: true,
+  });
 
   if (isLoading) {
     return (
@@ -99,13 +94,5 @@ export function ProfileStats() {
         </Card>
       </div>
     </div>
-  );
-}
-
-export function App({ children }: { children: ReactNode }) {
-  return (
-    <QueryClientProvider client={queryClient}>
-      {children}
-    </QueryClientProvider>
   );
 }
