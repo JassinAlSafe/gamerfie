@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { type Profile, type Game, type GameStats } from '@/types';

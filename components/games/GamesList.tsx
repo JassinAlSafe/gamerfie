@@ -1,10 +1,10 @@
-import { GameCard } from "../game-card";
-import { Game, GameStatus } from "@/types/game";
-import { useGameMutations } from "@/hooks/useGameMutations";
+import { GameCard } from '../game-card';
+import { Game, GameStatus } from '@/types';  // Add GameStatus import
+import { GameMutationHandlers } from '@/types/game';
 
 interface GamesListProps {
   games: Game[];
-  mutations: ReturnType<typeof useGameMutations>;
+  mutations: GameMutationHandlers;
 }
 
 export function GamesList({ games, mutations }: GamesListProps) {
@@ -13,18 +13,13 @@ export function GamesList({ games, mutations }: GamesListProps) {
       {games.map((game, index) => (
         <GameCard
           key={game.id}
-          id={game.game_id}
-          name={game.name || "Unknown Game"}
-          cover={game.cover}
-          platforms={game.platforms}
-          status={game.status as GameStatus}
-          summary={game.summary}
-          total_rating={game.total_rating}
+          {...game}
           isPriority={index < 4}
-          onStatusChange={(status) =>
-            mutations.updateGameStatus({ gameId: game.game_id, status })
+          onStatusChange={(status: GameStatus) => mutations.updateGameStatus(game.id, status)}
+          onRemove={() => mutations.removeFromLibrary(game.id)}
+          onReviewUpdate={(rating: number, reviewText: string) =>
+            mutations.updateReview(game.id, rating, reviewText)
           }
-          onRemove={() => mutations.removeFromLibrary(game.game_id)}
         />
       ))}
     </div>

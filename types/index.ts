@@ -4,10 +4,14 @@ import { type TwitchTokenResponse, type TokenResult, TwitchError } from './twitc
 import { type IGDBCover, type IGDBPlatform, type IGDBGenre, type IGDBGame, type FetchedGame, type ProcessedGame, type GameListResponse, type GameAPIError } from './igdb';
 import { type TimelineEntry } from './timeline';
 
-export type { GameStatus, Game, UserGame, GameReview, GameMutationHandlers, UserGamesResponse, QueryData, GameCardProps };
-export type { TwitchTokenResponse, TokenResult };
-export type { IGDBCover, IGDBPlatform, IGDBGenre, IGDBGame, FetchedGame, ProcessedGame, GameListResponse };
-export type { TimelineEntry };
+export function isSupabaseError(error: unknown): error is AuthError {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'message' in error &&
+    typeof (error as Record<string, unknown>).message === 'string'
+  );
+}
 
 export interface Profile {
   id: string;
@@ -30,13 +34,25 @@ export interface GamesPaginationProps {
   setCurrentPage: (newPage: number) => void;
 }
 
-export function isSupabaseError(error: unknown): error is AuthError {
-  return (
-    typeof error === 'object' &&
-    error !== null &&
-    'message' in error &&
-    typeof (error as Record<string, unknown>).message === 'string'
-  );
-}
-
-export { TwitchError, GameAPIError };
+export {
+  GameStatus,
+  Game,
+  UserGame,
+  GameReview,
+  GameMutationHandlers,
+  UserGamesResponse,
+  QueryData,
+  GameCardProps,
+  TwitchTokenResponse,
+  TokenResult,
+  TwitchError,
+  IGDBCover,
+  IGDBPlatform,
+  IGDBGenre,
+  IGDBGame,
+  FetchedGame,
+  ProcessedGame,
+  GameListResponse,
+  GameAPIError,
+  TimelineEntry
+};
