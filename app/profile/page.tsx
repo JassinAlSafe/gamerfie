@@ -8,9 +8,25 @@ import { Label } from "@/components/ui/label";
 import { GamesTab } from "@/components/games-tab";
 import { ReviewsTab } from "@/components/reviews-tab";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardHeader, CardTitle, CardFooter, CardDescription } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardFooter,
+  CardDescription,
+} from "@/components/ui/card";
 import { Icons } from "@/components/ui/icons";
-import { X, Library, Activity, Heart, Users, ScrollText, Pencil, GamepadIcon } from "lucide-react";
+import {
+  X,
+  Library,
+  Activity,
+  Heart,
+  Users,
+  ScrollText,
+  Pencil,
+  GamepadIcon,
+} from "lucide-react";
 import Link from "next/link";
 import toast, { Toaster } from "react-hot-toast";
 import { AvatarUpload } from "@/components/avatar-upload";
@@ -28,7 +44,9 @@ export default function ProfilePage() {
 
   const supabase = createClientComponentClient();
 
-  const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
     try {
       const file = event.target.files?.[0];
       if (!file || !profile) return;
@@ -61,7 +79,7 @@ export default function ProfilePage() {
         display_name: formData.get("display_name") as string,
         bio: formData.get("bio") as string,
       });
-      
+
       toast.success("Profile updated successfully!");
       setIsEditing(false);
     } catch (error) {
@@ -72,9 +90,9 @@ export default function ProfilePage() {
   };
 
   const handleGamesUpdate = (games: Game[]) => {
-    const processedGames = games.map(game => ({
+    const processedGames = games.map((game) => ({
       ...game,
-      cover: game.cover || undefined
+      cover: game.cover || undefined,
     }));
     updateGameStats(processedGames);
   };
@@ -93,11 +111,17 @@ export default function ProfilePage() {
         <Card className="w-full max-w-md">
           <CardHeader>
             <CardTitle>Profile Not Found</CardTitle>
-            <CardDescription>Please sign in or create an account to view your profile.</CardDescription>
+            <CardDescription>
+              Please sign in or create an account to view your profile.
+            </CardDescription>
           </CardHeader>
           <CardFooter className="flex justify-between">
-            <Button asChild><Link href="/signin">Sign In</Link></Button>
-            <Button asChild variant="outline"><Link href="/signup">Sign Up</Link></Button>
+            <Button asChild>
+              <Link href="/signin">Sign In</Link>
+            </Button>
+            <Button asChild variant="outline">
+              <Link href="/signup">Sign Up</Link>
+            </Button>
           </CardFooter>
         </Card>
       </div>
@@ -108,7 +132,7 @@ export default function ProfilePage() {
     <QueryClientProvider client={queryClient}>
       <div className="container mx-auto px-4 py-8">
         <h1 className="text-3xl font-bold mb-8">Your Profile</h1>
-        
+
         <div className="min-h-screen bg-background p-4 md:p-8">
           <Toaster position="top-center" />
           <div className="max-w-6xl mx-auto space-y-8">
@@ -134,7 +158,7 @@ export default function ProfilePage() {
               {/* Right column - Stats and Bio */}
               <div className="flex-1 space-y-6">
                 <ProfileStats />
-                
+
                 {!isEditing ? (
                   <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0">
