@@ -1,57 +1,55 @@
 import { NextResponse, NextRequest } from "next/server";
-import {
-  getAccessToken,
-  fetchGames,
-  fetchTotalGames,
-  FetchedGame,
-  ensureAbsoluteUrl,
-} from "@/lib/igdb";
+import { getAccessToken, fetchGames, fetchTotalGames, ensureAbsoluteUrl } from "@/lib/igdb";
+import { ProcessedGame, GameListResponse, GameAPIError, IGDBPlatform, IGDBGenre, FetchedGame } from "@/types/igdb";
+import { cache } from 'react';
 
-interface ProcessedGame {
-  id: number;
-  name: string;
-  cover: { id: number; url: string } | null;
-  platforms: string[];
-  first_release_date?: number;
-  total_rating?: number;
-}
-
-async function processGames(games: FetchedGame[]): Promise<ProcessedGame[]> {
+// Cache the processGames function
+const processGames = cache((games: FetchedGame[]): ProcessedGame[] => {
   return games.map((game) => ({
     id: game.id,
     name: game.name,
     cover: game.cover
       ? {
-          id: game.cover.id,
-          url: ensureAbsoluteUrl(
-            game.cover.url.replace("t_thumb", "t_cover_big")
-          ),
-        }
+        id: game.cover.id,
+        url: ensureAbsoluteUrl(game.cover.url.replace("t_thumb", "t_cover_big")),
+      }
       : null,
-    platforms: Array.isArray(game.platforms)
-      ? game.platforms.map((platform) => platform.name)
-      : [],
+    platforms: game.platforms?.map((platform: IGDBPlatform): string => platform.name) ?? [],
+    genres: game.genres?.map((genre: IGDBGenre): string => genre.name) ?? [],
+    summary: game.summary,
     first_release_date: game.first_release_date,
     total_rating: game.total_rating,
   }));
-}
+});
 
 async function handleRequest(
   page: number,
   limit: number,
-  platformId: string | undefined,
-  searchTerm: string | undefined
-) {
-  const accessToken = await getAccessToken();
-  const parsedPlatformId = platformId ? parseInt(platformId, 10) : undefined;
+  platformId?: string,
+  searchTerm?: string
+): Promise<GameListResponse> {
+  try {
+    const accessToken = await getAccessToken();
+    const parsedPlatformId = platformId ? parseInt(platformId, 10) : undefined;
 
-  const [games, totalGames] = await Promise.all([
-    fetchGames(accessToken, page, limit, parsedPlatformId, searchTerm),
-    fetchTotalGames(accessToken, parsedPlatformId, searchTerm),
-  ]);
+    const [games, totalGames] = await Promise.all([
+      fetchGames(accessToken, page, limit, parsedPlatformId, searchTerm),
+      fetchTotalGames(accessToken, parsedPlatformId, searchTerm),
+    ]);
 
-  const processedGames = await processGames(games);
-  return { games: processedGames, total: totalGames };
+    const processedGames = await processGames(games);
+    return {
+      games: processedGames,
+      total: totalGames,
+      page,
+      pageSize: limit
+    };
+  } catch (error) {
+    throw {
+      message: error instanceof Error ? error.message : 'Failed to fetch games',
+      statusCode: 500
+    } as GameAPIError;
+  }
 }
 
 export async function GET(request: NextRequest) {
