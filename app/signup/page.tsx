@@ -1,17 +1,8 @@
 "use client";
 
-// React and Next.js imports
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
-
-// Supabase imports
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
-
-// Type imports
-import { isSupabaseError } from '@/types'
-
-// Component imports
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,15 +15,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import Link from "next/link";
 
 export default function SignUpPage() {
-  const [isLoading, setIsLoading] = useState(false);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [username, setUsername] = useState("");
-  const [displayName, setDisplayName] = useState("");
-  const [dateOfBirth, setDateOfBirth] = useState("");
-  const [preferredPlatform, setPreferredPlatform] = useState("");
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [email, setEmail] = useState<string>("");
+  const [password, setPassword] = useState<string>("");
+  const [username, setUsername] = useState<string>("");
+  const [displayName, setDisplayName] = useState<string>("");
+  const [dateOfBirth, setDateOfBirth] = useState<string>("");
+  const [preferredPlatform, setPreferredPlatform] = useState<string>("");
   const router = useRouter();
   const supabase = createClientComponentClient();
   const { toast } = useToast();
@@ -42,17 +34,19 @@ export default function SignUpPage() {
     setIsLoading(true);
 
     try {
+      // Sign up with email and password
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/api/auth/callback`,
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
         },
       });
 
       if (authError) throw authError;
 
       if (authData.user) {
+        // Insert additional user data into a custom table
         const { error: profileError } = await supabase
           .from("user_profiles")
           .insert({
@@ -72,14 +66,11 @@ export default function SignUpPage() {
         });
         router.push("/signin");
       }
-    } catch (error: unknown) {
-      const errorMessage = isSupabaseError(error) 
-        ? error.message 
-        : 'An unexpected error occurred'
-      console.error("Sign-up error:", errorMessage);
+    } catch (error) {
+      console.error("Sign-up error:", error.message);
       toast({
         title: "Sign-up failed",
-        description: errorMessage,
+        description: error.message,
         variant: "destructive",
       });
     } finally {
@@ -94,19 +85,18 @@ export default function SignUpPage() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${window.location.origin}/api/auth/callback/google`,
+          redirectTo: `${window.location.origin}/auth/callback`,
         },
       });
 
       if (error) throw error;
-    } catch (error: unknown) {
-      const errorMessage = isSupabaseError(error) 
-        ? error.message 
-        : 'An unexpected error occurred'
-      console.error("Google sign-up error:", errorMessage);
+
+      // The toast for successful Google sign-up will be shown in the callback page
+    } catch (error) {
+      console.error("Google sign-up error:", error.message);
       toast({
         title: "Google sign-up failed",
-        description: errorMessage,
+        description: error.message,
         variant: "destructive",
       });
     } finally {

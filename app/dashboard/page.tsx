@@ -10,10 +10,8 @@ import { Library } from "lucide-react";
 
 const Dashboard: React.FC = () => {
   return (
-    <div
-      className="min-h-screen bg-gradient-to-b from-background to-background/80 overflow-hidden flex flex-col items-center justify-start relative w-full"
-      style={{ backgroundColor: "rgb(3, 6, 22" }}
-    >
+    
+    <div className="min-h-screen bg-gradient-to-b from-background to-background/80 overflow-hidden flex flex-col items-center justify-start relative w-full" style={{ backgroundColor: "rgb(3, 6, 22"}}>
       <div className="w-full">
         <div className="relative z-10 mb-16 w-full">
           <LampContainer>
@@ -47,6 +45,7 @@ const Dashboard: React.FC = () => {
               View All Games
             </Button>
           </Link>
+          
         </motion.div>
 
         <motion.div
@@ -55,10 +54,7 @@ const Dashboard: React.FC = () => {
           transition={{ delay: 1, duration: 0.8 }}
           className="relative z-20 w-full px-4 sm:px-6 lg:px-8"
         >
-          <div
-            className="bg-transparent rounded-lg shadow-2xl overflow-hidden"
-            style={{ backgroundColor: "rgb(3, 6, 22" }}
-          >
+          <div className="bg-transparent rounded-lg shadow-2xl overflow-hidden" style={{ backgroundColor: "rgb(3, 6, 22"}}>
             <PopularGamesSection />
           </div>
         </motion.div>
@@ -66,6 +62,7 @@ const Dashboard: React.FC = () => {
 
       <div className="absolute inset-0 z-0 bg-gradient-to-t from-background to-background/0 pointer-events-none" />
     </div>
+    
   );
 };
 

@@ -12,10 +12,10 @@
     "isolatedModules": true,
     "jsx": "preserve",
     "incremental": true,
-    "baseUrl": ".",
+    "baseUrl": ".", // Added baseUrl
     "paths": {
       "@/*": ["./*"],
-      "@/app/*": ["./app/*"]
+      "@types/*": ["types/*"] // Merged paths
     },
     "plugins": [
       {
@@ -28,7 +28,7 @@
     "**/*.ts",
     "**/*.tsx",
     ".next/types/**/*.ts",
-    "types/**/*.d.ts",
+    "types/**/*.d.ts", // Merged include
     "pages/**/*",
     "components/**/*"
   ],

@@ -1,3 +1,4 @@
+import FloatingHeader from "@/components/ui/FloatingHeader";
 import { Footer } from "@/components/Footer";
 
 export default function DefaultLayout({
@@ -7,6 +8,7 @@ export default function DefaultLayout({
 }>) {
   return (
     <>
+
       <main>{children}</main>
       <Footer />
     </>

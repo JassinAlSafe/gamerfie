@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Menu, X, Search, ChevronDown } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { User } from "@supabase/auth-helpers-nextjs";
-import { supabase } from '@/utils/supabase-client';
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 
 interface HeaderProps {
   user: User | null;
@@ -16,6 +16,7 @@ const FloatingHeader: React.FC<HeaderProps> = ({ user }) => {
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const router = useRouter();
+  const supabase = createClientComponentClient();
   const profileMenuRef = useRef<HTMLDivElement>(null);
   const profileButtonRef = useRef<HTMLButtonElement>(null);
 
@@ -34,7 +35,6 @@ const FloatingHeader: React.FC<HeaderProps> = ({ user }) => {
   };
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut();
     try {
       const response = await fetch("/auth/signout", { method: "POST" });
       if (response.ok) {

@@ -1,93 +1,92 @@
-"use client";
+'use client'
 
-import React, { useState } from "react";
-import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Icons } from "@/components/ui/icons";
-import Link from "next/link";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
-import { useToast } from "@/hooks/use-toast";
-import { isSupabaseError } from "@/types";
+import React, { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Icons } from "@/components/ui/icons"
+import Link from 'next/link'
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { useToast } from '@/hooks/use-toast'
 
 export default function SignInPage() {
-  const [isLoading, setIsLoading] = useState(false);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const router = useRouter();
-  const supabase = createClientComponentClient();
-  const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState<boolean>(false)
+  const [error, setError] = useState<string | null>(null)
+  const router = useRouter()
+  const supabase = createClientComponentClient()
+  const { toast } = useToast()
 
   async function onSubmit(event: React.SyntheticEvent) {
-    event.preventDefault();
-    setIsLoading(true);
-    setError(null);
+    event.preventDefault()
+    setIsLoading(true)
+    setError(null)
+
+    const target = event.target as typeof event.target & {
+      email: { value: string }
+      password: { value: string }
+    }
+
+    const email = target.email.value
+    const password = target.password.value
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
-      });
+      })
 
-      if (error) throw error;
+      if (error) throw error
 
       toast({
         title: "Welcome back!",
         description: "You've successfully signed in.",
         duration: 5000,
-      });
+      })
 
-      router.push("/dashboard");
-    } catch (error: unknown) {
-      const errorMessage = isSupabaseError(error)
-        ? error.message
-        : "An unexpected error occurred";
-      console.error("Sign-in error:", errorMessage);
-      setError(errorMessage);
+      router.push('/dashboard')
+    } catch (error) {
+      console.error('Email sign-in error:', error.message)
+      setError(error.message)
       toast({
         title: "Sign-in failed",
-        description: errorMessage,
+        description: error.message,
         variant: "destructive",
-      });
+      })
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
   }
 
   async function signInWithGoogle() {
-    setIsLoading(true);
-    setError(null);
+    setIsLoading(true)
+    setError(null)
 
     try {
       const { error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
+        provider: 'google',
         options: {
           redirectTo: `${window.location.origin}/auth/callback`,
         },
-      });
+      })
 
-      if (error) throw error;
+      if (error) throw error
 
       toast({
         title: "Google Sign-In Initiated",
         description: "You'll be redirected to Google for authentication.",
         duration: 5000,
-      });
-    } catch (error: unknown) {
-      const errorMessage = isSupabaseError(error)
-        ? error.message
-        : "An unexpected error occurred";
-      console.error("Google sign-in error:", errorMessage);
-      setError(errorMessage);
+      })
+    } catch (error) {
+      console.error('Google sign-in error:', error.message)
+      setError(error.message)
       toast({
         title: "Google sign-in failed",
-        description: errorMessage,
+        description: error.message,
         variant: "destructive",
-      });
+      })
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
   }
 
@@ -96,14 +95,14 @@ export default function SignInPage() {
       <div className="w-full max-w-[350px] space-y-6">
         <div className="flex flex-col space-y-2 text-center">
           <Icons.logo className="mx-auto h-6 w-6" />
-          <h1 className="text-2xl font-semibold tracking-tight">
-            Welcome back
-          </h1>
+          <h1 className="text-2xl font-semibold tracking-tight">Welcome back</h1>
           <p className="text-sm text-muted-foreground">
             Sign in to your account to continue
           </p>
         </div>
-        {error && <p className="text-sm text-red-500 text-center">{error}</p>}
+        {error && (
+          <p className="text-sm text-red-500 text-center">{error}</p>
+        )}
         <div className="grid gap-6">
           <form onSubmit={onSubmit}>
             <div className="grid gap-2">
@@ -119,8 +118,6 @@ export default function SignInPage() {
                   autoComplete="email"
                   autoCorrect="off"
                   disabled={isLoading}
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
                 />
               </div>
               <div className="grid gap-1">
@@ -135,8 +132,6 @@ export default function SignInPage() {
                   autoComplete="current-password"
                   autoCorrect="off"
                   disabled={isLoading}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
                 />
               </div>
               <Button className="w-full" disabled={isLoading}>
@@ -157,13 +152,7 @@ export default function SignInPage() {
               </span>
             </div>
           </div>
-          <Button
-            variant="outline"
-            type="button"
-            disabled={isLoading}
-            className="w-full"
-            onClick={signInWithGoogle}
-          >
+          <Button variant="outline" type="button" disabled={isLoading} className="w-full" onClick={signInWithGoogle}>
             {isLoading ? (
               <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
             ) : (
@@ -173,23 +162,17 @@ export default function SignInPage() {
           </Button>
         </div>
         <p className="px-8 text-center text-sm text-muted-foreground">
-          <Link
-            href="/forgot-password"
-            className="underline underline-offset-4 hover:text-primary"
-          >
+          <Link href="/forgot-password" className="underline underline-offset-4 hover:text-primary">
             Forgot your password?
           </Link>
         </p>
         <p className="px-8 text-center text-sm text-muted-foreground">
           Don&apos;t have an account?{" "}
-          <Link
-            href="/signup"
-            className="underline underline-offset-4 hover:text-primary"
-          >
+          <Link href="/signup" className="underline underline-offset-4 hover:text-primary">
             Sign up
           </Link>
         </p>
       </div>
     </div>
-  );
+  )
 }
