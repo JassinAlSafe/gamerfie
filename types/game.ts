@@ -154,14 +154,14 @@ export interface GameMutationHandlers {
 }
 
 export interface GameCardProps {
-  id: string | number;
+  id: string;
   name: string;
-  cover?: { url: string } | null;
-  platforms?: Array<{ id: number; name: string }>;
+  cover?: { url: string };
+  platforms?: { id: number; name: string }[];
   status: GameStatus;
-  rating?: number;
-  isPriority?: boolean;
-  onStatusChange: (_status: GameStatus) => void;
+  summary?: string;
+  total_rating?: number;
+  onStatusChange: (status: GameStatus) => void;
   onRemove: () => void;
-  onReviewUpdate: (_rating: number, _reviewText: string) => void;
+  isPriority?: boolean;
 }
