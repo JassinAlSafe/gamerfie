@@ -122,8 +122,8 @@ export interface QueryData {
 
 export interface ReviewUpdateData {
   gameId: string;
+  review: string;
   rating: number;
-  reviewText: string;
 }
 
 export interface GameMutationHandlers {
@@ -148,7 +148,7 @@ export interface GameMutationHandlers {
   updateReview: UseMutationResult<
     any,
     Error,
-    { gameId: string; review: string },
+    ReviewUpdateData,
     unknown
   >;
 }
@@ -156,12 +156,14 @@ export interface GameMutationHandlers {
 export interface GameCardProps {
   id: string | number;
   name: string;
+  description?: string;
   cover?: { url: string } | null;
   platforms?: Array<{ id: number; name: string }>;
   status: GameStatus;
   rating?: number;
   isPriority?: boolean;
-  onStatusChange: (_status: GameStatus) => void;
+  onStatusChange: (status: GameStatus) => void;
   onRemove: () => void;
-  onReviewUpdate: (_rating: number, _reviewText: string) => void;
+  onReviewUpdate: (rating: number, reviewText: string) => void;
 }
+
