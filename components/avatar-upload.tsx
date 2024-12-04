@@ -12,13 +12,13 @@ interface AvatarUploadProps {
   userId: string;
   username: string;
   currentAvatarUrl: string | null;
-  onAvatarUpdate: (url: string) => void;
+  onAvatarUpdate: (event: React.ChangeEvent<HTMLInputElement>) => void;
 }
 
 export function AvatarUpload({
   userId,
   username,
-  currentAvatarUrl,
+  currentAvatarUrl = null, // Provide default value
   onAvatarUpdate,
 }: AvatarUploadProps) {
   const [isUploading, setIsUploading] = useState(false);

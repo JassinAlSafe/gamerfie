@@ -1,13 +1,11 @@
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
-import { useMutation, useQueryClient } from "react-query";
+import { createSupabaseClient } from '@/utils/supabaseClient';
 import toast from "react-hot-toast";
 
 export function useAvatarUpload(userId: string) {
-    const supabase = createClientComponentClient();
-    const queryClient = useQueryClient();
-
-    return useMutation(
-        async (file: File) => {
+    const supabase = createSupabaseClient();
+    
+    const uploadAvatar = async (file: File) => {
+        try {
             const fileExt = file.name.split(".").pop();
             const filePath = `${userId}-${Math.random()}.${fileExt}`;
 
@@ -17,20 +15,14 @@ export function useAvatarUpload(userId: string) {
 
             if (uploadError) throw uploadError;
 
+            toast.success("Avatar updated successfully!");
             return filePath;
-        },
-        {
-            onSuccess: (filePath) => {
-                queryClient.setQueryData(['profile'], (oldData: any) => ({
-                    ...oldData,
-                    avatar_url: filePath,
-                }));
-                toast.success("Avatar updated successfully!");
-            },
-            onError: () => {
-                toast.error("Failed to update avatar");
-            },
+        } catch (error) {
+            toast.error("Failed to update avatar");
+            throw error;
         }
-    );
+    };
+
+    return { uploadAvatar };
 }
 
