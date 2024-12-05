@@ -1,5 +1,5 @@
 import axios from "axios";
-import { Game, Platform, Cover } from "@/types/game";
+import { Game, Platform, Cover, GameStatus } from "@/types/index";
 import { FetchedGame } from "@/types/igdb";
 
 const IGDB_API_ENDPOINT = "https://api.igdb.com/v4";

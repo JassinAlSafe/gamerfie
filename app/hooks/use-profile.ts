@@ -1,70 +1,57 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { createSupabaseClient } from '@/utils/supabaseClient'; // Ensure this client is centralized
-import { type Profile } from '@/types/profile';
-import { type Game } from '@/types/game';
-import toast from 'react-hot-toast';
-
-interface GameStats {
-  total_played: number;
-  played_this_year: number;
-  backlog: number;
-  hearted_games: number;
-}
+import { useState, useEffect, useCallback } from 'react';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { fetchProfile, updateProfile, fetchUserGames } from '@/lib/api';
+import { Game } from '@/types';
+import { Profile } from '@/types/index';
+import { GameStats } from '@/types/index';
+import { toast } from 'react-hot-toast';
 
 export function useProfile() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
   const [gameStats, setGameStats] = useState<GameStats>({
     total_played: 0,
     played_this_year: 0,
     backlog: 0,
-    hearted_games: 0,
   });
 
-  const supabase = createSupabaseClient();
-  const mounted = useRef(false);
+  const supabase = createClientComponentClient();
 
   const calculateGameStats = useCallback((games: Game[]): GameStats => {
     const currentYear = new Date().getFullYear();
     return games.reduce(
       (stats, game) => {
-        if (game.status === 'completed' || game.status === 'playing') {
+        if (game.status === "completed" || game.status === "playing") {
           stats.total_played++;
           if (new Date(game.updated_at).getFullYear() === currentYear) {
             stats.played_this_year++;
           }
-        } else if (game.status === 'want_to_play') {
+        } else if (game.status === "want_to_play") {
           stats.backlog++;
-        }
-        if (game.isHearted) {
-          stats.hearted_games++;
         }
         return stats;
       },
-      { total_played: 0, played_this_year: 0, backlog: 0, hearted_games: 0 }
+      { total_played: 0, played_this_year: 0, backlog: 0 }
     );
   }, []);
 
-  const updateGameStats = useCallback(
-    (games: Game[]) => {
+  const updateGameStats = useCallback(async (userId: string) => {
+    try {
+      const { games } = await fetchUserGames(userId);
       const newStats = calculateGameStats(games);
       setGameStats(newStats);
-    },
-    [calculateGameStats]
-  );
+    } catch (error) {
+      console.error('Error updating game stats:', error);
+    }
+  }, [calculateGameStats]);
 
-  const updateProfile = async (updates: Partial<Profile>) => {
+  const updateProfileData = async (updates: Partial<Profile>) => {
     if (!profile) return;
 
     try {
-      const { error } = await supabase
-        .from('profiles')
-        .update(updates)
-        .eq('id', profile.id);
-
-      if (error) throw error;
-
-      setProfile((prev) => (prev ? { ...prev, ...updates } : null));
+      const updatedProfile = await updateProfile(profile.id, updates);
+      setProfile(updatedProfile);
       toast.success('Profile updated successfully');
     } catch (error) {
       console.error('Error updating profile:', error);
@@ -72,116 +59,45 @@ export function useProfile() {
     }
   };
 
-  const updateGameHeart = useCallback(
-    async (gameId: string, isHearted: boolean) => {
-      if (!profile) return;
-
-      const toastId = toast.loading('Updating...');
+  useEffect(() => {
+    const loadProfile = async () => {
       try {
-        if (isHearted) {
-          await supabase.from('hearted_games').insert({
-            user_id: profile.id,
-            game_id: gameId,
-          });
-        } else {
-          await supabase
-            .from('hearted_games')
-            .delete()
-            .match({ user_id: profile.id, game_id: gameId });
-        }
-
-        fetchProfile(); // Refresh the profile and stats after update
-        toast.success('Game status updated', { id: toastId });
-      } catch (error) {
-        console.error('Error updating game heart status:', error);
-        toast.error('Failed to update game status', { id: toastId });
-      }
-    },
-    [profile, supabase]
-  );
-
-  const fetchProfile = useCallback(async () => {
-    if (!mounted.current) return;
-
-    setIsLoading(true);
-    try {
-      const {
-        data: { user },
-        error: userError,
-      } = await supabase.auth.getUser();
-      if (userError) throw userError;
-      if (!user) return;
-
-      const [profileResponse, gamesResponse, heartedGamesResponse] =
-        await Promise.all([
-          supabase.from('profiles').select('*').eq('id', user.id).single(),
-          supabase.from('user_games').select('*').eq('user_id', user.id),
-          supabase.from('hearted_games').select('game_id').eq('user_id', user.id),
-        ]);
-
-      if (profileResponse.error) throw profileResponse.error;
-      if (gamesResponse.error) throw gamesResponse.error;
-      if (heartedGamesResponse.error) throw heartedGamesResponse.error;
-
-      const gamesWithHeartStatus = gamesResponse.data.map((game) => ({
-        ...game,
-        isHearted: heartedGamesResponse.data.some(
-          (hg) => hg.game_id === game.id
-        ),
-      }));
-
-      setProfile(profileResponse.data);
-      updateGameStats(gamesWithHeartStatus);
-    } catch (error) {
-      console.error('Error fetching profile:', error);
-      toast.error('Failed to load profile');
-    } finally {
-      if (mounted.current) {
+        setIsLoading(true);
+        const fetchedProfile = await fetchProfile();
+        setProfile(fetchedProfile);
+        await updateGameStats(fetchedProfile.id);
+      } catch (err) {
+        setError(err instanceof Error ? err : new Error('An error occurred'));
+      } finally {
         setIsLoading(false);
       }
-    }
-  }, [supabase, updateGameStats]);
-
-  useEffect(() => {
-    mounted.current = true;
-    fetchProfile();
-
-    return () => {
-      mounted.current = false;
     };
-  }, [fetchProfile]);
+
+    loadProfile();
+  }, [updateGameStats]);
 
   useEffect(() => {
-    if (!profile?.id) return;
+    if (!profile) return;
 
-    const subscription = supabase
-      .channel('hearted_games_changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'hearted_games',
-          filter: `user_id=eq.${profile.id}`,
-        },
-        () => {
-          fetchProfile();
-        }
-      )
+    const channel = supabase
+      .channel('profile_changes')
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'profiles', filter: `id=eq.${profile.id}` }, (payload) => {
+        setProfile(payload.new as Profile);
+      })
       .subscribe();
 
     return () => {
-      subscription.unsubscribe();
+      supabase.removeChannel(channel);
     };
-  }, [profile?.id, supabase, fetchProfile]);
+  }, [supabase, profile?.id]);
 
   return {
     profile,
     isLoading,
+    error,
     gameStats,
-    updateProfile,
+    updateProfile: updateProfileData,
     updateGameStats,
-    updateGameHeart,
-    fetchProfile,
   };
 }
+

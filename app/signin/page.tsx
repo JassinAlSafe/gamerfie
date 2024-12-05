@@ -1,15 +1,14 @@
 "use client";
 
-import React, { useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Icons } from "@/components/ui/icons";
 import Link from "next/link";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { useToast } from "@/hooks/use-toast";
-import { isSupabaseError } from "@/types/index";
 
 export default function SignInPage() {
   const [isLoading, setIsLoading] = useState(false);
@@ -26,24 +25,27 @@ export default function SignInPage() {
     setError(null);
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
       if (error) throw error;
 
-      toast({
-        title: "Welcome back!",
-        description: "You've successfully signed in.",
-        duration: 5000,
-      });
+      if (data.session) {
+        toast({
+          title: "Welcome back!",
+          description: "You've successfully signed in.",
+          duration: 5000,
+        });
 
-      router.push("/dashboard");
+        router.push("/dashboard");
+      } else {
+        throw new Error("No session created after sign-in");
+      }
     } catch (error: unknown) {
-      const errorMessage = isSupabaseError(error)
-        ? error.message
-        : "An unexpected error occurred";
+      const errorMessage =
+        error instanceof Error ? error.message : "An unexpected error occurred";
       console.error("Sign-in error:", errorMessage);
       setError(errorMessage);
       toast({
@@ -61,7 +63,7 @@ export default function SignInPage() {
     setError(null);
 
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
+      const { data, error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
           redirectTo: `${window.location.origin}/auth/callback`,
@@ -76,9 +78,8 @@ export default function SignInPage() {
         duration: 5000,
       });
     } catch (error: unknown) {
-      const errorMessage = isSupabaseError(error)
-        ? error.message
-        : "An unexpected error occurred";
+      const errorMessage =
+        error instanceof Error ? error.message : "An unexpected error occurred";
       console.error("Google sign-in error:", errorMessage);
       setError(errorMessage);
       toast({

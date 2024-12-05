@@ -1,8 +1,9 @@
 import { useInfiniteQuery, useQuery, QueryKey } from '@tanstack/react-query';
-import { supabase } from "@/utils/supabase-client";
+import { supabase } from "@/utils/supabaseClient";
 import { fetchGameDetails, fetchUserGames } from "@/utils/game-utils";
 import { type UserGame, type GameReview, type Game } from "@/types/game";
 import { useMemo } from 'react';
+import { useProfile } from '@/app/hooks/use-profile';
 
 const GAMES_PER_PAGE = 12;
 
@@ -12,15 +13,25 @@ export interface UserGamesResponse {
     hasMore: boolean;
 }
 
-export function useUserGames(userId: string, pageSize: number = GAMES_PER_PAGE) {
-    return useInfiniteQuery<UserGamesResponse, Error>({
-        queryKey: ['userGames', userId],
-        queryFn: async ({ pageParam = 0 }: { pageParam?: number }) => {
-            const start = pageParam * pageSize;
-            const end = start + pageSize - 1; // Supabase range is inclusive
-            const data = await fetchUserGames(supabase, { start, end, userId });
+export function useUserGames(pageSize: number = GAMES_PER_PAGE) {
+    const { profile, isLoading: isProfileLoading } = useProfile();
 
-            // Fetch game details for each user game
+    return useInfiniteQuery<UserGamesResponse, Error>({
+        queryKey: ['userGames', profile?.id],
+        queryFn: async ({ pageParam = 0 }: { pageParam?: number }) => {
+            if (!profile?.id) {
+                throw new Error('No authenticated user');
+            }
+
+            const start = pageParam * pageSize;
+            const end = start + pageSize - 1;
+
+            const data = await fetchUserGames(supabase, { 
+                start, 
+                end, 
+                userId: profile.id 
+            });
+
             const userGamesWithDetails = await Promise.all(
                 data.userGames.map(async (userGame: UserGame & Game) => {
                     try {
@@ -39,12 +50,11 @@ export function useUserGames(userId: string, pageSize: number = GAMES_PER_PAGE) 
                 hasMore: data.userGames.length === pageSize
             };
         },
-        getNextPageParam: (lastPage, allPages) => {
-            return lastPage.hasMore ? allPages.length : undefined;
-        },
-        staleTime: 5 * 60 * 1000, // 5 minutes
-        cacheTime: 30 * 60 * 1000, // 30 minutes
-        refetchOnWindowFocus: false,
+        enabled: Boolean(profile?.id),
+        retry: 3,
+        retryDelay: 1000,
+        staleTime: 1000 * 60 * 5,
+        cacheTime: 1000 * 60 * 30,
     });
 }
 
@@ -56,7 +66,9 @@ export function useGamesList(
 ) {
     const allGames = useMemo(() => {
         if (!data) return [];
-        return data.flatMap(page => page.userGames);
+        // Add logging to debug data
+        console.log('Games data:', data);
+        return data.flatMap(page => page.userGames || []);
     }, [data]);
 
     const filteredGames = useMemo(() => {

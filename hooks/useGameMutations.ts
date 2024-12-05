@@ -16,7 +16,7 @@ export function useGameMutations() {
         .update({ status, updated_at: new Date().toISOString() })
         .eq("user_id", user.id)
         .eq("game_id", gameId);
-        
+
       if (error) throw error;
       return { gameId, status };
     },

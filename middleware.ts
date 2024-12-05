@@ -1,34 +1,30 @@
+import { NextRequest, NextResponse } from "next/server";
 import { createMiddlewareClient } from "@supabase/auth-helpers-nextjs";
-import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
 
 export async function middleware(req: NextRequest) {
   const res = NextResponse.next();
   const supabase = createMiddlewareClient({ req, res });
 
   try {
-    // This updates the session if it exists
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
+    const { data: { session }, error } = await supabase.auth.getSession();
+
+    if (error) {
+      console.error("Error getting session:", error);
+      return NextResponse.redirect(new URL("/signin", req.url));
+    }
 
     if (session) {
-      // Authenticate the user
-      const {
-        data: { user },
-        error,
-      } = await supabase.auth.getUser();
+      // Refresh the session if it exists
+      const { data: { session: refreshedSession }, error: refreshError } = await supabase.auth.refreshSession();
 
-      if (error) {
-        console.error("Error authenticating user:", error);
-        // Handle the error appropriately, e.g., redirect to login
+      if (refreshError) {
+        console.error("Error refreshing session:", refreshError);
         return NextResponse.redirect(new URL("/signin", req.url));
       }
 
-      if (user) {
-        console.log("Authenticated user:", user.id);
-        // You can add the user to the request here if needed
-        // req.user = user
+      if (refreshedSession) {
+        // Session refreshed successfully
+        console.log("Session refreshed for user:", refreshedSession.user.id);
       }
     }
 
@@ -57,3 +53,4 @@ export const config = {
     "/((?!_next/static|_next/image|favicon.ico|public).*)",
   ],
 };
+
