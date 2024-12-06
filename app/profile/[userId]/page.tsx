@@ -1,13 +1,23 @@
+
 "use client";
 
-import { useProfile } from "../hooks/use-profile";
+import { useProfile } from "@/app/hooks/use-profile";
 import { ProfileContent } from "@/components/profile/profile-content";
+import { ProfileTabs } from "@/components/profile/profile-tabs";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { Toaster } from "react-hot-toast";
 
-export default function ProfilePage() {
-  const { profile, isLoading, error, gameStats, updateProfile } = useProfile();
+interface ProfilePageProps {
+  params: {
+    userId: string;
+  };
+}
+
+export default function ProfilePage({ params }: ProfilePageProps) {
+  const { profile, isLoading, error, gameStats, updateProfile } = useProfile(
+    params.userId
+  );
   const router = useRouter();
 
   if (isLoading) {
@@ -57,6 +67,9 @@ export default function ProfilePage() {
         gameStats={gameStats}
         updateProfile={updateProfile}
       />
+      <div className="container mx-auto px-4 py-6">
+        <ProfileTabs userId={params.userId} />
+      </div>
     </div>
   );
 }
