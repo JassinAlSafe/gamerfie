@@ -3,9 +3,14 @@ import { AvatarUpload } from "@/components/avatar-upload";
 import { Button } from "@/components/ui/button";
 import { Profile } from "@/types/index";
 import { GameStats } from "@/types/index";
-import { Pencil } from "lucide-react";
+import {
+  Pencil,
+  GamepadIcon as GameController,
+  Calendar,
+  Clock,
+  BarChart2,
+} from "lucide-react";
 import { useState } from "react";
-
 
 interface ProfileHeaderProps {
   profile: Profile;
@@ -21,10 +26,10 @@ export function ProfileHeader({
   const [isEditing, setIsEditing] = useState(false);
 
   return (
-    <div className="relative mb-8">
-      <div className="absolute inset-0 h-64 bg-gradient-to-r from-[#5b21b6] to-[#1e40af]" />
-      <div className="relative container mx-auto px-4 py-16">
-        <div className="flex flex-col md:flex-row items-center md:items-end space-y-4 md:space-y-0 md:space-x-6">
+    <div className="relative mb-16">
+      <div className="absolute inset-0 h-80 bg-gradient-to-r from-purple-900 via-indigo-900 to-blue-900" />
+      <div className="relative container mx-auto px-4 py-20">
+        <div className="flex flex-col md:flex-row items-center md:items-end space-y-6 md:space-y-0 md:space-x-8">
           <div className="flex-shrink-0 z-10">
             <AvatarUpload
               userId={profile.id}
@@ -36,17 +41,22 @@ export function ProfileHeader({
             />
           </div>
           <div className="flex-grow min-w-0 text-center md:text-left">
-            <h1 className="text-4xl font-bold text-white mb-2">
+            <h1 className="text-4xl md:text-5xl font-bold text-white mb-2 shadow-text">
               {profile.display_name || profile.username}
             </h1>
-            <p className="text-xl text-gray-300">@{profile.username}</p>
+            <p className="text-xl text-gray-300 shadow-text">
+              @{profile.username}
+            </p>
+            <p className="mt-4 text-gray-200 max-w-2xl shadow-text">
+              {profile.bio || "No bio provided"}
+            </p>
           </div>
           <div className="flex-shrink-0">
             <Button
               variant="outline"
               size="lg"
               onClick={() => setIsEditing(!isEditing)}
-              className="bg-white/10 text-white border-white/20 hover:bg-white/20 transition-colors duration-200"
+              className="bg-white/10 text-white border-white/20 hover:bg-white/20 transition-colors duration-200 shadow-lg"
             >
               <Pencil className="h-5 w-5 mr-2" />
               Edit Profile
@@ -55,61 +65,64 @@ export function ProfileHeader({
         </div>
       </div>
 
-      <div className="container mx-auto px-4 mt-8">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card className="bg-[#0f1116] border-gray-800/50 text-white col-span-2">
-            <CardContent className="p-6">
-              <h3 className="text-xl font-semibold mb-4">About Me</h3>
-              <p className="text-gray-300">
-                {profile.bio || "No bio provided"}
-              </p>
-            </CardContent>
-          </Card>
+      <div className="container mx-auto px-4 -mt-16 relative z-10">
+        <Card className="bg-gray-800 border-gray-700 shadow-xl">
+          <CardContent className="p-6">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+              <StatItem
+                icon={GameController}
+                label="Total Played"
+                value={stats?.total_played || 0}
+                color="text-purple-400"
+              />
+              <StatItem
+                icon={Calendar}
+                label="Played This Year"
+                value={stats?.played_this_year || 0}
+                color="text-indigo-400"
+              />
+              <StatItem
+                icon={Clock}
+                label="Backlog"
+                value={stats?.backlog || 0}
+                color="text-pink-400"
+              />
+              <StatItem
+                icon={BarChart2}
+                label="Completion Rate"
+                value={
+                  stats && stats.total_played > 0
+                    ? `${(
+                        (stats.total_played /
+                          (stats.total_played + stats.backlog)) *
+                        100
+                      ).toFixed(1)}%`
+                    : "0%"
+                }
+                color="text-green-400"
+              />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}
 
-          {stats && (
-            <Card className="bg-[#0f1116] border-gray-800/50 text-white">
-              <CardHeader>
-                <CardTitle className="text-2xl font-bold text-white">
-                  Quick Stats
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-6">
-                <div className="grid grid-cols-2 gap-8">
-                  <div>
-                    <p className="text-gray-400 text-sm mb-1">Total Played</p>
-                    <p className="text-4xl font-bold text-purple-500">
-                      {stats.total_played}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-gray-400 text-sm mb-1">Played This Year</p>
-                    <p className="text-4xl font-bold text-indigo-500">
-                      {stats.played_this_year}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-gray-400 text-sm mb-1">Backlog</p>
-                    <p className="text-4xl font-bold text-pink-500">
-                      {stats.backlog}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-gray-400 text-sm mb-1">Completion Rate</p>
-                    <p className="text-4xl font-bold text-green-500">
-                      {stats.total_played > 0
-                        ? `${(
-                            (stats.total_played /
-                              (stats.total_played + stats.backlog)) *
-                            100
-                          ).toFixed(1)}%`
-                        : "0%"}
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-        </div>
+interface StatItemProps {
+  icon: React.ElementType;
+  label: string;
+  value: number | string;
+  color: string;
+}
+
+function StatItem({ icon: Icon, label, value, color }: StatItemProps) {
+  return (
+    <div className="flex items-center space-x-4">
+      <Icon className={`h-8 w-8 ${color}`} />
+      <div>
+        <p className="text-sm text-gray-400">{label}</p>
+        <p className="text-2xl font-bold text-white">{value}</p>
       </div>
     </div>
   );

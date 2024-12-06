@@ -5,7 +5,6 @@ import { useProfile } from "@/app/hooks/use-profile";
 import { ProfileHeader } from "./profile-header";
 import { ProfileInfo } from "./profile-info";
 import { ProfileStats } from "./profile-stats";
-import { ProfileTabs } from "./profile-tabs";
 import { ProfileError } from "./profile-error";
 import { Toaster } from "react-hot-toast";
 import { ProfileNav } from "./profile-nav";
@@ -17,8 +16,8 @@ export function ProfileContent() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-purple-500"></div>
+      <div className="flex items-center justify-center min-h-screen bg-gray-950">
+        <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-purple-500"></div>
       </div>
     );
   }
@@ -37,9 +36,8 @@ export function ProfileContent() {
       />
       <ProfileNav />
       <div className="container mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-       
-          <div className="md:col-span-2">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+          <div className="lg:col-span-3">
             <GamesTab userId={profile.id} />
           </div>
         </div>

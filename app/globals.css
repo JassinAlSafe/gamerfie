@@ -2,13 +2,37 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --foreground-rgb: 255, 255, 255;
+  --background-start-rgb: 0, 0, 0;
+  --background-end-rgb: 0, 0, 0;
+}
+
+body {
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+  color: rgb(var(--foreground-rgb));
+  background: linear-gradient(
+      to bottom,
+      transparent,
+      rgb(var(--background-end-rgb))
+    )
+    rgb(var(--background-start-rgb));
+}
+
+.shadow-text {
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
 @layer base {
   * {
     @apply border-border; /* Ensure border-border is defined in your Tailwind config */
     scroll-behavior: smooth; /* Use the scroll-behavior property directly */
   }
   body {
-    @apply bg-background text-foreground; /* Ensure these classes are defined in your Tailwind config */
+    @apply bg-background text-foreground;
+    @apply bg-gray-950 text-gray-100;
   }
   button {
     @apply active:outline-none;
@@ -68,6 +92,12 @@
   }
 }
 
+@layer components {
+  .btn-primary {
+    @apply bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded transition duration-200;
+  }
+}
+
 @layer utilities {
   .heading {
     @apply font-bold text-4xl md:text-5xl text-center;
@@ -76,16 +106,4 @@
   .black-gradient {
     @apply bg-gradient-to-b from-background to-transparent;
   }
-}
-
-:root {
-  --foreground-rgb: 255, 255, 255;
-  --background-start-rgb: 0, 0, 0;
-  --background-end-rgb: 0, 0, 0;
-}
-
-body {
-  min-height: 100vh;
-  margin: 0;
-  padding: 0;
 }
