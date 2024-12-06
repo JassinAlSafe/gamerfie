@@ -6,7 +6,6 @@ import Providers from "./providers";
 import { Footer } from "@/components/Footer";
 import { createServerComponentClient } from "@supabase/auth-helpers-nextjs";
 import { cookies } from "next/headers";
-import { User } from "@/types/types";
 
 export const metadata = siteMetadata;
 
@@ -17,33 +16,18 @@ export default async function RootLayout({
 }) {
   const supabase = createServerComponentClient({ cookies });
 
-  let extendedUser: User | null = null;
-
-  try {
-    const {
-      data: { user },
-      error,
-    } = await supabase.auth.getUser();
-    if (error) throw error;
-
-    extendedUser = user
-      ? { ...user, name: user.user_metadata?.name || "Unknown" }
-      : null;
-  } catch (error) {
-    console.error("Error fetching user:", error);
-  }
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
 
   return (
     <html lang="en" suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen`}
       >
-        <Providers
-          initialSession={null} // Pass session data here if available
-          initialUser={extendedUser}
-        >
+        <Providers initialSession={session}>
           <div className="flex flex-col min-h-screen">
-            <FloatingHeader user={extendedUser} />
+            <FloatingHeader />
             <main className="flex-grow">{children}</main>
             <Footer />
           </div>

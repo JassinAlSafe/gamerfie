@@ -1,30 +1,41 @@
-import { useInfiniteQuery, useQuery } from 'react-query';
-import { supabase } from "@/utils/supabase-client";
+import { useInfiniteQuery, useQuery, QueryKey } from '@tanstack/react-query';
+import { supabase } from "@/utils/supabaseClient";
 import { fetchGameDetails, fetchUserGames } from "@/utils/game-utils";
 import { type UserGame, type GameReview, type Game } from "@/types/game";
 import { useMemo } from 'react';
+import { useProfile } from '@/app/hooks/use-profile';
 
 const GAMES_PER_PAGE = 12;
 
 export interface UserGamesResponse {
     userGames: (UserGame & Game)[];
     reviews: GameReview[];
+    hasMore: boolean;
 }
 
-export function useUserGames(pageSize: number = 12) {
-    return useInfiniteQuery<UserGamesResponse, Error>(
-        'userGames',
-        async ({ pageParam = 0 }) => {
+export function useUserGames(pageSize: number = GAMES_PER_PAGE) {
+    const { profile, isLoading: isProfileLoading } = useProfile();
+
+    return useInfiniteQuery<UserGamesResponse, Error>({
+        queryKey: ['userGames', profile?.id],
+        queryFn: async ({ pageParam = 0 }: { pageParam?: number }) => {
+            if (!profile?.id) {
+                throw new Error('No authenticated user');
+            }
+
             const start = pageParam * pageSize;
-            const end = start + pageSize - 1; // Supabase range is inclusive
-            const data = await fetchUserGames(supabase, { start, end });
-            
-            // Fetch game details for each user game
+            const end = start + pageSize - 1;
+
+            const data = await fetchUserGames(supabase, { 
+                start, 
+                end, 
+                userId: profile.id 
+            });
+
             const userGamesWithDetails = await Promise.all(
-                data.userGames.map(async (userGame) => {
+                data.userGames.map(async (userGame: UserGame & Game) => {
                     try {
                         const gameDetails = await fetchGameDetails(userGame.game_id, data.reviews);
-                        console.log(`Fetched details for game ${userGame.game_id}:`, gameDetails);
                         return { ...userGame, ...gameDetails };
                     } catch (error) {
                         console.error(`Error fetching details for game ${userGame.game_id}:`, error);
@@ -33,48 +44,43 @@ export function useUserGames(pageSize: number = 12) {
                 })
             );
 
-            return { 
+            return {
                 userGames: userGamesWithDetails,
                 reviews: data.reviews,
-                hasMore: data.userGames.length === pageSize 
+                hasMore: data.userGames.length === pageSize
             };
         },
-        {
-            getNextPageParam: (lastPage, allPages) => {
-                return lastPage.hasMore ? allPages.length : undefined;
-            },
-            staleTime: 5 * 60 * 1000, // 5 minutes
-            cacheTime: 30 * 60 * 1000, // 30 minutes
-            refetchOnWindowFocus: false,
-        }
-    );
+        enabled: Boolean(profile?.id),
+        retry: 3,
+        retryDelay: 1000,
+        staleTime: 1000 * 60 * 5,
+        cacheTime: 1000 * 60 * 30,
+    });
 }
 
-export function useGameDetails(gameId: string, reviews: GameReview[]) {
-    return useQuery<Game, Error>(
-        ['gameDetails', gameId],
-        async () => await fetchGameDetails(gameId, reviews),
-        {
-            staleTime: 60 * 60 * 1000, // 1 hour
-            cacheTime: 24 * 60 * 60 * 1000, // 24 hours
-        }
-    );
-}
+export function useGamesList(
+    data: UserGamesResponse[] | undefined,
+    searchQuery: string,
+    statusFilter: string,
+    currentPage: number
+) {
+    const allGames = useMemo(() => {
+        if (!data) return [];
+        // Add logging to debug data
+        console.log('Games data:', data);
+        return data.flatMap(page => page.userGames || []);
+    }, [data]);
 
-export function useGamesList(data: UserGamesResponse | undefined, searchQuery: string, statusFilter: string, currentPage: number) {
     const filteredGames = useMemo(() => {
-        if (!data?.userGames) return [];
-        
-        return data.userGames.filter(game => {
+        return allGames.filter(game => {
             if (!game.name) return false; // Skip games without names
             const matchesSearch = game.name.toLowerCase().includes(searchQuery.toLowerCase());
             const matchesStatus = statusFilter === 'all' || game.status === statusFilter;
             return matchesSearch && matchesStatus;
         });
-    }, [data, searchQuery, statusFilter]);
+    }, [allGames, searchQuery, statusFilter]);
 
     const totalPages = useMemo(() => {
-        if (!filteredGames) return 0;
         return Math.ceil(filteredGames.length / GAMES_PER_PAGE);
     }, [filteredGames]);
 
@@ -84,7 +90,6 @@ export function useGamesList(data: UserGamesResponse | undefined, searchQuery: s
         return filteredGames.slice(start, end);
     }, [filteredGames, currentPage]);
 
-    console.log("Filtered and paginated games:", paginatedGames); // Debug log
-
-    return { filteredGames: paginatedGames, totalPages };
+    return { filteredGames: paginatedGames, totalPages, totalGames: filteredGames.length };
 }
+

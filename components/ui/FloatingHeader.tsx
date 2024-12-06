@@ -4,20 +4,44 @@ import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { Menu, X, Search, ChevronDown } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { User } from "@supabase/auth-helpers-nextjs";
-import { supabase } from '@/utils/supabase-client';
+import { User } from "@supabase/supabase-js";
+import { useSupabaseClient } from "@supabase/auth-helpers-react";
 
-interface HeaderProps {
-  user: User | null;
-}
-
-const FloatingHeader: React.FC<HeaderProps> = ({ user }) => {
+const FloatingHeader: React.FC = () => {
+  const [user, setUser] = useState<User | null>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const router = useRouter();
   const profileMenuRef = useRef<HTMLDivElement>(null);
   const profileButtonRef = useRef<HTMLButtonElement>(null);
+
+  const supabase = useSupabaseClient();
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      setUser(user);
+    };
+
+    fetchUser();
+
+    const { data: authListener } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        if (event === "SIGNED_IN") {
+          setUser(session?.user ?? null);
+        } else if (event === "SIGNED_OUT") {
+          setUser(null);
+        }
+      }
+    );
+
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
+  }, [supabase]);
 
   const handleSignUp = () => {
     router.push("/signup");
@@ -35,20 +59,13 @@ const FloatingHeader: React.FC<HeaderProps> = ({ user }) => {
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
-    try {
-      const response = await fetch("/auth/signout", { method: "POST" });
-      if (response.ok) {
-        console.log("User signed out successfully");
-        router.refresh();
-      } else {
-        console.error("Sign out failed");
-      }
-    } catch (error) {
-      console.error("Error during sign out:", error);
-    }
+    router.refresh();
   };
 
   const getUserInitial = () => {
+    if (user && user.user_metadata && user.user_metadata.name) {
+      return user.user_metadata.name[0].toUpperCase();
+    }
     if (user && user.email) {
       return user.email[0].toUpperCase();
     }
@@ -115,10 +132,9 @@ const FloatingHeader: React.FC<HeaderProps> = ({ user }) => {
                   onClick={toggleProfileMenu}
                   className="flex items-center space-x-2 focus:outline-none"
                 >
-                  <div className="bg-blue-600 rounded-full w-10 h-10 flex items-center justify-center">
+                  <div className="bg-blue-600 rounded-full w-10 h-10 flex items-center justify-center text-white font-semibold">
                     {getUserInitial()}
                   </div>
-                  <ChevronDown size={20} />
                 </button>
                 {isProfileMenuOpen && (
                   <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50">

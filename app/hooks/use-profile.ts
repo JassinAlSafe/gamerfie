@@ -1,11 +1,15 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
-import { type Profile, type Game, type GameStats } from '@/types';
+import { fetchProfile, updateProfile, fetchUserGames } from '@/lib/api';
+import { Game } from '@/types';
+import { Profile } from '@/types/index';
+import { GameStats } from '@/types/index';
+import { toast } from 'react-hot-toast';
 
 export function useProfile() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
   const [gameStats, setGameStats] = useState<GameStats>({
     total_played: 0,
     played_this_year: 0,
@@ -32,56 +36,68 @@ export function useProfile() {
     );
   }, []);
 
-  const updateGameStats = useCallback((games: Game[]) => {
-    const newStats = calculateGameStats(games);
-    setGameStats(newStats);
+  const updateGameStats = useCallback(async (userId: string) => {
+    try {
+      const { games } = await fetchUserGames(userId);
+      const newStats = calculateGameStats(games);
+      setGameStats(newStats);
+    } catch (error) {
+      console.error('Error updating game stats:', error);
+    }
   }, [calculateGameStats]);
 
-  const updateProfile = async (updates: Partial<Profile>) => {
+  const updateProfileData = async (updates: Partial<Profile>) => {
     if (!profile) return;
 
-    const { error } = await supabase
-      .from("profiles")
-      .update(updates)
-      .eq("id", profile.id);
-
-    if (error) throw error;
-
-    setProfile(prev => prev ? { ...prev, ...updates } : null);
+    try {
+      const updatedProfile = await updateProfile(profile.id, updates);
+      setProfile(updatedProfile);
+      toast.success('Profile updated successfully');
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      toast.error('Failed to update profile');
+    }
   };
 
   useEffect(() => {
-    const fetchProfile = async () => {
+    const loadProfile = async () => {
       try {
-        const { data: { user }, error: userError } = await supabase.auth.getUser();
-        if (userError) throw userError;
-        if (!user) return;
-
-        const [profileResponse, gamesResponse] = await Promise.all([
-          supabase.from("profiles").select("*").eq("id", user.id).single(),
-          supabase.from("user_games").select("*").eq("user_id", user.id)
-        ]);
-
-        if (profileResponse.error) throw profileResponse.error;
-        if (gamesResponse.error) throw gamesResponse.error;
-
-        setProfile(profileResponse.data);
-        updateGameStats(gamesResponse.data);
-      } catch (error) {
-        console.error("Error fetching profile:", error);
+        setIsLoading(true);
+        const fetchedProfile = await fetchProfile();
+        setProfile(fetchedProfile);
+        await updateGameStats(fetchedProfile.id);
+      } catch (err) {
+        setError(err instanceof Error ? err : new Error('An error occurred'));
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchProfile();
-  }, [supabase, updateGameStats]);
+    loadProfile();
+  }, [updateGameStats]);
+
+  useEffect(() => {
+    if (!profile) return;
+
+    const channel = supabase
+      .channel('profile_changes')
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'profiles', filter: `id=eq.${profile.id}` }, (payload) => {
+        setProfile(payload.new as Profile);
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [supabase, profile?.id]);
 
   return {
     profile,
     isLoading,
+    error,
     gameStats,
-    updateProfile,
+    updateProfile: updateProfileData,
     updateGameStats,
   };
 }
+
