@@ -1,5 +1,5 @@
-import React from "react";
-import { Game } from "@/types/game";
+import React, { memo } from "react";
+import { Game } from "@/types";
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Image from "next/image";
@@ -44,21 +44,23 @@ function ErrorState({ error }: { error: Error }) {
   );
 }
 
-function GameDetails({ game }: { game: Game }) {
-  const getHighQualityImageUrl = (url: string) => {
-    return url.startsWith("//")
-      ? `https:${url.replace("/t_thumb/", "/t_1080p/")}`
-      : url.replace("/t_thumb/", "/t_1080p/");
-  };
+// Extract utility functions
+const getHighQualityImageUrl = (url: string) => {
+  return url.startsWith("//")
+    ? `https:${url.replace("/t_thumb/", "/t_1080p/")}`
+    : url.replace("/t_thumb/", "/t_1080p/");
+};
 
-  const getWebsiteUrl = (game: Game) => {
-    if (game.websites && game.websites.length > 0) {
-      const officialSite = game.websites.find((site) => site.category === 1);
-      return officialSite ? officialSite.url : game.websites[0].url;
-    }
-    return null;
-  };
+const getWebsiteUrl = (game: Game) => {
+  if (game.websites && game.websites.length > 0) {
+    const officialSite = game.websites.find((site) => site.category === 1);
+    return officialSite ? officialSite.url : game.websites[0].url;
+  }
+  return null;
+};
 
+// Memoize GameDetails component
+const GameDetails = memo(function GameDetails({ game }: { game: Game }) {
   const websiteUrl = getWebsiteUrl(game);
 
   const backgroundImage =
@@ -97,7 +99,7 @@ function GameDetails({ game }: { game: Game }) {
               )}
               <div className="flex flex-col gap-2 mt-4">
                 {websiteUrl && (
-                  <Button asChild className="w-full">
+                  <Button asChild className="w-full" aria-label="Visit Website">
                     <a
                       href={websiteUrl}
                       target="_blank"
@@ -223,7 +225,7 @@ function GameDetails({ game }: { game: Game }) {
       </div>
     </div>
   );
-}
+});
 
 export default async function Page({ params }: { params: { id: string } }) {
   try {
