@@ -1,6 +1,12 @@
 "use client";
 
-import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import React, {
+  useState,
+  useEffect,
+  useMemo,
+  useCallback,
+  useRef,
+} from "react";
 import { useQuery } from "@tanstack/react-query";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import LoadingSpinner from "@/components/loadingSpinner";
@@ -16,7 +22,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { FetchGamesResponse, FetchedGame } from "@/lib/igdb";
+import { FetchGamesResponse } from "@/lib/igdb";
+import { FetchedGame } from "@/types/igdb";
 import { Platform } from "@/types/game";
 
 const GAMES_PER_PAGE = 48;
@@ -38,8 +45,17 @@ export default function AllGamesPage() {
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   const fetchGamesData = useCallback(async () => {
-    console.log("Fetching games with:", { currentPage, selectedPlatform, activeSearchTerm, sortBy });
-    const response = await fetch(`/api/games?page=${currentPage}&limit=${GAMES_PER_PAGE}&platformId=${selectedPlatform}&search=${encodeURIComponent(activeSearchTerm)}&sort=${sortBy}`);
+    console.log("Fetching games with:", {
+      currentPage,
+      selectedPlatform,
+      activeSearchTerm,
+      sortBy,
+    });
+    const response = await fetch(
+      `/api/games?page=${currentPage}&limit=${GAMES_PER_PAGE}&platformId=${selectedPlatform}&search=${encodeURIComponent(
+        activeSearchTerm
+      )}&sort=${sortBy}`
+    );
     if (!response.ok) {
       throw new Error("Network response was not ok");
     }
@@ -48,22 +64,38 @@ export default function AllGamesPage() {
     return data;
   }, [currentPage, selectedPlatform, activeSearchTerm, sortBy]);
 
-  const { data: gamesData, error: gamesError, isLoading: gamesLoading, isFetching: gamesFetching, refetch } = useQuery<FetchGamesResponse, Error>({
-    queryKey: ["allGames", currentPage, selectedPlatform, activeSearchTerm, sortBy],
+  const {
+    data: gamesData,
+    error: gamesError,
+    isLoading: gamesLoading,
+    isFetching: gamesFetching,
+    refetch,
+  } = useQuery<FetchGamesResponse, Error>({
+    queryKey: [
+      "allGames",
+      currentPage,
+      selectedPlatform,
+      activeSearchTerm,
+      sortBy,
+    ],
     queryFn: fetchGamesData,
     staleTime: 5 * 60 * 1000,
-    gcTime: 60 * 60 * 1000,
+    cacheTime: 60 * 60 * 1000, // Corrected from gcTime to cacheTime
   });
 
   const fetchPlatforms = useCallback(async () => {
-    const response = await fetch('/api/platforms');
+    const response = await fetch("/api/platforms");
     if (!response.ok) {
       throw new Error("Failed to fetch platforms");
     }
     return response.json();
   }, []);
 
-  const { data: platformsData, error: platformsError, isLoading: platformsLoading } = useQuery<Platform[], Error>({
+  const {
+    data: platformsData,
+    error: platformsError,
+    isLoading: platformsLoading,
+  } = useQuery<Platform[], Error>({
     queryKey: ["platforms"],
     queryFn: fetchPlatforms,
     staleTime: 24 * 60 * 60 * 1000,
@@ -72,11 +104,14 @@ export default function AllGamesPage() {
 
   const games = useMemo(() => gamesData?.games || [], [gamesData]);
   const totalGames = useMemo(() => gamesData?.total || 0, [gamesData]);
-  const totalPages = useMemo(() => Math.ceil(totalGames / GAMES_PER_PAGE), [totalGames]);
+  const totalPages = useMemo(
+    () => Math.ceil(totalGames / GAMES_PER_PAGE),
+    [totalGames]
+  );
 
   const platforms = useMemo(() => {
     if (!platformsData) return [];
-    return platformsData.filter(platform => 
+    return platformsData.filter((platform) =>
       platform.name.toLowerCase().includes(platformSearch.toLowerCase())
     );
   }, [platformsData, platformSearch]);
@@ -86,11 +121,14 @@ export default function AllGamesPage() {
     window.scrollTo(0, 0);
   }, []);
 
-  const handlePlatformChange = useCallback((value: string) => {
-    setSelectedPlatform(value);
-    setCurrentPage(1);
-    refetch();
-  }, [refetch]);
+  const handlePlatformChange = useCallback(
+    (value: string) => {
+      setSelectedPlatform(value);
+      setCurrentPage(1);
+      refetch();
+    },
+    [refetch]
+  );
 
   const handleSearch = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
@@ -102,12 +140,15 @@ export default function AllGamesPage() {
     setCurrentPage(1);
   }, [searchTerm]);
 
-  const handleKeyPress = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      executeSearch();
-    }
-  }, [executeSearch]);
+  const handleKeyPress = useCallback(
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        executeSearch();
+      }
+    },
+    [executeSearch]
+  );
 
   useEffect(() => {
     setCurrentPage(1);
@@ -128,7 +169,6 @@ export default function AllGamesPage() {
   }
 
   return (
-   
     <div className="w-full min-h-screen py-8  px-4 md:px-8 bg-gradient-to-b from-gray-900 to-gray-800">
       <ErrorBoundary
         fallback={
@@ -156,7 +196,7 @@ export default function AllGamesPage() {
               placeholder="Search games..."
               value={searchTerm}
               onChange={handleSearch}
-              onKeyPress={handleKeyPress}
+              onKeyDown={handleKeyPress} // Replaced onKeyPress with onKeyDown
               className="pl-10 bg-gray-700 text-white"
               aria-label="Search games"
               ref={searchInputRef}
@@ -219,7 +259,9 @@ export default function AllGamesPage() {
             </SelectContent>
           </Select>
         </div>
-        {gamesFetching && <div className="text-white text-center my-4">Searching...</div>}
+        {gamesFetching && (
+          <div className="text-white text-center my-4">Searching...</div>
+        )}
         {games.length === 0 && !gamesFetching ? (
           <NoDataDisplay searchTerm={searchTerm} />
         ) : (
@@ -309,9 +351,13 @@ const NoDataDisplay: React.FC<{ searchTerm: string }> = ({ searchTerm }) => (
     <Gamepad2 className="w-16 h-16 mb-4 text-gray-600" aria-hidden="true" />
     <h2 className="text-2xl font-bold mb-2">No games found</h2>
     {searchTerm ? (
-      <p className="text-gray-400">No results for "{searchTerm}". Try a different search term.</p>
+      <p className="text-gray-400">
+        No results for "{searchTerm}". Try a different search term.
+      </p>
     ) : (
-      <p className="text-gray-400">No game data available. Check back later for exciting new games!</p>
+      <p className="text-gray-400">
+        No game data available. Check back later for exciting new games!
+      </p>
     )}
   </div>
 );

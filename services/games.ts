@@ -1,12 +1,8 @@
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
-import { IGDBGame, ProcessedGame } from '@/types/igdb';
+import { Game, FetchGamesResponse } from '@/types/game';
 
 export const GAMES_PER_PAGE = 48;
 
-export interface FetchGamesResponse {
-    games: ProcessedGame[];
-    total: number;
-}
 
 export async function fetchGamesData(
     page: number,
@@ -16,7 +12,6 @@ export async function fetchGamesData(
 ): Promise<FetchGamesResponse> {
     const supabase = createClientComponentClient()
 
-    // Construct the IGDB API query
     let query = `fields name,cover.url,platforms.name,genres.name,summary,first_release_date,total_rating,total_rating_count;
                limit ${GAMES_PER_PAGE};
                offset ${(page - 1) * GAMES_PER_PAGE};`;
@@ -43,13 +38,14 @@ export async function fetchGamesData(
     }
 
     try {
-        const { data, error } = await supabase.functions.invoke('igdb-proxy', {
+        const response = await supabase.functions.invoke('igdb-proxy', {
             body: { endpoint: 'games', query: query }
         })
+        const data = (await response.json()) as Game[];
 
-        if (error) throw error;
+        if (response.error) throw response.error;
 
-        const games = (data as IGDBGame[]).map(game => ({
+        const games = data.map((game: Game) => ({
             id: game.id,
             name: game.name,
             cover: game.cover ? {
