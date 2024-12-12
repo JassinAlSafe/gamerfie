@@ -13,7 +13,7 @@ export default function ProfilePage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-950">
+      <div className="flex items-center justify-center min-h-screen bg-gray-950 pt-16">
         <LoadingSpinner size="lg" />
       </div>
     );
@@ -22,7 +22,7 @@ export default function ProfilePage() {
   if (error) {
     if (error.message === "No authenticated user") {
       return (
-        <div className="flex flex-col items-center justify-center min-h-screen bg-gray-950 text-white">
+        <div className="flex flex-col items-center justify-center min-h-screen bg-gray-950 pt-16">
           <h1 className="text-3xl font-bold mb-6">
             Please sign in to view your profile
           </h1>
@@ -37,7 +37,7 @@ export default function ProfilePage() {
       );
     }
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-950 text-red-500">
+      <div className="flex items-center justify-center min-h-screen bg-gray-950 text-red-500 pt-16">
         <p className="text-xl font-semibold">Error: {error.message}</p>
       </div>
     );
@@ -45,14 +45,14 @@ export default function ProfilePage() {
 
   if (!profile) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-950 text-white">
+      <div className="flex items-center justify-center min-h-screen bg-gray-950 text-white pt-16">
         <p className="text-xl font-semibold">Profile not found</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-950">
+    <div className="min-h-screen bg-gray-950 pt-16">
       <Toaster position="top-center" />
       <ProfileContent
         profile={profile}
