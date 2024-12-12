@@ -2,10 +2,11 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
-import { Menu, X, Search, ChevronDown } from "lucide-react";
+import { Menu, X, Search } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { User } from "@supabase/supabase-js";
-import { useSupabaseClient } from "@supabase/auth-helpers-react";
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { useToast } from "@/hooks/use-toast";
 
 const FloatingHeader: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -13,35 +14,69 @@ const FloatingHeader: React.FC = () => {
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const router = useRouter();
+  const { toast } = useToast();
   const profileMenuRef = useRef<HTMLDivElement>(null);
   const profileButtonRef = useRef<HTMLButtonElement>(null);
 
-  const supabase = useSupabaseClient();
+  const supabase = createClientComponentClient();
 
+  // Check auth status on mount and route changes
   useEffect(() => {
-    const fetchUser = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      setUser(user);
+    const checkUser = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        if (error) throw error;
+        setUser(session?.user ?? null);
+      } catch (error) {
+        console.error('Auth error:', error);
+        setUser(null);
+      }
     };
 
-    fetchUser();
+    checkUser();
 
-    const { data: authListener } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        if (event === "SIGNED_IN") {
-          setUser(session?.user ?? null);
-        } else if (event === "SIGNED_OUT") {
-          setUser(null);
+    // Subscribe to auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        setUser(session?.user ?? null);
+        
+        if (event === 'SIGNED_IN') {
+          toast({
+            title: "Welcome back!",
+            description: "Successfully signed in",
+          });
+        } else if (event === 'SIGNED_OUT') {
+          toast({
+            title: "Signed out",
+            description: "Successfully signed out",
+          });
         }
       }
     );
 
     return () => {
-      authListener.subscription.unsubscribe();
+      subscription.unsubscribe();
     };
-  }, [supabase]);
+  }, [supabase, router, toast]);
+
+  const handleSignOut = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      
+      setUser(null);
+      setIsProfileMenuOpen(false);
+      router.push('/');
+      router.refresh();
+    } catch (error) {
+      console.error('Sign out error:', error);
+      toast({
+        title: "Error",
+        description: "Failed to sign out",
+        variant: "destructive",
+      });
+    }
+  };
 
   const handleSignUp = () => {
     router.push("/signup");
@@ -55,11 +90,6 @@ const FloatingHeader: React.FC = () => {
     e.preventDefault();
     // Implement search functionality here
     console.log("Searching for:", searchQuery);
-  };
-
-  const handleSignOut = async () => {
-    await supabase.auth.signOut();
-    router.refresh();
   };
 
   const getUserInitial = () => {

@@ -1,29 +1,34 @@
 import React, { memo } from "react";
-import { Game } from "@/types";
+import { Game } from "@/types/game";
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Image from "next/image";
-import { getAccessToken } from "../../../lib/igdb";
-import { fetchGameDetails } from "@/lib/igdb";
 import { Star, ExternalLink, Calendar, Gamepad2, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import BackButton from "./BackButton";
 import { AddToLibraryButton } from "@/components/add-to-library-button";
+import { GameService } from "@/services/gameService";
+import LoadingSpinner from "@/components/loadingSpinner";
 
 export async function generateMetadata({
   params,
 }: {
   params: { id: string };
 }): Promise<Metadata> {
-  const accessToken = await getAccessToken();
-  const game = await fetchGameDetails(accessToken, parseInt(params.id));
-
-  return {
-    title: game ? `${game.name} | Gamerfie` : "Game Details",
-    description: game?.summary || "View game details",
-  };
+  try {
+    const game = await GameService.fetchGameById(parseInt(params.id));
+    return {
+      title: game ? `${game.name} | Gamerfie` : "Game Details",
+      description: game?.summary || "View game details",
+    };
+  } catch (error) {
+    return {
+      title: "Game Details | Gamerfie",
+      description: "View game details",
+    };
+  }
 }
 
 function LoadingState() {
@@ -149,7 +154,10 @@ const GameDetails = memo(function GameDetails({ game }: { game: Game }) {
                   </h2>
                   <div className="flex flex-wrap gap-2">
                     {game.genres.map((genre) => (
-                      <Badge key={genre.id} variant="secondary">
+                      <Badge 
+                        key={`genre-${genre.id || genre.name}`}
+                        variant="secondary"
+                      >
                         {genre.name}
                       </Badge>
                     ))}
@@ -165,7 +173,7 @@ const GameDetails = memo(function GameDetails({ game }: { game: Game }) {
                   <div className="flex flex-wrap gap-2">
                     {game.platforms.map((platform) => (
                       <Badge
-                        key={platform.id}
+                        key={`platform-${platform.id || platform.name}`}
                         variant="outline"
                         className="text-sm py-1 px-2 transition-colors duration-200 hover:bg-primary hover:text-primary-foreground"
                       >
@@ -229,8 +237,7 @@ const GameDetails = memo(function GameDetails({ game }: { game: Game }) {
 
 export default async function Page({ params }: { params: { id: string } }) {
   try {
-    const accessToken = await getAccessToken();
-    const game = await fetchGameDetails(accessToken, parseInt(params.id));
+    const game = await GameService.fetchGameById(parseInt(params.id));
 
     if (!game) {
       notFound();

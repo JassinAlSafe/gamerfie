@@ -22,9 +22,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { FetchGamesResponse } from "@/lib/igdb";
-import { FetchedGame } from "@/types/igdb";
-import { Platform } from "@/types/game";
+import { Platform, GameQueryParams, SortOption, ProcessedGame } from "@/types/game";
+import { useGames } from '@/hooks/useGames';
+
 
 const GAMES_PER_PAGE = 48;
 
@@ -44,44 +44,18 @@ export default function AllGamesPage() {
   const [platformSearch, setPlatformSearch] = useState("");
   const searchInputRef = useRef<HTMLInputElement>(null);
 
-  const fetchGamesData = useCallback(async () => {
-    console.log("Fetching games with:", {
-      currentPage,
-      selectedPlatform,
-      activeSearchTerm,
-      sortBy,
-    });
-    const response = await fetch(
-      `/api/games?page=${currentPage}&limit=${GAMES_PER_PAGE}&platformId=${selectedPlatform}&search=${encodeURIComponent(
-        activeSearchTerm
-      )}&sort=${sortBy}`
-    );
-    if (!response.ok) {
-      throw new Error("Network response was not ok");
-    }
-    const data = await response.json();
-    console.log("Fetched games data:", data);
-    return data;
-  }, [currentPage, selectedPlatform, activeSearchTerm, sortBy]);
-
-  const {
-    data: gamesData,
-    error: gamesError,
-    isLoading: gamesLoading,
-    isFetching: gamesFetching,
-    refetch,
-  } = useQuery<FetchGamesResponse, Error>({
-    queryKey: [
-      "allGames",
-      currentPage,
-      selectedPlatform,
-      activeSearchTerm,
-      sortBy,
-    ],
-    queryFn: fetchGamesData,
-    staleTime: 5 * 60 * 1000,
-    cacheTime: 60 * 60 * 1000, // Corrected from gcTime to cacheTime
+  const [queryParams, setQueryParams] = useState<GameQueryParams>({
+    page: 1,
+    platformId: 'all',
+    sortBy: 'popularity',
+    searchTerm: ''
   });
+
+  const { 
+    data, 
+    isLoading, 
+    error 
+  } = useGames(queryParams);
 
   const fetchPlatforms = useCallback(async () => {
     const response = await fetch("/api/platforms");
@@ -102,8 +76,8 @@ export default function AllGamesPage() {
     gcTime: 7 * 24 * 60 * 60 * 1000,
   });
 
-  const games = useMemo(() => gamesData?.games || [], [gamesData]);
-  const totalGames = useMemo(() => gamesData?.total || 0, [gamesData]);
+  const games = useMemo(() => data?.games || [], [data]);
+  const totalGames = useMemo(() => data?.total || 0, [data]);
   const totalPages = useMemo(
     () => Math.ceil(totalGames / GAMES_PER_PAGE),
     [totalGames]
@@ -125,9 +99,8 @@ export default function AllGamesPage() {
     (value: string) => {
       setSelectedPlatform(value);
       setCurrentPage(1);
-      refetch();
     },
-    [refetch]
+    []
   );
 
   const handleSearch = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -151,11 +124,15 @@ export default function AllGamesPage() {
   );
 
   useEffect(() => {
-    setCurrentPage(1);
-    refetch();
-  }, [activeSearchTerm, selectedPlatform, sortBy, refetch]);
+    setQueryParams({
+      page: currentPage,
+      platformId: selectedPlatform,
+      searchTerm: activeSearchTerm,
+      sortBy: sortBy as SortOption
+    });
+  }, [currentPage, selectedPlatform, activeSearchTerm, sortBy]);
 
-  if (gamesLoading || platformsLoading) {
+  if (isLoading || platformsLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <LoadingSpinner />
@@ -163,9 +140,9 @@ export default function AllGamesPage() {
     );
   }
 
-  if (gamesError || platformsError) {
-    console.error("Error in AllGamesPage:", gamesError || platformsError);
-    return <ErrorDisplay error={gamesError || platformsError} />;
+  if (error || platformsError) {
+    console.error("Error in AllGamesPage:", error || platformsError);
+    return <ErrorDisplay error={error || platformsError} />;
   }
 
   return (
@@ -259,14 +236,11 @@ export default function AllGamesPage() {
             </SelectContent>
           </Select>
         </div>
-        {gamesFetching && (
-          <div className="text-white text-center my-4">Searching...</div>
-        )}
-        {games.length === 0 && !gamesFetching ? (
+        {games.length === 0 ? (
           <NoDataDisplay searchTerm={searchTerm} />
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-4">
-            {games.map((game: FetchedGame, index: number) => (
+            {games.map((game: ProcessedGame, index: number) => (
               <Link href={`/game/${game.id}`} key={game.id}>
                 <div className="relative aspect-[3/4] rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 group">
                   {game.cover ? (
@@ -302,7 +276,7 @@ export default function AllGamesPage() {
         >
           <Button
             onClick={() => handlePageChange(currentPage - 1)}
-            disabled={currentPage === 1 || gamesFetching}
+            disabled={currentPage === 1}
             variant="outline"
             size="sm"
             className="text-white border-white hover:bg-white hover:text-gray-900"
@@ -315,7 +289,7 @@ export default function AllGamesPage() {
           </span>
           <Button
             onClick={() => handlePageChange(currentPage + 1)}
-            disabled={currentPage === totalPages || gamesFetching}
+            disabled={currentPage === totalPages}
             variant="outline"
             size="sm"
             className="text-white border-white hover:bg-white hover:text-gray-900"
@@ -329,14 +303,14 @@ export default function AllGamesPage() {
   );
 }
 
-const ErrorDisplay: React.FC<{ error: Error }> = ({ error }) => (
+const ErrorDisplay: React.FC<{ error: Error | null }> = ({ error }) => (
   <div
     className="flex flex-col items-center justify-center min-h-screen text-white"
     role="alert"
   >
     <Gamepad2 className="w-16 h-16 mb-4 text-red-500" aria-hidden="true" />
     <h2 className="text-2xl font-bold mb-2">Error loading game data</h2>
-    <p className="text-gray-400 text-center max-width-md">{error.message}</p>
+    <p className="text-gray-400 text-center max-width-md">{error?.message}</p>
     <p className="mt-4 text-blue-400 hover:text-blue-300 cursor-pointer">
       Please try refreshing the page or contact support if the problem persists.
     </p>

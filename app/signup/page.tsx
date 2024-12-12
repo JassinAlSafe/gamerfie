@@ -42,21 +42,25 @@ export default function SignUpPage() {
     setIsLoading(true);
 
     try {
-      const { data: authData, error: authError } = await supabase.auth.signUp({
+      const { data: { user }, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/api/auth/callback`,
-        },
+          emailRedirectTo: `${location.origin}/auth/callback`,
+          data: {
+            username,
+            display_name: displayName,
+          }
+        }
       });
 
-      if (authError) throw authError;
+      if (signUpError) throw signUpError;
 
-      if (authData.user) {
+      if (user) {
         const { error: profileError } = await supabase
-          .from("user_profiles")
+          .from('profiles')
           .insert({
-            user_id: authData.user.id,
+            id: user.id,
             username,
             display_name: displayName,
             date_of_birth: dateOfBirth,
@@ -66,20 +70,16 @@ export default function SignUpPage() {
         if (profileError) throw profileError;
 
         toast({
-          title: "Sign-up successful!",
-          description: "Please check your email to confirm your account.",
-          duration: 5000,
+          title: "Account created",
+          description: "Please check your email to verify your account",
         });
+        
         router.push("/signin");
       }
-    } catch (error: unknown) {
-      const errorMessage = isSupabaseError(error) 
-        ? error.message 
-        : 'An unexpected error occurred'
-      console.error("Sign-up error:", errorMessage);
+    } catch (error) {
       toast({
-        title: "Sign-up failed",
-        description: errorMessage,
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to create account",
         variant: "destructive",
       });
     } finally {
@@ -88,29 +88,21 @@ export default function SignUpPage() {
   }
 
   async function signUpWithGoogle() {
-    setIsLoading(true);
-
     try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${window.location.origin}/api/auth/callback/google`,
+          redirectTo: `${location.origin}/auth/callback`,
         },
       });
 
       if (error) throw error;
-    } catch (error: unknown) {
-      const errorMessage = isSupabaseError(error) 
-        ? error.message 
-        : 'An unexpected error occurred'
-      console.error("Google sign-up error:", errorMessage);
+    } catch (error) {
       toast({
-        title: "Google sign-up failed",
-        description: errorMessage,
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to sign up with Google",
         variant: "destructive",
       });
-    } finally {
-      setIsLoading(false);
     }
   }
 

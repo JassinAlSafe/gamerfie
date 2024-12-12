@@ -14,7 +14,6 @@ export default function SignInPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
   const supabase = createClientComponentClient();
   const { toast } = useToast();
@@ -22,7 +21,6 @@ export default function SignInPage() {
   async function onSubmit(event: React.SyntheticEvent) {
     event.preventDefault();
     setIsLoading(true);
-    setError(null);
 
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
@@ -32,25 +30,18 @@ export default function SignInPage() {
 
       if (error) throw error;
 
-      if (data.session) {
+      if (data?.user) {
         toast({
           title: "Welcome back!",
           description: "You've successfully signed in.",
-          duration: 5000,
         });
-
-        router.push("/dashboard");
-      } else {
-        throw new Error("No session created after sign-in");
+        router.refresh();
+        router.push("/profile");
       }
-    } catch (error: unknown) {
-      const errorMessage =
-        error instanceof Error ? error.message : "An unexpected error occurred";
-      console.error("Sign-in error:", errorMessage);
-      setError(errorMessage);
+    } catch (error) {
       toast({
-        title: "Sign-in failed",
-        description: errorMessage,
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to sign in",
         variant: "destructive",
       });
     } finally {
@@ -59,36 +50,21 @@ export default function SignInPage() {
   }
 
   async function signInWithGoogle() {
-    setIsLoading(true);
-    setError(null);
-
     try {
-      const { data, error } = await supabase.auth.signInWithOAuth({
+      const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
+          redirectTo: `${location.origin}/auth/callback`,
         },
       });
 
       if (error) throw error;
-
+    } catch (error) {
       toast({
-        title: "Google Sign-In Initiated",
-        description: "You'll be redirected to Google for authentication.",
-        duration: 5000,
-      });
-    } catch (error: unknown) {
-      const errorMessage =
-        error instanceof Error ? error.message : "An unexpected error occurred";
-      console.error("Google sign-in error:", errorMessage);
-      setError(errorMessage);
-      toast({
-        title: "Google sign-in failed",
-        description: errorMessage,
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to sign in with Google",
         variant: "destructive",
       });
-    } finally {
-      setIsLoading(false);
     }
   }
 
@@ -104,7 +80,6 @@ export default function SignInPage() {
             Sign in to your account to continue
           </p>
         </div>
-        {error && <p className="text-sm text-red-500 text-center">{error}</p>}
         <div className="grid gap-6">
           <form onSubmit={onSubmit}>
             <div className="grid gap-2">
