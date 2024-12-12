@@ -1,110 +1,19 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { AvatarUpload } from "@/components/avatar-upload";
-import { Button } from "@/components/ui/button";
-import { Profile } from "@/types/index";
-import { GameStats } from "@/types/index";
-import { Pencil, GamepadIcon as GameController, Calendar, Clock, BarChart2 } from 'lucide-react';
-import { useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import { Profile, GameStats } from "@/types/user";
+import { 
+  Trophy, 
+  GamepadIcon as GameController, 
+  Calendar, 
+  Clock, 
+  BarChart2,
+  Star 
+} from 'lucide-react';
 
 interface ProfileHeaderProps {
   profile: Profile;
-  stats?: GameStats;
-  onProfileUpdate: (updatedProfile: Profile) => void;
-}
-
-export function ProfileHeader({
-  profile,
-  stats,
-  onProfileUpdate,
-}: ProfileHeaderProps) {
-  const queryClient = useQueryClient();
-
-  // Get the updated stats from the cache
-  const cachedStats = queryClient.getQueryData<GameStats>(["userStats", profile.id]) || stats;
-
-  const [isEditing, setIsEditing] = useState(false);
-
-  return (
-    <div className="relative mb-16">
-      <div className="absolute inset-0 h-80 bg-gradient-to-r from-purple-900 via-indigo-900 to-blue-900" />
-      <div className="relative container mx-auto px-4 py-20">
-        <div className="flex flex-col md:flex-row items-center md:items-end space-y-6 md:space-y-0 md:space-x-8">
-          <div className="flex-shrink-0 z-10">
-            <AvatarUpload
-              userId={profile.id}
-              username={profile.username}
-              currentAvatarUrl={profile.avatar_url}
-              onAvatarUpdate={(url) =>
-                onProfileUpdate({ ...profile, avatar_url: url })
-              }
-            />
-          </div>
-          <div className="flex-grow min-w-0 text-center md:text-left">
-            <h1 className="text-4xl md:text-5xl font-bold text-white mb-2 shadow-text">
-              {profile.display_name || profile.username}
-            </h1>
-            <p className="text-xl text-gray-300 shadow-text">@{profile.username}</p>
-            <p className="mt-4 text-gray-200 max-w-2xl shadow-text">
-              {profile.bio || "No bio provided"}
-            </p>
-          </div>
-          <div className="flex-shrink-0">
-            <Button
-              variant="outline"
-              size="lg"
-              onClick={() => setIsEditing(!isEditing)}
-              className="bg-white/10 text-white border-white/20 hover:bg-white/20 transition-colors duration-200 shadow-lg"
-            >
-              <Pencil className="h-5 w-5 mr-2" />
-              Edit Profile
-            </Button>
-          </div>
-        </div>
-      </div>
-
-      <div className="container mx-auto px-4 -mt-16 relative z-10">
-        <Card className="bg-gray-800 border-gray-700 shadow-xl">
-          <CardContent className="p-6">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-              <StatItem
-                icon={GameController}
-                label="Total Played"
-                value={cachedStats.total_played || 0}
-                color="text-purple-400"
-              />
-              <StatItem
-                icon={Calendar}
-                label="Played This Year"
-                value={cachedStats.played_this_year || 0}
-                color="text-indigo-400"
-              />
-              <StatItem
-                icon={Clock}
-                label="Backlog"
-                value={cachedStats.backlog || 0}
-                color="text-pink-400"
-              />
-              <StatItem
-                icon={BarChart2}
-                label="Completion Rate"
-                value={
-                  cachedStats && cachedStats.total_played > 0
-                    ? `${(
-                        (cachedStats.total_played /
-                          (cachedStats.total_played + cachedStats.backlog)) *
-                        100
-                      ).toFixed(1)}%`
-                    : "0%"
-                }
-                color="text-green-400"
-              />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
-  );
+  stats: GameStats;
+  onProfileUpdate: (_updates: Partial<Profile>) => void;
 }
 
 interface StatItemProps {
@@ -112,7 +21,118 @@ interface StatItemProps {
   label: string;
   value: number | string;
   color: string;
-}function StatItem({ icon: Icon, label, value, color }: StatItemProps) {  return (    <div className="flex items-center space-x-4">      <Icon className={`h-8 w-8 ${color}`} />      <div>        <p className="text-sm text-gray-400">{label}</p>        <p className="text-2xl font-bold text-white">{value}</p>
+  subtext?: string;
+}
+
+function StatItem({ icon: Icon, label, value, color, subtext }: StatItemProps) {
+  return (
+    <div className="flex items-center space-x-4 p-4 rounded-lg bg-gray-800/50 hover:bg-gray-800/70 transition-colors duration-200">
+      <div className={`${color} p-3 rounded-lg bg-opacity-10 backdrop-blur-sm`}>
+        <Icon className="h-6 w-6" />
+      </div>
+      <div>
+        <p className="text-sm text-gray-400">{label}</p>
+        <p className="text-2xl font-bold text-white">{value}</p>
+        {subtext && <p className="text-xs text-gray-500 mt-1">{subtext}</p>}
+      </div>
+    </div>
+  );
+}
+
+export function ProfileHeader({ profile, stats, onProfileUpdate }: ProfileHeaderProps) {
+  const completionRate = stats.total_played > 0
+    ? `${((stats.total_played / (stats.total_played + stats.backlog)) * 100).toFixed(1)}%`
+    : "0%";
+
+  return (
+    <div className="w-full">
+      {/* Background with gradient overlay */}
+      <div className="absolute inset-0 h-[400px]">
+        <div className="absolute inset-0 bg-gradient-to-b from-purple-900/80 via-gray-900/95 to-gray-900" />
+        <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-20" />
+      </div>
+
+      {/* Profile Content */}
+      <div className="relative max-w-7xl mx-auto px-4 pt-16 pb-24">
+        <div className="flex flex-col md:flex-row items-start space-y-6 md:space-y-0 md:space-x-8">
+          {/* Avatar Section */}
+          <div className="relative">
+            <div className="relative w-24 h-24 md:w-32 md:h-32 rounded-full overflow-hidden ring-4 ring-purple-500/30 shadow-xl">
+              <AvatarUpload
+                userId={profile.id}
+                username={profile.username}
+                currentAvatarUrl={profile.avatar_url}
+                onAvatarUpdate={(url) => onProfileUpdate({ ...profile, avatar_url: url })}
+              />
+            </div>
+            <div className="absolute -bottom-2 right-0 bg-purple-500 rounded-full p-2 shadow-lg">
+              <Trophy className="w-4 h-4 text-white" />
+            </div>
+          </div>
+
+          {/* Profile Info */}
+          <div className="flex-grow">
+            <div className="space-y-2">
+              <h1 className="text-4xl md:text-5xl font-bold text-white">
+                {profile.display_name || profile.username}
+              </h1>
+              <p className="text-xl text-purple-300">@{profile.username}</p>
+              <p className="text-gray-300 max-w-2xl mt-4">
+                {profile.bio || "No bio provided yet"}
+              </p>
+            </div>
+
+            {/* Quick Stats */}
+            <div className="flex items-center space-x-6 mt-6">
+              <div className="flex items-center space-x-2">
+                <GameController className="w-5 h-5 text-purple-400" />
+                <span className="text-gray-300">{stats.total_played} Games Played</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Star className="w-5 h-5 text-yellow-400" />
+                <span className="text-gray-300">Level {Math.floor(stats.total_played / 10) + 1}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Detailed Stats */}
+        <div className="mt-12">
+          <Card className="bg-gray-900/50 border-gray-800 backdrop-blur-sm">
+            <CardContent className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <StatItem
+                  icon={GameController}
+                  label="Total Games"
+                  value={stats.total_played}
+                  color="bg-purple-500"
+                  subtext="Games in your collection"
+                />
+                <StatItem
+                  icon={Calendar}
+                  label="This Year"
+                  value={stats.played_this_year}
+                  color="bg-blue-500"
+                  subtext={`${new Date().getFullYear()} progress`}
+                />
+                <StatItem
+                  icon={Clock}
+                  label="Backlog"
+                  value={stats.backlog}
+                  color="bg-pink-500"
+                  subtext="Games to play"
+                />
+                <StatItem
+                  icon={BarChart2}
+                  label="Completion Rate"
+                  value={completionRate}
+                  color="bg-green-500"
+                  subtext="Of total collection"
+                />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );
