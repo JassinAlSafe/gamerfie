@@ -41,11 +41,11 @@ export function ProfileNav() {
               key={href}
               href={href}
               className={`
-                flex items-center px-4 py-2.5 rounded-lg text-sm font-medium
-                transition-colors duration-200 whitespace-nowrap
+                flex items-center px-4 py-2 rounded-lg text-sm font-medium
+                transition-all duration-200 whitespace-nowrap
                 ${isActive 
-                  ? 'bg-purple-500/20 text-purple-400' 
-                  : 'text-gray-400 hover:text-white hover:bg-white/10'
+                  ? 'bg-purple-500/20 text-purple-400 shadow-lg shadow-purple-500/10' 
+                  : 'text-gray-400 hover:text-white hover:bg-white/5'
                 }
               `}
             >

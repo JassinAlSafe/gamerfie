@@ -28,7 +28,7 @@ export default function ProfilePage() {
           </h1>
           <Button
             onClick={() => router.push("/signin")}
-            variant="primary"
+            variant="default"
             size="lg"
           >
             Sign In
@@ -56,7 +56,7 @@ export default function ProfilePage() {
       <Toaster position="top-center" />
       <ProfileContent
         profile={profile}
-        gameStats={gameStats}
+        gameStats={gameStats ?? { total_played: 0, played_this_year: 0, backlog: 0 }}
         updateProfile={updateProfile}
       />
     </div>
