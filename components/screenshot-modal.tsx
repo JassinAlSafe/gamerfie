@@ -1,9 +1,15 @@
 "use client";
 
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import Image from "next/image";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
-import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
+
+const ensureAbsoluteUrl = (url: string) => {
+  if (url.startsWith("//")) {
+    return `https:${url}`;
+  }
+  return url;
+};
 
 interface ScreenshotModalProps {
   screenshots: { id: number; url: string }[];
@@ -22,19 +28,23 @@ export function ScreenshotModal({
   onNext,
   onPrevious,
 }: ScreenshotModalProps) {
+  console.log('Screenshots:', screenshots);
+  console.log('Current screenshot:', screenshots[currentIndex]);
+  console.log('Current URL:', ensureAbsoluteUrl(screenshots[currentIndex].url));
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent 
         className="max-w-[90vw] max-h-[90vh] p-0 bg-black/95 border-gray-800"
-        aria-describedby="screenshot-description"
       >
         <DialogTitle className="sr-only">
           Screenshot {currentIndex + 1} of {screenshots.length}
         </DialogTitle>
         
-        <div id="screenshot-description" className="sr-only">
-          Use left and right arrow keys to navigate between screenshots
-        </div>
+        <DialogDescription className="sr-only">
+          Use arrow keys or on-screen buttons to navigate between screenshots. 
+          Press Escape to close the viewer.
+        </DialogDescription>
 
         <div className="relative w-full h-[80vh]">
           {/* Close button */}
@@ -67,15 +77,16 @@ export function ScreenshotModal({
           )}
 
           {/* Screenshot */}
-          <div className="relative w-full h-full">
+          <div className="relative w-full h-full flex items-center justify-center bg-black">
             <Image
-              src={screenshots[currentIndex].url}
+              src={ensureAbsoluteUrl(screenshots[currentIndex].url)}
               alt={`Screenshot ${currentIndex + 1} of ${screenshots.length}`}
               fill
               sizes="90vw"
               className="object-contain"
               quality={100}
               priority
+              unoptimized
             />
           </div>
 

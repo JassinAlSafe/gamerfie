@@ -2,7 +2,7 @@
 
 import React, { memo, useState } from "react";
 import Image from "next/image";
-import { Star, ExternalLink, Calendar, Gamepad2, Users } from "lucide-react";
+import { Star, ExternalLink, Calendar, Gamepad2, Users, Heart, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -10,6 +10,12 @@ import { AddToLibraryButton } from "@/components/add-to-library-button";
 import { ScreenshotModal } from "@/components/screenshot-modal";
 import BackButton from "@/app/game/[id]/BackButton";
 import { Game } from "@/types/game";
+import { useLibraryStore } from '@/stores/useLibraryStore';
+import { useAuthStore } from '@/stores/useAuthStore';
+import { useToast } from '@/hooks/use-toast';
+import { LoadingSpinner } from "@/components/loadingSpinner";
+import { cn } from "@/lib/utils";
+import { CompletionDialog } from '@/components/game/completion-dialog';
 
 const getHighQualityImageUrl = (url: string) => {
   return url.startsWith("//")
@@ -51,9 +57,58 @@ const formatDate = (timestamp: number) => {
 };
 
 export const GameDetails = memo(function GameDetails({ game }: { game: Game }) {
-  const [selectedScreenshot, setSelectedScreenshot] = useState<number | null>(null);
+  const { user } = useAuthStore();
+  const { games, addGame, removeGame } = useLibraryStore();
+  const { toast } = useToast();
+  const [isAddingToLibrary, setIsAddingToLibrary] = useState(false);
+  const [isScreenshotModalOpen, setIsScreenshotModalOpen] = useState(false);
+  const [currentScreenshotIndex, setCurrentScreenshotIndex] = useState(0);
+  const [isCompletionDialogOpen, setIsCompletionDialogOpen] = useState(false);
   const websiteUrl = getWebsiteUrl(game);
   const backgroundImage = getBackgroundImage(game);
+
+  const isInLibrary = games.some(g => g.id === game.id);
+
+  const handleLibraryAction = async () => {
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please sign in to manage your library",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsAddingToLibrary(true);
+    try {
+      if (isInLibrary) {
+        await removeGame(game.id);
+        toast({
+          title: "Game Removed",
+          description: `${game.name} has been removed from your library`,
+        });
+      } else {
+        await addGame(game);
+        toast({
+          title: "Game Added",
+          description: `${game.name} has been added to your library`,
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update library",
+        variant: "destructive",
+      });
+    } finally {
+      setIsAddingToLibrary(false);
+    }
+  };
+
+  const handleScreenshotClick = (index: number) => {
+    setCurrentScreenshotIndex(index);
+    setIsScreenshotModalOpen(true);
+  };
 
   return (
     <div className="min-h-screen bg-gray-950 text-white flex flex-col">
@@ -84,15 +139,14 @@ export const GameDetails = memo(function GameDetails({ game }: { game: Game }) {
               {/* Cover Image */}
               <div className="md:w-1/4 flex-shrink-0">
                 {game.cover && (
-                  <div className="relative aspect-[3/4] rounded-xl overflow-hidden shadow-2xl 
-                                 ring-1 ring-white/10 transform hover:scale-105 transition-all duration-300">
+                  <div className="relative w-48 h-64 md:w-56 md:h-72 rounded-lg overflow-hidden shadow-2xl">
                     <Image
                       src={getCoverImageUrl(game.cover.url)}
                       alt={game.name}
                       fill
-                      sizes="(max-width: 768px) 100vw, 25vw"
-                      className="object-cover"
                       priority
+                      className="object-cover"
+                      unoptimized
                     />
                   </div>
                 )}
@@ -129,10 +183,21 @@ export const GameDetails = memo(function GameDetails({ game }: { game: Game }) {
 
                 {/* Action Buttons */}
                 <div className="flex gap-3">
-                  <AddToLibraryButton
-                    gameId={game.id.toString()}
-                    gameName={game.name}
-                  />
+                  <Button
+                    onClick={handleLibraryAction}
+                    disabled={isAddingToLibrary}
+                    className={cn(
+                      "flex items-center space-x-2",
+                      isInLibrary ? "bg-red-500/20 hover:bg-red-500/30" : "bg-green-500/20 hover:bg-green-500/30"
+                    )}
+                  >
+                    {isAddingToLibrary ? (
+                      <LoadingSpinner className="w-4 h-4" />
+                    ) : (
+                      <Heart className={cn("w-4 h-4", isInLibrary && "fill-current")} />
+                    )}
+                    <span>{isInLibrary ? "Remove from Library" : "Add to Library"}</span>
+                  </Button>
                   {websiteUrl && (
                     <Button variant="outline" size="lg" className="group" asChild>
                       <a
@@ -146,6 +211,14 @@ export const GameDetails = memo(function GameDetails({ game }: { game: Game }) {
                       </a>
                     </Button>
                   )}
+                  <Button
+                    onClick={() => setIsCompletionDialogOpen(true)}
+                    variant="outline"
+                    className="flex items-center space-x-2"
+                  >
+                    <Clock className="w-4 h-4" />
+                    <span>Update Progress</span>
+                  </Button>
                 </div>
               </div>
             </div>
@@ -234,47 +307,23 @@ export const GameDetails = memo(function GameDetails({ game }: { game: Game }) {
 
             {/* Screenshots */}
             {game.screenshots && game.screenshots.length > 0 && (
-              <>
-                <div className="mb-16">
-                  <h2 className="text-2xl font-bold mb-8">Screenshots</h2>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    {game.screenshots.slice(0, 3).map((screenshot, index) => (
-                      <div
-                        key={screenshot.id}
-                        className="relative aspect-video rounded-xl overflow-hidden group shadow-2xl cursor-pointer"
-                        onClick={() => setSelectedScreenshot(index)}
-                      >
-                        <Image
-                          src={getHighQualityImageUrl(screenshot.url)}
-                          alt={`${game.name} screenshot ${index + 1}`}
-                          fill
-                          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                          className="object-cover transition-transform duration-300 group-hover:scale-110"
-                        />
-                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                          <div className="text-white text-sm font-medium">Click to view</div>
-                        </div>
-                      </div>
-                    ))}
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                {game.screenshots.map((screenshot, index) => (
+                  <div 
+                    key={screenshot.id}
+                    className="cursor-pointer relative aspect-video"
+                    onClick={() => handleScreenshotClick(index)}
+                  >
+                    <Image
+                      src={getHighQualityImageUrl(screenshot.url)}
+                      alt={`Screenshot ${index + 1}`}
+                      fill
+                      className="object-cover rounded-lg"
+                      unoptimized
+                    />
                   </div>
-                </div>
-
-                <ScreenshotModal
-                  screenshots={game.screenshots.map(s => ({
-                    id: s.id,
-                    url: getHighQualityImageUrl(s.url)
-                  }))}
-                  currentIndex={selectedScreenshot ?? 0}
-                  isOpen={selectedScreenshot !== null}
-                  onClose={() => setSelectedScreenshot(null)}
-                  onNext={() => setSelectedScreenshot(prev => 
-                    prev !== null && prev < game.screenshots.length - 1 ? prev + 1 : prev
-                  )}
-                  onPrevious={() => setSelectedScreenshot(prev => 
-                    prev !== null && prev > 0 ? prev - 1 : prev
-                  )}
-                />
-              </>
+                ))}
+              </div>
             )}
 
             <Separator className="my-16 bg-gray-800" />
@@ -294,6 +343,29 @@ export const GameDetails = memo(function GameDetails({ game }: { game: Game }) {
           </div>
         </div>
       </div>
+
+      {/* Screenshot Modal */}
+      <ScreenshotModal
+        screenshots={game.screenshots?.map(screenshot => ({
+          id: screenshot.id,
+          url: getHighQualityImageUrl(screenshot.url)
+        })) || []}
+        currentIndex={currentScreenshotIndex}
+        isOpen={isScreenshotModalOpen}
+        onClose={() => setIsScreenshotModalOpen(false)}
+        onNext={() => setCurrentScreenshotIndex((prev) => 
+          Math.min(prev + 1, (game.screenshots?.length || 1) - 1)
+        )}
+        onPrevious={() => setCurrentScreenshotIndex((prev) => 
+          Math.max(prev - 1, 0)
+        )}
+      />
+
+      <CompletionDialog
+        game={game}
+        isOpen={isCompletionDialogOpen}
+        onClose={() => setIsCompletionDialogOpen(false)}
+      />
     </div>
   );
 }); 

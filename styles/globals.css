@@ -7,4 +7,20 @@
     -ms-overflow-x: hidden;
     scrollbar-width: none;
   }
-} 
+}
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    /* ... other variables ... */
+  }
+
+  /* Add or update container styles */
+  .container {
+    @apply px-4 mx-auto;
+    max-width: 1440px; /* or your preferred max-width */
+  }
+}
+
+/* Rest of your global styles */ 

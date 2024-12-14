@@ -29,6 +29,11 @@ export interface Game {
         developer: boolean;
         publisher: boolean;
     }[];
+    completed?: boolean
+    completedAt?: number
+    playStatus?: 'notStarted' | 'inProgress' | 'completed' | 'abandoned'
+    playTime?: number
+    rating?: number
 }
 
 export interface ProcessedGame {
