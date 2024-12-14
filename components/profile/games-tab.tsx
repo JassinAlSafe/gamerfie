@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState, useEffect, useMemo, useCallback, memo } from "react";
+import { useInfiniteQuery, useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { useSupabaseClient } from "@supabase/auth-helpers-react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
@@ -11,7 +11,8 @@ import { Gamepad2, Loader2, AlertCircle, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { fetchUserGames, updateGameStatus } from "@/utils/game-utils";
-import { Game, GameStats } from "@/types/game";
+import { ProcessedGame, GameStatus } from "@/types/game";
+import { GameSkeletonGrid } from "./game-skeleton";
 
 const GAMES_PER_PAGE = 24;
 
@@ -45,9 +46,16 @@ export function GamesTab({ userId }: GamesTabProps) {
     queryFn: async ({ pageParam = 0 }) => {
       const start = pageParam * GAMES_PER_PAGE;
       const end = start + GAMES_PER_PAGE - 1;
-      return fetchUserGames({ supabase, start, end, userId });
+      const games = await fetchUserGames({ supabase, start, end, userId });
+      return {
+        userGames: games,
+        nextPage: games.length === GAMES_PER_PAGE ? pageParam + 1 : undefined,
+        hasMore: games.length === GAMES_PER_PAGE
+      };
     },
-    getNextPageParam: (lastPage) => lastPage?.hasMore ? lastPage.nextPage : undefined
+    getNextPageParam: (lastPage) => lastPage?.nextPage,
+    staleTime: 1000 * 60 * 5, // Cache for 5 minutes
+    cacheTime: 1000 * 60 * 30, // Keep in cache for 30 minutes
   });
 
   const updateStatusMutation = useMutation({
@@ -69,12 +77,7 @@ export function GamesTab({ userId }: GamesTabProps) {
   }
 
   if (status === "loading") {
-    return (
-      <div className="flex flex-col items-center justify-center h-[60vh]">
-        <Loader2 className="w-16 h-16 text-purple-500 animate-spin mb-4" />
-        <p className="text-xl font-semibold text-gray-300">Loading your games...</p>
-      </div>
-    );
+    return <GameSkeletonGrid />;
   }
 
   if (status === "error") {
@@ -92,7 +95,7 @@ export function GamesTab({ userId }: GamesTabProps) {
     );
   }
 
-  const games = data?.pages.flatMap(page => page.userGames) || [];
+  const games = data?.pages.flatMap(page => page.userGames).filter(Boolean) || [];
 
   return (
     <div className="space-y-8">
@@ -100,18 +103,25 @@ export function GamesTab({ userId }: GamesTabProps) {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6"
+        className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6 px-2 md:px-0"
       >
-        {games.map((game, index) => (
-          <GameCard 
-            key={game.id} 
-            game={game} 
-            index={index}
-            onStatusChange={(newStatus) => 
-              updateStatusMutation.mutate({ gameId: game.game_id, newStatus })
-            }
-          />
-        ))}
+        {games.map((game, index) => {
+          if (!game?.id) {
+            console.warn('Invalid game data:', game);
+            return null;
+          }
+
+          return (
+            <GameCard 
+              key={game.id} 
+              game={game as ProcessedGame} 
+              index={index}
+              onStatusChange={(newStatus) => 
+                updateStatusMutation.mutate({ gameId: game.id, newStatus })
+              }
+            />
+          );
+        })}
       </motion.div>
 
       {hasNextPage && (
@@ -138,42 +148,54 @@ export function GamesTab({ userId }: GamesTabProps) {
 }
 
 interface GameCardProps {
-  game: Game;
+  game: ProcessedGame;
   index: number;
-  onStatusChange: (status: string) => void;
+  onStatusChange: (status: GameStatus) => void;
 }
 
 function GameCard({ game, index, onStatusChange }: GameCardProps) {
   const router = useRouter();
+  const imageUrl = useMemo(() => {
+    if (!game.cover?.url) return '';
+    const url = game.cover.url.startsWith('//') ? `https:${game.cover.url}` : game.cover.url;
+    return url.replace('t_thumb', 't_1080p').replace('t_micro', 't_1080p');
+  }, [game.cover?.url]);
 
-  const handleClick = (e: React.MouseEvent) => {
-    // Prevent navigation if clicking on the status dropdown
+  const handleClick = useCallback((e: React.MouseEvent) => {
     if ((e.target as HTMLElement).closest('.status-dropdown')) {
       return;
     }
-    router.push(`/game/${game.game_id}`);
-  };
+    router.push(`/game/${game.id}`);
+  }, [game.id, router]);
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: index * 0.05 }}
-      className="group relative cursor-pointer"
+      className="group relative cursor-pointer rounded-xl transition-all duration-300 hover:transform hover:scale-[1.02] hover:shadow-xl hover:shadow-purple-500/20"
       onClick={handleClick}
     >
-      <div className="aspect-[3/4] overflow-hidden rounded-lg bg-gray-800 relative">
-        {game.cover ? (
+      <div className="aspect-[3/4] overflow-hidden rounded-xl bg-gray-800/80 relative">
+        {imageUrl ? (
           <Image
-            src={game.cover.url.replace("t_thumb", "t_cover_big")}
+            src={imageUrl}
             alt={game.name}
             fill
             sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 25vw"
-            className="object-cover transition-transform group-hover:scale-105"
-            priority
+            className="object-cover transition-transform duration-300 group-hover:scale-105"
+            priority={index < 12}
+            quality={100}
+            loading={index < 12 ? "eager" : "lazy"}
+            onError={(e) => {
+              const img = e.target as HTMLImageElement;
+              if (img.src.includes('t_1080p')) {
+                img.src = img.src.replace('t_1080p', 't_cover_big');
+              }
+            }}
           />
         ) : (
-          <div className="flex items-center justify-center h-full">
+          <div className="flex items-center justify-center h-full bg-gray-800/90 backdrop-blur-sm">
             <Gamepad2 className="w-16 h-16 text-gray-500" />
           </div>
         )}
@@ -183,7 +205,7 @@ function GameCard({ game, index, onStatusChange }: GameCardProps) {
   );
 }
 
-function GameCardOverlay({ game, onStatusChange }: { game: Game; onStatusChange: (status: string) => void }) {
+const GameCardOverlay = memo(({ game, onStatusChange }: { game: ProcessedGame; onStatusChange: (status: GameStatus) => void }) => {
   const statusColors = {
     playing: "bg-green-500",
     completed: "bg-blue-500",
@@ -191,24 +213,23 @@ function GameCardOverlay({ game, onStatusChange }: { game: Game; onStatusChange:
     dropped: "bg-red-500"
   };
 
-  // Add click handler to stop propagation
-  const handleClick = (e: React.MouseEvent) => {
+  const handleClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
-  };
+  }, []);
 
   return (
     <div 
-      className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-      onClick={handleClick}  // Add click handler here
+      className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/70 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300 rounded-xl"
+      onClick={handleClick}
     >
-      <div className="absolute bottom-0 left-0 right-0 p-3">
-        <h3 className="text-white font-bold text-sm sm:text-base truncate mb-1">
+      <div className="absolute bottom-0 left-0 right-0 p-4">
+        <h3 className="text-white font-bold text-sm sm:text-base truncate mb-2 drop-shadow-lg">
           {game.name}
         </h3>
         <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <span className={`w-2 h-2 rounded-full ${statusColors[game.status] || "bg-gray-500"}`} />
-            <p className="text-gray-300 text-xs sm:text-sm">
+          <div className="flex items-center space-x-2 bg-black/40 rounded-full px-3 py-1.5">
+            <span className={`w-2.5 h-2.5 rounded-full ${statusColors[game.status] || "bg-gray-500"} shadow-glow`} />
+            <p className="text-gray-200 text-xs sm:text-sm font-medium">
               {game.status.split("_").map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ")}
             </p>
           </div>
@@ -219,9 +240,11 @@ function GameCardOverlay({ game, onStatusChange }: { game: Game; onStatusChange:
       </div>
     </div>
   );
-}
+});
 
-function StatusDropdown({ onStatusChange }: { onStatusChange: (status: string) => void }) {
+GameCardOverlay.displayName = 'GameCardOverlay';
+
+const StatusDropdown = memo(({ onStatusChange }: { onStatusChange: (status: GameStatus) => void }) => {
   const statusOptions = [
     { value: 'want_to_play', label: 'Want to Play', icon: '📋', color: 'text-yellow-400' },
     { value: 'playing', label: 'Playing', icon: '🎮', color: 'text-green-400' },
@@ -229,7 +252,7 @@ function StatusDropdown({ onStatusChange }: { onStatusChange: (status: string) =
     { value: 'dropped', label: 'Dropped', icon: '⏹️', color: 'text-red-400' }
   ];
 
-  const handleStatusChange = (status: string) => (e: Event) => {
+  const handleStatusChange = (status: GameStatus) => (e: Event) => {
     e.preventDefault();
     e.stopPropagation();
     onStatusChange(status);
@@ -241,7 +264,7 @@ function StatusDropdown({ onStatusChange }: { onStatusChange: (status: string) =
         <Button 
           variant="ghost" 
           size="sm"
-          className="h-8 w-8 p-0 hover:bg-white/20 hover:text-white focus:ring-2 focus:ring-white/20 transition-all duration-200"
+          className="h-8 w-8 p-0 hover:bg-white/30 hover:text-white focus:ring-2 focus:ring-white/30 transition-all duration-200 rounded-lg"
         >
           <ChevronDown className="h-4 w-4 text-gray-300" />
         </Button>
@@ -249,7 +272,7 @@ function StatusDropdown({ onStatusChange }: { onStatusChange: (status: string) =
       <DropdownMenuContent 
         align="end" 
         sideOffset={5}
-        className="w-48 bg-gray-900/95 backdrop-blur-md border border-gray-700/50 shadow-2xl rounded-lg p-1 animate-in fade-in-0 zoom-in-95 duration-100 z-50"
+        className="w-56 bg-gray-900/95 backdrop-blur-md border border-gray-700/50 shadow-2xl rounded-lg p-1.5 animate-in fade-in-0 zoom-in-95 duration-100 z-50"
       >
         <div className="relative">
           {statusOptions.map(({ value, label, icon, color }) => (
@@ -270,4 +293,6 @@ function StatusDropdown({ onStatusChange }: { onStatusChange: (status: string) =
       </DropdownMenuContent>
     </DropdownMenu>
   );
-}
+});
+
+StatusDropdown.displayName = 'StatusDropdown';

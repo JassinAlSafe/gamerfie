@@ -1,6 +1,7 @@
 import { geistSans, geistMono } from "./utils/fonts";
 import { siteMetadata } from "./config/metadata";
 import "./globals.css";
+import "../styles/game-card.css";
 import FloatingHeader from "@/components/ui/FloatingHeader";
 import Providers from "./providers";
 import { Footer } from "@/components/Footer";
