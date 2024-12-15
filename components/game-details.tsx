@@ -1,11 +1,29 @@
 "use client";
 
-import React, { memo, useState } from "react";
+import React, { memo, useState, useEffect } from "react";
 import Image from "next/image";
-import { Star, ExternalLink, Calendar, Gamepad2, Users, Heart, Clock } from "lucide-react";
+import { motion, useScroll, useTransform } from "framer-motion";
+import { 
+  Star, 
+  ExternalLink, 
+  Calendar, 
+  Gamepad2, 
+  Users, 
+  Heart, 
+  Clock, 
+  Trophy,
+  MessageSquare,
+  Share2,
+  BookOpen,
+  BarChart3,
+  Check,
+  Plus
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Progress } from "@/components/ui/progress";
 import { AddToLibraryButton } from "@/components/add-to-library-button";
 import { ScreenshotModal } from "@/components/screenshot-modal";
 import BackButton from "@/app/game/[id]/BackButton";
@@ -57,17 +75,28 @@ const formatDate = (timestamp: number) => {
 };
 
 export const GameDetails = memo(function GameDetails({ game }: { game: Game }) {
+  const { scrollYProgress } = useScroll();
+  const y = useTransform(scrollYProgress, [0, 1], ["0%", "100%"]);
+  const opacity = useTransform(scrollYProgress, [0, 0.5], [1, 0]);
+  
   const { user } = useAuthStore();
-  const { games, addGame, removeGame } = useLibraryStore();
+  const { games, addGame, removeGame, fetchUserLibrary } = useLibraryStore();
   const { toast } = useToast();
   const [isAddingToLibrary, setIsAddingToLibrary] = useState(false);
   const [isScreenshotModalOpen, setIsScreenshotModalOpen] = useState(false);
   const [currentScreenshotIndex, setCurrentScreenshotIndex] = useState(0);
   const [isCompletionDialogOpen, setIsCompletionDialogOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState("overview");
+  
   const websiteUrl = getWebsiteUrl(game);
   const backgroundImage = getBackgroundImage(game);
-
   const isInLibrary = games.some(g => g.id === game.id);
+
+  useEffect(() => {
+    if (user) {
+      fetchUserLibrary(user.id);
+    }
+  }, [user, fetchUserLibrary]);
 
   const handleLibraryAction = async () => {
     if (!user) {
@@ -94,7 +123,9 @@ export const GameDetails = memo(function GameDetails({ game }: { game: Game }) {
           description: `${game.name} has been added to your library`,
         });
       }
+      await fetchUserLibrary(user.id);
     } catch (error) {
+      console.error('Library action error:', error);
       toast({
         title: "Error",
         description: "Failed to update library",
@@ -111,15 +142,15 @@ export const GameDetails = memo(function GameDetails({ game }: { game: Game }) {
   };
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white flex flex-col">
-      {/* Header Spacer */}
-      <div className="h-16" />
-
-      {/* Hero Section */}
-      <div className="relative h-[85vh] w-full">
-        {/* Background Image */}
+    <div className="min-h-screen bg-gray-950 text-white">
+      {/* Parallax Hero Section */}
+      <motion.div 
+        className="relative h-[85vh] w-full"
+        style={{ y, opacity }}
+      >
+        {/* Background Image with Parallax */}
         <div
-          className="absolute inset-0 bg-cover bg-center bg-fixed"
+          className="absolute inset-0 bg-cover bg-center bg-fixed transform scale-110"
           style={{
             backgroundImage: backgroundImage ? `url(${backgroundImage})` : "none",
           }}
@@ -128,78 +159,142 @@ export const GameDetails = memo(function GameDetails({ game }: { game: Game }) {
 
         {/* Hero Content */}
         <div className="relative z-30 h-full container mx-auto px-4">
-          {/* Back Button */}
           <div className="pt-8">
             <BackButton />
           </div>
 
           {/* Game Info Container */}
           <div className="absolute bottom-0 left-4 right-4 pb-32">
-            <div className="flex flex-col md:flex-row gap-8 items-end">
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+              className="flex flex-col md:flex-row gap-4 items-end"
+            >
               {/* Cover Image */}
-              <div className="md:w-1/4 flex-shrink-0">
+              <motion.div 
+                className="md:w-1/4 flex-shrink-0 md:translate-y-24"
+                whileHover={{ scale: 1.05 }}
+                transition={{ duration: 0.2 }}
+              >
                 {game.cover && (
-                  <div className="relative w-48 h-64 md:w-56 md:h-72 rounded-lg overflow-hidden shadow-2xl">
+                  <div className="relative w-56 h-72 md:w-72 md:h-96 rounded-lg overflow-hidden shadow-2xl ring-4 ring-purple-500/20">
                     <Image
-                      src={getCoverImageUrl(game.cover.url)}
+                      src={game.cover.url.replace('t_thumb', 't_1080p').replace('t_micro', 't_1080p')}
                       alt={game.name}
                       fill
                       priority
+                      quality={100}
                       className="object-cover"
                       unoptimized
                     />
                   </div>
                 )}
-              </div>
+              </motion.div>
 
               {/* Game Details */}
               <div className="md:w-3/4 pb-4">
-                <h1 className="text-5xl md:text-7xl font-bold mb-6 text-white">
+                <motion.h1 
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.2 }}
+                  className="text-5xl md:text-7xl font-bold mb-6 text-white"
+                >
                   {game.name}
-                </h1>
+                </motion.h1>
 
                 {/* Quick Stats */}
-                <div className="flex flex-wrap gap-4 mb-6">
+                <motion.div 
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.3 }}
+                  className="flex flex-wrap gap-4 mb-6"
+                >
+                  {/* Add to Library Button for Desktop */}
+                  <div className="hidden md:block">
+                    <Button
+                      onClick={handleLibraryAction}
+                      disabled={isAddingToLibrary}
+                      size="lg"
+                      className={cn(
+                        "flex items-center space-x-3 transition-all duration-300 text-lg py-6 px-8",
+                        isInLibrary 
+                          ? "bg-purple-600 hover:bg-purple-700" 
+                          : "bg-purple-500/20 hover:bg-purple-500/30 hover:text-purple-300"
+                      )}
+                    >
+                      {isAddingToLibrary ? (
+                        <LoadingSpinner className="w-5 h-5" />
+                      ) : isInLibrary ? (
+                        <>
+                          <Heart className="w-5 h-5 fill-current" />
+                          <span>In Library</span>
+                        </>
+                      ) : (
+                        <>
+                          <Heart className="w-5 h-5" />
+                          <span>Add to Library</span>
+                        </>
+                      )}
+                    </Button>
+                  </div>
+
                   {game.total_rating && (
-                    <div className="flex items-center bg-white/10 rounded-lg px-4 py-2 backdrop-blur-sm">
-                      <Star className="w-5 h-5 text-yellow-400 mr-2" />
+                    <div className="flex items-center bg-white/10 rounded-lg px-6 py-3 backdrop-blur-sm hover:bg-white/20 transition-colors">
+                      <Star className="w-6 h-6 text-yellow-400 mr-2" />
                       <span className="text-2xl font-bold">{game.total_rating.toFixed(1)}</span>
                     </div>
                   )}
-                  <div className="flex items-center bg-white/10 rounded-lg px-4 py-2 backdrop-blur-sm">
-                    <Calendar className="w-5 h-5 text-blue-400 mr-2" />
+                  <div className="flex items-center bg-white/10 rounded-lg px-6 py-3 backdrop-blur-sm hover:bg-white/20 transition-colors">
+                    <Calendar className="w-6 h-6 text-blue-400 mr-2" />
                     <span className="text-lg">
                       {game.first_release_date
                         ? formatDate(game.first_release_date)
                         : "Unknown"}
                     </span>
                   </div>
-                </div>
+                  {game.genres && (
+                    <div className="flex items-center bg-white/10 rounded-lg px-6 py-3 backdrop-blur-sm hover:bg-white/20 transition-colors">
+                      <Gamepad2 className="w-6 h-6 text-purple-400 mr-2" />
+                      <span className="text-lg">{game.genres[0]?.name}</span>
+                    </div>
+                  )}
+                </motion.div>
 
                 {/* Summary */}
-                <p className="text-lg text-gray-300 leading-relaxed mb-8 line-clamp-3">
+                <motion.p 
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.4 }}
+                  className="text-lg text-gray-300 leading-relaxed mb-8 line-clamp-3"
+                >
                   {game.summary}
-                </p>
+                </motion.p>
 
                 {/* Action Buttons */}
-                <div className="flex gap-3">
+                <motion.div 
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.5 }}
+                  className="flex flex-wrap gap-3"
+                >
                   <Button
-                    onClick={handleLibraryAction}
-                    disabled={isAddingToLibrary}
-                    className={cn(
-                      "flex items-center space-x-2",
-                      isInLibrary ? "bg-red-500/20 hover:bg-red-500/30" : "bg-green-500/20 hover:bg-green-500/30"
-                    )}
+                    onClick={() => setIsCompletionDialogOpen(true)}
+                    variant="outline"
+                    size="lg"
+                    className="flex items-center space-x-2 hover:scale-105 transition-all duration-300 py-6"
                   >
-                    {isAddingToLibrary ? (
-                      <LoadingSpinner className="w-4 h-4" />
-                    ) : (
-                      <Heart className={cn("w-4 h-4", isInLibrary && "fill-current")} />
-                    )}
-                    <span>{isInLibrary ? "Remove from Library" : "Add to Library"}</span>
+                    <Clock className="w-5 h-5" />
+                    <span>Update Progress</span>
                   </Button>
+
                   {websiteUrl && (
-                    <Button variant="outline" size="lg" className="group" asChild>
+                    <Button 
+                      variant="outline"
+                      size="lg"
+                      className="group hover:scale-105 transition-all duration-300 py-6" 
+                      asChild
+                    >
                       <a
                         href={websiteUrl}
                         target="_blank"
@@ -207,164 +302,289 @@ export const GameDetails = memo(function GameDetails({ game }: { game: Game }) {
                         className="inline-flex items-center"
                       >
                         Visit Website
-                        <ExternalLink className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
+                        <ExternalLink className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
                       </a>
                     </Button>
                   )}
+
                   <Button
-                    onClick={() => setIsCompletionDialogOpen(true)}
                     variant="outline"
-                    className="flex items-center space-x-2"
+                    size="lg"
+                    className="flex items-center space-x-2 hover:scale-105 transition-all duration-300 py-6"
                   >
-                    <Clock className="w-4 h-4" />
-                    <span>Update Progress</span>
+                    <Share2 className="w-5 h-5" />
+                    <span>Share</span>
                   </Button>
-                </div>
+                </motion.div>
               </div>
-            </div>
+            </motion.div>
           </div>
         </div>
-      </div>
+      </motion.div>
 
-      {/* Content Wrapper */}
-      <div className="flex-grow w-full">
-        {/* Info Cards Section */}
-        <div className="relative z-20 bg-transparent">
-          <div className="max-w-7xl mx-auto px-4 w-full">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 -mt-24">
-              {/* Genres Card */}
-              <div className="bg-gray-900/90 backdrop-blur-md p-6 rounded-xl border border-white/10 hover:border-white/20 transition-all duration-300">
-                <h3 className="text-lg font-semibold mb-4 flex items-center">
-                  <Gamepad2 className="w-5 h-5 mr-2 text-purple-400" />
-                  Genres
-                </h3>
-                <div className="flex flex-wrap gap-2">
-                  {game.genres?.map((genre) => (
-                    <Badge 
-                      key={genre.id}
-                      variant="secondary"
-                      className="bg-purple-500/10 text-purple-400 hover:bg-purple-500/20 px-3 py-1"
+      {/* Content Tabs */}
+      <div className="sticky top-16 z-40 bg-gray-950/80 backdrop-blur-md border-b border-white/10">
+        <div className="max-w-7xl mx-auto px-4">
+          <Tabs defaultValue="overview" className="w-full">
+            <TabsList className="w-full justify-start border-b border-white/10 bg-transparent h-auto p-0">
+              <TabsTrigger
+                value="overview"
+                className="px-4 py-3 text-gray-400 data-[state=active]:text-white data-[state=active]:border-b-2 data-[state=active]:border-purple-500 rounded-none bg-transparent"
+              >
+                Overview
+              </TabsTrigger>
+              <TabsTrigger
+                value="media"
+                className="px-4 py-3 text-gray-400 data-[state=active]:text-white data-[state=active]:border-b-2 data-[state=active]:border-purple-500 rounded-none bg-transparent"
+              >
+                Media
+              </TabsTrigger>
+              <TabsTrigger
+                value="achievements"
+                className="px-4 py-3 text-gray-400 data-[state=active]:text-white data-[state=active]:border-b-2 data-[state=active]:border-purple-500 rounded-none bg-transparent"
+              >
+                Achievements
+              </TabsTrigger>
+              <TabsTrigger
+                value="reviews"
+                className="px-4 py-3 text-gray-400 data-[state=active]:text-white data-[state=active]:border-b-2 data-[state=active]:border-purple-500 rounded-none bg-transparent"
+              >
+                Reviews
+              </TabsTrigger>
+            </TabsList>
+
+            <div className="py-8">
+              <TabsContent value="overview" className="mt-0">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                  {/* Main Content */}
+                  <div className="lg:col-span-2 space-y-8">
+                    {/* About */}
+                    <div className="bg-gray-900/50 rounded-xl p-6 backdrop-blur-sm border border-white/10">
+                      <h3 className="text-xl font-semibold mb-4 flex items-center">
+                        <BookOpen className="w-5 h-5 mr-2 text-purple-400" />
+                        About
+                      </h3>
+                      <p className="text-gray-300 leading-relaxed">
+                        {game.summary}
+                      </p>
+                      {game.storyline && (
+                        <>
+                          <h4 className="text-lg font-semibold mt-6 mb-2">Storyline</h4>
+                          <p className="text-gray-300 leading-relaxed">
+                            {game.storyline}
+                          </p>
+                        </>
+                      )}
+                    </div>
+
+                    {/* Features */}
+                    <div className="bg-gray-900/50 rounded-xl p-6 backdrop-blur-sm border border-white/10">
+                      <h3 className="text-xl font-semibold mb-4 flex items-center">
+                        <Trophy className="w-5 h-5 mr-2 text-yellow-400" />
+                        Features
+                      </h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {game.genres && (
+                          <div>
+                            <h4 className="text-sm font-medium text-gray-400 mb-2">Genres</h4>
+                            <div className="flex flex-wrap gap-2">
+                              {game.genres.map((genre) => (
+                                <Badge
+                                  key={genre.id}
+                                  variant="secondary"
+                                  className="bg-purple-500/10 text-purple-400 hover:bg-purple-500/20"
+                                >
+                                  {genre.name}
+                                </Badge>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        {game.platforms && (
+                          <div>
+                            <h4 className="text-sm font-medium text-gray-400 mb-2">Platforms</h4>
+                            <div className="flex flex-wrap gap-2">
+                              {game.platforms.map((platform) => (
+                                <Badge
+                                  key={platform.id}
+                                  variant="secondary"
+                                  className="bg-blue-500/10 text-blue-400 hover:bg-blue-500/20"
+                                >
+                                  {platform.name}
+                                </Badge>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Sidebar */}
+                  <div className="space-y-6">
+                    {/* Progress */}
+                    <div className="bg-gray-900/50 rounded-xl p-6 backdrop-blur-sm border border-white/10">
+                      <h3 className="text-xl font-semibold mb-4 flex items-center">
+                        <BarChart3 className="w-5 h-5 mr-2 text-green-400" />
+                        Your Progress
+                      </h3>
+                      <div className="space-y-4">
+                        <div>
+                          <div className="flex justify-between text-sm mb-2">
+                            <span className="text-gray-400">Completion</span>
+                            <span className="text-white">60%</span>
+                          </div>
+                          <Progress value={60} className="h-2" />
+                        </div>
+                        <div>
+                          <div className="flex justify-between text-sm mb-2">
+                            <span className="text-gray-400">Achievements</span>
+                            <span className="text-white">12/20</span>
+                          </div>
+                          <Progress value={60} className="h-2" />
+                        </div>
+                        <Button 
+                          className="w-full mt-4 bg-green-500/20 hover:bg-green-500/30"
+                          onClick={() => setIsCompletionDialogOpen(true)}
+                        >
+                          Update Progress
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* Community Stats */}
+                    <div className="bg-gray-900/50 rounded-xl p-6 backdrop-blur-sm border border-white/10">
+                      <h3 className="text-xl font-semibold mb-4 flex items-center">
+                        <Users className="w-5 h-5 mr-2 text-blue-400" />
+                        Community Stats
+                      </h3>
+                      <div className="space-y-4">
+                        <div className="flex justify-between items-center">
+                          <span className="text-gray-400">Players</span>
+                          <span className="text-white font-medium">1,234</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-gray-400">Reviews</span>
+                          <span className="text-white font-medium">456</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-gray-400">Avg. Playtime</span>
+                          <span className="text-white font-medium">25h</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="media" className="mt-0">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                  {game.screenshots?.map((screenshot, index) => (
+                    <motion.div
+                      key={index}
+                      whileHover={{ scale: 1.05 }}
+                      className="relative aspect-video rounded-lg overflow-hidden cursor-pointer"
+                      onClick={() => handleScreenshotClick(index)}
                     >
-                      {genre.name}
-                    </Badge>
+                      <Image
+                        src={getHighQualityImageUrl(screenshot.url)}
+                        alt={`Screenshot ${index + 1}`}
+                        fill
+                        className="object-cover"
+                      />
+                    </motion.div>
                   ))}
                 </div>
-              </div>
+              </TabsContent>
 
-              {/* Platforms Card */}
-              <div className="bg-gray-900/90 backdrop-blur-md p-6 rounded-xl border border-white/10 hover:border-white/20 transition-all duration-300">
-                <h3 className="text-lg font-semibold mb-4 flex items-center">
-                  <Gamepad2 className="w-5 h-5 mr-2 text-blue-400" />
-                  Platforms
-                </h3>
-                <div className="flex flex-wrap gap-2">
-                  {game.platforms?.map((platform) => (
-                    <Badge
-                      key={platform.id}
-                      variant="outline"
-                      className="hover:bg-white/10 px-3 py-1"
+              <TabsContent value="achievements" className="mt-0">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Placeholder achievements */}
+                  {Array.from({ length: 8 }).map((_, index) => (
+                    <div
+                      key={index}
+                      className="bg-gray-900/50 rounded-lg p-4 border border-white/10 flex items-center gap-4"
                     >
-                      {platform.name}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-
-              {/* Companies Card */}
-              <div className="bg-gray-900/90 backdrop-blur-md p-6 rounded-xl border border-white/10 hover:border-white/20 transition-all duration-300">
-                <h3 className="text-lg font-semibold mb-4 flex items-center">
-                  <Users className="w-5 h-5 mr-2 text-green-400" />
-                  Development
-                </h3>
-                <div className="space-y-2">
-                  {game.involved_companies?.map((company) => (
-                    <div key={company.id} className="text-sm">
-                      <span className="text-white font-medium">{company.company.name}</span>
-                      <span className="text-gray-400 ml-2">
-                        {company.developer && company.publisher ? "(Dev & Pub)" : 
-                         company.developer ? "(Developer)" : "(Publisher)"}
-                      </span>
+                      <div className="w-12 h-12 rounded-lg bg-purple-500/20 flex items-center justify-center">
+                        <Trophy className="w-6 h-6 text-purple-400" />
+                      </div>
+                      <div>
+                        <h4 className="font-medium text-white">Achievement {index + 1}</h4>
+                        <p className="text-sm text-gray-400">Description of the achievement</p>
+                      </div>
+                      <div className="ml-auto">
+                        <Badge variant="secondary" className="bg-purple-500/10 text-purple-400">
+                          10G
+                        </Badge>
+                      </div>
                     </div>
                   ))}
                 </div>
-              </div>
-            </div>
-          </div>
-        </div>
+              </TabsContent>
 
-        {/* Main Content Section */}
-        <div className="bg-gray-950 mt-24 w-full pb-24">
-          <div className="max-w-7xl mx-auto px-4">
-            {/* About Section */}
-            <div className="mb-16">
-              <h2 className="text-2xl font-bold mb-6">About</h2>
-              <p className="text-gray-300 text-lg leading-relaxed max-w-4xl">
-                {game.summary}
-              </p>
-            </div>
-
-            <Separator className="my-16 bg-gray-800" />
-
-            {/* Screenshots */}
-            {game.screenshots && game.screenshots.length > 0 && (
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                {game.screenshots.map((screenshot, index) => (
-                  <div 
-                    key={screenshot.id}
-                    className="cursor-pointer relative aspect-video"
-                    onClick={() => handleScreenshotClick(index)}
-                  >
-                    <Image
-                      src={getHighQualityImageUrl(screenshot.url)}
-                      alt={`Screenshot ${index + 1}`}
-                      fill
-                      className="object-cover rounded-lg"
-                      unoptimized
+              <TabsContent value="reviews" className="mt-0">
+                <div className="space-y-6">
+                  {/* Review Form */}
+                  <div className="bg-gray-900/50 rounded-xl p-6 backdrop-blur-sm border border-white/10">
+                    <h3 className="text-xl font-semibold mb-4">Write a Review</h3>
+                    <textarea
+                      className="w-full h-32 bg-gray-800/50 rounded-lg border border-white/10 p-4 text-white resize-none focus:outline-none focus:ring-2 focus:ring-purple-500"
+                      placeholder="Share your thoughts about this game..."
                     />
+                    <div className="flex justify-end mt-4">
+                      <Button className="bg-purple-600 hover:bg-purple-700">
+                        Post Review
+                      </Button>
+                    </div>
                   </div>
-                ))}
-              </div>
-            )}
 
-            <Separator className="my-16 bg-gray-800" />
-
-            {/* Similar Games */}
-            <div className="w-full">
-              <h2 className="text-2xl font-bold mb-8">You Might Also Like</h2>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6">
-                {[...Array(6)].map((_, i) => (
-                  <div
-                    key={i}
-                    className="aspect-[3/4] rounded-lg bg-white/5 animate-pulse w-full"
-                  />
-                ))}
-              </div>
+                  {/* Reviews List */}
+                  <div className="space-y-4">
+                    {/* Placeholder reviews */}
+                    {Array.from({ length: 3 }).map((_, index) => (
+                      <div
+                        key={index}
+                        className="bg-gray-900/50 rounded-xl p-6 backdrop-blur-sm border border-white/10"
+                      >
+                        <div className="flex items-center justify-between mb-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-purple-500/20" />
+                            <div>
+                              <h4 className="font-medium text-white">User {index + 1}</h4>
+                              <p className="text-sm text-gray-400">Posted 2 days ago</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center">
+                            <Star className="w-5 h-5 text-yellow-400" />
+                            <span className="ml-1 font-medium">4.5</span>
+                          </div>
+                        </div>
+                        <p className="text-gray-300">
+                          This is a placeholder review. The actual review content would go here.
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </TabsContent>
             </div>
-          </div>
+          </Tabs>
         </div>
       </div>
 
-      {/* Screenshot Modal */}
+      {/* Modals */}
       <ScreenshotModal
-        screenshots={game.screenshots?.map(screenshot => ({
-          id: screenshot.id,
-          url: getHighQualityImageUrl(screenshot.url)
-        })) || []}
-        currentIndex={currentScreenshotIndex}
         isOpen={isScreenshotModalOpen}
         onClose={() => setIsScreenshotModalOpen(false)}
-        onNext={() => setCurrentScreenshotIndex((prev) => 
-          Math.min(prev + 1, (game.screenshots?.length || 1) - 1)
-        )}
-        onPrevious={() => setCurrentScreenshotIndex((prev) => 
-          Math.max(prev - 1, 0)
-        )}
+        screenshots={game.screenshots || []}
+        currentIndex={currentScreenshotIndex}
+        onIndexChange={setCurrentScreenshotIndex}
       />
-
+      
       <CompletionDialog
+        open={isCompletionDialogOpen}
+        onOpenChange={setIsCompletionDialogOpen}
         game={game}
-        isOpen={isCompletionDialogOpen}
-        onClose={() => setIsCompletionDialogOpen(false)}
       />
     </div>
   );

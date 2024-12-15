@@ -8,7 +8,7 @@ import React, {
   useRef,
 } from "react";
 import { useQuery } from "@tanstack/react-query";
-import ErrorBoundary from "@/components/ErrorBoundary";
+import { ErrorBoundary } from "@/components/error-boundary";
 import LoadingSpinner from "@/components/loadingSpinner";
 import { Gamepad2, ArrowLeft, Search } from "lucide-react";
 import Link from "next/link";

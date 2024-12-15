@@ -8,10 +8,10 @@ interface LibraryState {
   error: string | null
   setGames: (games: Game[]) => void
   addGame: (game: Game) => Promise<void>
-  removeGame: (gameId: number) => Promise<void>
+  removeGame: (gameId: string) => Promise<void>
   fetchUserLibrary: (userId: string) => Promise<void>
   clearLibrary: () => void
-  updateGame: (gameId: number, updates: Partial<Game>) => Promise<void>
+  updateGame: (gameId: string, updates: Partial<Game>) => Promise<void>
   updateGameProgress: (gameId: string, progress: {
     status?: GameStatus;
     playTime?: number;
@@ -24,7 +24,7 @@ interface LibraryState {
     totalPlayTime: number;
     averageRating: number;
   }
-  updateGamesOrder: (newOrder: number[]) => Promise<void>;
+  updateGamesOrder: (newOrder: string[]) => Promise<void>;
 }
 
 export const useLibraryStore = create<LibraryState>((set, get) => {
@@ -43,22 +43,42 @@ export const useLibraryStore = create<LibraryState>((set, get) => {
         const { data: { user } } = await supabase.auth.getUser()
         if (!user) throw new Error('User not authenticated')
 
-        // First, insert or update the game in the games table
-        const { error: gameError } = await supabase
-          .from('games')
-          .upsert({
+        // First, update the games table through the server API
+        const response = await fetch('/api/games/upsert', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
             id: game.id,
             name: game.name,
-            cover: game.cover,
-            rating: game.rating,
+            cover: game.cover ? {
+              id: game.cover.id,
+              url: game.cover.url.startsWith('//') 
+                ? `https:${game.cover.url.replace('t_thumb', 't_1080p')}` 
+                : game.cover.url.replace('t_thumb', 't_1080p')
+            } : null,
+            rating: game.rating || 0,
             first_release_date: game.first_release_date,
             platforms: game.platforms,
-            genres: game.genres
-          }, { 
-            onConflict: 'id'  // Update if game already exists
-          });
+            genres: game.genres,
+            summary: game.summary || '',
+            storyline: game.storyline || ''
+          })
+        });
 
-        if (gameError) throw gameError;
+        if (!response.ok) {
+          const error = await response.text();
+          throw new Error(`Failed to update game: ${error}`);
+        }
+
+        // Get current number of games to determine the display order
+        const { data: currentGames, error: countError } = await supabase
+          .from('user_games')
+          .select('game_id')
+          .eq('user_id', user.id);
+
+        if (countError) throw countError;
 
         // Then create the user-game relationship
         const { error: userGameError } = await supabase
@@ -66,21 +86,23 @@ export const useLibraryStore = create<LibraryState>((set, get) => {
           .insert([{ 
             user_id: user.id, 
             game_id: game.id,
-            status: 'notStarted',
-            display_order: get().games.length  // Add at the end of the list
+            status: 'want_to_play',
+            created_at: new Date().toISOString(),
+            display_order: (currentGames?.length || 0) + 1 // Add to the end of the list
           }])
 
         if (userGameError) throw userGameError;
 
-        set((state) => ({ 
-          games: [...state.games, game],
-          isLoading: false 
-        }))
+        // Fetch updated library
+        await get().fetchUserLibrary(user.id);
       } catch (error) {
         set({ 
           error: error instanceof Error ? error.message : 'Failed to add game',
           isLoading: false 
         })
+        throw error;
+      } finally {
+        set({ isLoading: false })
       }
     },
 
@@ -97,12 +119,14 @@ export const useLibraryStore = create<LibraryState>((set, get) => {
 
         if (error) throw error
 
-        set((state) => ({
-          games: state.games.filter(g => g.id !== gameId),
-          isLoading: false
-        }))
+        // Fetch updated library instead of updating local state directly
+        await get().fetchUserLibrary(user.id);
       } catch (error) {
-        set({ error: (error as Error).message, isLoading: false })
+        set({ 
+          error: error instanceof Error ? error.message : 'Failed to remove game',
+          isLoading: false 
+        })
+        throw error;
       }
     },
 
@@ -110,7 +134,7 @@ export const useLibraryStore = create<LibraryState>((set, get) => {
       try {
         set({ isLoading: true, error: null })
         
-        // First get user's games
+        // First get user's games with all game details in a single query
         const { data: userGames, error: userGamesError } = await supabase
           .from('user_games')
           .select(`
@@ -121,45 +145,52 @@ export const useLibraryStore = create<LibraryState>((set, get) => {
             completed_at,
             notes,
             last_played_at,
-            display_order
+            display_order,
+            games (
+              id,
+              name,
+              cover,
+              rating,
+              first_release_date,
+              platforms,
+              genres,
+              summary,
+              storyline
+            )
           `)
           .eq('user_id', userId)
           .order('display_order', { ascending: true });
 
-        if (userGamesError) throw userGamesError;
-
-        // Then fetch the game details
-        if (userGames && userGames.length > 0) {
-          const { data: gamesData, error: gamesError } = await supabase
-            .from('games')
-            .select('*')
-            .in('id', userGames.map(ug => ug.game_id));
-
-          if (gamesError) throw gamesError;
-
-          // Combine the data
-          const games = userGames.map(userGame => {
-            const gameData = gamesData?.find(g => g.id === userGame.game_id);
-            return {
-              ...gameData,
-              playStatus: userGame.status,
-              playTime: userGame.play_time,
-              userRating: userGame.user_rating,
-              completed: userGame.status === 'completed',
-              completedAt: userGame.completed_at,
-              lastPlayedAt: userGame.last_played_at,
-              notes: userGame.notes
-            };
-          });
-
-          set({ games, isLoading: false });
-        } else {
-          set({ games: [], isLoading: false });
+        if (userGamesError) {
+          console.error('Error fetching user games:', userGamesError);
+          throw userGamesError;
         }
+
+        if (!userGames?.length) {
+          set({ games: [], isLoading: false });
+          return;
+        }
+
+        // Transform the data to match our Game type
+        const games = userGames.map(userGame => ({
+          id: userGame.game_id,
+          ...userGame.games,
+          status: userGame.status,
+          playTime: userGame.play_time,
+          userRating: userGame.user_rating,
+          completedAt: userGame.completed_at,
+          lastPlayedAt: userGame.last_played_at,
+          notes: userGame.notes,
+          displayOrder: userGame.display_order
+        }));
+
+        set({ games, isLoading: false });
       } catch (error) {
+        console.error('Error in fetchUserLibrary:', error);
         set({ 
           error: error instanceof Error ? error.message : 'Failed to fetch library',
-          isLoading: false 
+          isLoading: false,
+          games: []
         });
       }
     },

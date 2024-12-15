@@ -1,11 +1,14 @@
+import { UserSettings } from "./settings";
+
 export interface Profile {
   id: string;
-  username: string;
-  display_name: string;
-  bio: string | null;
-  avatar_url: string | null;
-  email: string | null;
+  email: string;
+  username?: string;
+  avatar_url?: string;
+  bio?: string;
+  created_at: string;
   updated_at: string;
+  settings?: UserSettings;
 }
 
 export interface QueryData {

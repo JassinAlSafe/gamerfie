@@ -213,7 +213,8 @@ export const addGame = async (game: Game, userId: string) => {
       throw userGameError;
     }
 
-    return game;
+    // Return both the game and a success flag for the UI to handle
+    return { game, success: true };
   } catch (error) {
     console.error('Error adding game:', error);
     throw error;

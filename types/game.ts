@@ -11,6 +11,12 @@ export interface Game {
   first_release_date?: number;
   summary?: string;
   storyline?: string;
+  total_rating?: number;
+  total_rating_count?: number;
+  artworks?: { url: string }[];
+  screenshots?: { url: string }[];
+  websites?: any[];
+  involved_companies?: any[];
 }
 
 export interface UserGame {
@@ -53,5 +59,12 @@ export interface ProcessedGame extends Game {
   completedAt?: string;
   lastPlayedAt?: string;
   notes?: string;
+}
+
+export interface FetchGamesResponse {
+  games: Game[];
+  total: number;
+  page: number;
+  pageSize: number;
 }
 

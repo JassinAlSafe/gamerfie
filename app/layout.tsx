@@ -7,6 +7,7 @@ import Providers from "./providers";
 import { Footer } from "@/components/Footer";
 import { createServerComponentClient } from "@supabase/auth-helpers-nextjs";
 import { cookies } from "next/headers";
+import '@/styles/carousel.css'
 
 export const metadata = siteMetadata;
 
@@ -24,7 +25,7 @@ export default async function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen bg-gray-950`}
       >
         <Providers initialSession={session}>
           <div className="flex flex-col min-h-screen">

@@ -5,7 +5,7 @@ import PopularGamesSection from "@/components/PopularGamesSection";
 import { Button } from "@/components/ui/button";
 import { Search } from "lucide-react";
 
-const Dashboard: React.FC = () => {
+export default function ExplorePage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-950">
       {/* Hero Section */}
@@ -77,6 +77,4 @@ const Dashboard: React.FC = () => {
       </div>
     </div>
   );
-};
-
-export default Dashboard;
+} 

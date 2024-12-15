@@ -2,19 +2,10 @@
 
 import React, { useRef, useEffect } from "react";
 import Link from "next/link";
-import {
-  Menu,
-  X,
-  Search,
-  User,
-  Settings,
-  Heart,
-  LogOut,
-  Gamepad2,
-  ChevronDown,
-} from "lucide-react";
+import { Menu, X, Search, Gamepad2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
+import { Button } from "@/components/ui/button";
 import {
   Command,
   CommandList,
@@ -27,9 +18,13 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import Image from "next/image";
-import { useSearchStore } from '@/stores/useSearchStore';
-import { useAuthStore } from '@/stores/useAuthStore';
-import { useUIStore } from '@/stores/useUIStore';
+import { useSearchStore } from "@/stores/useSearchStore";
+import { useAuthStore } from "@/stores/useAuthStore";
+import { useUIStore } from "@/stores/useUIStore";
+import { ProfileDropdown } from "./profile-dropdown";
+import { AnimatedNav } from "./animated-nav";
+import { AnimatedButton } from "./animated-button";
+import { motion } from "framer-motion";
 
 // Add this utility function near the top of the file
 const ensureAbsoluteUrl = (url: string) => {
@@ -38,34 +33,6 @@ const ensureAbsoluteUrl = (url: string) => {
   }
   return url;
 };
-
-// Add this new component for the profile menu items
-interface ProfileMenuItemProps {
-  icon: React.ElementType;
-  label: string;
-  onClick: () => void;
-  variant?: "default" | "danger";
-}
-
-const ProfileMenuItem = ({
-  icon: Icon,
-  label,
-  onClick,
-  variant = "default",
-}: ProfileMenuItemProps) => (
-  <button
-    onClick={onClick}
-    className={`w-full flex items-center space-x-3 px-4 py-2.5 text-sm hover:bg-white/10 transition-colors duration-200
-      ${
-        variant === "danger"
-          ? "text-red-400 hover:text-red-300"
-          : "text-gray-300 hover:text-white"
-      }`}
-  >
-    <Icon className="w-4 h-4" />
-    <span className="font-medium">{label}</span>
-  </button>
-);
 
 export const FloatingHeader: React.FC = () => {
   const router = useRouter();
@@ -80,44 +47,39 @@ export const FloatingHeader: React.FC = () => {
     setQuery,
     search,
     setIsOpen,
-    reset
+    reset,
   } = useSearchStore();
-  const {
-    user,
-    signOut,
-    checkUser
-  } = useAuthStore()
+  const { user, signOut, checkUser } = useAuthStore();
   const {
     isMobileMenuOpen,
     isProfileMenuOpen,
     toggleMobileMenu,
-    toggleProfileMenu,
-    closeAllMenus
+    closeAllMenus,
   } = useUIStore();
 
   // Check auth status on mount and route changes
   useEffect(() => {
-    checkUser()
-  }, [checkUser])
+    checkUser();
+  }, [checkUser]);
 
   const handleSignOut = async () => {
     try {
-      await signOut()
-      router.push('/')
-      router.refresh()
+      await signOut();
+      router.push("/");
+      router.refresh();
       toast({
         title: "Signed out",
         description: "Successfully signed out",
-      })
+      });
     } catch (error) {
-      console.error('Sign out error:', error)
+      console.error("Sign out error:", error);
       toast({
         title: "Error",
         description: "Failed to sign out",
         variant: "destructive",
-      })
+      });
     }
-  }
+  };
 
   const handleSignUp = () => {
     router.push("/signup");
@@ -125,22 +87,6 @@ export const FloatingHeader: React.FC = () => {
 
   const handleLogIn = () => {
     router.push("/signin");
-  };
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    // Implement search functionality here
-    console.log("Searching for:", query);
-  };
-
-  const getUserInitial = () => {
-    if (user && user.user_metadata && user.user_metadata.name) {
-      return user.user_metadata.name[0].toUpperCase();
-    }
-    if (user && user.email) {
-      return user.email[0].toUpperCase();
-    }
-    return "U";
   };
 
   useEffect(() => {
@@ -157,13 +103,9 @@ export const FloatingHeader: React.FC = () => {
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [isProfileMenuOpen, closeAllMenus]);
-
-  const handleProfileClick = () => {
-    toggleProfileMenu();
-  };
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -187,20 +129,31 @@ export const FloatingHeader: React.FC = () => {
           </Link>
 
           <div className="hidden md:flex items-center space-x-8">
-            <nav className="flex items-center space-x-6">
-              <NavLink href="/">Home</NavLink>
-              <NavLink href="/dashboard">Games</NavLink>
-              <NavLink href="/about">About</NavLink>
-            </nav>
+            <AnimatedNav
+              items={[
+                { href: "/", label: "Home" },
+                { href: "/explore", label: "Explore" },
+                { href: "/all-games", label: "All Games" },
+                { href: "/about", label: "About" },
+              ]}
+            />
 
-            <div className="relative w-full md:w-auto">
-              <Popover open={searchOpen} onOpenChange={(open) => {
-                if (!open && !query) {
-                  setIsOpen(false);
-                } else {
-                  setIsOpen(true);
-                }
-              }}>
+            <motion.div
+              className="relative w-full md:w-auto"
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.2 }}
+            >
+              <Popover
+                open={searchOpen}
+                onOpenChange={(open) => {
+                  if (!open && !query) {
+                    setIsOpen(false);
+                  } else {
+                    setIsOpen(true);
+                  }
+                }}
+              >
                 <PopoverTrigger>
                   <div className="relative">
                     <Search
@@ -235,7 +188,9 @@ export const FloatingHeader: React.FC = () => {
                             <span>Searching...</span>
                           </div>
                         ) : (
-                          searchResults?.length === 0 && query.length >= 3 && "No results found."
+                          searchResults?.length === 0 &&
+                          query.length >= 3 &&
+                          "No results found."
                         )}
                       </CommandEmpty>
                       {searchResults && searchResults.length > 0 && (
@@ -251,7 +206,7 @@ export const FloatingHeader: React.FC = () => {
                               role="button"
                               tabIndex={0}
                               onKeyDown={(e) => {
-                                if (e.key === 'Enter') {
+                                if (e.key === "Enter") {
                                   router.push(`/game/${game.id}`);
                                   reset();
                                 }
@@ -282,212 +237,113 @@ export const FloatingHeader: React.FC = () => {
                   </Command>
                 </PopoverContent>
               </Popover>
-            </div>
+            </motion.div>
 
-            {user ? (
-              <div className="relative">
-                <button
-                  ref={profileButtonRef}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    toggleProfileMenu();
-                  }}
-                  className="flex items-center space-x-3 hover:bg-white/10 px-3 py-2 rounded-lg transition duration-200"
-                >
-                  <div className="relative w-8 h-8 rounded-full overflow-hidden">
-                    <Image
-                      src={user.user_metadata.avatar_url || "/default-avatar.png"}
-                      alt="Profile"
-                      fill
-                      priority
-                      className="object-cover"
-                    />
-                  </div>
-                  <ChevronDown className="w-4 h-4" />
-                </button>
-
-                {isProfileMenuOpen && (
-                  <div
-                    ref={profileMenuRef}
-                    className="absolute right-0 mt-2 w-48 bg-gray-900 rounded-lg shadow-lg border border-white/10"
-                    onClick={(e) => e.stopPropagation()}
+            <div className="flex items-center space-x-4">
+              {user ? (
+                <ProfileDropdown user={user} onSignOut={handleSignOut} />
+              ) : (
+                <div className="flex items-center space-x-4">
+                  <AnimatedButton
+                    variant="ghost"
+                    onClick={handleLogIn}
                   >
-                    <div className="px-4 py-2 border-b border-white/10">
-                      <div className="flex items-center space-x-3">
-                        <div className="bg-white/10 rounded-full w-10 h-10 flex items-center justify-center">
-                          {getUserInitial()}
-                        </div>
-                        <div className="flex flex-col">
-                          <span className="text-sm font-medium text-white">
-                            {user.user_metadata?.name ||
-                              user.email?.split("@")[0]}
-                          </span>
-                          <span className="text-xs text-gray-400">
-                            {user.email}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="py-1.5">
-                      <ProfileMenuItem
-                        icon={User}
-                        label="Your Profile"
-                        onClick={() => {
-                          router.push("/profile");
-                          closeAllMenus();
-                        }}
-                      />
-                      <ProfileMenuItem
-                        icon={Settings}
-                        label="Settings"
-                        onClick={() => {
-                          router.push("/settings");
-                          closeAllMenus();
-                        }}
-                      />
-                      <ProfileMenuItem
-                        icon={Heart}
-                        label="Your Library"
-                        onClick={() => {
-                          router.push("/profile/games");
-                          closeAllMenus();
-                        }}
-                      />
-                    </div>
-
-                    <div className="h-px bg-white/10 my-1" />
-
-                    <div className="py-1.5">
-                      <ProfileMenuItem
-                        icon={LogOut}
-                        label="Sign Out"
-                        onClick={() => {
-                          handleSignOut();
-                          closeAllMenus();
-                        }}
-                        variant="danger"
-                      />
-                    </div>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="flex items-center space-x-4">
-                <button
-                  onClick={handleLogIn}
-                  className="text-gray-300 hover:text-white font-medium transition duration-200"
-                >
-                  Log In
-                </button>
-                <button
-                  onClick={handleSignUp}
-                  className="bg-white/10 hover:bg-white/20 text-white font-medium px-4 py-1.5 rounded-full transition duration-200"
-                >
-                  Sign Up
-                </button>
-              </div>
-            )}
+                    Sign In
+                  </AnimatedButton>
+                  <AnimatedButton
+                    onClick={handleSignUp}
+                  >
+                    Sign Up
+                  </AnimatedButton>
+                </div>
+              )}
+            </div>
           </div>
 
           <button
-            className="md:hidden text-gray-300 hover:text-white transition-colors duration-200"
-            onClick={(e) => {
-              e.stopPropagation();
-              toggleMobileMenu();
-            }}
+            onClick={toggleMobileMenu}
+            className="md:hidden p-2 text-gray-400 hover:text-white"
           >
-            {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+            {isMobileMenuOpen ? (
+              <X className="h-6 w-6" />
+            ) : (
+              <Menu className="h-6 w-6" />
+            )}
           </button>
         </div>
       </div>
 
       {isMobileMenuOpen && (
-        <div className="md:hidden container mx-auto" onClick={(e) => e.stopPropagation()}>
-          <nav className="flex flex-col items-center py-4 space-y-4">
-            <NavLink href="/" onClick={toggleMobileMenu}>
+        <div className="md:hidden bg-gray-900/95 backdrop-blur-md border-t border-white/10">
+          <nav className="px-4 pt-2 pb-4">
+            <Link
+              href="/"
+              className="block py-2 text-gray-300 hover:text-white"
+              onClick={closeAllMenus}
+            >
               Home
-            </NavLink>
-            <NavLink href="/dashboard" onClick={toggleMobileMenu}>
-              Games
-            </NavLink>
-            <NavLink href="/about" onClick={toggleMobileMenu}>
+            </Link>
+            <Link
+              href="/explore"
+              className="block py-2 text-gray-300 hover:text-white"
+              onClick={closeAllMenus}
+            >
+              Explore
+            </Link>
+            <Link
+              href="/all-games"
+              className="block py-2 text-gray-300 hover:text-white"
+              onClick={closeAllMenus}
+            >
+              All Games
+            </Link>
+            <Link
+              href="/about"
+              className="block py-2 text-gray-300 hover:text-white"
+              onClick={closeAllMenus}
+            >
               About
-            </NavLink>
-
-            <form onSubmit={handleSearch} className="relative w-full px-4">
-              <input
-                type="text"
-                placeholder="Search games..."
-                value={query}
-                onChange={(e) => {
-                  setQuery(e.target.value);
-                  setIsOpen(true);
-                }}
-                onFocus={() => setIsOpen(true)}
-                className="w-full bg-white/10 text-white placeholder-gray-400 px-4 py-2 pr-10 rounded-full 
-                          focus:outline-none focus:ring-2 focus:ring-white/20 focus:bg-white/20"
-              />
-              <button
-                type="submit"
-                className="absolute right-7 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white"
-              >
-                <Search size={16} />
-              </button>
-            </form>
-
+            </Link>
             {user ? (
-              <div className="flex flex-col items-center space-y-4 w-full px-4">
-                <div className="bg-white/10 rounded-full w-10 h-10 flex items-center justify-center text-white">
-                  {getUserInitial()}
-                </div>
+              <>
                 <Link
                   href="/profile"
-                  className="text-gray-300 hover:text-white font-medium transition duration-200"
-                  onClick={toggleMobileMenu}
+                  className="block py-2 text-gray-300 hover:text-white"
+                  onClick={closeAllMenus}
                 >
                   Profile
-                </Link>
-                <Link
-                  href="/settings"
-                  className="text-gray-300 hover:text-white font-medium transition duration-200"
-                  onClick={toggleMobileMenu}
-                >
-                  Settings
                 </Link>
                 <button
                   onClick={() => {
                     handleSignOut();
-                    toggleMobileMenu();
+                    closeAllMenus();
                   }}
-                  className="bg-white/10 hover:bg-white/20 text-red-400 hover:text-red-300 font-medium 
-                           py-2 px-4 rounded-full transition duration-200 w-full max-w-xs"
+                  className="block w-full text-left py-2 text-red-400 hover:text-red-300"
                 >
                   Sign Out
                 </button>
-              </div>
+              </>
             ) : (
-              <div className="flex flex-col items-center space-y-4 w-full px-4">
+              <>
                 <button
                   onClick={() => {
                     handleLogIn();
-                    toggleMobileMenu();
+                    closeAllMenus();
                   }}
-                  className="text-gray-300 hover:text-white font-medium transition duration-200"
+                  className="block w-full text-left py-2 text-gray-300 hover:text-white"
                 >
-                  Log In
+                  Sign In
                 </button>
                 <button
                   onClick={() => {
                     handleSignUp();
-                    toggleMobileMenu();
+                    closeAllMenus();
                   }}
-                  className="bg-white/10 hover:bg-white/20 text-white font-medium 
-                           py-2 px-4 rounded-full transition duration-200 w-full max-w-xs"
+                  className="block w-full text-left py-2 text-purple-400 hover:text-purple-300"
                 >
                   Sign Up
                 </button>
-              </div>
+              </>
             )}
           </nav>
         </div>

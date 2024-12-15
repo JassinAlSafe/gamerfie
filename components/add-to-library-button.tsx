@@ -8,47 +8,45 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import { Plus, Check, Loader2, ChevronDown } from "lucide-react";
-import toast from "react-hot-toast";
+import { Plus, Check, Loader2, ChevronDown, Trash2 } from "lucide-react";
+import { useQueryClient, useQuery, useMutation } from "@tanstack/react-query";
+import { toast } from "react-hot-toast";
+import { cn } from "@/lib/utils";
 
 interface AddToLibraryButtonProps {
   gameId: string;
   gameName: string;
+  variant?: 'default' | 'outline' | 'ghost';
+  size?: 'default' | 'sm' | 'lg';
 }
 
 type GameStatus = "playing" | "completed" | "want_to_play" | "dropped";
 
-const statusLabels: Record<GameStatus, string> = {
-  playing: "Currently Playing",
-  completed: "Completed",
-  want_to_play: "Want to Play",
-  dropped: "Dropped",
+const statusLabels: Record<GameStatus, { label: string; color: string }> = {
+  playing: { label: "Currently Playing", color: "text-green-400" },
+  completed: { label: "Completed", color: "text-blue-400" },
+  want_to_play: { label: "Want to Play", color: "text-yellow-400" },
+  dropped: { label: "Dropped", color: "text-red-400" }
 };
 
 export function AddToLibraryButton({
   gameId,
   gameName,
+  variant = 'default',
+  size = 'default'
 }: AddToLibraryButtonProps) {
-  const [isLoading, setIsLoading] = useState(true);
-  const [currentStatus, setCurrentStatus] = useState<GameStatus | null>(null);
-  const [isUpdating, setIsUpdating] = useState(false);
   const supabase = createClientComponentClient();
+  const queryClient = useQueryClient();
+  const [isOpen, setIsOpen] = useState(false);
 
-  useEffect(() => {
-    checkGameStatus();
-  }, [gameId]);
-
-  const checkGameStatus = async () => {
-    try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (!user) {
-        setIsLoading(false);
-        return;
-      }
+  // Query for game status
+  const { data: currentStatus, isLoading } = useQuery<GameStatus | null>({
+    queryKey: ["gameStatus", gameId],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return null;
 
       const { data, error } = await supabase
         .from("user_games")
@@ -61,28 +59,21 @@ export function AddToLibraryButton({
         throw error;
       }
 
-      setCurrentStatus((data?.status as GameStatus) || null);
-    } catch (error) {
-      console.error("Error checking game status:", error);
-      toast.error("Failed to check game status");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+      return (data?.status as GameStatus) || null;
+    },
+    retry: 1,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
 
-  const updateGameStatus = async (status: GameStatus) => {
-    try {
-      setIsUpdating(true);
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
+  // Mutation for updating game status
+  const updateStatusMutation = useMutation({
+    mutationFn: async (status: GameStatus) => {
+      const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        toast.error("Please sign in to add games to your library");
-        return;
+        throw new Error("Please sign in to add games to your library");
       }
 
-      // First, check if the game exists
+      // Check if the game exists
       const { data: existingGame } = await supabase
         .from("user_games")
         .select("id")
@@ -116,27 +107,33 @@ export function AddToLibraryButton({
       }
 
       if (error) throw error;
-
-      setCurrentStatus(status);
+      return { status, isNew: !existingGame };
+    },
+    onSuccess: (data) => {
+      // Optimistically update the cache
+      queryClient.setQueryData(["gameStatus", gameId], data.status);
+      
+      // Then invalidate to ensure consistency
+      queryClient.invalidateQueries({ queryKey: ["userGames"] });
+      queryClient.invalidateQueries({ queryKey: ["userStats"] });
+      
+      setIsOpen(false);
       toast.success(
-        `${gameName} ${existingGame ? "updated in" : "added to"} your library`
+        `${gameName} ${data.isNew ? "added to" : "updated in"} your library`,
+        { duration: 3000 }
       );
-    } catch (error) {
+    },
+    onError: (error) => {
       console.error("Error updating game status:", error);
-      toast.error("Failed to update game status");
-    } finally {
-      setIsUpdating(false);
+      toast.error("Failed to update game status", { duration: 4000 });
     }
-  };
+  });
 
-  const removeFromLibrary = async () => {
-    try {
-      setIsUpdating(true);
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (!user) return;
+  // Mutation for removing from library
+  const removeFromLibraryMutation = useMutation({
+    mutationFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
 
       const { error } = await supabase
         .from("user_games")
@@ -145,54 +142,85 @@ export function AddToLibraryButton({
         .eq("game_id", gameId);
 
       if (error) throw error;
-
-      setCurrentStatus(null);
-      toast.success(`${gameName} removed from your library`);
-    } catch (error) {
+    },
+    onSuccess: () => {
+      // Optimistically update the cache
+      queryClient.setQueryData(["gameStatus", gameId], null);
+      
+      // Then invalidate to ensure consistency
+      queryClient.invalidateQueries({ queryKey: ["userGames"] });
+      queryClient.invalidateQueries({ queryKey: ["userStats"] });
+      
+      setIsOpen(false);
+      toast.success(`${gameName} removed from your library`, { duration: 3000 });
+    },
+    onError: (error) => {
       console.error("Error removing game:", error);
-      toast.error("Failed to remove game");
-    } finally {
-      setIsUpdating(false);
+      toast.error("Failed to remove game", { duration: 4000 });
     }
-  };
+  });
+
+  const isPending = updateStatusMutation.isPending || removeFromLibraryMutation.isPending;
 
   if (isLoading) {
     return (
-      <Button disabled>
+      <Button variant={variant} size={size} disabled className="min-w-[140px]">
         <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-        Checking status...
+        Loading...
       </Button>
     );
   }
 
   if (currentStatus) {
     return (
-      <DropdownMenu>
+      <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
         <DropdownMenuTrigger asChild>
-          <Button className="w-full md:w-auto" disabled={isUpdating}>
-            {isUpdating ? (
+          <Button 
+            variant={variant} 
+            size={size}
+            disabled={isPending}
+            className={cn(
+              "min-w-[140px] transition-all duration-200",
+              isPending && "opacity-80"
+            )}
+          >
+            {isPending ? (
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
             ) : (
               <Check className="w-4 h-4 mr-2" />
             )}
-            {statusLabels[currentStatus]}
-            <ChevronDown className="w-4 h-4 ml-2" />
+            <span className={statusLabels[currentStatus].color}>
+              {statusLabels[currentStatus].label}
+            </span>
+            <ChevronDown className={cn(
+              "w-4 h-4 ml-2 transition-transform duration-200",
+              isOpen && "transform rotate-180"
+            )} />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          {Object.entries(statusLabels).map(([status, label]) => (
+        <DropdownMenuContent 
+          align="end"
+          className="w-[200px] animate-in fade-in-0 zoom-in-95 duration-100"
+        >
+          {Object.entries(statusLabels).map(([status, { label, color }]) => (
             <DropdownMenuItem
               key={status}
-              onClick={() => updateGameStatus(status as GameStatus)}
-              className={currentStatus === status ? "bg-accent" : ""}
+              onClick={() => updateStatusMutation.mutate(status as GameStatus)}
+              className={cn(
+                "flex items-center py-2 transition-colors duration-150",
+                currentStatus === status && "bg-accent",
+                color
+              )}
             >
               {label}
             </DropdownMenuItem>
           ))}
+          <DropdownMenuSeparator />
           <DropdownMenuItem
-            className="text-destructive"
-            onClick={removeFromLibrary}
+            onClick={() => removeFromLibraryMutation.mutate()}
+            className="flex items-center py-2 text-destructive hover:text-destructive"
           >
+            <Trash2 className="w-4 h-4 mr-2" />
             Remove from Library
           </DropdownMenuItem>
         </DropdownMenuContent>
@@ -202,11 +230,16 @@ export function AddToLibraryButton({
 
   return (
     <Button
-      onClick={() => updateGameStatus("want_to_play")}
-      disabled={isUpdating}
-      className="w-full md:w-auto"
+      variant={variant}
+      size={size}
+      onClick={() => updateStatusMutation.mutate("want_to_play")}
+      disabled={isPending}
+      className={cn(
+        "min-w-[140px] transition-all duration-200",
+        isPending && "opacity-80"
+      )}
     >
-      {isUpdating ? (
+      {isPending ? (
         <Loader2 className="w-4 h-4 mr-2 animate-spin" />
       ) : (
         <Plus className="w-4 h-4 mr-2" />
