@@ -29,15 +29,17 @@ export const AnimatedNav = ({ items, className }: AnimatedNavProps) => {
         >
           <span
             className={cn(
-              "relative z-10 text-sm font-medium transition-colors duration-200",
-              pathname === item.href ? "text-white" : "text-gray-300 hover:text-white"
+              "relative z-10 text-sm transition-colors duration-200",
+              pathname === item.href 
+                ? "text-white font-medium" 
+                : "text-gray-400 hover:text-white"
             )}
           >
             {item.label}
           </span>
           {pathname === item.href && (
             <motion.div
-              className="absolute inset-0 bg-purple-500/10 rounded-lg"
+              className="absolute inset-x-0 -bottom-px h-px bg-gradient-to-r from-purple-500/0 via-purple-500/70 to-purple-500/0"
               layoutId="navbar-active"
               transition={{
                 type: "spring",

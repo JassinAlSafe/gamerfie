@@ -37,9 +37,9 @@ function formatNumber(num: number): string {
 }
 
 const GameCard = ({ game, index }: { game: Game; index: number }) => (
-  <Link href={`/game/${game.id}`} className="flex-shrink-0 w-[280px]">
+  <Link href={`/game/${game.id}`} className="flex-shrink-0 w-[160px]">
     <motion.div
-      className="group relative aspect-[3/4] rounded-xl overflow-hidden shadow-lg cursor-pointer border border-white/5"
+      className="group relative aspect-[2/3] rounded-lg overflow-hidden shadow-lg cursor-pointer border border-white/5"
       whileHover={{ scale: 1.02 }}
       transition={{ duration: 0.2 }}
     >
@@ -48,47 +48,34 @@ const GameCard = ({ game, index }: { game: Game; index: number }) => (
           src={ensureAbsoluteUrl(game.cover.url) || ''}
           alt={game.name}
           fill
-          sizes="280px"
+          sizes="160px"
           className="object-cover transition-transform duration-300 group-hover:scale-110"
           priority={index < 4}
         />
       ) : (
         <div className="absolute inset-0 bg-gray-800 flex items-center justify-center">
-          <Gamepad2 className="w-12 h-12 text-gray-600" />
+          <Gamepad2 className="w-8 h-8 text-gray-600" />
         </div>
       )}
       
-      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent opacity-100 transition-opacity duration-300" />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
       
-      <div className="absolute bottom-0 left-0 right-0 p-4">
-        <h3 className="text-lg font-semibold text-white mb-2 line-clamp-2">{game.name}</h3>
-        <div className="flex items-center gap-4 text-sm">
+      <div className="absolute bottom-0 left-0 right-0 p-2 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
+        <h3 className="text-xs font-semibold text-white line-clamp-2 mb-1">{game.name}</h3>
+        <div className="flex items-center gap-2 text-xs">
           {game.rating && (
             <div className="flex items-center text-yellow-400">
-              <Star className="w-4 h-4 mr-1 fill-current" />
+              <Star className="w-3 h-3 mr-0.5 fill-current" />
               <span>{Math.round(game.rating)}</span>
             </div>
           )}
           {game.total_rating_count && game.total_rating_count > 0 && (
             <div className="flex items-center text-gray-400">
-              <Users className="w-4 h-4 mr-1" />
+              <Users className="w-3 h-3 mr-0.5" />
               <span>{formatNumber(game.total_rating_count)}</span>
             </div>
           )}
         </div>
-        {game.genres && game.genres.length > 0 && (
-          <div className="mt-2 flex flex-wrap gap-1">
-            {game.genres.slice(0, 2).map((genre) => (
-              <Badge
-                key={genre.id}
-                variant="secondary"
-                className="bg-white/10 hover:bg-white/20 text-xs"
-              >
-                {genre.name}
-              </Badge>
-            ))}
-          </div>
-        )}
       </div>
     </motion.div>
   </Link>
@@ -100,18 +87,17 @@ const GameCarousel = ({ title, games }: { title: string; games: Game[] }) => {
   const scroll = (direction: 'left' | 'right') => {
     if (scrollContainerRef.current) {
       const container = scrollContainerRef.current;
-      const scrollAmount = direction === 'left' ? -600 : 600;
+      const scrollAmount = direction === 'left' ? -320 : 320;
       container.scrollBy({ left: scrollAmount, behavior: 'smooth' });
     }
   };
 
   return (
     <div className="relative group">
-      <h2 className="text-2xl font-bold mb-4">{title}</h2>
       <div className="relative">
         <div
           ref={scrollContainerRef}
-          className="flex gap-6 overflow-x-auto scrollbar-hide scroll-smooth pb-4"
+          className="flex gap-3 overflow-x-auto scrollbar-hide scroll-smooth pb-4"
         >
           {games.map((game, index) => (
             <GameCard key={game.id} game={game} index={index} />
@@ -120,17 +106,17 @@ const GameCarousel = ({ title, games }: { title: string; games: Game[] }) => {
         
         <button
           onClick={() => scroll('left')}
-          className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 bg-black/80 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-0"
+          className="absolute -left-3 top-1/2 -translate-y-1/2 bg-black/80 text-white p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-0"
           disabled={!scrollContainerRef.current?.scrollLeft}
         >
-          <ChevronLeft className="w-6 h-6" />
+          <ChevronLeft className="w-4 h-4" />
         </button>
         
         <button
           onClick={() => scroll('right')}
-          className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 bg-black/80 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+          className="absolute -right-3 top-1/2 -translate-y-1/2 bg-black/80 text-white p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
         >
-          <ChevronRight className="w-6 h-6" />
+          <ChevronRight className="w-4 h-4" />
         </button>
       </div>
     </div>
@@ -164,7 +150,7 @@ const ErrorDisplay = ({ message, onRetry }: { message: string; onRetry: () => vo
   </div>
 );
 
-const PopularGamesSection: React.FC = () => {
+const PopularGamesSection: React.FC<{ category?: 'popular' | 'upcoming' | 'new' }> = ({ category = 'popular' }) => {
   const { data: categories, isLoading, error, refetch } = useQuery<GameCategories>({
     queryKey: ['popularGames'],
     queryFn: async () => {
@@ -185,14 +171,7 @@ const PopularGamesSection: React.FC = () => {
   });
 
   if (isLoading) {
-    return (
-      <div className="space-y-12">
-        <CategorySkeleton />
-        <CategorySkeleton />
-        <CategorySkeleton />
-        <CategorySkeleton />
-      </div>
-    );
+    return <CategorySkeleton />;
   }
 
   if (error) {
@@ -219,14 +198,19 @@ const PopularGamesSection: React.FC = () => {
     );
   }
 
-  return (
-    <div className="space-y-12">
-      <GameCarousel title="Top Rated Games" games={categories.topRated} />
-      <GameCarousel title="New Releases" games={categories.newReleases} />
-      <GameCarousel title="Upcoming Games" games={categories.upcoming} />
-      <GameCarousel title="Trending Now" games={categories.trending} />
-    </div>
-  );
+  const getCategoryGames = () => {
+    switch (category) {
+      case 'upcoming':
+        return categories.upcoming;
+      case 'new':
+        return categories.newReleases;
+      case 'popular':
+      default:
+        return categories.topRated;
+    }
+  };
+
+  return <GameCarousel games={getCategoryGames()} />;
 };
 
 export default PopularGamesSection;
