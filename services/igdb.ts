@@ -1,4 +1,4 @@
-import { Game, GameFilters, IGDBResponse } from "@/types";
+import { Game, GameFilters, IGDBResponse } from "@/types/index";
 import { getIGDBToken } from "@/lib/igdb";
 
 export class IGDBService {
@@ -40,15 +40,7 @@ export class IGDBService {
   static async getGames(
     page: number = 1,
     limit: number = 24,
-    filters?: {
-      platform?: string;
-      genre?: string;
-      timeRange?: 'recent' | 'upcoming' | 'classic';
-      isIndie?: boolean;
-      isAnticipated?: boolean;
-      sortBy?: 'rating' | 'popularity' | 'name' | 'release';
-      search?: string;
-    }
+    filters?: GameFilters
   ): Promise<IGDBResponse> {
     try {
       const offset = (page - 1) * limit;
@@ -142,7 +134,7 @@ export class IGDBService {
 
       // Fetch games with all necessary fields
       const query = `
-        fields name, cover.url, rating, total_rating_count, genres.*, platforms.*, first_release_date, summary, hypes;
+        fields name, cover.url, rating, total_rating_count, genres.*, platforms.*, first_release_date, summary;
         where ${conditions.join(' & ')};
         sort ${sortBy};
         limit ${limit};

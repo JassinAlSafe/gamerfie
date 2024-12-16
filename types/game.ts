@@ -20,6 +20,7 @@ export interface Game {
   cover_url?: string | null;
   rating?: number | null;
   total_rating?: number | null;
+  total_rating_count?: number;
   first_release_date?: number | null;
   platforms?: Platform[] | null;
   genres?: Genre[] | null;

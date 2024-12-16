@@ -12,25 +12,35 @@ const ensureAbsoluteUrl = (url: string) => {
 };
 
 interface ScreenshotModalProps {
-  screenshots: { id: number; url: string }[];
-  currentIndex: number;
   isOpen: boolean;
   onClose: () => void;
-  onNext: () => void;
-  onPrevious: () => void;
+  screenshots: Screenshot[];
+  currentIndex: number;
+  onIndexChange: (index: number) => void;
 }
 
-export function ScreenshotModal({
-  screenshots,
-  currentIndex,
+export const ScreenshotModal: React.FC<ScreenshotModalProps> = ({
   isOpen,
   onClose,
-  onNext,
-  onPrevious,
-}: ScreenshotModalProps) {
+  screenshots,
+  currentIndex,
+  onIndexChange,
+}) => {
   console.log('Screenshots:', screenshots);
   console.log('Current screenshot:', screenshots[currentIndex]);
   console.log('Current URL:', ensureAbsoluteUrl(screenshots[currentIndex].url));
+
+  const handlePrevious = () => {
+    if (currentIndex > 0) {
+      onIndexChange(currentIndex - 1);
+    }
+  };
+
+  const handleNext = () => {
+    if (currentIndex < screenshots.length - 1) {
+      onIndexChange(currentIndex + 1);
+    }
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -59,7 +69,7 @@ export function ScreenshotModal({
           {/* Navigation buttons */}
           {currentIndex > 0 && (
             <button
-              onClick={onPrevious}
+              onClick={handlePrevious}
               className="absolute left-4 top-1/2 -translate-y-1/2 z-50 p-2 rounded-full bg-black/50 hover:bg-black/70 transition-colors"
               aria-label="Previous screenshot"
             >
@@ -68,7 +78,7 @@ export function ScreenshotModal({
           )}
           {currentIndex < screenshots.length - 1 && (
             <button
-              onClick={onNext}
+              onClick={handleNext}
               className="absolute right-4 top-1/2 -translate-y-1/2 z-50 p-2 rounded-full bg-black/50 hover:bg-black/70 transition-colors"
               aria-label="Next screenshot"
             >
@@ -98,4 +108,4 @@ export function ScreenshotModal({
       </DialogContent>
     </Dialog>
   );
-}
+};

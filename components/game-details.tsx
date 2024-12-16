@@ -50,6 +50,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { AddToLibraryButton } from "@/components/add-to-library-button";
+import { formatRating } from '@/utils/game-utils';
 
 const getHighQualityImageUrl = (url: string) => {
   return url.startsWith("//")
@@ -95,7 +96,6 @@ export const GameDetails = memo(function GameDetails({ game }: { game: Game }) {
   const y = useTransform(scrollYProgress, [0, 1], ["0%", "100%"]);
   const opacity = useTransform(scrollYProgress, [0, 0.5], [1, 0]);
   
-  const { user } = useProfile();
   const { games, addGame, removeGame, fetchUserLibrary } = useLibraryStore();
   const { toast } = useToast();
   const [isScreenshotModalOpen, setIsScreenshotModalOpen] = useState(false);
@@ -130,7 +130,7 @@ export const GameDetails = memo(function GameDetails({ game }: { game: Game }) {
 
   useEffect(() => {
     if (profile?.id && game?.id) {
-      fetchProgress(profile.id, game.id);
+      fetchProgress(profile.id.toString(), game.id.toString());
     }
   }, [profile?.id, game?.id, fetchProgress]);
 
@@ -264,12 +264,14 @@ export const GameDetails = memo(function GameDetails({ game }: { game: Game }) {
                   transition={{ duration: 0.5, delay: 0.3 }}
                   className="flex flex-wrap gap-4 mb-6"
                 >
-                  {game.total_rating && (
-                    <div className="flex items-center bg-white/10 rounded-lg px-6 py-3 backdrop-blur-sm hover:bg-white/20 transition-colors">
-                      <Star className="w-6 h-6 text-yellow-400 mr-2" />
-                      <span className="text-2xl font-bold">{game.total_rating.toFixed(1)}</span>
+                  {game.total_rating ? (
+                    <div className="flex items-center gap-2">
+                      <Star className="w-5 h-5 text-yellow-400" />
+                      <span className="text-lg font-semibold">
+                        {formatRating(game.total_rating)}
+                      </span>
                     </div>
-                  )}
+                  ) : null}
                   <div className="flex items-center bg-white/10 rounded-lg px-6 py-3 backdrop-blur-sm hover:bg-white/20 transition-colors">
                     <Calendar className="w-6 h-6 text-blue-400 mr-2" />
                     <span className="text-lg">
@@ -307,10 +309,10 @@ export const GameDetails = memo(function GameDetails({ game }: { game: Game }) {
                     gameId={game.id.toString()}
                     gameName={game.name}
                     cover={game.cover?.url}
-                    rating={game.total_rating}
-                    releaseDate={game.first_release_date}
-                    platforms={game.platforms}
-                    genres={game.genres}
+                    rating={game.total_rating || undefined}
+                    releaseDate={game.first_release_date || undefined}
+                    platforms={game.platforms || []}
+                    genres={game.genres || []}
                     variant="outline"
                     size="lg"
                     className="py-6 min-w-[200px] hover:scale-105 transition-all duration-300"

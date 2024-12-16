@@ -59,8 +59,11 @@ export interface IGDBResponse {
 export interface GameFilters {
   platform?: string;
   genre?: string;
-  category?: string;
-  searchQuery?: string;
+  timeRange?: 'recent' | 'upcoming' | 'classic';
+  isIndie?: boolean;
+  isAnticipated?: boolean;
+  sortBy?: 'rating' | 'popularity' | 'name' | 'release';
+  search?: string;
 }
 
 export interface SortOption {

@@ -298,3 +298,8 @@ export const checkGameInLibrary = async (
   if (error && error.code !== 'PGRST116') throw error; // PGRST116 is "not found"
   return data;
 };
+
+export const formatRating = (rating: number | null | undefined): string => {
+  if (!rating || rating === 0) return ''; // Return empty string for no rating
+  return rating.toFixed(1);
+};

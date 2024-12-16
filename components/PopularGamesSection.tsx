@@ -3,13 +3,14 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
-import { Star, Users, Gamepad2, AlertCircle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Star, Users, Gamepad2, AlertCircle, ChevronLeft, ChevronRight, Calendar, Sparkles, Flame } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ensureAbsoluteUrl } from '@/lib/utils';
 import { useRef } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
+import { useRouter } from 'next/navigation';
 
 // Types moved to types/game.ts
 import { Game, GameCategories } from '@/types/game';
@@ -21,6 +22,11 @@ const formatNumber = (num: number): string => {
   return num.toString();
 };
 
+const formatRating = (rating: number | null | undefined): string => {
+  if (!rating || rating === 0) return '';
+  return Math.round(rating).toString();
+};
+
 const GameCard = memo(({ game, index }: { game: Game; index: number }) => (
   <Link href={`/game/${game.id}`} className="flex-shrink-0 w-[160px]">
     <motion.div
@@ -30,12 +36,13 @@ const GameCard = memo(({ game, index }: { game: Game; index: number }) => (
     >
       {game.cover?.url ? (
         <Image
-          src={ensureAbsoluteUrl(game.cover.url) || ''}
+          src={game.cover.url}
           alt={game.name}
           fill
-          sizes="160px"
+          priority={index < 6}
           className="object-cover transition-transform duration-300 group-hover:scale-110"
-          priority={index < 4}
+          sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 16vw"
+          quality={85}
         />
       ) : (
         <div className="absolute inset-0 bg-gray-800 flex items-center justify-center">
@@ -47,17 +54,17 @@ const GameCard = memo(({ game, index }: { game: Game; index: number }) => (
       
       <div className="absolute bottom-0 left-0 right-0 p-2 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
         <h3 className="text-xs font-semibold text-white line-clamp-2 mb-1">{game.name}</h3>
-        <div className="flex items-center gap-2 text-xs">
-          {game.rating && (
+        <div className="flex items-center gap-3">
+          {game.rating ? (
             <div className="flex items-center text-yellow-400">
-              <Star className="w-3 h-3 mr-0.5 fill-current" />
-              <span>{Math.round(game.rating)}</span>
+              <Star className="h-3 w-3 mr-1 fill-current" />
+              <span className="text-xs">{formatRating(game.rating)}</span>
             </div>
-          )}
-          {game.total_rating_count && game.total_rating_count > 0 && (
+          ) : null}
+          {game.total_rating_count > 0 && (
             <div className="flex items-center text-gray-400">
-              <Users className="w-3 h-3 mr-0.5" />
-              <span>{formatNumber(game.total_rating_count)}</span>
+              <Users className="h-3 w-3 mr-1" />
+              <span className="text-xs">{formatNumber(game.total_rating_count)}</span>
             </div>
           )}
         </div>
@@ -68,8 +75,24 @@ const GameCard = memo(({ game, index }: { game: Game; index: number }) => (
 
 GameCard.displayName = 'GameCard';
 
-const GameCarousel = memo(({ games }: { games: Game[] }) => {
+const GameCarousel = memo(({ games, category = 'popular' }: { games: Game[]; category?: string }) => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
+
+  // Get category label
+  const getCategoryLabel = (category: string) => {
+    switch (category) {
+      case 'upcoming':
+        return { title: 'Upcoming Games', color: 'text-purple-500', icon: Calendar };
+      case 'new':
+        return { title: 'New Releases', color: 'text-yellow-500', icon: Sparkles };
+      case 'popular':
+      default:
+        return { title: 'Popular Games', color: 'text-orange-500', icon: Flame };
+    }
+  };
+
+  const { title, color, icon: Icon } = getCategoryLabel(category);
 
   const scroll = useCallback((direction: 'left' | 'right') => {
     if (scrollContainerRef.current) {
@@ -81,10 +104,28 @@ const GameCarousel = memo(({ games }: { games: Game[] }) => {
 
   return (
     <div className="relative group">
-      <div className="relative">
+      <div className="relative w-full">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-2">
+            <Icon className={`h-6 w-6 ${color}`} />
+            <h2 className="text-2xl font-bold text-white">{title}</h2>
+          </div>
+          <Button 
+            variant="ghost" 
+            className="text-purple-400 hover:text-purple-300"
+            onClick={() => router.push(`/all-games?category=${category === 'new' ? 'recent' : category}`)}
+          >
+            View All
+          </Button>
+        </div>
+
         <div
           ref={scrollContainerRef}
           className="flex gap-3 overflow-x-auto scrollbar-hide scroll-smooth pb-4"
+          style={{ 
+            position: 'relative',
+            willChange: 'scroll-position'
+          }}
         >
           {games.map((game, index) => (
             <GameCard key={game.id} game={game} index={index} />
@@ -222,7 +263,7 @@ const PopularGamesSection: React.FC<{ category?: 'popular' | 'upcoming' | 'new' 
 
   return (
     <ErrorBoundary FallbackComponent={ErrorFallback}>
-      <GameCarousel games={getCategoryGames()} />
+      <GameCarousel games={getCategoryGames()} category={category} />
     </ErrorBoundary>
   );
 });

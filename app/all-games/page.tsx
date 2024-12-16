@@ -27,6 +27,8 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { useGamesStore } from '@/stores/useGamesStore';
 import { useDebounce } from '@/hooks/useDebounce';
+import { formatRating } from '@/utils/game-utils';
+import { useSearchParams } from 'next/navigation';
 
 interface Platform {
   id: number;
@@ -80,6 +82,9 @@ export default function AllGamesPage() {
     setLoading,
     setError: setStoreError
   } = useGamesStore();
+
+  const searchParams = useSearchParams();
+  const category = searchParams.get('category') || 'all';
 
   // Debounce the search query
   const debouncedSearch = useDebounce(searchQuery);

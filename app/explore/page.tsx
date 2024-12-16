@@ -3,7 +3,7 @@
 import React, { useCallback, useMemo } from "react";
 import PopularGamesSection from "@/components/PopularGamesSection";
 import { Button } from "@/components/ui/button";
-import { Search, Sparkles, Calendar, Flame } from "lucide-react";
+import { Search, Sparkles, Calendar, Flame, Star, Users } from "lucide-react";
 import { TracingBeam } from "@/components/ui/tracing-beam";
 import { TextGenerateEffect } from "@/components/ui/text-generate-effect";
 import { motion, AnimatePresence } from "framer-motion";
@@ -13,6 +13,8 @@ import { useDebounce } from '@/hooks/useDebounce';
 import { useRouter } from 'next/navigation';
 import { Skeleton } from "@/components/ui/skeleton";
 import { ErrorBoundary } from "react-error-boundary";
+import { formatRating } from '@/utils/game-utils';
+import { Suspense } from 'react';
 
 const categories = [
   { id: 'popular', label: 'Popular Games', icon: Flame, color: 'text-orange-500' },
@@ -107,30 +109,15 @@ export default function ExplorePage() {
             // Reset the error boundary state
           }}
         >
-          <div className="relative">
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-2">
-                <Icon className={`h-6 w-6 ${color}`} />
-                <h2 className="text-2xl font-bold text-white">{label}</h2>
-              </div>
-              <Button 
-                variant="ghost" 
-                className="text-purple-400 hover:text-purple-300"
-                onClick={() => handleCategoryClick(id)}
-              >
-                View All
-              </Button>
+          <Suspense fallback={
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="aspect-[3/4] rounded-lg bg-gray-800/50 animate-pulse" />
+              ))}
             </div>
-            <React.Suspense fallback={
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                {Array.from({ length: 6 }).map((_, i) => (
-                  <Skeleton key={i} className="aspect-[3/4] rounded-lg" />
-                ))}
-              </div>
-            }>
-              <PopularGamesSection category={id === 'recent' ? 'new' : id} />
-            </React.Suspense>
-          </div>
+          }>
+            <PopularGamesSection category={id === 'recent' ? 'new' : id} />
+          </Suspense>
         </ErrorBoundary>
       ))}
     </div>

@@ -29,66 +29,28 @@ interface CompletionDialogProps {
 
 export function CompletionDialog({ isOpen, setIsOpen, game }: CompletionDialogProps) {
   const { profile } = useProfile();
-  const { playTime, status, completedAt, completionPercentage, achievementsCompleted, fetchProgress, updateProgress } = useProgressStore();
+  const { updateProgress } = useProgressStore();
   const [localPlayTime, setLocalPlayTime] = useState(0);
   const [localCompletion, setLocalCompletion] = useState(0);
   const [localAchievementsCompleted, setLocalAchievementsCompleted] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Fetch initial progress when dialog opens
-  useEffect(() => {
-    if (isOpen && profile?.id && game.id) {
-      fetchProgress(profile.id, game.id);
-    }
-  }, [isOpen, profile?.id, game.id, fetchProgress]);
-
-  // Update local state when progress is fetched
-  useEffect(() => {
-    setLocalPlayTime(playTime || 0);
-    setLocalCompletion(completionPercentage || 0);
-    setLocalAchievementsCompleted(achievementsCompleted || 0);
-  }, [playTime, completionPercentage, achievementsCompleted]);
 
   const totalAchievements = game.achievements?.length || 0;
   const achievementPercentage = totalAchievements > 0 
     ? (localAchievementsCompleted / totalAchievements) * 100 
     : 0;
 
-  const handleSubmit = async () => {
-    if (!profile?.id) {
-      toast.error('Please sign in to update progress');
-      return;
-    }
-
-    setIsSubmitting(true);
-    console.log('Submitting progress:', {
-      userId: profile.id,
-      gameId: game.id,
-      playTime: localPlayTime,
-      completion: localCompletion,
-      achievementsCompleted: localAchievementsCompleted
+  const handleSubmit = async (data: any) => {
+    if (!profile?.id) return;
+    
+    await updateProgress(profile.id, game.id, {
+      play_time: data.playTime,
+      completion_percentage: data.completionPercentage,
+      status: data.status,
+      // ... other fields
     });
-
-    try {
-      await updateProgress(profile.id, game.id, {
-        play_time: localPlayTime,
-        completion_percentage: localCompletion,
-        achievements_completed: localAchievementsCompleted,
-        status: localCompletion === 100 ? 'completed' : 'playing',
-        completed_at: localCompletion === 100 ? new Date().toISOString() : null
-      });
-
-      toast.success('Progress updated successfully', {
-        duration: 3000,
-        position: 'bottom-right',
-      });
-      setIsOpen(false);
-    } catch (error) {
-      console.error('Detailed error:', error);
-      toast.error('Failed to update progress: ' + (error instanceof Error ? error.message : 'Unknown error'));
-    } finally {
-      setIsSubmitting(false);
-    }
+    
+    setIsOpen(false);
   };
 
   return (

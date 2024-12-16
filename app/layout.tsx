@@ -9,6 +9,7 @@ import { createServerComponentClient } from "@supabase/auth-helpers-nextjs";
 import { cookies } from "next/headers";
 import '@/styles/carousel.css'
 import { Toaster } from 'react-hot-toast';
+import { headers } from 'next/headers';
 
 export const metadata = siteMetadata;
 
