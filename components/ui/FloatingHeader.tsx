@@ -2,7 +2,7 @@
 
 import React, { useRef, useEffect } from "react";
 import Link from "next/link";
-import { Menu, X, Search, Gamepad2 } from "lucide-react";
+import { Menu, X, Search, Gamepad2, Star } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -154,10 +154,10 @@ export const FloatingHeader: React.FC = () => {
                   }
                 }}
               >
-                <PopoverTrigger>
-                  <div className="relative">
+                <PopoverTrigger asChild>
+                  <div className="relative group">
                     <Search
-                      className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                      className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-hover:text-white/70 transition-colors duration-200"
                       size={16}
                     />
                     <input
@@ -171,34 +171,53 @@ export const FloatingHeader: React.FC = () => {
                       onFocus={() => setIsOpen(true)}
                       onClick={(e) => e.stopPropagation()}
                       className="w-full md:w-[300px] bg-white/10 text-white placeholder-gray-400 pl-10 pr-4 py-2 rounded-full 
-                                focus:outline-none focus:ring-2 focus:ring-white/20 focus:bg-white/20"
+                                focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:bg-white/20
+                                hover:bg-white/15 transition-all duration-200"
                     />
+                    {isSearching && (
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                        <motion.div
+                          animate={{ rotate: 360 }}
+                          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                        >
+                          <Search className="w-4 h-4 text-purple-400" />
+                        </motion.div>
+                      </div>
+                    )}
                   </div>
                 </PopoverTrigger>
                 <PopoverContent
-                  className="w-[300px] p-0 bg-gray-900/95 backdrop-blur-md border border-gray-700"
+                  className="w-[300px] p-0 bg-gray-900/95 backdrop-blur-md border border-gray-700/50 shadow-xl"
                   align="start"
                   sideOffset={5}
                 >
                   <Command className="bg-transparent">
                     <CommandList>
-                      <CommandEmpty className="py-6 text-center text-sm text-gray-400">
+                      <CommandEmpty className="py-6 text-center text-sm">
                         {isSearching ? (
                           <div className="flex items-center justify-center gap-2">
-                            <span>Searching...</span>
+                            <motion.div
+                              animate={{ rotate: 360 }}
+                              transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                            >
+                              <Search className="w-4 h-4 text-purple-400" />
+                            </motion.div>
+                            <span className="text-gray-400">Searching...</span>
                           </div>
+                        ) : query.length < 3 ? (
+                          <span className="text-gray-400">Type at least 3 characters to search...</span>
                         ) : (
-                          searchResults?.length === 0 &&
-                          query.length >= 3 &&
-                          "No results found."
+                          <span className="text-gray-400">No results found.</span>
                         )}
                       </CommandEmpty>
                       {searchResults && searchResults.length > 0 && (
                         <CommandGroup heading="Games" className="text-gray-400">
                           {searchResults.map((game) => (
-                            <div
+                            <motion.div
                               key={game.id}
-                              className="flex items-center gap-3 px-4 py-3 hover:bg-white/10 cursor-pointer text-white"
+                              initial={{ opacity: 0, y: 5 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              className="flex items-center gap-3 px-4 py-3 hover:bg-white/10 cursor-pointer text-white transition-colors duration-200"
                               onClick={() => {
                                 router.push(`/game/${game.id}`);
                                 reset();
@@ -213,7 +232,7 @@ export const FloatingHeader: React.FC = () => {
                               }}
                             >
                               {game.cover ? (
-                                <div className="relative w-8 h-8 rounded overflow-hidden">
+                                <div className="relative w-10 h-14 rounded overflow-hidden">
                                   <Image
                                     src={ensureAbsoluteUrl(game.cover.url)}
                                     alt={game.name}
@@ -222,14 +241,24 @@ export const FloatingHeader: React.FC = () => {
                                   />
                                 </div>
                               ) : (
-                                <div className="w-8 h-8 rounded bg-gray-800 flex items-center justify-center">
-                                  <Gamepad2 className="w-4 h-4 text-gray-400" />
+                                <div className="w-10 h-14 rounded bg-gray-800 flex items-center justify-center">
+                                  <Gamepad2 className="w-5 h-5 text-gray-600" />
                                 </div>
                               )}
-                              <span className="text-sm text-gray-200">
-                                {game.name}
-                              </span>
-                            </div>
+                              <div className="flex flex-col">
+                                <span className="text-sm font-medium text-gray-200">
+                                  {game.name}
+                                </span>
+                                {game.rating && (
+                                  <div className="flex items-center gap-1 mt-1">
+                                    <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
+                                    <span className="text-xs text-gray-400">
+                                      {Math.round(game.rating)}
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
+                            </motion.div>
                           ))}
                         </CommandGroup>
                       )}

@@ -1,23 +1,66 @@
-import { NextResponse, NextRequest } from "next/server";
-import { GameService } from "@/services/gameService";
-import type { GameQueryParams, SortOption } from "@/types/game";
+import { NextRequest, NextResponse } from 'next/server';
+import { IGDBService } from '@/services/igdb';
 
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = request.nextUrl;
-    const queryParams: GameQueryParams = {
-      page: parseInt(searchParams.get("page") || "1", 10),
-      platformId: searchParams.get("platformId") || 'all',
-      searchTerm: searchParams.get("search") || '',
-      sortBy: (searchParams.get("sortBy") || 'popularity') as SortOption
+    const searchParams = request.nextUrl.searchParams;
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '24');
+    const platform = searchParams.get('platform');
+    const genre = searchParams.get('genre');
+    const category = searchParams.get('category');
+    const sort = searchParams.get('sort') || 'rating';
+    const search = searchParams.get('search') || '';
+
+    // Build IGDB filters based on parameters
+    const filters: any = {
+      page,
+      limit,
+      search: search.trim(),
+      sortBy: sort
     };
 
-    const result = await GameService.fetchGames(queryParams);
-    return NextResponse.json(result);
+    // Add platform filter if specified
+    if (platform && platform !== 'all') {
+      filters.platform = platform;
+    }
+
+    // Add genre filter if specified
+    if (genre && genre !== 'all') {
+      filters.genre = genre;
+    }
+
+    // Add category-specific filters
+    if (category && category !== 'all') {
+      switch (category) {
+        case 'recent':
+          filters.timeRange = 'recent';
+          break;
+        case 'upcoming':
+          filters.timeRange = 'upcoming';
+          break;
+        case 'popular':
+          filters.sortBy = 'popularity';
+          break;
+        case 'classic':
+          filters.timeRange = 'classic';
+          break;
+        case 'indie':
+          filters.isIndie = true;
+          break;
+        case 'anticipated':
+          filters.isAnticipated = true;
+          break;
+      }
+    }
+
+    const response = await IGDBService.getGames(page, limit, filters);
+
+    return NextResponse.json(response);
   } catch (error) {
-    console.error("API error:", error);
+    console.error('Error in games API:', error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : String(error) },
+      { error: error instanceof Error ? error.message : 'Failed to fetch games' },
       { status: 500 }
     );
   }

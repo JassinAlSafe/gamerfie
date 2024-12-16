@@ -67,18 +67,27 @@ export function GamesTab({ userId, filters = { status: 'all', sortBy: 'recent', 
   } = useInfiniteQuery<PageResult, Error>({
     queryKey: ["userGames", userId, filters],
     queryFn: async ({ pageParam = 0 }) => {
-      const start = pageParam * GAMES_PER_PAGE;
-      const end = start + GAMES_PER_PAGE - 1;
-      const games = await fetchUserGames({ supabase, start, end, userId });
-      return {
-        userGames: games,
-        nextPage: games.length === GAMES_PER_PAGE ? pageParam + 1 : undefined,
-        hasMore: games.length === GAMES_PER_PAGE
-      };
+      if (!userId) return null;
+      
+      try {
+        const games = await fetchUserGames(
+          userId,
+          pageParam * GAMES_PER_PAGE,
+          GAMES_PER_PAGE
+        );
+        
+        return {
+          userGames: games || [],
+          nextPage: games?.length === GAMES_PER_PAGE ? pageParam + 1 : undefined,
+          hasMore: games?.length === GAMES_PER_PAGE
+        };
+      } catch (error) {
+        console.error('Error fetching games:', error);
+        throw error;
+      }
     },
-    getNextPageParam: (lastPage) => lastPage.nextPage,
-    gcTime: 1000 * 60 * 30,
-    staleTime: 1000 * 60 * 5,
+    getNextPageParam: (lastPage) => lastPage?.nextPage,
+    enabled: !!userId,
   });
 
   const updateStatusMutation = useMutation({

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo, useCallback } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
@@ -9,34 +9,19 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ensureAbsoluteUrl } from '@/lib/utils';
 import { useRef } from 'react';
+import { ErrorBoundary } from 'react-error-boundary';
 
-interface Game {
-  id: string;
-  name: string;
-  cover: {
-    url: string;
-  } | null;
-  rating: number | null;
-  total_rating_count: number | null;
-  genres: Array<{ id: number; name: string; }>;
-  platforms: Array<{ id: number; name: string; }>;
-}
+// Types moved to types/game.ts
+import { Game, GameCategories } from '@/types/game';
 
-interface GameCategories {
-  topRated: Game[];
-  newReleases: Game[];
-  upcoming: Game[];
-  trending: Game[];
-}
-
-function formatNumber(num: number): string {
+const formatNumber = (num: number): string => {
   if (num >= 1000) {
     return `${(num / 1000).toFixed(1)}k`;
   }
   return num.toString();
-}
+};
 
-const GameCard = ({ game, index }: { game: Game; index: number }) => (
+const GameCard = memo(({ game, index }: { game: Game; index: number }) => (
   <Link href={`/game/${game.id}`} className="flex-shrink-0 w-[160px]">
     <motion.div
       className="group relative aspect-[2/3] rounded-lg overflow-hidden shadow-lg cursor-pointer border border-white/5"
@@ -79,18 +64,20 @@ const GameCard = ({ game, index }: { game: Game; index: number }) => (
       </div>
     </motion.div>
   </Link>
-);
+));
 
-const GameCarousel = ({ title, games }: { title: string; games: Game[] }) => {
+GameCard.displayName = 'GameCard';
+
+const GameCarousel = memo(({ games }: { games: Game[] }) => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  const scroll = (direction: 'left' | 'right') => {
+  const scroll = useCallback((direction: 'left' | 'right') => {
     if (scrollContainerRef.current) {
       const container = scrollContainerRef.current;
       const scrollAmount = direction === 'left' ? -320 : 320;
       container.scrollBy({ left: scrollAmount, behavior: 'smooth' });
     }
-  };
+  }, []);
 
   return (
     <div className="relative group">
@@ -121,9 +108,11 @@ const GameCarousel = ({ title, games }: { title: string; games: Game[] }) => {
       </div>
     </div>
   );
-};
+});
 
-const CategorySkeleton = () => (
+GameCarousel.displayName = 'GameCarousel';
+
+const CategorySkeleton = memo(() => (
   <div className="mb-12">
     <div className="h-8 w-48 bg-gray-800/50 rounded mb-4" />
     <div className="flex gap-6">
@@ -134,9 +123,11 @@ const CategorySkeleton = () => (
       ))}
     </div>
   </div>
-);
+));
 
-const ErrorDisplay = ({ message, onRetry }: { message: string; onRetry: () => void }) => (
+CategorySkeleton.displayName = 'CategorySkeleton';
+
+const ErrorDisplay = memo(({ message, onRetry }: { message: string; onRetry: () => void }) => (
   <div className="flex flex-col items-center justify-center py-12 text-gray-400">
     <AlertCircle className="w-12 h-12 mb-4" />
     <p className="mb-4 text-center max-w-md">{message}</p>
@@ -148,19 +139,36 @@ const ErrorDisplay = ({ message, onRetry }: { message: string; onRetry: () => vo
       Try Again
     </Button>
   </div>
-);
+));
 
-const PopularGamesSection: React.FC<{ category?: 'popular' | 'upcoming' | 'new' }> = ({ category = 'popular' }) => {
+ErrorDisplay.displayName = 'ErrorDisplay';
+
+function ErrorFallback({ error, resetErrorBoundary }: { error: Error, resetErrorBoundary: () => void }) {
+  return (
+    <div className="text-center p-4 rounded-lg bg-red-500/10 border border-red-500/20">
+      <p className="text-red-400">Something went wrong:</p>
+      <pre className="text-sm text-red-300">{error.message}</pre>
+      <Button onClick={resetErrorBoundary} className="mt-4">Try again</Button>
+    </div>
+  );
+}
+
+const PopularGamesSection: React.FC<{ category?: 'popular' | 'upcoming' | 'new' }> = memo(({ category = 'popular' }) => {
   const { data: categories, isLoading, error, refetch } = useQuery<GameCategories>({
-    queryKey: ['popularGames'],
+    queryKey: ['popularGames', category],
     queryFn: async () => {
       try {
         const response = await fetch('/api/games/popular');
         if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || 'Failed to fetch popular games');
+          throw new Error('Failed to fetch popular games');
         }
-        return response.json();
+        const data = await response.json();
+        return {
+          topRated: data.topRated || [],
+          newReleases: data.newReleases || [],
+          upcoming: data.upcoming || [],
+          trending: data.trending || []
+        };
       } catch (error) {
         console.error('Error fetching popular games:', error);
         throw error;
@@ -176,10 +184,12 @@ const PopularGamesSection: React.FC<{ category?: 'popular' | 'upcoming' | 'new' 
 
   if (error) {
     return (
-      <ErrorDisplay 
-        message={error instanceof Error ? error.message : 'Failed to load games'} 
-        onRetry={() => refetch()}
-      />
+      <ErrorBoundary FallbackComponent={ErrorFallback}>
+        <ErrorDisplay 
+          message={error instanceof Error ? error.message : 'Failed to load games'} 
+          onRetry={() => refetch()}
+        />
+      </ErrorBoundary>
     );
   }
 
@@ -210,7 +220,13 @@ const PopularGamesSection: React.FC<{ category?: 'popular' | 'upcoming' | 'new' 
     }
   };
 
-  return <GameCarousel games={getCategoryGames()} />;
-};
+  return (
+    <ErrorBoundary FallbackComponent={ErrorFallback}>
+      <GameCarousel games={getCategoryGames()} />
+    </ErrorBoundary>
+  );
+});
+
+PopularGamesSection.displayName = 'PopularGamesSection';
 
 export default PopularGamesSection;

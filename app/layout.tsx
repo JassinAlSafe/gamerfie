@@ -8,6 +8,7 @@ import { Footer } from "@/components/Footer";
 import { createServerComponentClient } from "@supabase/auth-helpers-nextjs";
 import { cookies } from "next/headers";
 import '@/styles/carousel.css'
+import { Toaster } from 'react-hot-toast';
 
 export const metadata = siteMetadata;
 
@@ -34,6 +35,16 @@ export default async function RootLayout({
             <Footer />
           </div>
         </Providers>
+        <Toaster 
+          position="bottom-right"
+          toastOptions={{
+            duration: 3000,
+            style: {
+              background: '#333',
+              color: '#fff',
+            },
+          }}
+        />
       </body>
     </html>
   );

@@ -7,6 +7,7 @@ import { ProfileNav } from "@/components/profile/profile-nav";
 import { GamesTab } from "@/components/profile/games-tab";
 import { GameFilters, GameFilters as GameFiltersType } from "@/components/profile/game-filters";
 import LoadingSpinner from "@/components/loadingSpinner";
+import { fetchUserGames } from "@/utils/game-utils";
 
 export default function ProfileGamesPage() {
   const { profile, isLoading, error, gameStats } = useProfile();

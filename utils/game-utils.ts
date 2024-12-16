@@ -1,6 +1,7 @@
 import { GameApiResponse, GameReview, Game, UserGame, Platform } from "@/types/index";
 import { SupabaseClient } from '@supabase/supabase-js';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { Database } from '@/types/supabase';
 
 export const fetchGameDetails = async (gameIds: string[]) => {
   try {
@@ -44,58 +45,61 @@ export const fetchGameDetails = async (gameIds: string[]) => {
   }
 };
 
-export const fetchUserGames = async (params: { 
-  userId: string, 
-  start: number, 
-  end: number,
-  supabase?: SupabaseClient
-}): Promise<ProcessedGame[]> => {
-  try {
-    const supabaseClient = params.supabase || createClientComponentClient();
-    
-    const { data: userGames, error } = await supabaseClient
-      .from('user_games')
-      .select(`
-        game_id,
-        status,
-        play_time,
-        user_rating,
-        completed_at,
-        notes,
-        last_played_at,
-        games (
-          id,
-          name,
-          cover,
-          rating,
-          first_release_date,
-          platforms,
-          genres,
-          summary,
-          storyline
-        )
-      `)
-      .eq('user_id', params.userId)
-      .range(params.start, params.end)
-      .order('created_at', { ascending: false });
+export const fetchUserGames = async (
+  userId: string,
+  offset = 0,
+  limit = 24
+) => {
+  const supabase = createClientComponentClient<Database>();
+  
+  // Validate userId
+  if (!userId || typeof userId !== 'string') {
+    throw new Error('Invalid userId provided');
+  }
 
-    if (error) throw error;
-    if (!userGames?.length) return [];
+  const { data, error } = await supabase
+    .from('user_games')
+    .select(`
+      game_id,
+      status,
+      play_time,
+      user_rating,
+      completed_at,
+      notes,
+      last_played_at,
+      games (
+        id,
+        name,
+        cover_url,
+        rating,
+        first_release_date,
+        platforms,
+        genres,
+        summary,
+        storyline
+      )
+    `)
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false })
+    .range(offset, offset + limit - 1);
 
-    return userGames.map(userGame => ({
-      ...userGame.games,
-      status: userGame.status,
-      playTime: userGame.play_time,
-      userRating: userGame.user_rating,
-      completedAt: userGame.completed_at,
-      lastPlayedAt: userGame.last_played_at,
-      notes: userGame.notes
-    })).filter(Boolean) as ProcessedGame[];
-
-  } catch (error) {
+  if (error) {
     console.error('Error in fetchUserGames:', error);
     throw error;
   }
+
+  return data?.map(userGame => ({
+    ...userGame.games,
+    cover: userGame.games?.cover_url ? {
+      url: userGame.games.cover_url
+    } : undefined,
+    status: userGame.status,
+    playTime: userGame.play_time,
+    userRating: userGame.user_rating,
+    completedAt: userGame.completed_at,
+    lastPlayedAt: userGame.last_played_at,
+    notes: userGame.notes
+  }));
 };
 
 export const updateGameStatus = async (
@@ -219,4 +223,78 @@ export const addGame = async (game: Game, userId: string) => {
     console.error('Error adding game:', error);
     throw error;
   }
+};
+
+export const addGameToLibrary = async (
+  gameId: string,
+  userId: string,
+  initialStatus: string = 'want_to_play'
+) => {
+  const supabase = createClientComponentClient<Database>();
+
+  // First check if the game exists in our games table
+  const { data: existingGame } = await supabase
+    .from('games')
+    .select('id')
+    .eq('id', gameId)
+    .single();
+
+  // If game doesn't exist in our database, fetch and insert it
+  if (!existingGame) {
+    const response = await fetch(`/api/games/details`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids: [gameId] })
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch game details');
+    }
+  }
+
+  // Add the game to user's library
+  const { data, error } = await supabase
+    .from('user_games')
+    .upsert({
+      user_id: userId,
+      game_id: gameId,
+      status: initialStatus,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    });
+
+  if (error) throw error;
+  return data;
+};
+
+export const removeGameFromLibrary = async (
+  gameId: string,
+  userId: string
+) => {
+  const supabase = createClientComponentClient<Database>();
+
+  const { error } = await supabase
+    .from('user_games')
+    .delete()
+    .eq('user_id', userId)
+    .eq('game_id', gameId);
+
+  if (error) throw error;
+};
+
+export const checkGameInLibrary = async (
+  gameId: string,
+  userId: string
+) => {
+  const supabase = createClientComponentClient<Database>();
+
+  const { data, error } = await supabase
+    .from('user_games')
+    .select('status')
+    .eq('user_id', userId)
+    .eq('game_id', gameId)
+    .single();
+
+  if (error && error.code !== 'PGRST116') throw error; // PGRST116 is "not found"
+  return data;
 };

@@ -14,12 +14,19 @@ import { Plus, Check, Loader2, ChevronDown, Trash2 } from "lucide-react";
 import { useQueryClient, useQuery, useMutation } from "@tanstack/react-query";
 import { toast } from "react-hot-toast";
 import { cn } from "@/lib/utils";
+import { Game } from "@/types/game";
 
 interface AddToLibraryButtonProps {
   gameId: string;
   gameName: string;
+  cover?: string;
+  rating?: number;
+  releaseDate?: number;
+  platforms?: any[];
+  genres?: any[];
   variant?: 'default' | 'outline' | 'ghost';
   size?: 'default' | 'sm' | 'lg';
+  className?: string;
 }
 
 type GameStatus = "playing" | "completed" | "want_to_play" | "dropped";
@@ -34,8 +41,14 @@ const statusLabels: Record<GameStatus, { label: string; color: string }> = {
 export function AddToLibraryButton({
   gameId,
   gameName,
+  cover,
+  rating,
+  releaseDate,
+  platforms,
+  genres,
   variant = 'default',
-  size = 'default'
+  size = 'default',
+  className
 }: AddToLibraryButtonProps) {
   const supabase = createClientComponentClient();
   const queryClient = useQueryClient();
@@ -73,7 +86,27 @@ export function AddToLibraryButton({
         throw new Error("Please sign in to add games to your library");
       }
 
-      // Check if the game exists
+      // First, ensure the game exists in games table
+      const gameData = {
+        id: gameId,
+        name: gameName,
+        cover_url: cover,
+        rating: rating,
+        first_release_date: releaseDate,
+        platforms: platforms ? JSON.stringify(platforms) : null,
+        genres: genres ? JSON.stringify(genres) : null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+
+      // Insert/update the game first
+      const { error: gameError } = await supabase
+        .from('games')
+        .upsert(gameData);
+
+      if (gameError) throw gameError;
+
+      // Then handle the user_games table
       const { data: existingGame } = await supabase
         .from("user_games")
         .select("id")
@@ -83,7 +116,6 @@ export function AddToLibraryButton({
 
       let error;
       if (existingGame) {
-        // Update existing game
         const { error: updateError } = await supabase
           .from("user_games")
           .update({
@@ -93,7 +125,6 @@ export function AddToLibraryButton({
           .eq("id", existingGame.id);
         error = updateError;
       } else {
-        // Insert new game
         const { error: insertError } = await supabase
           .from("user_games")
           .insert({
@@ -236,7 +267,8 @@ export function AddToLibraryButton({
       disabled={isPending}
       className={cn(
         "min-w-[140px] transition-all duration-200",
-        isPending && "opacity-80"
+        isPending && "opacity-80",
+        className
       )}
     >
       {isPending ? (

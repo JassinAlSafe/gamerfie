@@ -1,22 +1,35 @@
-export interface Game {
-  id: string;
+export interface Achievement {
+  id: number;
   name: string;
-  cover?: {
-    id: number;
-    url: string;
-  };
-  platforms?: Platform[];
-  genres?: Genre[];
-  rating?: number;
-  first_release_date?: number;
-  summary?: string;
-  storyline?: string;
-  total_rating?: number;
-  total_rating_count?: number;
+  description: string;
+  category: number;
+  points: number;
+  rank: number;
+  game_id: number;
+}
+
+interface Screenshot {
+  id: number;
+  url: string;
+}
+
+export interface Game {
+  id: number | string;
+  name: string;
+  cover?: { url: string } | null;
+  cover_url?: string | null;
+  rating?: number | null;
+  total_rating?: number | null;
+  first_release_date?: number | null;
+  platforms?: Platform[] | null;
+  genres?: Genre[] | null;
+  summary?: string | null;
+  storyline?: string | null;
+  achievements?: Achievement[];
+  screenshots?: Screenshot[];
   artworks?: { url: string }[];
-  screenshots?: { url: string }[];
   websites?: any[];
-  involved_companies?: any[];
+  relatedGames?: Game[];
 }
 
 export interface UserGame {
@@ -66,5 +79,12 @@ export interface FetchGamesResponse {
   total: number;
   page: number;
   pageSize: number;
+}
+
+export interface GameCategories {
+  topRated: Game[];
+  newReleases: Game[];
+  upcoming: Game[];
+  trending: Game[];
 }
 
