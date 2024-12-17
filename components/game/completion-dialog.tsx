@@ -29,7 +29,13 @@ interface CompletionDialogProps {
 
 export function CompletionDialog({ isOpen, setIsOpen, game }: CompletionDialogProps) {
   const { profile } = useProfile();
-  const { updateProgress, fetchProgress } = useProgressStore();
+  const { 
+    updateProgress, 
+    fetchProgress, 
+    playTime, 
+    completionPercentage, 
+    achievementsCompleted 
+  } = useProgressStore();
   const [localPlayTime, setLocalPlayTime] = useState(0);
   const [localCompletion, setLocalCompletion] = useState(0);
   const [localAchievementsCompleted, setLocalAchievementsCompleted] = useState(0);
@@ -41,6 +47,12 @@ export function CompletionDialog({ isOpen, setIsOpen, game }: CompletionDialogPr
     }
   }, [profile?.id, game?.id, fetchProgress]);
 
+  useEffect(() => {
+    setLocalPlayTime(playTime || 0);
+    setLocalCompletion(completionPercentage || 0);
+    setLocalAchievementsCompleted(achievementsCompleted || 0);
+  }, [playTime, completionPercentage, achievementsCompleted]);
+
   const totalAchievements = game.achievements?.length || 0;
   const achievementPercentage = totalAchievements > 0 
     ? (localAchievementsCompleted / totalAchievements) * 100 
@@ -51,14 +63,29 @@ export function CompletionDialog({ isOpen, setIsOpen, game }: CompletionDialogPr
     
     setIsSubmitting(true);
     
+    const gameData = {
+      id: game.id.toString(),
+      name: game.name,
+      cover_url: game.cover?.url || null,
+      rating: game.total_rating || null,
+      first_release_date: game.first_release_date || null,
+      platforms: game.platforms || [],
+      genres: game.genres || [],
+    };
+
     try {
-      await updateProgress(profile.id, game.id.toString(), {
-        play_time: localPlayTime,
-        completion_percentage: localCompletion,
-        achievements_completed: localAchievementsCompleted,
-        status: localCompletion === 100 ? 'completed' : 'playing',
-        completed_at: localCompletion === 100 ? new Date().toISOString() : null,
-      });
+      await updateProgress(
+        profile.id.toString(), 
+        game.id.toString(), 
+        {
+          play_time: localPlayTime,
+          completion_percentage: localCompletion,
+          achievements_completed: localAchievementsCompleted,
+          status: localCompletion === 100 ? 'completed' : 'playing',
+          completed_at: localCompletion === 100 ? new Date().toISOString() : null,
+        },
+        gameData
+      );
       
       await fetchProgress(profile.id.toString(), game.id.toString());
       

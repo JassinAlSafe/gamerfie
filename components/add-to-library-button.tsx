@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -11,13 +10,21 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { Plus, Check, Loader2, ChevronDown, Trash2 } from "lucide-react";
-import { useQueryClient, useQuery, useMutation } from "@tanstack/react-query";
 import { toast } from "react-hot-toast";
 import { cn } from "@/lib/utils";
-import { Game } from "@/types/game";
 import { Database } from '@/types/supabase';
 import { useProgressStore } from '@/stores/useProgressStore';
 import { useProfile } from '@/hooks/use-profile';
+
+interface Platform {
+  id: number;
+  name: string;
+}
+
+interface Genre {
+  id: number;
+  name: string;
+}
 
 interface AddToLibraryButtonProps {
   gameId: string;
@@ -25,8 +32,8 @@ interface AddToLibraryButtonProps {
   cover?: string;
   rating?: number;
   releaseDate?: number;
-  platforms?: any[];
-  genres?: any[];
+  platforms?: Platform[];
+  genres?: Genre[];
   variant?: 'default' | 'outline' | 'ghost';
   size?: 'default' | 'sm' | 'lg';
   className?: string;
@@ -53,11 +60,15 @@ export function AddToLibraryButton({
   size = 'default',
   className
 }: AddToLibraryButtonProps) {
-  const supabase = createClientComponentClient<Database>();
-  const queryClient = useQueryClient();
   const [isOpen, setIsOpen] = useState(false);
   const { profile } = useProfile();
-  const { status, loading, updateGameStatus } = useProgressStore();
+  const { status, loading, updateGameStatus, fetchProgress } = useProgressStore();
+
+  useEffect(() => {
+    if (profile?.id && gameId) {
+      fetchProgress(profile.id.toString(), gameId);
+    }
+  }, [profile?.id, gameId, fetchProgress]);
 
   const handleStatusUpdate = async (newStatus: GameStatus) => {
     if (!profile?.id) {
@@ -69,14 +80,20 @@ export function AddToLibraryButton({
       id: gameId,
       name: gameName,
       cover_url: cover,
-      rating: rating,
-      first_release_date: releaseDate,
-      platforms: platforms,
-      genres: genres,
+      rating: rating || undefined,
+      first_release_date: releaseDate || undefined,
+      platforms: platforms || [],
+      genres: genres || [],
     };
     
-    await updateGameStatus(profile.id, gameId, newStatus, gameData);
-    setIsOpen(false);
+    try {
+      await updateGameStatus(profile.id.toString(), gameId, newStatus, gameData);
+      await fetchProgress(profile.id.toString(), gameId);
+      setIsOpen(false);
+    } catch (error) {
+      console.error('Error updating game status:', error);
+      toast.error('Failed to update game status');
+    }
   };
 
   if (loading) {
@@ -88,7 +105,7 @@ export function AddToLibraryButton({
     );
   }
 
-  if (status) {
+  if (status && status in statusLabels) {
     return (
       <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
         <DropdownMenuTrigger asChild>
@@ -106,8 +123,8 @@ export function AddToLibraryButton({
             ) : (
               <Check className="w-4 h-4 mr-2" />
             )}
-            <span className={statusLabels[status].color}>
-              {statusLabels[status].label}
+            <span className={statusLabels[status as GameStatus].color}>
+              {statusLabels[status as GameStatus].label}
             </span>
             <ChevronDown className={cn(
               "w-4 h-4 ml-2 transition-transform duration-200",

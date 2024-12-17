@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { toast } from "react-hot-toast";
-import { Gamepad2, Loader2, AlertCircle, ChevronDown, Clock } from "lucide-react";
+import { Gamepad2, Loader2, AlertCircle, ChevronDown, Clock, BarChart3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { fetchUserGames, updateGameStatus } from "@/utils/game-utils";
@@ -319,6 +319,12 @@ const GameCardOverlay = memo(({ game, onStatusChange }: { game: ProcessedGame; o
               <Clock className="w-3 h-3 text-gray-400" />
               <span className="text-gray-300 text-xs">{game.playTime || 0}h</span>
             </div>
+            {game.completionPercentage !== null && (
+              <div className="flex items-center space-x-1 bg-black/40 rounded-full px-2 py-1">
+                <BarChart3 className="w-3 h-3 text-gray-400" />
+                <span className="text-gray-300 text-xs">{game.completionPercentage}%</span>
+              </div>
+            )}
           </div>
           <div className="status-dropdown">
             <StatusDropdown onStatusChange={onStatusChange} />
@@ -448,6 +454,12 @@ const GameListItem = memo(({ game, index, onStatusChange }: GameCardProps) => {
               <Clock className="w-4 h-4 mr-1" />
               {game.playTime || 0}h
             </div>
+            {game.completionPercentage !== null && (
+              <div className="flex items-center text-sm text-gray-400">
+                <BarChart3 className="w-4 h-4 mr-1" />
+                {game.completionPercentage}%
+              </div>
+            )}
           </div>
         </div>
 

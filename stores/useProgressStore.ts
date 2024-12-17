@@ -3,30 +3,50 @@ import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { toast } from 'react-hot-toast';
 import { Database } from '@/types/supabase';
 
+type GameStatus = "playing" | "completed" | "want_to_play" | "dropped";
+
 interface ProgressStore {
   playTime: number | null;
   completionPercentage: number | null;
   achievementsCompleted: number | null;
-  status: string | null;
+  status: GameStatus | null;
   completedAt: string | null;
   loading: boolean;
   error: string | null;
   fetchProgress: (userId: string, gameId: string) => Promise<void>;
-  updateGameStatus: (userId: string, gameId: string, status: string, gameData?: GameData) => Promise<void>;
-  updateProgress: (userId: string, gameId: string, data: any, gameData?: GameData) => Promise<void>;
+  updateGameStatus: (userId: string, gameId: string, status: GameStatus, gameData?: GameData) => Promise<void>;
+  updateProgress: (userId: string, gameId: string, data: ProgressData) => Promise<void>;
 }
 
 interface GameData {
   id: string;
   name: string;
-  cover_url?: string;
-  rating?: number;
-  first_release_date?: number;
-  platforms?: any[];
-  genres?: any[];
+  cover_url?: string | null;
+  rating?: number | null;
+  first_release_date?: number | null;
+  platforms?: Platform[];
+  genres?: Genre[];
 }
 
-export const useProgressStore = create<ProgressStore>((set, get) => ({
+interface Platform {
+  id: number;
+  name: string;
+}
+
+interface Genre {
+  id: number;
+  name: string;
+}
+
+interface ProgressData {
+  play_time?: number;
+  completion_percentage?: number;
+  achievements_completed?: number;
+  status?: GameStatus;
+  completed_at?: string | null;
+}
+
+export const useProgressStore = create<ProgressStore>((set) => ({
   playTime: null,
   completionPercentage: null,
   achievementsCompleted: null,
@@ -54,7 +74,7 @@ export const useProgressStore = create<ProgressStore>((set, get) => ({
           playTime: data.play_time || null,
           completionPercentage: data.completion_percentage || null,
           achievementsCompleted: data.achievements_completed || null,
-          status: data.status || null,
+          status: data.status as GameStatus || null,
           completedAt: data.completed_at || null,
         });
       } else {
@@ -74,32 +94,13 @@ export const useProgressStore = create<ProgressStore>((set, get) => ({
     }
   },
 
-  updateGameStatus: async (userId, gameId, status, gameData?: GameData) => {
+  updateGameStatus: async (userId, gameId, status, gameData) => {
     set({ loading: true });
     const supabase = createClientComponentClient<Database>();
     
     try {
-      // First ensure game exists in games table
-      if (gameData) {
-        const { error: gameError } = await supabase
-          .from('games')
-          .upsert({
-            id: gameId,
-            name: gameData.name,
-            cover_url: gameData.cover_url,
-            rating: gameData.rating,
-            first_release_date: gameData.first_release_date,
-            platforms: gameData.platforms ? JSON.stringify(gameData.platforms) : null,
-            genres: gameData.genres ? JSON.stringify(gameData.genres) : null,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          });
-
-        if (gameError) throw gameError;
-      }
-
-      // Then update user_games
-      const { error } = await supabase
+      // First update user_games with the new status
+      const { error: userGameError } = await supabase
         .from('user_games')
         .upsert({
           user_id: userId,
@@ -110,9 +111,32 @@ export const useProgressStore = create<ProgressStore>((set, get) => ({
           onConflict: 'user_id,game_id'
         });
 
-      if (error) throw error;
+      if (userGameError) throw userGameError;
 
-      // Fetch fresh data
+      // Then ensure game exists in games table if gameData is provided
+      if (gameData) {
+        const { error: gameError } = await supabase
+          .from('games')
+          .upsert({
+            id: gameId,
+            name: gameData.name,
+            cover_url: gameData.cover_url || null,
+            rating: gameData.rating || null,
+            first_release_date: gameData.first_release_date || null,
+            platforms: gameData.platforms ? JSON.stringify(gameData.platforms) : null,
+            genres: gameData.genres ? JSON.stringify(gameData.genres) : null,
+            updated_at: new Date().toISOString()
+          }, {
+            onConflict: 'id'
+          });
+
+        if (gameError) {
+          console.error('Error updating game data:', gameError);
+          // Don't throw here as the status update was successful
+        }
+      }
+
+      // Fetch fresh data after update
       const { data: updatedData, error: fetchError } = await supabase
         .from('user_games')
         .select('*')
@@ -122,11 +146,12 @@ export const useProgressStore = create<ProgressStore>((set, get) => ({
 
       if (fetchError) throw fetchError;
 
+      // Update store with fresh data
       set({
         playTime: updatedData.play_time || null,
         completionPercentage: updatedData.completion_percentage || null,
         achievementsCompleted: updatedData.achievements_completed || null,
-        status: updatedData.status || null,
+        status: updatedData.status as GameStatus || null,
         completedAt: updatedData.completed_at || null,
       });
       
@@ -134,36 +159,17 @@ export const useProgressStore = create<ProgressStore>((set, get) => ({
     } catch (error) {
       console.error('Error updating game status:', error);
       toast.error('Failed to update game status');
+      throw error;
     } finally {
       set({ loading: false });
     }
   },
 
-  updateProgress: async (userId, gameId, data, gameData?: GameData) => {
+  updateProgress: async (userId, gameId, data) => {
     set({ loading: true });
     const supabase = createClientComponentClient<Database>();
     
     try {
-      // First ensure game exists in games table
-      if (gameData) {
-        const { error: gameError } = await supabase
-          .from('games')
-          .upsert({
-            id: gameId,
-            name: gameData.name,
-            cover_url: gameData.cover_url,
-            rating: gameData.rating,
-            first_release_date: gameData.first_release_date,
-            platforms: gameData.platforms ? JSON.stringify(gameData.platforms) : null,
-            genres: gameData.genres ? JSON.stringify(gameData.genres) : null,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          });
-
-        if (gameError) throw gameError;
-      }
-
-      // Then update user_games
       const { error } = await supabase
         .from('user_games')
         .upsert({
@@ -177,7 +183,7 @@ export const useProgressStore = create<ProgressStore>((set, get) => ({
 
       if (error) throw error;
 
-      // Fetch fresh data
+      // Fetch fresh data after update
       const { data: updatedData, error: fetchError } = await supabase
         .from('user_games')
         .select('*')
@@ -187,11 +193,12 @@ export const useProgressStore = create<ProgressStore>((set, get) => ({
 
       if (fetchError) throw fetchError;
 
+      // Update store with fresh data
       set({
         playTime: updatedData.play_time || null,
         completionPercentage: updatedData.completion_percentage || null,
         achievementsCompleted: updatedData.achievements_completed || null,
-        status: updatedData.status || null,
+        status: updatedData.status as GameStatus || null,
         completedAt: updatedData.completed_at || null,
       });
       
@@ -199,6 +206,7 @@ export const useProgressStore = create<ProgressStore>((set, get) => ({
     } catch (error) {
       console.error('Error updating progress:', error);
       toast.error('Failed to update progress');
+      throw error;
     } finally {
       set({ loading: false });
     }

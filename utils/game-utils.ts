@@ -67,6 +67,8 @@ export const fetchUserGames = async (
       completed_at,
       notes,
       last_played_at,
+      completion_percentage,
+      achievements_completed,
       games (
         id,
         name,
@@ -98,6 +100,8 @@ export const fetchUserGames = async (
     userRating: userGame.user_rating,
     completedAt: userGame.completed_at,
     lastPlayedAt: userGame.last_played_at,
+    completionPercentage: userGame.completion_percentage,
+    achievementsCompleted: userGame.achievements_completed,
     notes: userGame.notes
   }));
 };

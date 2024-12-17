@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { Database } from '@/types/supabase';
@@ -10,15 +10,21 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useProfile } from '@/hooks/use-profile';
-import { useProgressStore } from '@/stores/progress-store';
+import { useProgressStore } from '@/stores/useProgressStore';
 import { Game } from '@/types/game';
 
 export function GameProgressUpdate({ game }: { game: Game }) {
   const { profile } = useProfile();
-  const { updateGameStatus } = useProgressStore();
+  const { status, loading: isLoading, updateGameStatus, fetchProgress } = useProgressStore();
   const [isUpdating, setIsUpdating] = useState(false);
 
-  const handleStatusUpdate = async (status: string) => {
+  useEffect(() => {
+    if (profile?.id && game?.id) {
+      fetchProgress(profile.id.toString(), game.id.toString());
+    }
+  }, [profile?.id, game?.id, fetchProgress]);
+
+  const handleStatusUpdate = async (newStatus: string) => {
     if (!profile?.id) return;
     
     setIsUpdating(true);
@@ -34,7 +40,7 @@ export function GameProgressUpdate({ game }: { game: Game }) {
     };
 
     try {
-      await updateGameStatus(profile.id, gameData, status);
+      await updateGameStatus(profile.id.toString(), gameData.id, newStatus, gameData);
     } catch (error) {
       console.error('Error updating game status:', error);
     } finally {
@@ -42,11 +48,13 @@ export function GameProgressUpdate({ game }: { game: Game }) {
     }
   };
 
+  const isDisabled = isUpdating || isLoading;
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" disabled={isUpdating}>
-          {isUpdating ? 'Updating...' : `Status: ${game.status || 'Not Set'}`}
+        <Button variant="outline" disabled={isDisabled}>
+          {isDisabled ? 'Updating...' : `Status: ${status || 'Not Set'}`}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent>
