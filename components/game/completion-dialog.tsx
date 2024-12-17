@@ -29,28 +29,45 @@ interface CompletionDialogProps {
 
 export function CompletionDialog({ isOpen, setIsOpen, game }: CompletionDialogProps) {
   const { profile } = useProfile();
-  const { updateProgress } = useProgressStore();
+  const { updateProgress, fetchProgress } = useProgressStore();
   const [localPlayTime, setLocalPlayTime] = useState(0);
   const [localCompletion, setLocalCompletion] = useState(0);
   const [localAchievementsCompleted, setLocalAchievementsCompleted] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (profile?.id && game?.id) {
+      fetchProgress(profile.id.toString(), game.id.toString());
+    }
+  }, [profile?.id, game?.id, fetchProgress]);
 
   const totalAchievements = game.achievements?.length || 0;
   const achievementPercentage = totalAchievements > 0 
     ? (localAchievementsCompleted / totalAchievements) * 100 
     : 0;
 
-  const handleSubmit = async (data: any) => {
+  const handleSubmit = async () => {
     if (!profile?.id) return;
     
-    await updateProgress(profile.id, game.id, {
-      play_time: data.playTime,
-      completion_percentage: data.completionPercentage,
-      status: data.status,
-      // ... other fields
-    });
+    setIsSubmitting(true);
     
-    setIsOpen(false);
+    try {
+      await updateProgress(profile.id, game.id.toString(), {
+        play_time: localPlayTime,
+        completion_percentage: localCompletion,
+        achievements_completed: localAchievementsCompleted,
+        status: localCompletion === 100 ? 'completed' : 'playing',
+        completed_at: localCompletion === 100 ? new Date().toISOString() : null,
+      });
+      
+      await fetchProgress(profile.id.toString(), game.id.toString());
+      
+      setIsOpen(false);
+    } catch (error) {
+      console.error('Error updating progress:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (

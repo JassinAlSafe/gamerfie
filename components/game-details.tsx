@@ -115,7 +115,9 @@ export const GameDetails = memo(function GameDetails({ game }: { game: Game }) {
     status,
     completedAt,
     loading: progressLoading, 
-    fetchProgress 
+    fetchProgress,
+    updateProgress,
+    updateGameStatus
   } = useProgressStore();
 
   const {
@@ -157,14 +159,14 @@ export const GameDetails = memo(function GameDetails({ game }: { game: Game }) {
         </Button>
       </div>
       
-      {isLoading ? (
+      {progressLoading ? (
         <LoadingSpinner />
       ) : (
         <>
           <div className="space-y-4">
             <div className="flex justify-between items-center">
               <span className="text-gray-400">Completion</span>
-              <span className="text-white">{completionPercentage}%</span>
+              <span className="text-white">{completionPercentage || 0}%</span>
             </div>
             <ProgressIndicator value={completionPercentage || 0} />
           </div>

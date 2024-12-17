@@ -65,7 +65,17 @@ export function AddToLibraryButton({
       return;
     }
     
-    await updateGameStatus(profile.id, gameId, newStatus);
+    const gameData = {
+      id: gameId,
+      name: gameName,
+      cover_url: cover,
+      rating: rating,
+      first_release_date: releaseDate,
+      platforms: platforms,
+      genres: genres,
+    };
+    
+    await updateGameStatus(profile.id, gameId, newStatus, gameData);
     setIsOpen(false);
   };
 

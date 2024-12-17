@@ -9,42 +9,34 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { useProfile } from '@/hooks/use-profile';
+import { useProgressStore } from '@/stores/progress-store';
+import { Game } from '@/types/game';
 
-interface GameProgressUpdateProps {
-  gameId: string;
-  userId: string;
-  currentStatus: string | null;
-  onStatusUpdate: (newStatus: string) => void;
-}
-
-export function GameProgressUpdate({
-  gameId,
-  userId,
-  currentStatus,
-  onStatusUpdate
-}: GameProgressUpdateProps) {
+export function GameProgressUpdate({ game }: { game: Game }) {
+  const { profile } = useProfile();
+  const { updateGameStatus } = useProgressStore();
   const [isUpdating, setIsUpdating] = useState(false);
 
-  const handleStatusUpdate = async (newStatus: string) => {
+  const handleStatusUpdate = async (status: string) => {
+    if (!profile?.id) return;
+    
     setIsUpdating(true);
-    try {
-      const supabase = createClientComponentClient<Database>();
-      const { error } = await supabase
-        .from('user_games')
-        .upsert({
-          user_id: userId,
-          game_id: gameId,
-          status: newStatus,
-          updated_at: new Date().toISOString()
-        });
+    
+    const gameData = {
+      id: game.id.toString(),
+      name: game.name,
+      cover_url: game.cover?.url,
+      rating: game.total_rating || null,
+      first_release_date: game.first_release_date || null,
+      platforms: game.platforms || [],
+      genres: game.genres || [],
+    };
 
-      if (error) throw error;
-      
-      onStatusUpdate(newStatus);
-      toast.success('Progress updated');
+    try {
+      await updateGameStatus(profile.id, gameData, status);
     } catch (error) {
-      toast.error('Failed to update progress');
-      console.error('Status update error:', error);
+      console.error('Error updating game status:', error);
     } finally {
       setIsUpdating(false);
     }
@@ -54,7 +46,7 @@ export function GameProgressUpdate({
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="outline" disabled={isUpdating}>
-          {isUpdating ? 'Updating...' : `Status: ${currentStatus || 'Not Set'}`}
+          {isUpdating ? 'Updating...' : `Status: ${game.status || 'Not Set'}`}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent>
