@@ -1,198 +1,160 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import { Plus, Check, Loader2, ChevronDown } from "lucide-react";
-import toast from "react-hot-toast";
+import { Plus, Check, Loader2, ChevronDown, Trash2 } from "lucide-react";
+import { toast } from "react-hot-toast";
+import { cn } from "@/lib/utils";
+import { Database } from '@/types/supabase';
+import { useProgressStore } from '@/stores/useProgressStore';
+import { useProfile } from '@/hooks/use-profile';
+
+interface Platform {
+  id: number;
+  name: string;
+}
+
+interface Genre {
+  id: number;
+  name: string;
+}
 
 interface AddToLibraryButtonProps {
   gameId: string;
   gameName: string;
+  cover?: string;
+  rating?: number;
+  releaseDate?: number;
+  platforms?: Platform[];
+  genres?: Genre[];
+  variant?: 'default' | 'outline' | 'ghost';
+  size?: 'default' | 'sm' | 'lg';
+  className?: string;
 }
 
 type GameStatus = "playing" | "completed" | "want_to_play" | "dropped";
 
-const statusLabels: Record<GameStatus, string> = {
-  playing: "Currently Playing",
-  completed: "Completed",
-  want_to_play: "Want to Play",
-  dropped: "Dropped",
+const statusLabels: Record<GameStatus, { label: string; color: string }> = {
+  playing: { label: "Currently Playing", color: "text-green-400" },
+  completed: { label: "Completed", color: "text-blue-400" },
+  want_to_play: { label: "Want to Play", color: "text-yellow-400" },
+  dropped: { label: "Dropped", color: "text-red-400" }
 };
 
 export function AddToLibraryButton({
   gameId,
   gameName,
+  cover,
+  rating,
+  releaseDate,
+  platforms,
+  genres,
+  variant = 'default',
+  size = 'default',
+  className
 }: AddToLibraryButtonProps) {
-  const [isLoading, setIsLoading] = useState(true);
-  const [currentStatus, setCurrentStatus] = useState<GameStatus | null>(null);
-  const [isUpdating, setIsUpdating] = useState(false);
-  const supabase = createClientComponentClient();
+  const [isOpen, setIsOpen] = useState(false);
+  const { profile } = useProfile();
+  const { status, loading, updateGameStatus, fetchProgress } = useProgressStore();
 
   useEffect(() => {
-    checkGameStatus();
-  }, [gameId]);
+    if (profile?.id && gameId) {
+      fetchProgress(profile.id.toString(), gameId);
+    }
+  }, [profile?.id, gameId, fetchProgress]);
 
-  const checkGameStatus = async () => {
+  const handleStatusUpdate = async (newStatus: GameStatus) => {
+    if (!profile?.id) {
+      toast.error('Please sign in to add games to your library');
+      return;
+    }
+    
+    const gameData = {
+      id: gameId,
+      name: gameName,
+      cover_url: cover,
+      rating: rating || undefined,
+      first_release_date: releaseDate || undefined,
+      platforms: platforms || [],
+      genres: genres || [],
+    };
+    
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (!user) {
-        setIsLoading(false);
-        return;
-      }
-
-      const { data, error } = await supabase
-        .from("user_games")
-        .select("status")
-        .eq("user_id", user.id)
-        .eq("game_id", gameId)
-        .maybeSingle();
-
-      if (error && error.code !== "PGRST116") {
-        throw error;
-      }
-
-      setCurrentStatus((data?.status as GameStatus) || null);
+      await updateGameStatus(profile.id.toString(), gameId, newStatus, gameData);
+      await fetchProgress(profile.id.toString(), gameId);
+      setIsOpen(false);
     } catch (error) {
-      console.error("Error checking game status:", error);
-      toast.error("Failed to check game status");
-    } finally {
-      setIsLoading(false);
+      console.error('Error updating game status:', error);
+      toast.error('Failed to update game status');
     }
   };
 
-  const updateGameStatus = async (status: GameStatus) => {
-    try {
-      setIsUpdating(true);
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (!user) {
-        toast.error("Please sign in to add games to your library");
-        return;
-      }
-
-      // First, check if the game exists
-      const { data: existingGame } = await supabase
-        .from("user_games")
-        .select("id")
-        .eq("user_id", user.id)
-        .eq("game_id", gameId)
-        .maybeSingle();
-
-      let error;
-      if (existingGame) {
-        // Update existing game
-        const { error: updateError } = await supabase
-          .from("user_games")
-          .update({
-            status,
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", existingGame.id);
-        error = updateError;
-      } else {
-        // Insert new game
-        const { error: insertError } = await supabase
-          .from("user_games")
-          .insert({
-            user_id: user.id,
-            game_id: gameId,
-            status,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          });
-        error = insertError;
-      }
-
-      if (error) throw error;
-
-      setCurrentStatus(status);
-      toast.success(
-        `${gameName} ${existingGame ? "updated in" : "added to"} your library`
-      );
-    } catch (error) {
-      console.error("Error updating game status:", error);
-      toast.error("Failed to update game status");
-    } finally {
-      setIsUpdating(false);
-    }
-  };
-
-  const removeFromLibrary = async () => {
-    try {
-      setIsUpdating(true);
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (!user) return;
-
-      const { error } = await supabase
-        .from("user_games")
-        .delete()
-        .eq("user_id", user.id)
-        .eq("game_id", gameId);
-
-      if (error) throw error;
-
-      setCurrentStatus(null);
-      toast.success(`${gameName} removed from your library`);
-    } catch (error) {
-      console.error("Error removing game:", error);
-      toast.error("Failed to remove game");
-    } finally {
-      setIsUpdating(false);
-    }
-  };
-
-  if (isLoading) {
+  if (loading) {
     return (
-      <Button disabled>
+      <Button variant={variant} size={size} disabled className="min-w-[140px]">
         <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-        Checking status...
+        Loading...
       </Button>
     );
   }
 
-  if (currentStatus) {
+  if (status && status in statusLabels) {
     return (
-      <DropdownMenu>
+      <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
         <DropdownMenuTrigger asChild>
-          <Button className="w-full md:w-auto" disabled={isUpdating}>
-            {isUpdating ? (
+          <Button 
+            variant={variant} 
+            size={size}
+            disabled={loading}
+            className={cn(
+              "min-w-[140px] transition-all duration-200",
+              loading && "opacity-80"
+            )}
+          >
+            {loading ? (
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
             ) : (
               <Check className="w-4 h-4 mr-2" />
             )}
-            {statusLabels[currentStatus]}
-            <ChevronDown className="w-4 h-4 ml-2" />
+            <span className={statusLabels[status as GameStatus].color}>
+              {statusLabels[status as GameStatus].label}
+            </span>
+            <ChevronDown className={cn(
+              "w-4 h-4 ml-2 transition-transform duration-200",
+              isOpen && "transform rotate-180"
+            )} />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          {Object.entries(statusLabels).map(([status, label]) => (
+        <DropdownMenuContent 
+          align="end"
+          className="w-[200px] animate-in fade-in-0 zoom-in-95 duration-100"
+        >
+          {Object.entries(statusLabels).map(([statusKey, { label, color }]) => (
             <DropdownMenuItem
-              key={status}
-              onClick={() => updateGameStatus(status as GameStatus)}
-              className={currentStatus === status ? "bg-accent" : ""}
+              key={statusKey}
+              onClick={() => handleStatusUpdate(statusKey as GameStatus)}
+              className={cn(
+                "flex items-center py-2 transition-colors duration-150",
+                status === statusKey && "bg-accent",
+                color
+              )}
             >
               {label}
             </DropdownMenuItem>
           ))}
+          <DropdownMenuSeparator />
           <DropdownMenuItem
-            className="text-destructive"
-            onClick={removeFromLibrary}
+            onClick={() => handleStatusUpdate('dropped')}
+            className="flex items-center py-2 text-destructive hover:text-destructive"
           >
+            <Trash2 className="w-4 h-4 mr-2" />
             Remove from Library
           </DropdownMenuItem>
         </DropdownMenuContent>
@@ -202,11 +164,17 @@ export function AddToLibraryButton({
 
   return (
     <Button
-      onClick={() => updateGameStatus("want_to_play")}
-      disabled={isUpdating}
-      className="w-full md:w-auto"
+      variant={variant}
+      size={size}
+      onClick={() => handleStatusUpdate('want_to_play')}
+      disabled={loading}
+      className={cn(
+        "min-w-[140px] transition-all duration-200",
+        loading && "opacity-80",
+        className
+      )}
     >
-      {isUpdating ? (
+      {loading ? (
         <Loader2 className="w-4 h-4 mr-2 animate-spin" />
       ) : (
         <Plus className="w-4 h-4 mr-2" />

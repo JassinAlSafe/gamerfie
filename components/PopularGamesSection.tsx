@@ -1,107 +1,273 @@
-import React from 'react';
+import React, { memo, useCallback } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { motion } from 'framer-motion';
-import { ChevronRight, Users, Gamepad2 } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { Star, Users, Gamepad2, AlertCircle, ChevronLeft, ChevronRight, Calendar, Sparkles, Flame } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { ensureAbsoluteUrl } from '@/lib/utils';
+import { useRef } from 'react';
+import { ErrorBoundary } from 'react-error-boundary';
+import { useRouter } from 'next/navigation';
 
-interface PopularList {
-  id: string;
-  title: string;
-  creator: string;
-  gameCount: number;
-  category: string;
-}
+// Types moved to types/game.ts
+import { Game, GameCategories } from '@/types/game';
 
-const PopularListItem: React.FC<PopularList> = ({ id, title, creator, gameCount, category }) => (
-  <Link href={`/list/${id}`}>
+const formatNumber = (num: number): string => {
+  if (num >= 1000) {
+    return `${(num / 1000).toFixed(1)}k`;
+  }
+  return num.toString();
+};
+
+const formatRating = (rating: number | null | undefined): string => {
+  if (!rating || rating === 0) return '';
+  return Math.round(rating).toString();
+};
+
+const GameCard = memo(({ game, index }: { game: Game; index: number }) => (
+  <Link href={`/game/${game.id}`} className="flex-shrink-0 w-[160px]">
     <motion.div
-      className="bg-gray-800/50 backdrop-blur-sm rounded-lg overflow-hidden shadow-lg cursor-pointer p-6 h-full flex flex-col justify-between border border-gray-700"
-      whileHover={{ scale: 1.03 }}
+      className="group relative aspect-[2/3] rounded-lg overflow-hidden shadow-lg cursor-pointer border border-white/5"
+      whileHover={{ scale: 1.02 }}
       transition={{ duration: 0.2 }}
     >
-      <div>
-        <p className="text-sm font-medium text-blue-400 mb-2">{category}</p>
-        <h4 className="text-xl font-semibold text-white mb-4 line-clamp-2">{title}</h4>
-        <div className="flex items-center text-gray-300 mb-2">
-          <Users size={16} className="mr-2" />
-          <p className="text-sm">{creator}</p>
+      {game.cover?.url ? (
+        <Image
+          src={game.cover.url}
+          alt={game.name}
+          fill
+          priority={index < 6}
+          className="object-cover transition-transform duration-300 group-hover:scale-110"
+          sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 16vw"
+          quality={85}
+        />
+      ) : (
+        <div className="absolute inset-0 bg-gray-800 flex items-center justify-center">
+          <Gamepad2 className="w-8 h-8 text-gray-600" />
         </div>
-        <div className="flex items-center text-gray-300">
-          <Gamepad2 size={16} className="mr-2" />
-          <p className="text-sm">{gameCount} Games</p>
+      )}
+      
+      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+      
+      <div className="absolute bottom-0 left-0 right-0 p-2 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
+        <h3 className="text-xs font-semibold text-white line-clamp-2 mb-1">{game.name}</h3>
+        <div className="flex items-center gap-3">
+          {game.rating ? (
+            <div className="flex items-center text-yellow-400">
+              <Star className="h-3 w-3 mr-1 fill-current" />
+              <span className="text-xs">{formatRating(game.rating)}</span>
+            </div>
+          ) : null}
+          {game.total_rating_count > 0 && (
+            <div className="flex items-center text-gray-400">
+              <Users className="h-3 w-3 mr-1" />
+              <span className="text-xs">{formatNumber(game.total_rating_count)}</span>
+            </div>
+          )}
         </div>
-      </div>
-      <div className="mt-6 flex items-center text-blue-400 group">
-        <span className="text-sm font-medium">View List</span>
-        <ChevronRight size={16} className="ml-1 group-hover:translate-x-1 transition-transform" />
       </div>
     </motion.div>
   </Link>
-);
+));
 
-const PopularGamesSection: React.FC = () => {
-  const popularLists: PopularList[] = [
-    {
-      id: '1',
-      title: 'Top RPGs of All Time',
-      creator: 'GingerV',
-      gameCount: 20,
-      category: 'Role-Playing Games',
-    },
-    {
-      id: '2',
-      title: 'Best Indies of the Decade',
-      creator: 'IndieGamer',
-      gameCount: 15,
-      category: 'Indie Games',
-    },
-    {
-      id: '3',
-      title: 'Classic FPS Games That Defined the Genre',
-      creator: 'RetroShooter',
-      gameCount: 10,
-      category: 'First-Person Shooters',
-    },
-    {
-      id: '4',
-      title: 'Hidden Gems You Might Have Missed',
-      creator: 'GameExplorer',
-      gameCount: 25,
-      category: 'Underrated Games',
-    },
-    {
-      id: '5',
-      title: 'Must-Play Nintendo Switch Exclusives',
-      creator: 'NintendoFan',
-      gameCount: 12,
-      category: 'Nintendo Switch',
-    },
-    {
-      id: '6',
-      title: 'Best Story-Driven Adventures',
-      creator: 'NarrativeNerd',
-      gameCount: 18,
-      category: 'Adventure Games',
-    },
-  ];
+GameCard.displayName = 'GameCard';
+
+const GameCarousel = memo(({ games, category = 'popular' }: { games: Game[]; category?: string }) => {
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
+
+  // Get category label
+  const getCategoryLabel = (category: string) => {
+    switch (category) {
+      case 'upcoming':
+        return { title: 'Upcoming Games', color: 'text-purple-500', icon: Calendar };
+      case 'new':
+        return { title: 'New Releases', color: 'text-yellow-500', icon: Sparkles };
+      case 'popular':
+      default:
+        return { title: 'Popular Games', color: 'text-orange-500', icon: Flame };
+    }
+  };
+
+  const { title, color, icon: Icon } = getCategoryLabel(category);
+
+  const scroll = useCallback((direction: 'left' | 'right') => {
+    if (scrollContainerRef.current) {
+      const container = scrollContainerRef.current;
+      const scrollAmount = direction === 'left' ? -320 : 320;
+      container.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+    }
+  }, []);
 
   return (
-    <div className="py-16 px-4 sm:px-6 lg:px-8" style={{ backgroundColor: 'rgb(3, 6, 22)' }}>
-      <div className="max-w-7xl mx-auto">
-        <h2 className="text-4xl font-bold text-white mb-8">Popular Game Lists</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {popularLists.map((list) => (
-            <PopularListItem key={list.id} {...list} />
+    <div className="relative group">
+      <div className="relative w-full">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-2">
+            <Icon className={`h-6 w-6 ${color}`} />
+            <h2 className="text-2xl font-bold text-white">{title}</h2>
+          </div>
+          <Button 
+            variant="ghost" 
+            className="text-purple-400 hover:text-purple-300"
+            onClick={() => router.push(`/all-games?category=${category === 'new' ? 'recent' : category}`)}
+          >
+            View All
+          </Button>
+        </div>
+
+        <div
+          ref={scrollContainerRef}
+          className="flex gap-3 overflow-x-auto scrollbar-hide scroll-smooth pb-4"
+          style={{ 
+            position: 'relative',
+            willChange: 'scroll-position'
+          }}
+        >
+          {games.map((game, index) => (
+            <GameCard key={game.id} game={game} index={index} />
           ))}
         </div>
-        <div className="mt-12 text-center">
-          <Link href="/lists" className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 transition-colors duration-300">
-            Explore All Lists
-            <ChevronRight size={20} className="ml-2" />
-          </Link>
-        </div>
+        
+        <button
+          onClick={() => scroll('left')}
+          className="absolute -left-3 top-1/2 -translate-y-1/2 bg-black/80 text-white p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-0"
+          disabled={!scrollContainerRef.current?.scrollLeft}
+        >
+          <ChevronLeft className="w-4 h-4" />
+        </button>
+        
+        <button
+          onClick={() => scroll('right')}
+          className="absolute -right-3 top-1/2 -translate-y-1/2 bg-black/80 text-white p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+        >
+          <ChevronRight className="w-4 h-4" />
+        </button>
       </div>
     </div>
   );
-};
+});
+
+GameCarousel.displayName = 'GameCarousel';
+
+const CategorySkeleton = memo(() => (
+  <div className="mb-12">
+    <div className="h-8 w-48 bg-gray-800/50 rounded mb-4" />
+    <div className="flex gap-6">
+      {Array.from({ length: 5 }).map((_, i) => (
+        <div key={i} className="flex-shrink-0 w-[280px] aspect-[3/4]">
+          <Card className="w-full h-full animate-pulse bg-gray-800/50" />
+        </div>
+      ))}
+    </div>
+  </div>
+));
+
+CategorySkeleton.displayName = 'CategorySkeleton';
+
+const ErrorDisplay = memo(({ message, onRetry }: { message: string; onRetry: () => void }) => (
+  <div className="flex flex-col items-center justify-center py-12 text-gray-400">
+    <AlertCircle className="w-12 h-12 mb-4" />
+    <p className="mb-4 text-center max-w-md">{message}</p>
+    <Button
+      variant="outline"
+      onClick={onRetry}
+      className="text-gray-400 hover:text-white"
+    >
+      Try Again
+    </Button>
+  </div>
+));
+
+ErrorDisplay.displayName = 'ErrorDisplay';
+
+function ErrorFallback({ error, resetErrorBoundary }: { error: Error, resetErrorBoundary: () => void }) {
+  return (
+    <div className="text-center p-4 rounded-lg bg-red-500/10 border border-red-500/20">
+      <p className="text-red-400">Something went wrong:</p>
+      <pre className="text-sm text-red-300">{error.message}</pre>
+      <Button onClick={resetErrorBoundary} className="mt-4">Try again</Button>
+    </div>
+  );
+}
+
+const PopularGamesSection: React.FC<{ category?: 'popular' | 'upcoming' | 'new' }> = memo(({ category = 'popular' }) => {
+  const { data: categories, isLoading, error, refetch } = useQuery<GameCategories>({
+    queryKey: ['popularGames', category],
+    queryFn: async () => {
+      try {
+        const response = await fetch('/api/games/popular');
+        if (!response.ok) {
+          throw new Error('Failed to fetch popular games');
+        }
+        const data = await response.json();
+        return {
+          topRated: data.topRated || [],
+          newReleases: data.newReleases || [],
+          upcoming: data.upcoming || [],
+          trending: data.trending || []
+        };
+      } catch (error) {
+        console.error('Error fetching popular games:', error);
+        throw error;
+      }
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    retry: 2,
+  });
+
+  if (isLoading) {
+    return <CategorySkeleton />;
+  }
+
+  if (error) {
+    return (
+      <ErrorBoundary FallbackComponent={ErrorFallback}>
+        <ErrorDisplay 
+          message={error instanceof Error ? error.message : 'Failed to load games'} 
+          onRetry={() => refetch()}
+        />
+      </ErrorBoundary>
+    );
+  }
+
+  if (!categories) {
+    return (
+      <div className="text-center py-12 text-gray-400">
+        <p>No games found at the moment.</p>
+        <Button
+          variant="outline"
+          onClick={() => refetch()}
+          className="mt-4"
+        >
+          Refresh
+        </Button>
+      </div>
+    );
+  }
+
+  const getCategoryGames = () => {
+    switch (category) {
+      case 'upcoming':
+        return categories.upcoming;
+      case 'new':
+        return categories.newReleases;
+      case 'popular':
+      default:
+        return categories.topRated;
+    }
+  };
+
+  return (
+    <ErrorBoundary FallbackComponent={ErrorFallback}>
+      <GameCarousel games={getCategoryGames()} category={category} />
+    </ErrorBoundary>
+  );
+});
+
+PopularGamesSection.displayName = 'PopularGamesSection';
 
 export default PopularGamesSection;

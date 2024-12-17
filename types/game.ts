@@ -1,69 +1,91 @@
-export type GameStatus = "playing" | "completed" | "want_to_play" | "dropped";
-
-export interface Platform {
-    id: number;
-    name: string;
-    category: number;
+export interface Achievement {
+  id: number;
+  name: string;
+  description: string;
+  category: number;
+  points: number;
+  rank: number;
+  game_id: number;
 }
 
-export interface Cover {
-    id: number;
-    url: string;
+interface Screenshot {
+  id: number;
+  url: string;
 }
 
 export interface Game {
-    id: string;
-    name: string;
-    cover?: Cover;
-    platforms?: Platform[];
-    genres?: { id: number; name: string }[];
-    summary?: string;
-    total_rating?: number;
-    first_release_date?: number;
-    artworks?: { id: number; url: string }[];
-    screenshots?: { id: number; url: string }[];
-    websites?: { id: number; category: number; url: string }[];
-    involved_companies?: {
-        id: number;
-        company: { id: number; name: string };
-        developer: boolean;
-        publisher: boolean;
-    }[];
+  id: number | string;
+  name: string;
+  cover?: { url: string } | null;
+  cover_url?: string | null;
+  rating?: number | null;
+  total_rating?: number | null;
+  total_rating_count?: number;
+  first_release_date?: number | null;
+  platforms?: Platform[] | null;
+  genres?: Genre[] | null;
+  summary?: string | null;
+  storyline?: string | null;
+  achievements?: Achievement[];
+  screenshots?: Screenshot[];
+  artworks?: { url: string }[];
+  websites?: any[];
+  relatedGames?: Game[];
 }
 
-export interface ProcessedGame {
-    id: string;
-    name: string;
-    cover: Cover | null | undefined;
-    platforms: Platform[];
-    genres: { id: number; name: string }[];
-    summary?: string;
-    first_release_date?: number;
-    total_rating?: number;
-    artworks?: { id: number; url: string }[];
-    screenshots?: { id: number; url: string }[];
-    websites?: { id: number; category: number; url: string }[];
-    involved_companies?: {
-        id: number;
-        company: { id: number; name: string };
-        developer: boolean;
-        publisher: boolean;
-    }[];
+export interface UserGame {
+  user_id: string;
+  game_id: string;
+  status: GameStatus;
+  play_time?: number;
+  user_rating?: number;
+  completed_at?: string;
+  notes?: string;
+  last_played_at?: string;
+  created_at: string;
+}
+
+export type GameStatus = 'playing' | 'completed' | 'want_to_play' | 'dropped';
+
+export interface Platform {
+  id: number;
+  name: string;
+}
+
+export interface Genre {
+  id: number;
+  name: string;
+}
+
+export interface GameQueryParams {
+  page: number;
+  platformId: string;
+  searchTerm: string;
+  sortBy: SortOption;
+}
+
+export type SortOption = 'popularity' | 'releaseDate' | 'name';
+
+export interface ProcessedGame extends Game {
+  status?: GameStatus;
+  playTime?: number;
+  userRating?: number;
+  completedAt?: string;
+  lastPlayedAt?: string;
+  notes?: string;
 }
 
 export interface FetchGamesResponse {
-    games: ProcessedGame[];
-    total: number;
-    page: number;
-    pageSize: number;
+  games: Game[];
+  total: number;
+  page: number;
+  pageSize: number;
 }
 
-export type SortOption = 'name' | 'releaseDate' | 'popularity';
-
-export interface GameQueryParams {
-  page?: number;
-  platformId?: string;
-  searchTerm?: string;
-  sortBy?: SortOption;
+export interface GameCategories {
+  topRated: Game[];
+  newReleases: Game[];
+  upcoming: Game[];
+  trending: Game[];
 }
 

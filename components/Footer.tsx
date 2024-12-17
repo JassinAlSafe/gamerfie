@@ -30,8 +30,13 @@ export function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/games" className="text-sm hover:underline">
-                  Games
+                <Link href="/explore" className="text-sm hover:underline">
+                  Explore
+                </Link>
+              </li>
+              <li>
+                <Link href="/all-games" className="text-sm hover:underline">
+                  All Games
                 </Link>
               </li>
               <li>

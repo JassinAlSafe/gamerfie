@@ -15,16 +15,12 @@ import { Gamepad2, MoreHorizontal } from "lucide-react";
 import { type GameStatus } from "@/types/game";
 import { type GameCardProps } from "@/types/game";
 
-export function GameCard({
-  id,
-  name,
-  cover,
-  platforms,
-  status,
-  onStatusChange,
-  onRemove,
-  isPriority = false,
-}: GameCardProps) {
+export function GameCard({ game, index, onStatusChange }: GameCardProps) {
+  if (!game?.id) {
+    console.warn('Invalid game data:', game);
+    return null;
+  }
+
   const getHighQualityImageUrl = (url: string) => {
     return url.startsWith("//")
       ? `https:${url.replace("/t_thumb/", "/t_cover_big/")}`
@@ -41,14 +37,14 @@ export function GameCard({
   return (
     <div className="space-y-4">
       <Card className="group relative overflow-hidden transition-all hover:shadow-xl dark:hover:shadow-primary/10">
-        <Link href={`/game/${id}`} className="relative block">
+        <Link href={`/game/${game.id}`} className="relative block">
           <div className="relative aspect-[3/4] overflow-hidden">
-            {cover?.url ? (
+            {game.cover?.url ? (
               <Image
-                src={getHighQualityImageUrl(cover.url)}
-                alt={name}
+                src={getHighQualityImageUrl(game.cover.url)}
+                alt={game.name}
                 fill
-                priority={isPriority}
+                priority={game.isPriority}
                 className="object-cover transition-transform duration-300 group-hover:scale-105"
                 sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
               />
@@ -62,11 +58,11 @@ export function GameCard({
             <div className="absolute bottom-4 left-4 right-4">
               <div className="flex flex-col gap-2">
                 <h3 className="text-lg font-semibold text-white line-clamp-2">
-                  {name}
+                  {game.name}
                 </h3>
-                {platforms && platforms.length > 0 && (
+                {game.platforms && game.platforms.length > 0 && (
                   <div className="flex flex-wrap gap-1">
-                    {platforms.map((platform) => (
+                    {game.platforms.map((platform) => (
                       <Badge
                         key={platform.id}
                         variant="secondary"
@@ -99,13 +95,13 @@ export function GameCard({
                   <DropdownMenuItem
                     key={value}
                     onClick={() => onStatusChange(value)}
-                    className={status === value ? "bg-accent" : ""}
+                    className={game.status === value ? "bg-accent" : ""}
                   >
                     {label}
                   </DropdownMenuItem>
                 )
               )}
-              <DropdownMenuItem className="text-destructive" onClick={onRemove}>
+              <DropdownMenuItem className="text-destructive" onClick={() => onStatusChange('dropped')}>
                 Remove from Library
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -117,7 +113,7 @@ export function GameCard({
             variant="secondary"
             className="bg-black/50 text-white border-none"
           >
-            {statusLabels[status]}
+            {statusLabels[game.status]}
           </Badge>
         </div>
       </Card>

@@ -47,13 +47,13 @@ export function ProfileHeader({ profile, stats, onProfileUpdate }: ProfileHeader
   return (
     <div className="w-full">
       {/* Background with gradient overlay */}
-      <div className="absolute inset-0 h-[400px]">
+      <div className="absolute inset-0 h-[250px]">
         <div className="absolute inset-0 bg-gradient-to-b from-purple-900/80 via-gray-900/95 to-gray-900" />
         <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-20" />
       </div>
 
       {/* Profile Content */}
-      <div className="relative max-w-7xl mx-auto px-4 pt-16 pb-24">
+      <div className="relative max-w-7xl mx-auto px-4 pt-6 pb-8">
         <div className="flex flex-col md:flex-row items-start space-y-6 md:space-y-0 md:space-x-8">
           {/* Avatar Section */}
           <div className="relative">
@@ -83,7 +83,7 @@ export function ProfileHeader({ profile, stats, onProfileUpdate }: ProfileHeader
             </div>
 
             {/* Quick Stats */}
-            <div className="flex items-center space-x-6 mt-6">
+            <div className="flex items-center space-x-6 mt-4">
               <div className="flex items-center space-x-2">
                 <GameController className="w-5 h-5 text-purple-400" />
                 <span className="text-gray-300">{stats.total_played} Games Played</span>
@@ -97,9 +97,9 @@ export function ProfileHeader({ profile, stats, onProfileUpdate }: ProfileHeader
         </div>
 
         {/* Detailed Stats */}
-        <div className="mt-12">
+        <div className="mt-6">
           <Card className="bg-gray-900/50 border-gray-800 backdrop-blur-sm">
-            <CardContent className="p-6">
+            <CardContent className="p-4">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <StatItem
                   icon={GameController}

@@ -1,70 +1,80 @@
 "use client";
 
 import React from "react";
-import { motion } from "framer-motion";
-import { LampContainer } from "@/components/ui/lamp";
 import PopularGamesSection from "@/components/PopularGamesSection";
 import { Button } from "@/components/ui/button";
-import Link from "next/link";
-import { Library } from "lucide-react";
+import { Search } from "lucide-react";
 
 const Dashboard: React.FC = () => {
   return (
-    <div
-      className="min-h-screen bg-gradient-to-b from-background to-background/80 overflow-hidden flex flex-col items-center justify-start relative w-full"
-      style={{ backgroundColor: "rgb(3, 6, 22" }}
-    >
-      <div className="w-full">
-        <div className="relative z-10 mb-16 w-full">
-          <LampContainer>
-            <motion.h1
-              initial={{ opacity: 0.5, y: 100 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{
-                delay: 0.3,
-                duration: 0.8,
-                ease: "easeInOut",
-              }}
-              className="mt-8 bg-gradient-to-br from-slate-300 to-slate-500 py-4 bg-clip-text text-center text-5xl font-bold tracking-tight text-transparent md:text-7xl"
-            >
-              Track Games <br /> the right way
-            </motion.h1>
-          </LampContainer>
-        </div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.8, duration: 0.6 }}
-          className="flex justify-center mb-16 w-full bg-transparent"
-        >
-          <Link href="/all-games" className="inline-block">
-            <Button
-              size="lg"
-              className="bg-blue-600 hover:bg-blue-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
-            >
-              <Library className="mr-2 h-5 w-5" />
-              View All Games
-            </Button>
-          </Link>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 50 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 1, duration: 0.8 }}
-          className="relative z-20 w-full px-4 sm:px-6 lg:px-8"
-        >
-          <div
-            className="bg-transparent rounded-lg shadow-2xl overflow-hidden"
-            style={{ backgroundColor: "rgb(3, 6, 22" }}
-          >
-            <PopularGamesSection />
+    <div className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-950">
+      {/* Hero Section */}
+      <div className="relative px-4 py-20 sm:px-6 lg:px-8 lg:py-32 overflow-hidden">
+        <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center [mask-image:linear-gradient(180deg,white,rgba(255,255,255,0))]" />
+        
+        <div className="relative mx-auto max-w-7xl">
+          <div className="text-center">
+            <h1 className="text-4xl font-bold tracking-tight text-white sm:text-6xl bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500">
+              Discover Your Next Gaming Adventure
+            </h1>
+            <p className="mt-6 text-lg leading-8 text-gray-300 max-w-3xl mx-auto">
+              Explore trending games, connect with fellow gamers, and keep track of your gaming journey.
+              Join our community of passionate players and discover new experiences.
+            </p>
+            <div className="mt-10 flex items-center justify-center gap-x-6">
+              <Button
+                size="lg"
+                className="bg-white/10 hover:bg-white/20 text-white"
+              >
+                <Search className="mr-2 h-5 w-5" />
+                Search Games
+              </Button>
+            </div>
           </div>
-        </motion.div>
+        </div>
       </div>
 
-      <div className="absolute inset-0 z-0 bg-gradient-to-t from-background to-background/0 pointer-events-none" />
+      {/* Game Categories */}
+      <div className="px-4 sm:px-6 lg:px-8 pb-20">
+        <div className="mx-auto max-w-7xl">
+          <PopularGamesSection />
+        </div>
+      </div>
+
+      {/* Community Section */}
+      <div className="relative px-4 py-16 sm:px-6 lg:px-8 bg-black/30">
+        <div className="mx-auto max-w-7xl">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            <div>
+              <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">
+                Join the Gaming Community
+              </h2>
+              <p className="mt-4 text-lg text-gray-300">
+                Connect with other gamers, share your experiences, and discover new gaming perspectives.
+                Track your progress, write reviews, and build your gaming profile.
+              </p>
+              <div className="mt-8">
+                <Button
+                  size="lg"
+                  className="bg-white/10 hover:bg-white/20 text-white"
+                >
+                  Get Started
+                </Button>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-4">
+                <div className="h-48 bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-lg"></div>
+                <div className="h-64 bg-gradient-to-br from-blue-500/20 to-indigo-500/20 rounded-lg"></div>
+              </div>
+              <div className="space-y-4 pt-8">
+                <div className="h-64 bg-gradient-to-br from-indigo-500/20 to-purple-500/20 rounded-lg"></div>
+                <div className="h-48 bg-gradient-to-br from-pink-500/20 to-rose-500/20 rounded-lg"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
