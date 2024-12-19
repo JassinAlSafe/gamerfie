@@ -93,7 +93,9 @@ export function FriendActivityFeed() {
               )}
 
               {activity.details && activity.activity_type === "review" && (
-                <p className="mt-2 text-sm">&ldquo;{activity.details.comment}&rdquo;</p>
+                <p className="mt-2 text-sm">
+                  &ldquo;{activity.details.comment}&rdquo;
+                </p>
               )}
             </div>
 

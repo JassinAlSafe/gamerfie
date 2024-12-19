@@ -103,7 +103,7 @@ export default function FriendsPage() {
                 <div className="lg:col-span-1 space-y-8">
                   <FriendSearch />
                   <div className="bg-gray-900/50 rounded-xl p-4 backdrop-blur-sm border border-white/5">
-                    <FriendActivityFeed />
+                    {/* <FriendActivityFeed /> */}
                   </div>
                 </div>
               </div>
