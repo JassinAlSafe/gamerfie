@@ -35,7 +35,7 @@ export function ProfileNav() {
       <div className="flex items-center gap-1 px-4 py-3 max-w-7xl mx-auto overflow-x-auto no-scrollbar">
         {navItems.map(({ label, href, icon: Icon }) => {
           const isActive = pathname === href;
-          
+
           return (
             <Link
               key={href}
@@ -43,9 +43,10 @@ export function ProfileNav() {
               className={`
                 flex items-center px-4 py-2 rounded-lg text-sm font-medium
                 transition-all duration-200 whitespace-nowrap
-                ${isActive 
-                  ? 'bg-purple-500/20 text-purple-400 shadow-lg shadow-purple-500/10' 
-                  : 'text-gray-400 hover:text-white hover:bg-white/5'
+                ${
+                  isActive
+                    ? "bg-purple-500/20 text-purple-400 shadow-lg shadow-purple-500/10"
+                    : "text-gray-400 hover:text-white hover:bg-white/5"
                 }
               `}
             >
