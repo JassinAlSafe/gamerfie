@@ -1,14 +1,14 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { AvatarUpload } from "@/components/avatar-upload";
 import { Profile, GameStats } from "@/types/user";
-import { 
-  Trophy, 
-  GamepadIcon as GameController, 
-  Calendar, 
-  Clock, 
+import {
+  Trophy,
+  GamepadIcon as GameController,
+  Calendar,
+  Clock,
   BarChart2,
-  Star 
-} from 'lucide-react';
+  Star,
+} from "lucide-react";
 
 interface ProfileHeaderProps {
   profile: Profile;
@@ -39,10 +39,18 @@ function StatItem({ icon: Icon, label, value, color, subtext }: StatItemProps) {
   );
 }
 
-export function ProfileHeader({ profile, stats, onProfileUpdate }: ProfileHeaderProps) {
-  const completionRate = stats.total_played > 0
-    ? `${((stats.total_played / (stats.total_played + stats.backlog)) * 100).toFixed(1)}%`
-    : "0%";
+export function ProfileHeader({
+  profile,
+  stats,
+  onProfileUpdate,
+}: ProfileHeaderProps) {
+  const completionRate =
+    stats.total_played > 0
+      ? `${(
+          (stats.total_played / (stats.total_played + stats.backlog)) *
+          100
+        ).toFixed(1)}%`
+      : "0%";
 
   return (
     <div className="w-full">
@@ -62,7 +70,9 @@ export function ProfileHeader({ profile, stats, onProfileUpdate }: ProfileHeader
                 userId={profile.id}
                 username={profile.username}
                 currentAvatarUrl={profile.avatar_url}
-                onAvatarUpdate={(url) => onProfileUpdate({ ...profile, avatar_url: url })}
+                onAvatarUpdate={(url) =>
+                  onProfileUpdate({ ...profile, avatar_url: url })
+                }
               />
             </div>
             <div className="absolute -bottom-2 right-0 bg-purple-500 rounded-full p-2 shadow-lg">
@@ -86,11 +96,15 @@ export function ProfileHeader({ profile, stats, onProfileUpdate }: ProfileHeader
             <div className="flex items-center space-x-6 mt-4">
               <div className="flex items-center space-x-2">
                 <GameController className="w-5 h-5 text-purple-400" />
-                <span className="text-gray-300">{stats.total_played} Games Played</span>
+                <span className="text-gray-300">
+                  {stats.total_played} Games Played
+                </span>
               </div>
               <div className="flex items-center space-x-2">
                 <Star className="w-5 h-5 text-yellow-400" />
-                <span className="text-gray-300">Level {Math.floor(stats.total_played / 10) + 1}</span>
+                <span className="text-gray-300">
+                  Level {Math.floor(stats.total_played / 10) + 1}
+                </span>
               </div>
             </div>
           </div>
@@ -137,4 +151,3 @@ export function ProfileHeader({ profile, stats, onProfileUpdate }: ProfileHeader
     </div>
   );
 }
-

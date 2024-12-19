@@ -99,7 +99,22 @@ export const useProgressStore = create<ProgressStore>((set) => ({
     const supabase = createClientComponentClient<Database>();
     
     try {
-      // First update user_games with the new status
+      // First, ensure game exists in games table
+      if (!gameData) throw new Error('Game data is required');
+
+      const { error: gameError } = await supabase
+        .from('games')
+        .upsert({ 
+          id: gameId,
+          name: gameData.name,
+          cover_url: gameData.cover_url
+        }, { 
+          onConflict: 'id' 
+        });
+
+      if (gameError) throw gameError;
+
+      // Then update user_games
       const { error: userGameError } = await supabase
         .from('user_games')
         .upsert({
