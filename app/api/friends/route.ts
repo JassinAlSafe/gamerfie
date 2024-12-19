@@ -58,8 +58,12 @@ export async function GET(request: Request) {
       const friendData = userMap.get(friendId);
       return {
         id: friendId,
-        username: friendData?.username,
-        status: f.status
+        username: friendData?.username || '',
+        status: f.status,
+        bio: friendData?.bio || '',
+        avatar_url: friendData?.avatar_url,
+        sender_id: f.user_id,
+        display_name: friendData?.display_name
       };
     });
 

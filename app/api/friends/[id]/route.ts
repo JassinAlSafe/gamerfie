@@ -1,7 +1,8 @@
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
-import { FriendStatus } from '@/types/friend';
+
+
 
 export async function PATCH(
   request: Request,
@@ -11,14 +12,22 @@ export async function PATCH(
 
   try {
     const { status } = await request.json();
-    const { data: { session } } = await supabase.auth.getSession();
     
+    // Validate status is one of the allowed values
+    if (!['accepted', 'declined'].includes(status)) {
+      return NextResponse.json(
+        { error: 'Invalid status value' },
+        { status: 400 }
+      );
+    }
+
+    const { data: { session } } = await supabase.auth.getSession();
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Update friend status
-    const { data: friend, error } = await supabase
+    const { data: updatedFriend, error: updateError } = await supabase
       .from('friends')
       .update({ status })
       .match({
@@ -26,13 +35,31 @@ export async function PATCH(
         user_id: params.id,
         status: 'pending'
       })
-      .select('*, friend:profiles!friend_id(*)')
+      .select()
       .single();
 
-    if (error) throw error;
-    if (!friend) throw new Error('Friend not found');
+    if (updateError) throw updateError;
 
-    return NextResponse.json(friend);
+    // Fetch friend's profile details separately
+    const { data: friendProfile, error: profileError } = await supabase
+      .from('profiles')
+      .select('id, username, avatar_url, bio')
+      .eq('id', params.id)
+      .single();
+
+    if (profileError) throw profileError;
+
+    // Transform the response to match your Friend interface
+    const transformedFriend = {
+      id: friendProfile.id,
+      username: friendProfile.username,
+      status: updatedFriend.status,
+      bio: friendProfile.bio,
+      avatar_url: friendProfile.avatar_url,
+      sender_id: updatedFriend.user_id
+    };
+
+    return NextResponse.json(transformedFriend);
   } catch (error) {
     console.error('Friend status update error:', error);
     return NextResponse.json(

@@ -1,4 +1,4 @@
-export type FriendStatus = 'pending' | 'accepted';
+export type FriendStatus = 'pending' | 'accepted' | 'declined';
 
 export interface Friend {
   id: string;
@@ -6,6 +6,8 @@ export interface Friend {
   display_name?: string;
   bio?: string;
   status: FriendStatus;
+  sender_id: string;
+  avatar_url?: string;
 }
 
 export interface FriendCardProps {
