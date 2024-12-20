@@ -2,6 +2,8 @@ import { create } from 'zustand';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { toast } from 'react-hot-toast';
 import { Database } from '@/types/supabase';
+import { FriendsService } from '@/services/friends-service';
+import { ActivityType } from '@/types/friend';
 
 type GameStatus = "playing" | "completed" | "want_to_play" | "dropped";
 
@@ -114,6 +116,16 @@ export const useProgressStore = create<ProgressStore>((set) => ({
 
       if (gameError) throw gameError;
 
+      // Get current status before update
+      const { data: currentData } = await supabase
+        .from('user_games')
+        .select('status')
+        .eq('user_id', userId)
+        .eq('game_id', gameId)
+        .maybeSingle();
+
+      const previousStatus = currentData?.status;
+
       // Then update user_games
       const { error: userGameError } = await supabase
         .from('user_games')
@@ -148,6 +160,35 @@ export const useProgressStore = create<ProgressStore>((set) => ({
         if (gameError) {
           console.error('Error updating game data:', gameError);
           // Don't throw here as the status update was successful
+        }
+      }
+
+      // Create activity based on status change
+      if (status !== previousStatus) {
+        let activityType: ActivityType | undefined;
+        if (status === 'playing') {
+          activityType = 'started_playing';
+        } else if (status === 'completed') {
+          activityType = 'completed';
+        }
+
+        if (activityType) {
+          console.log('Creating activity:', {
+            activity_type: activityType,
+            game_id: gameId,
+            previous_status: previousStatus,
+            new_status: status
+          });
+          
+          try {
+            await FriendsService.createActivity({
+              activity_type: activityType,
+              game_id: gameId,
+            });
+            console.log('Activity created successfully');
+          } catch (error) {
+            console.error('Error creating activity:', error);
+          }
         }
       }
 

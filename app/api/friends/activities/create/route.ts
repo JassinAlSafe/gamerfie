@@ -1,6 +1,7 @@
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
+import { FriendActivity } from '../../../../types/friend';
 
 export async function POST(request: Request) {
   const supabase = createRouteHandlerClient({ cookies });
@@ -50,6 +51,8 @@ export async function POST(request: Request) {
       }, { status: 500 });
     }
 
+    console.log('Activity inserted successfully:', newActivity);
+
     // Then fetch the activity details in separate queries
     const { data: activity } = await supabase
       .from('friend_activities')
@@ -64,12 +67,16 @@ export async function POST(request: Request) {
       }, { status: 500 });
     }
 
+    console.log('Activity fetched:', activity);
+
     // Fetch user profile
     const { data: userProfile } = await supabase
       .from('profiles')
       .select('id, username, avatar_url')
       .eq('id', activity.user_id)
       .single();
+
+    console.log('User profile fetched:', userProfile);
 
     // Fetch game details if there's a game_id
     let gameDetails = null;
@@ -80,10 +87,11 @@ export async function POST(request: Request) {
         .eq('id', activity.game_id)
         .single();
       gameDetails = game;
+      console.log('Game details fetched:', gameDetails);
     }
 
     // Transform the response to match the expected format
-    const transformedActivity = {
+    const transformedActivity: FriendActivity = {
       id: activity.id,
       type: activity.activity_type,
       details: activity.details,
@@ -92,13 +100,23 @@ export async function POST(request: Request) {
         id: userProfile.id,
         username: userProfile.username,
         avatar_url: userProfile.avatar_url,
-      } : null,
+      } : {
+        id: activity.user_id,
+        username: 'Unknown User',
+        avatar_url: null,
+      },
       game: gameDetails ? {
         id: gameDetails.id,
         name: gameDetails.name,
         cover_url: gameDetails.cover_url,
-      } : null,
+      } : {
+        id: activity.game_id,
+        name: 'Unknown Game',
+        cover_url: null,
+      },
     };
+
+    console.log('Transformed activity:', transformedActivity);
 
     return NextResponse.json(transformedActivity);
   } catch (error) {

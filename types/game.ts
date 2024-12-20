@@ -1,3 +1,5 @@
+import { ActivityType } from "./friend";
+
 export interface Achievement {
   id: number;
   name: string;
@@ -11,6 +13,18 @@ export interface Achievement {
 interface Screenshot {
   id: number;
   url: string;
+}
+
+interface GameActivity {
+  id: string;
+  type: ActivityType;
+  details: any;
+  timestamp: string;
+  user: {
+    id: string;
+    username: string;
+    avatar_url: string | null;
+  };
 }
 
 export interface Game {
@@ -31,6 +45,7 @@ export interface Game {
   artworks?: { url: string }[];
   websites?: any[];
   relatedGames?: Game[];
+  activities?: GameActivity[];
 }
 
 export interface UserGame {

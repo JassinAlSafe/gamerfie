@@ -3,54 +3,36 @@
 import React, { memo, useState, useEffect, useMemo, useCallback } from "react";
 import Image from "next/image";
 import { motion, useScroll, useTransform } from "framer-motion";
-import { 
-  Star, 
-  ExternalLink, 
-  Calendar, 
-  Gamepad2, 
-  Users, 
-  Heart, 
-  Clock, 
-  Trophy,
-  Share2,
+import {
+  Star,
+  ExternalLink,
+  Calendar,
+  Gamepad2,
+  Users,
+  Activity,
   BookOpen,
+  Trophy,
+  Clock,
+  Share2,
   BarChart3,
-  Library,
-  X,
-  Target
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Progress } from "@/components/ui/progress";
 import { ProgressIndicator } from "@/components/ui/progress-indicator";
 import { ScreenshotModal } from "@/components/screenshot-modal";
 import BackButton from "@/app/game/[id]/BackButton";
 import { Game } from "@/types/game";
-import { useLibraryStore } from '@/stores/useLibraryStore';
-import { useProfile } from '@/hooks/use-profile';
-import { useToast } from '@/hooks/use-toast';
-import { LoadingSpinner } from "@/components/loadingSpinner";
-import { cn } from "@/lib/utils";
-import { CompletionDialog } from '@/components/game/completion-dialog';
-import { AchievementsSection } from '@/components/game/achievements-section';
-import { RelatedGamesSection } from '@/components/game/related-games-section';
-import { useProgressStore } from '@/stores/useProgressStore';
-import { addGameToLibrary, removeGameFromLibrary, checkGameInLibrary } from '@/utils/game-utils';
-import { toast } from 'react-hot-toast';
-import { GameProgressUpdate } from "@/components/game-progress-update";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { useProfile } from "@/hooks/use-profile";
+import { useProgressStore } from "@/stores/useProgressStore";
+import { formatRating } from "@/utils/game-utils";
+import { GameActivities } from "@/components/game/game-activities";
+import { CompletionDialog } from "@/components/game/completion-dialog";
+import { AchievementsSection } from "@/components/game/achievements-section";
+import { RelatedGamesSection } from "@/components/game/related-games-section";
 import { AddToLibraryButton } from "@/components/add-to-library-button";
-import { formatRating } from '@/utils/game-utils';
+import { LoadingSpinner } from "@/components/loadingSpinner";
+import { useGameActivities } from "@/hooks/use-game-activities";
 
 const getHighQualityImageUrl = (url: string) => {
   return url.startsWith("//")
@@ -84,10 +66,10 @@ const getBackgroundImage = (game: Game) => {
 
 const formatDate = (timestamp: number) => {
   const date = new Date(timestamp * 1000);
-  return date.toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'numeric',
-    day: 'numeric'
+  return date.toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "numeric",
+    day: "numeric",
   });
 };
 
@@ -95,40 +77,30 @@ export const GameDetails = memo(function GameDetails({ game }: { game: Game }) {
   const { scrollYProgress } = useScroll();
   const y = useTransform(scrollYProgress, [0, 1], ["0%", "100%"]);
   const opacity = useTransform(scrollYProgress, [0, 0.5], [1, 0]);
-  
-  const { games, addGame, removeGame, fetchUserLibrary } = useLibraryStore();
-  const { toast } = useToast();
+
   const [isScreenshotModalOpen, setIsScreenshotModalOpen] = useState(false);
   const [currentScreenshotIndex, setCurrentScreenshotIndex] = useState(0);
   const [isCompletionDialogOpen, setIsCompletionDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
-  
+
   const websiteUrl = useMemo(() => getWebsiteUrl(game), [game]);
   const backgroundImage = useMemo(() => getBackgroundImage(game), [game]);
-  const isInLibrary = useMemo(() => games.some(g => g.id === game.id), [games, game.id]);
 
   const { profile } = useProfile();
-  const { 
-    playTime, 
-    completionPercentage, 
+  const {
+    playTime,
+    completionPercentage,
     achievementsCompleted,
-    status,
-    completedAt,
-    loading: progressLoading, 
+    loading: progressLoading,
     fetchProgress,
-    updateProgress,
-    updateGameStatus
   } = useProgressStore();
 
   const {
-    games: libraryGames,
-    loading: libraryLoading,
-    addGame: libraryAddGame,
-    removeGame: libraryRemoveGame,
-    fetchUserLibrary: libraryFetchUserLibrary
-  } = useLibraryStore();
-
-  const isLoading = progressLoading || libraryLoading;
+    activities,
+    loading: activitiesLoading,
+    hasMore,
+    loadMore,
+  } = useGameActivities(game.id.toString());
 
   useEffect(() => {
     if (profile?.id && game?.id) {
@@ -158,7 +130,7 @@ export const GameDetails = memo(function GameDetails({ game }: { game: Game }) {
           Update
         </Button>
       </div>
-      
+
       {progressLoading ? (
         <LoadingSpinner />
       ) : (
@@ -186,9 +158,12 @@ export const GameDetails = memo(function GameDetails({ game }: { game: Game }) {
                   {achievementsCompleted || 0} / {game.achievements.length}
                 </span>
               </div>
-              <ProgressIndicator 
-                value={((achievementsCompleted || 0) / game.achievements.length) * 100}
-                variant="achievement" 
+              <ProgressIndicator
+                value={
+                  ((achievementsCompleted || 0) / game.achievements.length) *
+                  100
+                }
+                variant="achievement"
               />
             </div>
           )}
@@ -200,15 +175,14 @@ export const GameDetails = memo(function GameDetails({ game }: { game: Game }) {
   return (
     <div className="min-h-screen bg-gray-950 text-white">
       {/* Parallax Hero Section */}
-      <motion.div 
-        className="relative h-[85vh] w-full"
-        style={{ y, opacity }}
-      >
+      <motion.div className="relative h-[85vh] w-full" style={{ y, opacity }}>
         {/* Background Image with Parallax */}
         <div
           className="absolute inset-0 bg-cover bg-center bg-fixed transform scale-110"
           style={{
-            backgroundImage: backgroundImage ? `url(${backgroundImage})` : "none",
+            backgroundImage: backgroundImage
+              ? `url(${backgroundImage})`
+              : "none",
           }}
         />
         <div className="absolute inset-0 bg-gradient-to-b from-gray-950/50 via-gray-950/80 to-gray-950" />
@@ -221,14 +195,14 @@ export const GameDetails = memo(function GameDetails({ game }: { game: Game }) {
 
           {/* Game Info Container */}
           <div className="absolute bottom-0 left-4 right-4 pb-32">
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
               className="flex flex-col md:flex-row gap-4 items-end"
             >
               {/* Cover Image */}
-              <motion.div 
+              <motion.div
                 className="md:w-1/4 flex-shrink-0 md:translate-y-24"
                 whileHover={{ scale: 1.05 }}
                 transition={{ duration: 0.2 }}
@@ -236,7 +210,9 @@ export const GameDetails = memo(function GameDetails({ game }: { game: Game }) {
                 {game.cover && (
                   <div className="relative w-56 h-72 md:w-72 md:h-96 rounded-lg overflow-hidden shadow-2xl ring-4 ring-purple-500/20">
                     <Image
-                      src={game.cover.url.replace('t_thumb', 't_1080p').replace('t_micro', 't_1080p')}
+                      src={game.cover.url
+                        .replace("t_thumb", "t_1080p")
+                        .replace("t_micro", "t_1080p")}
                       alt={game.name}
                       fill
                       priority
@@ -250,7 +226,7 @@ export const GameDetails = memo(function GameDetails({ game }: { game: Game }) {
 
               {/* Game Details */}
               <div className="md:w-3/4 pb-4">
-                <motion.h1 
+                <motion.h1
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: 0.2 }}
@@ -260,7 +236,7 @@ export const GameDetails = memo(function GameDetails({ game }: { game: Game }) {
                 </motion.h1>
 
                 {/* Quick Stats */}
-                <motion.div 
+                <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: 0.3 }}
@@ -291,7 +267,7 @@ export const GameDetails = memo(function GameDetails({ game }: { game: Game }) {
                 </motion.div>
 
                 {/* Summary */}
-                <motion.p 
+                <motion.p
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: 0.4 }}
@@ -301,13 +277,13 @@ export const GameDetails = memo(function GameDetails({ game }: { game: Game }) {
                 </motion.p>
 
                 {/* Action Buttons */}
-                <motion.div 
+                <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: 0.5 }}
                   className="flex flex-wrap gap-3"
                 >
-                  <AddToLibraryButton 
+                  <AddToLibraryButton
                     gameId={game.id.toString()}
                     gameName={game.name}
                     cover={game.cover?.url}
@@ -331,10 +307,10 @@ export const GameDetails = memo(function GameDetails({ game }: { game: Game }) {
                   </Button>
 
                   {websiteUrl && (
-                    <Button 
+                    <Button
                       variant="outline"
                       size="lg"
-                      className="group hover:scale-105 transition-all duration-300 py-6" 
+                      className="group hover:scale-105 transition-all duration-300 py-6"
                       asChild
                     >
                       <a
@@ -367,7 +343,11 @@ export const GameDetails = memo(function GameDetails({ game }: { game: Game }) {
       {/* Content Tabs */}
       <div className="sticky top-16 z-40 bg-gray-950/80 backdrop-blur-md border-b border-white/10">
         <div className="max-w-7xl mx-auto px-4">
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <Tabs
+            value={activeTab}
+            onValueChange={setActiveTab}
+            className="w-full"
+          >
             <TabsList className="w-full justify-start border-b border-white/10 bg-transparent h-auto p-0">
               <TabsTrigger
                 value="overview"
@@ -386,6 +366,12 @@ export const GameDetails = memo(function GameDetails({ game }: { game: Game }) {
                 className="px-4 py-3 text-gray-400 data-[state=active]:text-white data-[state=active]:border-b-2 data-[state=active]:border-purple-500 rounded-none bg-transparent"
               >
                 Achievements
+              </TabsTrigger>
+              <TabsTrigger
+                value="activity"
+                className="px-4 py-3 text-gray-400 data-[state=active]:text-white data-[state=active]:border-b-2 data-[state=active]:border-purple-500 rounded-none bg-transparent"
+              >
+                Activity
               </TabsTrigger>
               <TabsTrigger
                 value="related"
@@ -411,7 +397,9 @@ export const GameDetails = memo(function GameDetails({ game }: { game: Game }) {
                       </p>
                       {game.storyline && (
                         <>
-                          <h4 className="text-lg font-semibold mt-6 mb-2">Storyline</h4>
+                          <h4 className="text-lg font-semibold mt-6 mb-2">
+                            Storyline
+                          </h4>
                           <p className="text-gray-300 leading-relaxed">
                             {game.storyline}
                           </p>
@@ -428,7 +416,9 @@ export const GameDetails = memo(function GameDetails({ game }: { game: Game }) {
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {game.genres && (
                           <div>
-                            <h4 className="text-sm font-medium text-gray-400 mb-2">Genres</h4>
+                            <h4 className="text-sm font-medium text-gray-400 mb-2">
+                              Genres
+                            </h4>
                             <div className="flex flex-wrap gap-2">
                               {game.genres.map((genre) => (
                                 <Badge
@@ -444,7 +434,9 @@ export const GameDetails = memo(function GameDetails({ game }: { game: Game }) {
                         )}
                         {game.platforms && (
                           <div>
-                            <h4 className="text-sm font-medium text-gray-400 mb-2">Platforms</h4>
+                            <h4 className="text-sm font-medium text-gray-400 mb-2">
+                              Platforms
+                            </h4>
                             <div className="flex flex-wrap gap-2">
                               {game.platforms.map((platform) => (
                                 <Badge
@@ -521,6 +513,37 @@ export const GameDetails = memo(function GameDetails({ game }: { game: Game }) {
                 </div>
               </TabsContent>
 
+              <TabsContent value="activity" className="mt-0">
+                <div className="bg-gray-900/50 rounded-xl p-6 backdrop-blur-sm border border-white/10">
+                  <h3 className="text-xl font-semibold mb-6 flex items-center">
+                    <Activity className="w-5 h-5 mr-2 text-purple-400" />
+                    Recent Activity
+                  </h3>
+                  {activitiesLoading && !activities.length ? (
+                    <LoadingSpinner />
+                  ) : (
+                    <>
+                      <GameActivities activities={activities} />
+                      {hasMore && (
+                        <div className="text-center mt-6">
+                          <Button
+                            onClick={loadMore}
+                            variant="outline"
+                            disabled={activitiesLoading}
+                          >
+                            {activitiesLoading ? (
+                              <LoadingSpinner size="sm" />
+                            ) : (
+                              "Load More"
+                            )}
+                          </Button>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+              </TabsContent>
+
               <TabsContent value="related" className="mt-0">
                 <div className="bg-gray-900/50 rounded-xl p-6 backdrop-blur-sm border border-white/10">
                   <h3 className="text-xl font-semibold mb-6 flex items-center">
@@ -543,7 +566,7 @@ export const GameDetails = memo(function GameDetails({ game }: { game: Game }) {
         currentIndex={currentScreenshotIndex}
         onIndexChange={setCurrentScreenshotIndex}
       />
-      
+
       {isCompletionDialogOpen && game && (
         <CompletionDialog
           isOpen={isCompletionDialogOpen}
@@ -553,4 +576,4 @@ export const GameDetails = memo(function GameDetails({ game }: { game: Game }) {
       )}
     </div>
   );
-}); 
+});

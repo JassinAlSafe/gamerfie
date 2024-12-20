@@ -31,16 +31,16 @@ export interface ActivityDetails {
   progress?: number;
 }
 
+export type ActivityType = 'started_playing' | 'completed' | 'achievement' | 'review';
+
 export interface FriendActivity {
   id: string;
-  user_id: string;
-  activity_type: 'started_playing' | 'completed' | 'achievement' | 'review';
-  game_id: string;
+  type: ActivityType;
   details?: {
     name?: string;
     comment?: string;
   };
-  created_at: string;
+  timestamp: string;
   user: {
     id: string;
     username: string;
@@ -52,8 +52,6 @@ export interface FriendActivity {
     cover_url?: string;
   };
 }
-
-export type ActivityType = 'started_playing' | 'completed' | 'achievement' | 'review';
 
 export interface FriendsState {
   friends: Friend[];
@@ -70,4 +68,5 @@ export interface FriendsState {
   activitiesPage: number;
   fetchActivities: () => Promise<void>;
   loadMoreActivities: () => Promise<void>;
+  createActivity: (activity_type: ActivityType, game_id?: string, details?: any) => Promise<void>;
 } 

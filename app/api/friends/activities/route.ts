@@ -17,7 +17,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get user's friends
+    // Get user's friends and include the user's own ID
     const { data: friends, error: friendsError } = await supabase
       .from('friends')
       .select('friend_id')
@@ -29,17 +29,15 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Failed to fetch friends' }, { status: 500 });
     }
 
-    if (!friends || friends.length === 0) {
-      return NextResponse.json([], { status: 200 });
-    }
-
-    const friendIds = friends.map(f => f.friend_id);
+    // Include both friends' IDs and the user's own ID
+    const userIds = [...(friends?.map(f => f.friend_id) || []), session.user.id];
+    console.log('Fetching activities for users:', userIds);
 
     // First, let's check if we have any activities
     const { data: activities, error: activitiesError } = await supabase
       .from('friend_activities')
       .select('*')
-      .in('user_id', friendIds)
+      .in('user_id', userIds)
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1);
 
@@ -49,20 +47,25 @@ export async function GET(request: Request) {
     }
 
     if (!activities || activities.length === 0) {
+      console.log('No activities found');
       return NextResponse.json([], { status: 200 });
     }
 
+    console.log('Found activities:', activities);
+
     // Now let's get the user profiles for these activities
-    const userIds = activities.map(a => a.user_id);
+    const activityUserIds = activities.map(a => a.user_id);
     const { data: profiles, error: profilesError } = await supabase
       .from('profiles')
       .select('id, username, avatar_url')
-      .in('id', userIds);
+      .in('id', activityUserIds);
 
     if (profilesError) {
       console.error('Error fetching profiles:', profilesError);
       return NextResponse.json({ error: 'Failed to fetch profiles' }, { status: 500 });
     }
+
+    console.log('Found profiles:', profiles);
 
     // And get the games
     const gameIds = activities.filter(a => a.game_id).map(a => a.game_id);
@@ -76,12 +79,14 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Failed to fetch games' }, { status: 500 });
     }
 
+    console.log('Found games:', games);
+
     // Create lookup maps for faster access
     const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
     const gameMap = new Map(games?.map(g => [g.id, g]) || []);
 
     // Transform the activities with joined data
-    const transformedActivities = activities.map(activity => {
+    const transformedActivities: FriendActivity[] = activities.map(activity => {
       const profile = profileMap.get(activity.user_id);
       const game = activity.game_id ? gameMap.get(activity.game_id) : null;
 
@@ -94,14 +99,24 @@ export async function GET(request: Request) {
           id: profile.id,
           username: profile.username,
           avatar_url: profile.avatar_url,
-        } : null,
+        } : {
+          id: activity.user_id,
+          username: 'Unknown User',
+          avatar_url: null,
+        },
         game: game ? {
           id: game.id,
           name: game.name,
           cover_url: game.cover_url,
-        } : null,
+        } : {
+          id: activity.game_id,
+          name: 'Unknown Game',
+          cover_url: null,
+        },
       };
     });
+
+    console.log('Transformed activities:', transformedActivities);
 
     return NextResponse.json(transformedActivities);
   } catch (error) {

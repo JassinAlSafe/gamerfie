@@ -23,6 +23,13 @@ const activityIcons: Record<ActivityType, React.ReactNode> = {
   review: <MessageCircle className="w-5 h-5 text-purple-400" />,
 };
 
+const activityText: Record<ActivityType, string> = {
+  started_playing: "started playing",
+  completed: "completed",
+  achievement: "unlocked an achievement in",
+  review: "reviewed",
+};
+
 export function FriendActivityFeed() {
   const {
     activities,
@@ -45,7 +52,7 @@ export function FriendActivityFeed() {
 
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold">Friend Activity</h2>
+      <h2 className="text-2xl font-bold">Recent Activity</h2>
 
       <div className="space-y-4">
         {activities.map((activity, index) => (
@@ -71,7 +78,10 @@ export function FriendActivityFeed() {
                 >
                   {activity.user.username}
                 </Link>
-                {activityIcons[activity.activity_type]}
+                {activityIcons[activity.type]}
+                <span className="text-gray-400">
+                  {activityText[activity.type]}
+                </span>
                 <Link
                   href={`/game/${activity.game.id}`}
                   className="font-medium text-purple-400 hover:underline truncate"
@@ -81,18 +91,20 @@ export function FriendActivityFeed() {
               </div>
 
               <p className="text-sm text-gray-400 mt-1">
-                {formatDistanceToNow(new Date(activity.created_at), {
-                  addSuffix: true,
-                })}
+                {activity.timestamp
+                  ? formatDistanceToNow(new Date(activity.timestamp), {
+                      addSuffix: true,
+                    })
+                  : "Just now"}
               </p>
 
-              {activity.details && activity.activity_type === "achievement" && (
+              {activity.details && activity.type === "achievement" && (
                 <p className="mt-2 text-sm">
                   🏆 Unlocked: {activity.details.name}
                 </p>
               )}
 
-              {activity.details && activity.activity_type === "review" && (
+              {activity.details && activity.type === "review" && (
                 <p className="mt-2 text-sm">
                   &ldquo;{activity.details.comment}&rdquo;
                 </p>
