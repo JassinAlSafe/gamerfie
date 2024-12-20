@@ -31,25 +31,33 @@ export interface ActivityDetails {
   progress?: number;
 }
 
-export type ActivityType = 'started_playing' | 'completed' | 'achievement' | 'review';
+export type ActivityType = 
+  | "started_playing" 
+  | "completed" 
+  | "achievement" 
+  | "review" 
+  | "want_to_play"
+  | "progress";
 
 export interface FriendActivity {
   id: string;
   type: ActivityType;
+  user_id: string;
+  game_id: string;
+  timestamp: string;
   details?: {
     name?: string;
     comment?: string;
   };
-  timestamp: string;
   user: {
     id: string;
     username: string;
-    avatar_url?: string;
+    avatar_url: string | null;
   };
   game: {
     id: string;
     name: string;
-    cover_url?: string;
+    cover_url: string | null;
   };
 }
 

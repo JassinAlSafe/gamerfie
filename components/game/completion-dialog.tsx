@@ -1,24 +1,24 @@
 "use client";
 
-import { useState, useEffect } from 'react';
-import { Game } from '@/types/game';
-import { useProgressStore } from '@/stores/useProgressStore';
-import { useProfile } from '@/hooks/use-profile';
-import { toast } from 'react-hot-toast';
-import { LoadingSpinner } from '@/components/loadingSpinner';
+import { useState, useEffect } from "react";
+import { Game } from "@/types/game";
+import { useProgressStore } from "@/stores/useProgressStore";
+import { useProfile } from "@/hooks/use-profile";
+import { toast } from "react-hot-toast";
+import { LoadingSpinner } from "@/components/loadingSpinner";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Slider } from '@/components/ui/slider';
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Slider } from "@/components/ui/slider";
 import { ProgressIndicator } from "@/components/ui/progress-indicator";
-import { Clock, Trophy, BarChart3, Target } from 'lucide-react';
+import { Clock, Trophy, BarChart3, Target } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface CompletionDialogProps {
@@ -27,18 +27,23 @@ interface CompletionDialogProps {
   game: Game;
 }
 
-export function CompletionDialog({ isOpen, setIsOpen, game }: CompletionDialogProps) {
+export function CompletionDialog({
+  isOpen,
+  setIsOpen,
+  game,
+}: CompletionDialogProps) {
   const { profile } = useProfile();
-  const { 
-    updateProgress, 
-    fetchProgress, 
-    playTime, 
-    completionPercentage, 
-    achievementsCompleted 
+  const {
+    updateProgress,
+    fetchProgress,
+    playTime,
+    completionPercentage,
+    achievementsCompleted,
   } = useProgressStore();
   const [localPlayTime, setLocalPlayTime] = useState(0);
   const [localCompletion, setLocalCompletion] = useState(0);
-  const [localAchievementsCompleted, setLocalAchievementsCompleted] = useState(0);
+  const [localAchievementsCompleted, setLocalAchievementsCompleted] =
+    useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
@@ -54,15 +59,16 @@ export function CompletionDialog({ isOpen, setIsOpen, game }: CompletionDialogPr
   }, [playTime, completionPercentage, achievementsCompleted]);
 
   const totalAchievements = game.achievements?.length || 0;
-  const achievementPercentage = totalAchievements > 0 
-    ? (localAchievementsCompleted / totalAchievements) * 100 
-    : 0;
+  const achievementPercentage =
+    totalAchievements > 0
+      ? (localAchievementsCompleted / totalAchievements) * 100
+      : 0;
 
   const handleSubmit = async () => {
     if (!profile?.id) return;
-    
+
     setIsSubmitting(true);
-    
+
     const gameData = {
       id: game.id.toString(),
       name: game.name,
@@ -74,24 +80,19 @@ export function CompletionDialog({ isOpen, setIsOpen, game }: CompletionDialogPr
     };
 
     try {
-      await updateProgress(
-        profile.id.toString(), 
-        game.id.toString(), 
-        {
-          play_time: localPlayTime,
-          completion_percentage: localCompletion,
-          achievements_completed: localAchievementsCompleted,
-          status: localCompletion === 100 ? 'completed' : 'playing',
-          completed_at: localCompletion === 100 ? new Date().toISOString() : null,
-        },
-        gameData
-      );
-      
+      await updateProgress(profile.id.toString(), game.id.toString(), {
+        playTime: localPlayTime,
+        completionPercentage: localCompletion,
+        achievementsCompleted: localAchievementsCompleted,
+      });
+
       await fetchProgress(profile.id.toString(), game.id.toString());
-      
+
       setIsOpen(false);
+      toast.success("Progress updated successfully");
     } catch (error) {
-      console.error('Error updating progress:', error);
+      console.error("Error updating progress:", error);
+      toast.error("Failed to update progress");
     } finally {
       setIsSubmitting(false);
     }
@@ -115,13 +116,20 @@ export function CompletionDialog({ isOpen, setIsOpen, game }: CompletionDialogPr
                 <Target className="w-4 h-4 text-purple-400" />
                 Overall Completion
               </div>
-              <span className={cn(
-                "text-sm font-medium",
-                localCompletion === 100 ? "text-green-400" :
-                localCompletion >= 75 ? "text-blue-400" :
-                localCompletion >= 50 ? "text-purple-400" :
-                localCompletion >= 25 ? "text-orange-400" : "text-red-400"
-              )}>
+              <span
+                className={cn(
+                  "text-sm font-medium",
+                  localCompletion === 100
+                    ? "text-green-400"
+                    : localCompletion >= 75
+                    ? "text-blue-400"
+                    : localCompletion >= 50
+                    ? "text-purple-400"
+                    : localCompletion >= 25
+                    ? "text-orange-400"
+                    : "text-red-400"
+                )}
+              >
                 {localCompletion}%
               </span>
             </Label>
@@ -133,14 +141,21 @@ export function CompletionDialog({ isOpen, setIsOpen, game }: CompletionDialogPr
               className={cn(
                 "[&_[role=slider]]:h-4 [&_[role=slider]]:w-4",
                 "[&_[role=slider]]:transition-colors",
-                localCompletion === 100 ? "[&_[role=slider]]:bg-green-500" :
-                localCompletion >= 75 ? "[&_[role=slider]]:bg-blue-500" :
-                localCompletion >= 50 ? "[&_[role=slider]]:bg-purple-500" :
-                localCompletion >= 25 ? "[&_[role=slider]]:bg-orange-500" : 
-                "[&_[role=slider]]:bg-red-500"
+                localCompletion === 100
+                  ? "[&_[role=slider]]:bg-green-500"
+                  : localCompletion >= 75
+                  ? "[&_[role=slider]]:bg-blue-500"
+                  : localCompletion >= 50
+                  ? "[&_[role=slider]]:bg-purple-500"
+                  : localCompletion >= 25
+                  ? "[&_[role=slider]]:bg-orange-500"
+                  : "[&_[role=slider]]:bg-red-500"
               )}
             />
-            <ProgressIndicator value={localCompletion} className="transition-all duration-300" />
+            <ProgressIndicator
+              value={localCompletion}
+              className="transition-all duration-300"
+            />
           </div>
 
           {/* Play Time */}
@@ -173,12 +188,14 @@ export function CompletionDialog({ isOpen, setIsOpen, game }: CompletionDialogPr
               <Input
                 type="number"
                 value={localAchievementsCompleted}
-                onChange={(e) => setLocalAchievementsCompleted(Number(e.target.value))}
+                onChange={(e) =>
+                  setLocalAchievementsCompleted(Number(e.target.value))
+                }
                 min={0}
                 max={totalAchievements}
               />
-              <ProgressIndicator 
-                value={achievementPercentage} 
+              <ProgressIndicator
+                value={achievementPercentage}
                 variant="achievement"
                 className="transition-all duration-300"
               />
@@ -187,17 +204,26 @@ export function CompletionDialog({ isOpen, setIsOpen, game }: CompletionDialogPr
 
           {/* Status Summary */}
           <div className="bg-gray-800/50 rounded-lg p-4 space-y-2">
-            <h4 className="text-sm font-medium text-gray-300">Status Summary</h4>
+            <h4 className="text-sm font-medium text-gray-300">
+              Status Summary
+            </h4>
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
                 <p className="text-gray-400">Overall Progress</p>
-                <p className={cn(
-                  "font-medium",
-                  localCompletion === 100 ? "text-green-400" :
-                  localCompletion >= 75 ? "text-blue-400" :
-                  localCompletion >= 50 ? "text-purple-400" :
-                  localCompletion >= 25 ? "text-orange-400" : "text-red-400"
-                )}>
+                <p
+                  className={cn(
+                    "font-medium",
+                    localCompletion === 100
+                      ? "text-green-400"
+                      : localCompletion >= 75
+                      ? "text-blue-400"
+                      : localCompletion >= 50
+                      ? "text-purple-400"
+                      : localCompletion >= 25
+                      ? "text-orange-400"
+                      : "text-red-400"
+                  )}
+                >
                   {localCompletion}%
                 </p>
               </div>
@@ -221,8 +247,8 @@ export function CompletionDialog({ isOpen, setIsOpen, game }: CompletionDialogPr
           <Button variant="outline" onClick={() => setIsOpen(false)}>
             Cancel
           </Button>
-          <Button 
-            onClick={handleSubmit} 
+          <Button
+            onClick={handleSubmit}
             disabled={isSubmitting}
             className="flex items-center gap-2"
           >
@@ -232,11 +258,11 @@ export function CompletionDialog({ isOpen, setIsOpen, game }: CompletionDialogPr
                 <span>Saving...</span>
               </>
             ) : (
-              'Save Progress'
+              "Save Progress"
             )}
           </Button>
         </div>
       </DialogContent>
     </Dialog>
   );
-} 
+}

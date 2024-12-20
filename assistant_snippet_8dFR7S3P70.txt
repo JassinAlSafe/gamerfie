@@ -16,11 +16,20 @@
 16|DROP POLICY IF EXISTS "Users can read their friends' activities" ON friend_activities;
 17|DROP POLICY IF EXISTS "Users can read their own activities" ON friend_activities;
 18|DROP POLICY IF EXISTS "Users can view activities from their friends" ON friend_activities;
-19|
-20|CREATE POLICY "Users can view all activities" ON friend_activities
-21|FOR SELECT TO authenticated
-22|USING (true);
-23|
-24|-- Keep the existing insert policy but make it simpler
-25|ALTER POLICY "Users can create their own activities" ON friend_activities
-26|WITH CHECK (auth.uid() = user_id); 
+19|DROP POLICY IF EXISTS "Users can create their own activities" ON friend_activities;
+20|
+21|-- Add foreign key constraint
+22|ALTER TABLE friend_activities
+23|ADD CONSTRAINT friend_activities_user_id_fkey
+24|FOREIGN KEY (user_id)
+25|REFERENCES auth.users(id)
+26|ON DELETE CASCADE;
+27|
+28|-- Create new policies
+29|CREATE POLICY "Users can view all activities" ON friend_activities
+30|FOR SELECT TO authenticated
+31|USING (true);
+32|
+33|CREATE POLICY "Users can create their own activities" ON friend_activities
+34|FOR INSERT TO authenticated
+35|WITH CHECK (auth.uid() = user_id); 

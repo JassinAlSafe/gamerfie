@@ -1,10 +1,14 @@
-import React from "react";
+"use client";
+
+import React, { useEffect } from "react";
 import { formatDistanceToNow } from "date-fns";
 import Link from "next/link";
 import { Trophy, PlayCircle, CheckCircle, MessageCircle } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ActivityType } from "@/types/friend";
 import { motion } from "framer-motion";
+import { useGameActivities } from "@/hooks/use-game-activities";
+import { Button } from "@/components/ui/button";
 
 const activityIcons: Record<ActivityType, React.ReactNode> = {
   started_playing: <PlayCircle className="w-5 h-5 text-blue-400" />,
@@ -13,23 +17,28 @@ const activityIcons: Record<ActivityType, React.ReactNode> = {
   review: <MessageCircle className="w-5 h-5 text-purple-400" />,
 };
 
-interface GameActivity {
-  id: string;
-  type: ActivityType;
-  details: any;
-  timestamp: string;
-  user: {
-    id: string;
-    username: string;
-    avatar_url: string | null;
-  };
-}
+const activityText: Record<ActivityType, string> = {
+  started_playing: "started playing",
+  completed: "completed",
+  achievement: "unlocked an achievement in",
+  review: "reviewed",
+};
 
 interface GameActivitiesProps {
-  activities: GameActivity[];
+  gameId: string;
 }
 
-export function GameActivities({ activities }: GameActivitiesProps) {
+export function GameActivities({ gameId }: GameActivitiesProps) {
+  const { activities, loading, hasMore, loadMore } = useGameActivities(gameId);
+
+  if (loading && !activities.length) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <span className="loading loading-spinner loading-lg" />
+      </div>
+    );
+  }
+
   if (!activities.length) {
     return <p className="text-gray-400">No recent activity for this game.</p>;
   }
@@ -61,17 +70,16 @@ export function GameActivities({ activities }: GameActivitiesProps) {
               </Link>
               {activityIcons[activity.type]}
               <span className="text-gray-400">
-                {activity.type === "started_playing" && "started playing"}
-                {activity.type === "completed" && "completed"}
-                {activity.type === "achievement" && "unlocked an achievement"}
-                {activity.type === "review" && "reviewed"}
+                {activityText[activity.type]}
               </span>
             </div>
 
             <p className="text-sm text-gray-400 mt-1">
-              {formatDistanceToNow(new Date(activity.timestamp), {
-                addSuffix: true,
-              })}
+              {activity.timestamp
+                ? formatDistanceToNow(new Date(activity.timestamp), {
+                    addSuffix: true,
+                  })
+                : "Just now"}
             </p>
 
             {activity.details && activity.type === "achievement" && (
@@ -85,9 +93,31 @@ export function GameActivities({ activities }: GameActivitiesProps) {
                 &ldquo;{activity.details.comment}&rdquo;
               </p>
             )}
+
+            {activity.details?.comment && activity.type !== "review" && (
+              <p className="mt-2 text-sm text-gray-400">
+                &ldquo;{activity.details.comment}&rdquo;
+              </p>
+            )}
           </div>
         </motion.div>
       ))}
+
+      {hasMore && (
+        <div className="text-center">
+          <Button
+            onClick={() => loadMore()}
+            variant="outline"
+            disabled={loading}
+          >
+            {loading ? (
+              <span className="loading loading-spinner loading-sm" />
+            ) : (
+              "Load More"
+            )}
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

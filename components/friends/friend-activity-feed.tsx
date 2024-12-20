@@ -1,12 +1,19 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { useEffect } from "react";
 import { motion } from "framer-motion";
 import { formatDistanceToNow } from "date-fns";
 import Image from "next/image";
 import Link from "next/link";
-import { Trophy, PlayCircle, CheckCircle, MessageCircle } from "lucide-react";
+import {
+  Trophy,
+  PlayCircle,
+  CheckCircle,
+  MessageCircle,
+  Edit2,
+  BookmarkPlus,
+} from "lucide-react";
 import {
   Avatar,
   AvatarFallback,
@@ -14,13 +21,16 @@ import {
 } from "../../components/ui/avatar";
 import { Button } from "../ui/button";
 import { useFriendsStore } from "../../stores/useFriendsStore";
-import { ActivityType } from "../../types/friend";
+import { ActivityType, FriendActivity } from "../../types/friend";
+import { useProfile } from "@/hooks/use-profile";
+import { ActivityCommentDialog } from "./activity-comment-dialog";
 
 const activityIcons: Record<ActivityType, React.ReactNode> = {
   started_playing: <PlayCircle className="w-5 h-5 text-blue-400" />,
   completed: <CheckCircle className="w-5 h-5 text-green-400" />,
   achievement: <Trophy className="w-5 h-5 text-yellow-400" />,
   review: <MessageCircle className="w-5 h-5 text-purple-400" />,
+  want_to_play: <BookmarkPlus className="w-5 h-5 text-purple-400" />,
 };
 
 const activityText: Record<ActivityType, string> = {
@@ -28,15 +38,19 @@ const activityText: Record<ActivityType, string> = {
   completed: "completed",
   achievement: "unlocked an achievement in",
   review: "reviewed",
+  want_to_play: "wants to play",
 };
 
 export function FriendActivityFeed() {
+  const { profile } = useProfile();
   const {
     activities,
     isLoadingActivities,
     fetchActivities,
     loadMoreActivities,
   } = useFriendsStore();
+  const [selectedActivity, setSelectedActivity] =
+    useState<FriendActivity | null>(null);
 
   useEffect(() => {
     fetchActivities();
@@ -64,7 +78,7 @@ export function FriendActivityFeed() {
             className="flex items-start gap-4 p-4 bg-gray-800/50 rounded-lg"
           >
             <Avatar>
-              <AvatarImage src={activity.user.avatar_url} />
+              <AvatarImage src={activity.user.avatar_url || undefined} />
               <AvatarFallback>
                 {activity.user.username[0].toUpperCase()}
               </AvatarFallback>
@@ -88,6 +102,16 @@ export function FriendActivityFeed() {
                 >
                   {activity.game.name}
                 </Link>
+                {profile?.id === activity.user.id && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setSelectedActivity(activity)}
+                    className="ml-2 text-gray-400 hover:text-white"
+                  >
+                    <Edit2 className="w-4 h-4" />
+                  </Button>
+                )}
               </div>
 
               <p className="text-sm text-gray-400 mt-1">
@@ -106,6 +130,12 @@ export function FriendActivityFeed() {
 
               {activity.details && activity.type === "review" && (
                 <p className="mt-2 text-sm">
+                  &ldquo;{activity.details.comment}&rdquo;
+                </p>
+              )}
+
+              {activity.details?.comment && activity.type !== "review" && (
+                <p className="mt-2 text-sm text-gray-400">
                   &ldquo;{activity.details.comment}&rdquo;
                 </p>
               )}
@@ -139,6 +169,14 @@ export function FriendActivityFeed() {
             )}
           </Button>
         </div>
+      )}
+
+      {selectedActivity && (
+        <ActivityCommentDialog
+          activity={selectedActivity}
+          isOpen={!!selectedActivity}
+          onClose={() => setSelectedActivity(null)}
+        />
       )}
     </div>
   );

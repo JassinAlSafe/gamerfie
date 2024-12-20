@@ -15,6 +15,9 @@ import {
   Clock,
   Share2,
   BarChart3,
+  PlayCircle,
+  BookmarkPlus,
+  Ban,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -22,7 +25,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ProgressIndicator } from "@/components/ui/progress-indicator";
 import { ScreenshotModal } from "@/components/screenshot-modal";
 import BackButton from "@/app/game/[id]/BackButton";
-import { Game } from "@/types/game";
+import { Game, GameStatus } from "@/types/game";
 import { useProfile } from "@/hooks/use-profile";
 import { useProgressStore } from "@/stores/useProgressStore";
 import { formatRating } from "@/utils/game-utils";
@@ -33,6 +36,19 @@ import { RelatedGamesSection } from "@/components/game/related-games-section";
 import { AddToLibraryButton } from "@/components/add-to-library-button";
 import { LoadingSpinner } from "@/components/loadingSpinner";
 import { useGameActivities } from "@/hooks/use-game-activities";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { Database } from "@/types/supabase";
+import { useRouter } from "next/navigation";
+import { StatusDialog } from "@/components/game/status-dialog";
 
 const getHighQualityImageUrl = (url: string) => {
   return url.startsWith("//")
@@ -81,7 +97,13 @@ export const GameDetails = memo(function GameDetails({ game }: { game: Game }) {
   const [isScreenshotModalOpen, setIsScreenshotModalOpen] = useState(false);
   const [currentScreenshotIndex, setCurrentScreenshotIndex] = useState(0);
   const [isCompletionDialogOpen, setIsCompletionDialogOpen] = useState(false);
+  const [isStatusDialogOpen, setIsStatusDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
+  const [showCommentDialog, setShowCommentDialog] = useState(false);
+  const [selectedStatus, setSelectedStatus] = useState<GameStatus | null>(null);
+  const [comment, setComment] = useState("");
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [currentStatus, setCurrentStatus] = useState<GameStatus | null>(null);
 
   const websiteUrl = useMemo(() => getWebsiteUrl(game), [game]);
   const backgroundImage = useMemo(() => getBackgroundImage(game), [game]);
@@ -93,6 +115,7 @@ export const GameDetails = memo(function GameDetails({ game }: { game: Game }) {
     achievementsCompleted,
     loading: progressLoading,
     fetchProgress,
+    updateGameStatus,
   } = useProgressStore();
 
   const {
@@ -102,16 +125,70 @@ export const GameDetails = memo(function GameDetails({ game }: { game: Game }) {
     loadMore,
   } = useGameActivities(game.id.toString());
 
+  const router = useRouter();
+
   useEffect(() => {
     if (profile?.id && game?.id) {
       fetchProgress(profile.id.toString(), game.id.toString());
     }
   }, [profile?.id, game?.id, fetchProgress]);
 
+  useEffect(() => {
+    const checkGameStatus = async () => {
+      if (!profile?.id || !game?.id) return;
+
+      const supabase = createClientComponentClient<Database>();
+      const { data, error } = await supabase
+        .from("user_games")
+        .select("status")
+        .eq("user_id", profile.id)
+        .eq("game_id", game.id)
+        .single();
+
+      if (!error && data) {
+        setCurrentStatus(data.status as GameStatus);
+      }
+    };
+
+    checkGameStatus();
+  }, [profile?.id, game?.id]);
+
   const handleScreenshotClick = useCallback((index: number) => {
     setCurrentScreenshotIndex(index);
     setIsScreenshotModalOpen(true);
   }, []);
+
+  const handleCommentSubmit = async () => {
+    if (selectedStatus) {
+      await updateStatus(selectedStatus, comment.trim());
+      setShowCommentDialog(false);
+      setComment("");
+      setSelectedStatus(null);
+    }
+  };
+
+  const updateStatus = async (status: GameStatus, comment?: string) => {
+    if (!profile) return;
+
+    try {
+      setIsUpdating(true);
+      await updateGameStatus(
+        profile.id,
+        game.id.toString(),
+        status,
+        {
+          playTime: null,
+          completionPercentage: null,
+        },
+        comment
+      );
+      setIsCompletionDialogOpen(false);
+    } catch (error) {
+      console.error("Error updating game status:", error);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
 
   const renderProgress = () => (
     <div className="bg-gray-900/50 rounded-xl p-6 backdrop-blur-sm border border-white/5 space-y-4">
@@ -171,6 +248,143 @@ export const GameDetails = memo(function GameDetails({ game }: { game: Game }) {
       )}
     </div>
   );
+
+  const renderActionButtons = () => {
+    if (!profile) {
+      return (
+        <Button
+          onClick={() => router.push("/signin")}
+          variant="outline"
+          size="lg"
+          className="py-6 min-w-[200px] hover:scale-105 transition-all duration-300"
+        >
+          Sign in to add to library
+        </Button>
+      );
+    }
+
+    if (currentStatus) {
+      return (
+        <div className="flex flex-wrap gap-3">
+          <Button
+            onClick={() => setIsStatusDialogOpen(true)}
+            variant="outline"
+            size="lg"
+            className="py-6 min-w-[200px] hover:scale-105 transition-all duration-300"
+          >
+            {currentStatus === "playing" && (
+              <>
+                <PlayCircle className="w-5 h-5 mr-2 text-blue-400" />
+                Currently Playing
+              </>
+            )}
+            {currentStatus === "completed" && (
+              <>
+                <Trophy className="w-5 h-5 mr-2 text-green-400" />
+                Completed
+              </>
+            )}
+            {currentStatus === "want_to_play" && (
+              <>
+                <BookmarkPlus className="w-5 h-5 mr-2 text-purple-400" />
+                Want to Play
+              </>
+            )}
+            {currentStatus === "dropped" && (
+              <>
+                <Ban className="w-5 h-5 mr-2 text-red-400" />
+                Dropped
+              </>
+            )}
+          </Button>
+
+          <Button
+            onClick={() => setIsCompletionDialogOpen(true)}
+            variant="outline"
+            size="lg"
+            className="flex items-center space-x-2 hover:scale-105 transition-all duration-300 py-6"
+          >
+            <Clock className="w-5 h-5" />
+            <span>Update Progress</span>
+          </Button>
+
+          {websiteUrl && (
+            <Button
+              variant="outline"
+              size="lg"
+              className="group hover:scale-105 transition-all duration-300 py-6"
+              asChild
+            >
+              <a
+                href={websiteUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center"
+              >
+                Visit Website
+                <ExternalLink className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
+              </a>
+            </Button>
+          )}
+
+          <Button
+            variant="outline"
+            size="lg"
+            className="flex items-center space-x-2 hover:scale-105 transition-all duration-300 py-6"
+          >
+            <Share2 className="w-5 h-5" />
+            <span>Share</span>
+          </Button>
+        </div>
+      );
+    }
+
+    return (
+      <div className="flex flex-wrap gap-3">
+        <AddToLibraryButton
+          gameId={game.id.toString()}
+          gameName={game.name}
+          cover={game.cover?.url}
+          rating={game.total_rating || undefined}
+          releaseDate={game.first_release_date || undefined}
+          platforms={game.platforms || []}
+          genres={game.genres || []}
+          variant="outline"
+          size="lg"
+          className="py-6 min-w-[200px] hover:scale-105 transition-all duration-300"
+          onSuccess={(status) => setCurrentStatus(status)}
+        />
+
+        {websiteUrl && (
+          <Button
+            variant="outline"
+            size="lg"
+            className="group hover:scale-105 transition-all duration-300 py-6"
+            asChild
+          >
+            <a
+              href={websiteUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center"
+            >
+              Visit Website
+              <ExternalLink className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
+            </a>
+          </Button>
+        )}
+
+        <Button
+          variant="outline"
+          size="lg"
+          className="flex items-center space-x-2 hover:scale-105 transition-all duration-300 py-6"
+        >
+          <Share2 className="w-5 h-5" />
+          <span>Share</span>
+        </Button>
+      </div>
+    );
+  };
 
   return (
     <div className="min-h-screen bg-gray-950 text-white">
@@ -283,56 +497,7 @@ export const GameDetails = memo(function GameDetails({ game }: { game: Game }) {
                   transition={{ duration: 0.5, delay: 0.5 }}
                   className="flex flex-wrap gap-3"
                 >
-                  <AddToLibraryButton
-                    gameId={game.id.toString()}
-                    gameName={game.name}
-                    cover={game.cover?.url}
-                    rating={game.total_rating || undefined}
-                    releaseDate={game.first_release_date || undefined}
-                    platforms={game.platforms || []}
-                    genres={game.genres || []}
-                    variant="outline"
-                    size="lg"
-                    className="py-6 min-w-[200px] hover:scale-105 transition-all duration-300"
-                  />
-
-                  <Button
-                    onClick={() => setIsCompletionDialogOpen(true)}
-                    variant="outline"
-                    size="lg"
-                    className="flex items-center space-x-2 hover:scale-105 transition-all duration-300 py-6"
-                  >
-                    <Clock className="w-5 h-5" />
-                    <span>Update Progress</span>
-                  </Button>
-
-                  {websiteUrl && (
-                    <Button
-                      variant="outline"
-                      size="lg"
-                      className="group hover:scale-105 transition-all duration-300 py-6"
-                      asChild
-                    >
-                      <a
-                        href={websiteUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center"
-                      >
-                        Visit Website
-                        <ExternalLink className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
-                      </a>
-                    </Button>
-                  )}
-
-                  <Button
-                    variant="outline"
-                    size="lg"
-                    className="flex items-center space-x-2 hover:scale-105 transition-all duration-300 py-6"
-                  >
-                    <Share2 className="w-5 h-5" />
-                    <span>Share</span>
-                  </Button>
+                  {renderActionButtons()}
                 </motion.div>
               </div>
             </motion.div>
@@ -523,7 +688,7 @@ export const GameDetails = memo(function GameDetails({ game }: { game: Game }) {
                     <LoadingSpinner />
                   ) : (
                     <>
-                      <GameActivities activities={activities} />
+                      <GameActivities gameId={game.id.toString()} />
                       {hasMore && (
                         <div className="text-center mt-6">
                           <Button
@@ -574,6 +739,56 @@ export const GameDetails = memo(function GameDetails({ game }: { game: Game }) {
           game={game}
         />
       )}
+
+      {isStatusDialogOpen && game && (
+        <StatusDialog
+          isOpen={isStatusDialogOpen}
+          setIsOpen={setIsStatusDialogOpen}
+          game={game}
+          onStatusChange={setCurrentStatus}
+        />
+      )}
+
+      {/* Comment Dialog */}
+      <Dialog open={showCommentDialog} onOpenChange={setShowCommentDialog}>
+        <DialogContent className="sm:max-w-[425px] bg-gray-900 text-white">
+          <DialogHeader>
+            <DialogTitle>Add a Comment</DialogTitle>
+            <DialogDescription className="text-gray-400">
+              Add a comment about your experience with {game.name}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <Textarea
+              value={comment}
+              onChange={(e) => setComment(e.target.value)}
+              placeholder="Write your thoughts about this game..."
+              className="bg-gray-800 border-gray-700 text-white"
+              rows={4}
+            />
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowCommentDialog(false);
+                setComment("");
+                setSelectedStatus(null);
+              }}
+              className="bg-gray-800 text-white hover:bg-gray-700"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleCommentSubmit}
+              disabled={isUpdating}
+              className="bg-purple-600 text-white hover:bg-purple-500"
+            >
+              {isUpdating ? "Saving..." : "Save Comment"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 });
