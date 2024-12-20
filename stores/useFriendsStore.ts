@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { FriendsState } from "../types/friend";
+import { FriendsState, ActivityType } from "../types/friend";
 import { FriendsService } from '../services/friends-service';
 
 export const useFriendsStore = create<FriendsState>((set, get) => ({
@@ -56,6 +56,17 @@ export const useFriendsStore = create<FriendsState>((set, get) => ({
       await get().fetchFriends();
     } catch (error) {
       set({ error: (error as Error).message, isLoading: false });
+      throw error;
+    }
+  },
+
+  createActivity: async (activity_type: ActivityType, game_id?: string, details?: any) => {
+    try {
+      set({ isLoadingActivities: true, error: null });
+      await FriendsService.createActivity({ activity_type, game_id, details });
+      await get().fetchActivities(); // Refresh activities after creating a new one
+    } catch (error) {
+      set({ error: (error as Error).message, isLoadingActivities: false });
       throw error;
     }
   },

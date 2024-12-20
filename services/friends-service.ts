@@ -1,4 +1,13 @@
-import { Friend, FriendStatus, FriendRequest, FriendActivity } from "../types/friend";
+import { Friend, FriendStatus, FriendRequest, FriendActivity, ActivityType } from "../types/friend";
+
+interface CreateActivityRequest {
+  activity_type: ActivityType;
+  game_id?: string;
+  details?: {
+    name?: string;
+    comment?: string;
+  };
+}
 
 export const FriendsService = {
   async getFriends(status?: FriendStatus): Promise<Friend[]> {
@@ -32,6 +41,16 @@ export const FriendsService = {
       method: 'DELETE',
     });
     if (!response.ok) throw new Error('Failed to remove friend');
+  },
+
+  async createActivity(request: CreateActivityRequest): Promise<FriendActivity> {
+    const response = await fetch('/api/friends/activities/create', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(request),
+    });
+    if (!response.ok) throw new Error('Failed to create activity');
+    return response.json();
   },
 
   async getFriendActivities(page: number = 0): Promise<FriendActivity[]> {

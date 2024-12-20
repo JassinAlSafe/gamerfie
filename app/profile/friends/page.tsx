@@ -7,6 +7,7 @@ import { ProfileNav } from "../../../components/profile/profile-nav";
 import { FriendsList } from "../../../components/friends/friends-list";
 import { FriendActivityFeed } from "../../../components/friends/friend-activity-feed";
 import { FriendSearch } from "../../../components/friends/friend-search";
+import { CreateActivity } from "../../../components/friends/create-activity";
 import LoadingSpinner from "../../../components/loadingSpinner";
 import { Button } from "../../../components/ui/button";
 import { useRouter } from "next/navigation";
@@ -103,7 +104,10 @@ export default function FriendsPage() {
                 <div className="lg:col-span-1 space-y-8">
                   <FriendSearch />
                   <div className="bg-gray-900/50 rounded-xl p-4 backdrop-blur-sm border border-white/5">
-                    {/* <FriendActivityFeed /> */}
+                    <CreateActivity />
+                  </div>
+                  <div className="bg-gray-900/50 rounded-xl p-4 backdrop-blur-sm border border-white/5">
+                    <FriendActivityFeed />
                   </div>
                 </div>
               </div>
