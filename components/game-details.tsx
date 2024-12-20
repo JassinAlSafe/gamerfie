@@ -104,6 +104,8 @@ export const GameDetails = memo(function GameDetails({ game }: { game: Game }) {
   const [comment, setComment] = useState("");
   const [isUpdating, setIsUpdating] = useState(false);
   const [currentStatus, setCurrentStatus] = useState<GameStatus | null>(null);
+  const [isAboutExpanded, setIsAboutExpanded] = useState(false);
+  const [isStorylineExpanded, setIsStorylineExpanded] = useState(false);
 
   const websiteUrl = useMemo(() => getWebsiteUrl(game), [game]);
   const backgroundImage = useMemo(() => getBackgroundImage(game), [game]);
@@ -386,6 +388,25 @@ export const GameDetails = memo(function GameDetails({ game }: { game: Game }) {
     );
   };
 
+  const summaryMaxLength = 300;
+  const storylineMaxLength = 300;
+
+  const truncatedSummary = useMemo(() => {
+    if (!game.summary || game.summary.length <= summaryMaxLength)
+      return game.summary;
+    return isAboutExpanded
+      ? game.summary
+      : `${game.summary.slice(0, summaryMaxLength)}...`;
+  }, [game.summary, isAboutExpanded]);
+
+  const truncatedStoryline = useMemo(() => {
+    if (!game.storyline || game.storyline.length <= storylineMaxLength)
+      return game.storyline;
+    return isStorylineExpanded
+      ? game.storyline
+      : `${game.storyline.slice(0, storylineMaxLength)}...`;
+  }, [game.storyline, isStorylineExpanded]);
+
   return (
     <div className="min-h-screen bg-gray-950 text-white">
       {/* Parallax Hero Section */}
@@ -408,21 +429,21 @@ export const GameDetails = memo(function GameDetails({ game }: { game: Game }) {
           </div>
 
           {/* Game Info Container */}
-          <div className="absolute bottom-0 left-4 right-4 pb-32">
+          <div className="absolute bottom-0 left-4 right-4 pb-16 md:pb-32">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
-              className="flex flex-col md:flex-row gap-4 items-end"
+              className="flex flex-col md:flex-row gap-8 md:gap-4 items-start md:items-end"
             >
               {/* Cover Image */}
               <motion.div
-                className="md:w-1/4 flex-shrink-0 md:translate-y-24"
+                className="w-48 md:w-1/4 flex-shrink-0 md:translate-y-24 mx-auto md:mx-0"
                 whileHover={{ scale: 1.05 }}
                 transition={{ duration: 0.2 }}
               >
                 {game.cover && (
-                  <div className="relative w-56 h-72 md:w-72 md:h-96 rounded-lg overflow-hidden shadow-2xl ring-4 ring-purple-500/20">
+                  <div className="relative w-48 h-64 md:w-72 md:h-96 rounded-lg overflow-hidden shadow-2xl ring-4 ring-purple-500/20">
                     <Image
                       src={game.cover.url
                         .replace("t_thumb", "t_1080p")
@@ -439,7 +460,7 @@ export const GameDetails = memo(function GameDetails({ game }: { game: Game }) {
               </motion.div>
 
               {/* Game Details */}
-              <div className="md:w-3/4 pb-4">
+              <div className="md:w-3/4 pb-4 text-center md:text-left">
                 <motion.h1
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -454,7 +475,7 @@ export const GameDetails = memo(function GameDetails({ game }: { game: Game }) {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: 0.3 }}
-                  className="flex flex-wrap gap-4 mb-6"
+                  className="flex flex-wrap gap-4 mb-6 justify-center md:justify-start"
                 >
                   {game.total_rating ? (
                     <div className="flex items-center gap-2">
@@ -495,7 +516,7 @@ export const GameDetails = memo(function GameDetails({ game }: { game: Game }) {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: 0.5 }}
-                  className="flex flex-wrap gap-3"
+                  className="flex flex-wrap gap-3 justify-center md:justify-start"
                 >
                   {renderActionButtons()}
                 </motion.div>
@@ -513,7 +534,7 @@ export const GameDetails = memo(function GameDetails({ game }: { game: Game }) {
             onValueChange={setActiveTab}
             className="w-full"
           >
-            <TabsList className="w-full justify-start border-b border-white/10 bg-transparent h-auto p-0">
+            <TabsList className="w-full justify-start border-b border-white/10 bg-transparent h-auto p-0 overflow-x-auto flex-nowrap whitespace-nowrap">
               <TabsTrigger
                 value="overview"
                 className="px-4 py-3 text-gray-400 data-[state=active]:text-white data-[state=active]:border-b-2 data-[state=active]:border-purple-500 rounded-none bg-transparent"
@@ -557,19 +578,48 @@ export const GameDetails = memo(function GameDetails({ game }: { game: Game }) {
                         <BookOpen className="w-5 h-5 mr-2 text-purple-400" />
                         About
                       </h3>
-                      <p className="text-gray-300 leading-relaxed">
-                        {game.summary}
-                      </p>
-                      {game.storyline && (
-                        <>
-                          <h4 className="text-lg font-semibold mt-6 mb-2">
-                            Storyline
-                          </h4>
+                      <div className="space-y-6">
+                        <div>
                           <p className="text-gray-300 leading-relaxed">
-                            {game.storyline}
+                            {truncatedSummary}
                           </p>
-                        </>
-                      )}
+                          {game.summary &&
+                            game.summary.length > summaryMaxLength && (
+                              <Button
+                                variant="link"
+                                onClick={() =>
+                                  setIsAboutExpanded(!isAboutExpanded)
+                                }
+                                className="mt-2 text-purple-400 hover:text-purple-300 p-0 h-auto font-semibold"
+                              >
+                                {isAboutExpanded ? "Show Less" : "Read More"}
+                              </Button>
+                            )}
+                        </div>
+                        {game.storyline && (
+                          <div>
+                            <h4 className="text-lg font-semibold mb-2">
+                              Storyline
+                            </h4>
+                            <p className="text-gray-300 leading-relaxed">
+                              {truncatedStoryline}
+                            </p>
+                            {game.storyline.length > storylineMaxLength && (
+                              <Button
+                                variant="link"
+                                onClick={() =>
+                                  setIsStorylineExpanded(!isStorylineExpanded)
+                                }
+                                className="mt-2 text-purple-400 hover:text-purple-300 p-0 h-auto font-semibold"
+                              >
+                                {isStorylineExpanded
+                                  ? "Show Less"
+                                  : "Read More"}
+                              </Button>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     </div>
 
                     {/* Features */}
@@ -649,7 +699,7 @@ export const GameDetails = memo(function GameDetails({ game }: { game: Game }) {
               </TabsContent>
 
               <TabsContent value="media" className="mt-0">
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                   {game.screenshots?.map((screenshot, index) => (
                     <motion.div
                       key={index}
