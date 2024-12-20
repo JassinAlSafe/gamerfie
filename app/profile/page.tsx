@@ -9,7 +9,29 @@ import { ProfileHeader } from "@/components/profile/profile-header";
 import { ProfileNav } from "@/components/profile/profile-nav";
 import { useFriendsStore } from "@/stores/useFriendsStore";
 import { useEffect } from "react";
-import { Users } from "lucide-react";
+import {
+  Users,
+  Trophy,
+  PlayCircle,
+  CheckCircle,
+  MessageCircle,
+} from "lucide-react";
+import { formatDistanceToNow } from "date-fns";
+import { ActivityType } from "@/types/friend";
+
+const activityIcons: Record<ActivityType, React.ReactNode> = {
+  started_playing: <PlayCircle className="w-5 h-5 text-blue-400" />,
+  completed: <CheckCircle className="w-5 h-5 text-green-400" />,
+  achievement: <Trophy className="w-5 h-5 text-yellow-400" />,
+  review: <MessageCircle className="w-5 h-5 text-purple-400" />,
+};
+
+const activityText: Record<ActivityType, string> = {
+  started_playing: "started playing",
+  completed: "completed",
+  achievement: "unlocked an achievement in",
+  review: "reviewed",
+};
 
 export default function ProfilePage() {
   const { profile, isLoading, error, gameStats, updateProfile } = useProfile();
@@ -209,27 +231,39 @@ export default function ProfilePage() {
                             {activity.user.username[0].toUpperCase()}
                           </div>
                           <div>
-                            <p className="text-white">
+                            <div className="flex items-center gap-2">
                               <span className="font-medium">
                                 {activity.user.username}
-                              </span>{" "}
-                              {activity.activity_type === "started_playing" &&
-                                "started playing"}
-                              {activity.activity_type === "completed" &&
-                                "completed"}
-                              {activity.activity_type === "achievement" &&
-                                "unlocked an achievement in"}
-                              {activity.activity_type === "review" &&
-                                "reviewed"}{" "}
+                              </span>
+                              {activityIcons[activity.type]}
+                              <span className="text-gray-400">
+                                {activityText[activity.type]}
+                              </span>
                               <span className="text-purple-400">
                                 {activity.game.name}
                               </span>
+                            </div>
+                            <p className="text-sm text-gray-400 mt-1">
+                              {activity.timestamp
+                                ? formatDistanceToNow(
+                                    new Date(activity.timestamp),
+                                    {
+                                      addSuffix: true,
+                                    }
+                                  )
+                                : "Just now"}
                             </p>
-                            <p className="text-sm text-gray-400">
-                              {new Date(
-                                activity.created_at
-                              ).toLocaleDateString()}
-                            </p>
+                            {activity.details &&
+                              activity.type === "achievement" && (
+                                <p className="mt-2 text-sm">
+                                  🏆 Unlocked: {activity.details.name}
+                                </p>
+                              )}
+                            {activity.details && activity.type === "review" && (
+                              <p className="mt-2 text-sm">
+                                &ldquo;{activity.details.comment}&rdquo;
+                              </p>
+                            )}
                           </div>
                         </div>
                       ))}

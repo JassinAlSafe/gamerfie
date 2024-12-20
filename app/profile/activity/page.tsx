@@ -1,19 +1,16 @@
 "use client";
 
 import React from "react";
-import { useProfile } from "../../../hooks/use-profile";
-import { ProfileHeader } from "../../../components/profile/profile-header";
-import { ProfileNav } from "../../../components/profile/profile-nav";
-import { FriendsList } from "../../../components/friends/friends-list";
-import { FriendActivityFeed } from "../../../components/friends/friend-activity-feed";
-import { FriendSearch } from "../../../components/friends/friend-search";
-import { CreateActivity } from "../../../components/friends/create-activity";
-import LoadingSpinner from "../../../components/loadingSpinner";
-import { Button } from "../../../components/ui/button";
+import { useProfile } from "@/hooks/use-profile";
+import { ProfileHeader } from "@/components/profile/profile-header";
+import { ProfileNav } from "@/components/profile/profile-nav";
+import { FriendActivityFeed } from "@/components/friends/friend-activity-feed";
+import LoadingSpinner from "@/components/loadingSpinner";
+import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { Toaster } from "react-hot-toast";
 
-export default function FriendsPage() {
+export default function ActivityPage() {
   const { profile, isLoading, error, gameStats } = useProfile();
   const router = useRouter();
 
@@ -92,24 +89,8 @@ export default function FriendsPage() {
           {/* Main Content */}
           <div className="flex-grow bg-gray-950">
             <div className="max-w-7xl mx-auto px-4 py-8">
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* Left Column - Friends List */}
-                <div className="lg:col-span-2 space-y-8">
-                  <div className="bg-gray-900/50 rounded-xl p-4 backdrop-blur-sm border border-white/5">
-                    <FriendsList />
-                  </div>
-                </div>
-
-                {/* Right Column - Search and Activity */}
-                <div className="lg:col-span-1 space-y-8">
-                  <FriendSearch />
-                  <div className="bg-gray-900/50 rounded-xl p-4 backdrop-blur-sm border border-white/5">
-                    <CreateActivity />
-                  </div>
-                  <div className="bg-gray-900/50 rounded-xl p-4 backdrop-blur-sm border border-white/5">
-                    <FriendActivityFeed />
-                  </div>
-                </div>
+              <div className="bg-gray-900/50 rounded-xl p-6 backdrop-blur-sm border border-white/5">
+                <FriendActivityFeed />
               </div>
             </div>
           </div>

@@ -31,29 +31,61 @@ export interface ActivityDetails {
   progress?: number;
 }
 
+export type ActivityType = 
+  | "started_playing" 
+  | "completed" 
+  | "achievement" 
+  | "review" 
+  | "want_to_play"
+  | "progress";
+
+export interface ActivityReaction {
+  id: string;
+  activity_id: string;
+  user_id: string;
+  emoji: string;
+  created_at: string;
+  user: {
+    username: string;
+    avatar_url: string | null;
+  };
+}
+
+export interface ActivityComment {
+  id: string;
+  activity_id: string;
+  user_id: string;
+  content: string;
+  created_at: string;
+  user: {
+    username: string;
+    avatar_url: string | null;
+  };
+}
+
 export interface FriendActivity {
   id: string;
+  type: ActivityType;
   user_id: string;
-  activity_type: 'started_playing' | 'completed' | 'achievement' | 'review';
   game_id: string;
+  timestamp: string;
   details?: {
     name?: string;
     comment?: string;
   };
-  created_at: string;
   user: {
     id: string;
     username: string;
-    avatar_url?: string;
+    avatar_url: string | null;
   };
   game: {
     id: string;
     name: string;
-    cover_url?: string;
+    cover_url: string | null;
   };
+  reactions?: ActivityReaction[];
+  comments?: ActivityComment[];
 }
-
-export type ActivityType = 'started_playing' | 'completed' | 'achievement' | 'review';
 
 export interface FriendsState {
   friends: Friend[];
@@ -70,4 +102,9 @@ export interface FriendsState {
   activitiesPage: number;
   fetchActivities: () => Promise<void>;
   loadMoreActivities: () => Promise<void>;
+  createActivity: (activity_type: ActivityType, game_id?: string, details?: any) => Promise<void>;
+  addReaction: (activityId: string, emoji: string) => Promise<void>;
+  removeReaction: (activityId: string, emoji: string) => Promise<void>;
+  addComment: (activityId: string, content: string) => Promise<void>;
+  deleteComment: (commentId: string) => Promise<void>;
 } 

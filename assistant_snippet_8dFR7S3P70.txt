@@ -1,0 +1,35 @@
+1|-- Games table policies
+2|CREATE POLICY "Authenticated users can insert games" ON games
+3|FOR INSERT TO authenticated
+4|WITH CHECK (true);
+5|
+6|CREATE POLICY "Authenticated users can update games" ON games
+7|FOR UPDATE TO authenticated
+8|USING (true)
+9|WITH CHECK (true);
+10|
+11|CREATE POLICY "Everyone can view games" ON games
+12|FOR SELECT TO authenticated
+13|USING (true);
+14|
+15|-- Update friend_activities policies
+16|DROP POLICY IF EXISTS "Users can read their friends' activities" ON friend_activities;
+17|DROP POLICY IF EXISTS "Users can read their own activities" ON friend_activities;
+18|DROP POLICY IF EXISTS "Users can view activities from their friends" ON friend_activities;
+19|DROP POLICY IF EXISTS "Users can create their own activities" ON friend_activities;
+20|
+21|-- Add foreign key constraint
+22|ALTER TABLE friend_activities
+23|ADD CONSTRAINT friend_activities_user_id_fkey
+24|FOREIGN KEY (user_id)
+25|REFERENCES auth.users(id)
+26|ON DELETE CASCADE;
+27|
+28|-- Create new policies
+29|CREATE POLICY "Users can view all activities" ON friend_activities
+30|FOR SELECT TO authenticated
+31|USING (true);
+32|
+33|CREATE POLICY "Users can create their own activities" ON friend_activities
+34|FOR INSERT TO authenticated
+35|WITH CHECK (auth.uid() = user_id); 
