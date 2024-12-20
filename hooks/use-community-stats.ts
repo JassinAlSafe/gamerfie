@@ -26,15 +26,34 @@ export function useCommunityStats(gameId: string) {
       try {
         const supabase = createClientComponentClient<Database>();
 
-        // Get total players and average stats
-        const { data: basicStats, error: basicError } = await supabase
+        // Get current user
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        if (userError) throw userError;
+
+        console.log('Current user:', user?.id); // Debug log
+
+        // First, get ALL stats to check if there are any
+        const { data: allStats, error: allStatsError } = await supabase
           .from("user_games")
-          .select("play_time, completion_percentage, achievements_completed, status")
+          .select("user_id, play_time, completion_percentage, achievements_completed, status")
           .eq("game_id", gameId);
 
-        if (basicError) throw basicError;
+        if (allStatsError) throw allStatsError;
 
-        if (!basicStats || basicStats.length === 0) {
+        console.log('All stats:', allStats); // Debug log
+
+        if (!allStats || allStats.length === 0) {
+          console.log('No stats found for game:', gameId);
+          setStats(null);
+          return;
+        }
+
+        // Filter out current user's stats
+        const basicStats = allStats.filter(stat => stat.user_id !== user?.id);
+        console.log('Filtered stats (excluding current user):', basicStats); // Debug log
+
+        if (basicStats.length === 0) {
+          console.log('No community stats available (only current user stats found)');
           setStats(null);
           return;
         }
@@ -44,6 +63,13 @@ export function useCommunityStats(gameId: string) {
         const averagePlayTime = basicStats.reduce((acc, curr) => acc + (curr.play_time || 0), 0) / totalPlayers;
         const averageCompletion = basicStats.reduce((acc, curr) => acc + (curr.completion_percentage || 0), 0) / totalPlayers;
         const averageAchievements = basicStats.reduce((acc, curr) => acc + (curr.achievements_completed || 0), 0) / totalPlayers;
+
+        console.log('Calculated averages:', { // Debug log
+          totalPlayers,
+          averagePlayTime,
+          averageCompletion,
+          averageAchievements
+        });
 
         // Calculate playtime distribution
         const playTimeRanges = [
@@ -95,6 +121,7 @@ export function useCommunityStats(gameId: string) {
           .from("game_achievement_history")
           .select("created_at")
           .eq("game_id", gameId)
+          .neq("user_id", user?.id)
           .gte("created_at", new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString());
 
         if (historyError) throw historyError;
@@ -113,7 +140,7 @@ export function useCommunityStats(gameId: string) {
             }).reverse()
           : [];
 
-        setStats({
+        const finalStats = {
           totalPlayers,
           averagePlayTime,
           averageCompletionRate: averageCompletion,
@@ -122,7 +149,10 @@ export function useCommunityStats(gameId: string) {
           completionDistribution,
           achievementProgress,
           userStatuses,
-        });
+        };
+
+        console.log('Final stats:', finalStats); // Debug log
+        setStats(finalStats);
       } catch (err) {
         console.error("Error fetching community stats:", err);
         setError(err instanceof Error ? err.message : "Failed to fetch community stats");

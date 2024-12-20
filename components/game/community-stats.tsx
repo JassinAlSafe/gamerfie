@@ -25,7 +25,17 @@ export function CommunityStats({ gameId }: CommunityStatsProps) {
   }
 
   if (!stats) {
-    return <div className="text-gray-400">No community stats available</div>;
+    return (
+      <div className="max-w-4xl mx-auto">
+        <div className="text-gray-400 text-center p-8 bg-gray-800/50 rounded-lg border border-gray-700">
+          <Users className="w-12 h-12 mx-auto mb-4 text-gray-500" />
+          <p className="text-lg mb-2">No Community Stats Available Yet</p>
+          <p className="text-sm text-gray-500">
+            Be the first to add your stats for this game!
+          </p>
+        </div>
+      </div>
+    );
   }
 
   // Calculate hours per completion percentage
@@ -36,12 +46,23 @@ export function CommunityStats({ gameId }: CommunityStatsProps) {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
+      {/* Community Size Indicator */}
+      <div className="text-center mb-6">
+        <div className="inline-flex items-center gap-2 px-4 py-2 bg-gray-800/50 rounded-full border border-gray-700">
+          <Users className="w-4 h-4 text-blue-400" />
+          <span className="text-sm text-gray-400">
+            {stats.totalPlayers}{" "}
+            {stats.totalPlayers === 1 ? "Player" : "Players"} in Community
+          </span>
+        </div>
+      </div>
+
       {/* Quick Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card className="p-4 bg-gray-800/50 border-gray-700">
           <div className="flex items-center gap-2 text-sm text-gray-400">
             <Clock className="w-4 h-4 text-blue-400" />
-            Total Playtime
+            Average Playtime
           </div>
           <div className="mt-1 text-xl font-semibold">
             {stats.averagePlayTime.toFixed(1)}h
@@ -52,7 +73,7 @@ export function CommunityStats({ gameId }: CommunityStatsProps) {
         <Card className="p-4 bg-gray-800/50 border-gray-700">
           <div className="flex items-center gap-2 text-sm text-gray-400">
             <Target className="w-4 h-4 text-purple-400" />
-            Completion
+            Average Completion
           </div>
           <div className="mt-1 text-xl font-semibold">
             {stats.averageCompletionRate.toFixed(1)}%
@@ -63,7 +84,7 @@ export function CommunityStats({ gameId }: CommunityStatsProps) {
         <Card className="p-4 bg-gray-800/50 border-gray-700">
           <div className="flex items-center gap-2 text-sm text-gray-400">
             <Trophy className="w-4 h-4 text-yellow-400" />
-            Achievements
+            Achievement Rate
           </div>
           <div className="mt-1 text-xl font-semibold">
             {stats.averageAchievementRate.toFixed(1)}%
