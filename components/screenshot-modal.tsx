@@ -1,6 +1,11 @@
 "use client";
 
-import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import Image from "next/image";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 
@@ -26,9 +31,9 @@ export const ScreenshotModal: React.FC<ScreenshotModalProps> = ({
   currentIndex,
   onIndexChange,
 }) => {
-  console.log('Screenshots:', screenshots);
-  console.log('Current screenshot:', screenshots[currentIndex]);
-  console.log('Current URL:', ensureAbsoluteUrl(screenshots[currentIndex].url));
+  console.log("Screenshots:", screenshots);
+  console.log("Current screenshot:", screenshots[currentIndex]);
+  console.log("Current URL:", ensureAbsoluteUrl(screenshots[currentIndex].url));
 
   const handlePrevious = () => {
     if (currentIndex > 0) {
@@ -44,15 +49,13 @@ export const ScreenshotModal: React.FC<ScreenshotModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent 
-        className="max-w-[90vw] max-h-[90vh] p-0 bg-black/95 border-gray-800"
-      >
+      <DialogContent className="max-w-[90vw] max-h-[90vh] p-0 bg-black/95 border-gray-800">
         <DialogTitle className="sr-only">
           Screenshot {currentIndex + 1} of {screenshots.length}
         </DialogTitle>
-        
+
         <DialogDescription className="sr-only">
-          Use arrow keys or on-screen buttons to navigate between screenshots. 
+          Use arrow keys or on-screen buttons to navigate between screenshots.
           Press Escape to close the viewer.
         </DialogDescription>
 

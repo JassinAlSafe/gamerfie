@@ -14,7 +14,6 @@ import {
   Trophy,
   Clock,
   Share2,
-  BarChart3,
   PlayCircle,
   BookmarkPlus,
   Ban,
@@ -22,7 +21,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ProgressIndicator } from "@/components/ui/progress-indicator";
 import { ScreenshotModal } from "@/components/screenshot-modal";
 import BackButton from "@/app/game/[id]/BackButton";
 import { Game, GameStatus } from "@/types/game";
@@ -49,6 +47,8 @@ import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { Database } from "@/types/supabase";
 import { useRouter } from "next/navigation";
 import { StatusDialog } from "@/components/game/status-dialog";
+import { GameStats } from "@/components/game/game-stats";
+import { CommunityStats } from "@/components/game/community-stats";
 
 const getHighQualityImageUrl = (url: string) => {
   return url.startsWith("//")
@@ -193,61 +193,15 @@ export const GameDetails = memo(function GameDetails({ game }: { game: Game }) {
   };
 
   const renderProgress = () => (
-    <div className="bg-gray-900/50 rounded-xl p-6 backdrop-blur-sm border border-white/5 space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-xl font-semibold flex items-center">
-          <BarChart3 className="w-5 h-5 mr-2 text-purple-400" />
-          Your Progress
-        </h3>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setIsCompletionDialogOpen(true)}
-          className="flex items-center gap-2"
-        >
-          <Clock className="w-4 h-4" />
-          Update
-        </Button>
-      </div>
-
-      {progressLoading ? (
-        <LoadingSpinner />
-      ) : (
-        <>
-          <div className="space-y-4">
-            <div className="flex justify-between items-center">
-              <span className="text-gray-400">Completion</span>
-              <span className="text-white">{completionPercentage || 0}%</span>
-            </div>
-            <ProgressIndicator value={completionPercentage || 0} />
-          </div>
-
-          <div className="space-y-2">
-            <div className="flex justify-between items-center">
-              <span className="text-gray-400">Play Time</span>
-              <span className="text-white">{playTime || 0}h</span>
-            </div>
-          </div>
-
-          {game.achievements && game.achievements.length > 0 && (
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <span className="text-gray-400">Achievements</span>
-                <span className="text-white">
-                  {achievementsCompleted || 0} / {game.achievements.length}
-                </span>
-              </div>
-              <ProgressIndicator
-                value={
-                  ((achievementsCompleted || 0) / game.achievements.length) *
-                  100
-                }
-                variant="achievement"
-              />
-            </div>
-          )}
-        </>
-      )}
+    <div className="bg-gray-900/50 rounded-xl p-6 backdrop-blur-sm border border-white/5">
+      <GameStats
+        playTime={playTime || 0}
+        completionPercentage={completionPercentage || 0}
+        achievementsCompleted={achievementsCompleted || 0}
+        totalAchievements={game.achievements?.length || 0}
+        playTimeHistory={useProgressStore.getState().playTimeHistory}
+        achievementHistory={useProgressStore.getState().achievementHistory}
+      />
     </div>
   );
 
@@ -542,6 +496,12 @@ export const GameDetails = memo(function GameDetails({ game }: { game: Game }) {
                 Overview
               </TabsTrigger>
               <TabsTrigger
+                value="stats"
+                className="px-4 py-3 text-gray-400 data-[state=active]:text-white data-[state=active]:border-b-2 data-[state=active]:border-purple-500 rounded-none bg-transparent"
+              >
+                Stats
+              </TabsTrigger>
+              <TabsTrigger
                 value="media"
                 className="px-4 py-3 text-gray-400 data-[state=active]:text-white data-[state=active]:border-b-2 data-[state=active]:border-purple-500 rounded-none bg-transparent"
               >
@@ -667,33 +627,19 @@ export const GameDetails = memo(function GameDetails({ game }: { game: Game }) {
                         )}
                       </div>
                     </div>
-
-                    {profile && renderProgress()}
                   </div>
+                </div>
+              </TabsContent>
 
-                  {/* Sidebar */}
-                  <div className="space-y-6">
-                    {/* Community Stats */}
-                    <div className="bg-gray-900/50 rounded-xl p-6 backdrop-blur-sm border border-white/10">
-                      <h3 className="text-xl font-semibold mb-4 flex items-center">
-                        <Users className="w-5 h-5 mr-2 text-blue-400" />
-                        Community Stats
-                      </h3>
-                      <div className="space-y-4">
-                        <div className="flex justify-between items-center">
-                          <span className="text-gray-400">Players</span>
-                          <span className="text-white font-medium">1,234</span>
-                        </div>
-                        <div className="flex justify-between items-center">
-                          <span className="text-gray-400">Reviews</span>
-                          <span className="text-white font-medium">456</span>
-                        </div>
-                        <div className="flex justify-between items-center">
-                          <span className="text-gray-400">Avg. Playtime</span>
-                          <span className="text-white font-medium">25h</span>
-                        </div>
-                      </div>
-                    </div>
+              <TabsContent value="stats" className="mt-0">
+                <div className="space-y-6">
+                  {profile && renderProgress()}
+                  <div className="bg-gray-900/50 rounded-xl p-6 backdrop-blur-sm border border-white/10">
+                    <h3 className="text-xl font-semibold mb-4 flex items-center">
+                      <Users className="w-5 h-5 mr-2 text-green-400" />
+                      Community Stats
+                    </h3>
+                    <CommunityStats gameId={game.id.toString()} />
                   </div>
                 </div>
               </TabsContent>

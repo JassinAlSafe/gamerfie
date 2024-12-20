@@ -1,4 +1,4 @@
-import { Friend, FriendStatus, FriendRequest, FriendActivity, ActivityType } from "../types/friend";
+import { Friend, FriendStatus, FriendRequest, FriendActivity, ActivityType, ActivityReaction, ActivityComment } from "../types/friend";
 
 interface CreateActivityRequest {
   activity_type: ActivityType;
@@ -54,8 +54,44 @@ export const FriendsService = {
   },
 
   async getFriendActivities(page: number = 0): Promise<FriendActivity[]> {
-    const response = await fetch(`/api/friends/activities?offset=${page * 20}`);
+    const response = await fetch(`/api/friends/activities?offset=${page * 20}&include=reactions,comments`);
     if (!response.ok) throw new Error('Failed to fetch friend activities');
     return response.json();
+  },
+
+  async addReaction(activityId: string, emoji: string): Promise<ActivityReaction> {
+    const response = await fetch(`/api/friends/activities/${activityId}/reactions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ emoji }),
+    });
+    if (!response.ok) throw new Error('Failed to add reaction');
+    return response.json();
+  },
+
+  async removeReaction(activityId: string, emoji: string): Promise<void> {
+    const response = await fetch(`/api/friends/activities/${activityId}/reactions`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ emoji }),
+    });
+    if (!response.ok) throw new Error('Failed to remove reaction');
+  },
+
+  async addComment(activityId: string, content: string): Promise<ActivityComment> {
+    const response = await fetch(`/api/friends/activities/${activityId}/comments`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content }),
+    });
+    if (!response.ok) throw new Error('Failed to add comment');
+    return response.json();
+  },
+
+  async deleteComment(commentId: string): Promise<void> {
+    const response = await fetch(`/api/friends/activities/comments/${commentId}`, {
+      method: 'DELETE',
+    });
+    if (!response.ok) throw new Error('Failed to delete comment');
   },
 };

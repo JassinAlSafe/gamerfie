@@ -16,12 +16,12 @@ import {
   Share2,
   BarChart2,
   Filter,
+  X,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { useFriendsStore } from "@/stores/useFriendsStore";
 import { ActivityType, FriendActivity } from "@/types/friend";
-import { ActivityCommentDialog } from "./activity-comment-dialog";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -31,6 +31,21 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { useSession } from "@supabase/auth-helpers-react";
+import { toast } from "react-hot-toast";
 
 const activityIcons: Record<ActivityType, React.ReactNode> = {
   started_playing: <PlayCircle className="w-5 h-5 text-blue-400" />,
@@ -57,19 +72,33 @@ interface GroupedActivities {
 
 type ActivityFilter = "all" | ActivityType;
 
+const reactionEmojis = {
+  "👍": "thumbs up",
+  "❤️": "heart",
+  "🎮": "gaming",
+  "🏆": "trophy",
+  "🎯": "bullseye",
+  "🌟": "star",
+};
+
 export function FriendActivityFeed() {
+  const session = useSession();
   const {
     activities,
     isLoadingActivities,
     fetchActivities,
     loadMoreActivities,
+    addReaction,
+    removeReaction,
+    addComment,
+    deleteComment,
   } = useFriendsStore();
+
+  const [filter, setFilter] = useState<ActivityFilter>("all");
   const [selectedActivity, setSelectedActivity] =
     useState<FriendActivity | null>(null);
-  const [likedActivities, setLikedActivities] = useState<Set<string>>(
-    new Set()
-  );
-  const [filter, setFilter] = useState<ActivityFilter>("all");
+  const [commentContent, setCommentContent] = useState("");
+  const [isCommentDialogOpen, setIsCommentDialogOpen] = useState(false);
 
   const groupActivitiesByDate = useCallback(
     (activities: FriendActivity[]): GroupedActivities[] => {
@@ -110,16 +139,57 @@ export function FriendActivityFeed() {
     return groupActivitiesByDate(filteredActivities);
   }, [filteredActivities, groupActivitiesByDate]);
 
-  const handleLike = (activityId: string) => {
-    setLikedActivities((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(activityId)) {
-        newSet.delete(activityId);
+  const handleReaction = async (activityId: string, emoji: string) => {
+    if (!session) {
+      toast.error("Please sign in to react to activities");
+      return;
+    }
+
+    try {
+      const activity = activities.find((a) => a.id === activityId);
+      const hasReacted = activity?.reactions?.some(
+        (r) => r.user_id === session.user.id && r.emoji === emoji
+      );
+
+      if (hasReacted) {
+        await removeReaction(activityId, emoji);
+        toast.success("Reaction removed");
       } else {
-        newSet.add(activityId);
+        await addReaction(activityId, emoji);
+        toast.success("Reaction added");
       }
-      return newSet;
-    });
+    } catch (error) {
+      toast.error("Failed to update reaction");
+    }
+  };
+
+  const handleComment = async () => {
+    if (!session) {
+      toast.error("Please sign in to comment");
+      return;
+    }
+
+    if (!selectedActivity || !commentContent.trim()) {
+      return;
+    }
+
+    try {
+      await addComment(selectedActivity.id, commentContent.trim());
+      setCommentContent("");
+      setIsCommentDialogOpen(false);
+      toast.success("Comment added");
+    } catch (error) {
+      toast.error("Failed to add comment");
+    }
+  };
+
+  const handleDeleteComment = async (commentId: string) => {
+    try {
+      await deleteComment(commentId);
+      toast.success("Comment deleted");
+    } catch (error) {
+      toast.error("Failed to delete comment");
+    }
   };
 
   useEffect(() => {
@@ -250,31 +320,141 @@ export function FriendActivityFeed() {
                         )}
 
                         <div className="flex items-center gap-4 mt-3 pt-2 border-t border-gray-700">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className={cn(
-                              "text-gray-400 hover:text-pink-400 gap-2",
-                              likedActivities.has(activity.id) &&
-                                "text-pink-400"
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-gray-400 hover:text-purple-400 gap-2"
+                              >
+                                <Heart className="w-4 h-4" />
+                                <span className="text-sm">React</span>
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent
+                              className="w-full p-2"
+                              align="start"
+                            >
+                              <div className="flex flex-wrap gap-2">
+                                {Object.entries(reactionEmojis).map(
+                                  ([emoji, label]) => (
+                                    <Button
+                                      key={emoji}
+                                      variant="ghost"
+                                      size="sm"
+                                      className={cn(
+                                        "text-xl hover:bg-gray-800/30 h-8 px-2",
+                                        activity.reactions?.some(
+                                          (r) =>
+                                            r.user_id === session?.user?.id &&
+                                            r.emoji === emoji
+                                        ) && "bg-purple-500/20"
+                                      )}
+                                      onClick={() =>
+                                        handleReaction(activity.id, emoji)
+                                      }
+                                    >
+                                      {emoji}
+                                    </Button>
+                                  )
+                                )}
+                              </div>
+                            </PopoverContent>
+                          </Popover>
+
+                          {activity.reactions &&
+                            activity.reactions.length > 0 && (
+                              <div className="flex flex-wrap gap-1">
+                                {Object.entries(
+                                  activity.reactions.reduce(
+                                    (acc, r) => ({
+                                      ...acc,
+                                      [r.emoji]: (acc[r.emoji] || 0) + 1,
+                                    }),
+                                    {} as Record<string, number>
+                                  )
+                                ).map(([emoji, count]) => (
+                                  <Badge
+                                    key={emoji}
+                                    variant="secondary"
+                                    className="text-sm bg-gray-800/50 gap-1"
+                                  >
+                                    <span>{emoji}</span>
+                                    <span className="text-xs text-gray-400">
+                                      {count}
+                                    </span>
+                                  </Badge>
+                                ))}
+                              </div>
                             )}
-                            onClick={() => handleLike(activity.id)}
-                          >
-                            <Heart className="w-4 h-4" />
-                            <span className="text-sm">
-                              {likedActivities.has(activity.id)
-                                ? "Liked"
-                                : "Like"}
-                            </span>
-                          </Button>
+
                           <Button
                             variant="ghost"
                             size="sm"
                             className="text-gray-400 hover:text-blue-400 gap-2"
+                            onClick={() => {
+                              setSelectedActivity(activity);
+                              setIsCommentDialogOpen(true);
+                            }}
                           >
                             <MessageSquare className="w-4 h-4" />
                             <span className="text-sm">Comment</span>
                           </Button>
+
+                          {activity.comments &&
+                            activity.comments.length > 0 && (
+                              <div className="mt-4 space-y-2">
+                                {activity.comments.map((comment) => (
+                                  <div
+                                    key={comment.id}
+                                    className="flex items-start gap-2 bg-gray-800/30 rounded p-2"
+                                  >
+                                    <Avatar className="w-6 h-6">
+                                      <AvatarImage
+                                        src={
+                                          comment.user.avatar_url || undefined
+                                        }
+                                      />
+                                      <AvatarFallback>
+                                        {comment.user.username[0].toUpperCase()}
+                                      </AvatarFallback>
+                                    </Avatar>
+                                    <div className="flex-1 min-w-0">
+                                      <div className="flex items-center justify-between">
+                                        <span className="font-medium text-sm">
+                                          {comment.user.username}
+                                        </span>
+                                        <div className="flex items-center gap-2">
+                                          <span className="text-xs text-gray-400">
+                                            {format(
+                                              new Date(comment.created_at),
+                                              "MMM d, h:mm a"
+                                            )}
+                                          </span>
+                                          {session?.user?.id ===
+                                            comment.user_id && (
+                                            <Button
+                                              variant="ghost"
+                                              size="sm"
+                                              className="h-6 w-6 p-0"
+                                              onClick={() =>
+                                                handleDeleteComment(comment.id)
+                                              }
+                                            >
+                                              <X className="w-4 h-4" />
+                                            </Button>
+                                          )}
+                                        </div>
+                                      </div>
+                                      <p className="text-sm text-gray-300">
+                                        {comment.content}
+                                      </p>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+
                           <Button
                             variant="ghost"
                             size="sm"
@@ -335,13 +515,41 @@ export function FriendActivityFeed() {
         </div>
       )}
 
-      {selectedActivity && (
-        <ActivityCommentDialog
-          activity={selectedActivity}
-          isOpen={!!selectedActivity}
-          onClose={() => setSelectedActivity(null)}
-        />
-      )}
+      <Dialog open={isCommentDialogOpen} onOpenChange={setIsCommentDialogOpen}>
+        <DialogContent className="sm:max-w-[425px] bg-gray-900 text-white">
+          <DialogHeader>
+            <DialogTitle>Add a Comment</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <Textarea
+              value={commentContent}
+              onChange={(e) => setCommentContent(e.target.value)}
+              placeholder="Write your comment..."
+              className="bg-gray-800 border-gray-700 text-white"
+              rows={4}
+            />
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsCommentDialogOpen(false);
+                setCommentContent("");
+              }}
+              className="bg-gray-800 text-white hover:bg-gray-700"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleComment}
+              disabled={!commentContent.trim()}
+              className="bg-purple-600 text-white hover:bg-purple-500"
+            >
+              Post Comment
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

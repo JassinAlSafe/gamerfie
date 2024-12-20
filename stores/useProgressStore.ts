@@ -17,10 +17,22 @@ interface ProgressData {
   achievementsCompleted?: number;
 }
 
+interface PlayTimeEntry {
+  date: string;
+  hours: number;
+}
+
+interface AchievementEntry {
+  date: string;
+  count: number;
+}
+
 interface ProgressStore {
   playTime: number | null;
   completionPercentage: number | null;
   achievementsCompleted: number | null;
+  playTimeHistory: PlayTimeEntry[];
+  achievementHistory: AchievementEntry[];
   loading: boolean;
   error: string | null;
   fetchProgress: (userId: string, gameId: string) => Promise<void>;
@@ -32,6 +44,8 @@ export const useProgressStore = create<ProgressStore>((set) => ({
   playTime: null,
   completionPercentage: null,
   achievementsCompleted: null,
+  playTimeHistory: [],
+  achievementHistory: [],
   loading: false,
   error: null,
 
@@ -40,24 +54,55 @@ export const useProgressStore = create<ProgressStore>((set) => ({
     const supabase = createClientComponentClient<Database>();
 
     try {
-      const { data, error } = await supabase
+      // Fetch current progress
+      const { data: currentProgress, error: progressError } = await supabase
         .from("user_games")
         .select("*")
         .eq("user_id", userId)
         .eq("game_id", gameId)
         .single();
 
-      if (error) throw error;
+      if (progressError) throw progressError;
 
-      if (data) {
-        set({
-          playTime: data.play_time || null,
-          completionPercentage: data.completion_percentage || null,
-          achievementsCompleted: data.achievements_completed || null,
-        });
-      }
+      // Fetch playtime history
+      const { data: playTimeData, error: playTimeError } = await supabase
+        .from("game_progress_history")
+        .select("*")
+        .eq("user_id", userId)
+        .eq("game_id", gameId)
+        .order("created_at", { ascending: true });
 
-      set({ loading: false });
+      if (playTimeError) throw playTimeError;
+
+      // Fetch achievement history
+      const { data: achievementData, error: achievementError } = await supabase
+        .from("game_achievement_history")
+        .select("*")
+        .eq("user_id", userId)
+        .eq("game_id", gameId)
+        .order("created_at", { ascending: true });
+
+      if (achievementError) throw achievementError;
+
+      // Process history data
+      const playTimeHistory = playTimeData.map(entry => ({
+        date: new Date(entry.created_at).toLocaleDateString(),
+        hours: entry.play_time
+      }));
+
+      const achievementHistory = achievementData.map(entry => ({
+        date: new Date(entry.created_at).toLocaleDateString(),
+        count: entry.achievements_completed
+      }));
+
+      set({
+        playTime: currentProgress?.play_time || null,
+        completionPercentage: currentProgress?.completion_percentage || null,
+        achievementsCompleted: currentProgress?.achievements_completed || null,
+        playTimeHistory,
+        achievementHistory,
+        loading: false,
+      });
     } catch (error) {
       set({ error: (error as Error).message, loading: false });
     }
@@ -133,7 +178,8 @@ export const useProgressStore = create<ProgressStore>((set) => ({
     const supabase = createClientComponentClient<Database>();
 
     try {
-      const { error } = await supabase
+      // Update current progress
+      const { error: progressError } = await supabase
         .from("user_games")
         .upsert(
           {
@@ -149,17 +195,58 @@ export const useProgressStore = create<ProgressStore>((set) => ({
           }
         );
 
-      if (error) throw error;
+      if (progressError) throw progressError;
+
+      // Record progress history
+      const { error: historyError } = await supabase
+        .from("game_progress_history")
+        .insert({
+          user_id: userId,
+          game_id: gameId,
+          play_time: data.playTime,
+          completion_percentage: data.completionPercentage,
+        });
+
+      if (historyError) throw historyError;
+
+      // Record achievement history if achievements were updated
+      if (data.achievementsCompleted !== undefined) {
+        const { error: achievementError } = await supabase
+          .from("game_achievement_history")
+          .insert({
+            user_id: userId,
+            game_id: gameId,
+            achievements_completed: data.achievementsCompleted,
+          });
+
+        if (achievementError) throw achievementError;
+      }
 
       // Update local state
-      set({
+      set(state => ({
         loading: false,
-        playTime: data.playTime ?? null,
-        completionPercentage: data.completionPercentage ?? null,
-        achievementsCompleted: data.achievementsCompleted ?? null,
-      });
+        playTime: data.playTime ?? state.playTime,
+        completionPercentage: data.completionPercentage ?? state.completionPercentage,
+        achievementsCompleted: data.achievementsCompleted ?? state.achievementsCompleted,
+        playTimeHistory: [
+          ...state.playTimeHistory,
+          {
+            date: new Date().toLocaleDateString(),
+            hours: data.playTime || 0,
+          },
+        ],
+        achievementHistory: data.achievementsCompleted
+          ? [
+              ...state.achievementHistory,
+              {
+                date: new Date().toLocaleDateString(),
+                count: data.achievementsCompleted,
+              },
+            ]
+          : state.achievementHistory,
+      }));
 
-      // Create an activity for significant progress updates
+      // Create activities for significant progress updates
       if (data.completionPercentage === 100) {
         await useFriendsStore.getState().createActivity("completed", gameId);
       } else if (data.completionPercentage) {
