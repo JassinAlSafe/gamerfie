@@ -9,8 +9,8 @@ export async function POST(
   try {
     const supabase = createRouteHandlerClient({ cookies });
     const { data: { session } } = await supabase.auth.getSession();
-
-    if (!session) {
+    
+    if (!session?.user) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
@@ -33,6 +33,7 @@ export async function POST(
       if (error.code === "23505") { // Unique violation
         return new NextResponse("Already reacted with this emoji", { status: 400 });
       }
+      console.error('Error adding reaction:', error);
       throw error;
     }
 
@@ -50,8 +51,8 @@ export async function DELETE(
   try {
     const supabase = createRouteHandlerClient({ cookies });
     const { data: { session } } = await supabase.auth.getSession();
-
-    if (!session) {
+    
+    if (!session?.user) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
@@ -69,7 +70,10 @@ export async function DELETE(
         emoji,
       });
 
-    if (error) throw error;
+    if (error) {
+      console.error('Error removing reaction:', error);
+      throw error;
+    }
 
     return new NextResponse(null, { status: 204 });
   } catch (error) {

@@ -1,7 +1,7 @@
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
-import { FriendActivity } from '../../../../types/friend';
+import { FriendActivity } from '@/types/friend';
 
 export async function GET(request: Request) {
   const supabase = createRouteHandlerClient({ cookies });
@@ -36,7 +36,25 @@ export async function GET(request: Request) {
     // First, let's check if we have any activities
     const { data: activities, error: activitiesError } = await supabase
       .from('friend_activities')
-      .select('*')
+      .select(`
+        *,
+        reactions:activity_reactions(
+          *,
+          user:profiles(
+            id,
+            username,
+            avatar_url
+          )
+        ),
+        comments:activity_comments(
+          *,
+          user:profiles(
+            id,
+            username,
+            avatar_url
+          )
+        )
+      `)
       .in('user_id', userIds)
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1);
@@ -86,35 +104,26 @@ export async function GET(request: Request) {
     const gameMap = new Map(games?.map(g => [g.id, g]) || []);
 
     // Transform the activities with joined data
-    const transformedActivities: FriendActivity[] = activities.map(activity => {
-      const profile = profileMap.get(activity.user_id);
-      const game = activity.game_id ? gameMap.get(activity.game_id) : null;
-
-      return {
-        id: activity.id,
-        type: activity.activity_type,
-        details: activity.details,
-        timestamp: activity.created_at,
-        user: profile ? {
-          id: profile.id,
-          username: profile.username,
-          avatar_url: profile.avatar_url,
-        } : {
-          id: activity.user_id,
-          username: 'Unknown User',
-          avatar_url: null,
-        },
-        game: game ? {
-          id: game.id,
-          name: game.name,
-          cover_url: game.cover_url,
-        } : {
-          id: activity.game_id,
-          name: 'Unknown Game',
-          cover_url: null,
-        },
-      };
-    });
+    const transformedActivities: FriendActivity[] = activities.map(activity => ({
+      id: activity.id,
+      type: activity.activity_type,
+      user_id: activity.user_id,
+      game_id: activity.game_id,
+      timestamp: activity.created_at,
+      details: activity.details,
+      reactions: activity.reactions || [],
+      comments: activity.comments || [],
+      user: {
+        id: activity.user_id,
+        username: profileMap.get(activity.user_id)?.username || 'Unknown User',
+        avatar_url: profileMap.get(activity.user_id)?.avatar_url || null,
+      },
+      game: {
+        id: activity.game_id,
+        name: gameMap.get(activity.game_id)?.name || 'Unknown Game',
+        cover_url: gameMap.get(activity.game_id)?.cover_url || null,
+      },
+    }));
 
     console.log('Transformed activities:', transformedActivities);
 

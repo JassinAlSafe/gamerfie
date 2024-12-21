@@ -1,49 +1,58 @@
 import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { getToken } from "next-auth/jwt";
 
 export async function middleware(req: NextRequest) {
   const res = NextResponse.next();
 
-  // Handle Supabase auth
-  const supabase = createMiddlewareClient({ req, res });
-  await supabase.auth.getSession();
+  try {
+    // Handle Supabase auth
+    const supabase = createMiddlewareClient({ req, res });
+    const { data: { session: supabaseSession } } = await supabase.auth.getSession();
 
-  // Add CORS headers for API routes
-  if (req.nextUrl.pathname.startsWith('/api/')) {
-    res.headers.set('Access-Control-Allow-Origin', '*');
-    res.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    res.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-    
-    // Handle IGDB API routes specifically
-    if (req.nextUrl.pathname.startsWith('/api/games')) {
-      // Verify IGDB environment variables
-      if (!process.env.NEXT_PUBLIC_TWITCH_CLIENT_ID || !process.env.TWITCH_CLIENT_SECRET) {
-        return new NextResponse(
-          JSON.stringify({ 
-            error: 'IGDB credentials not configured' 
-          }),
-          { 
-            status: 500,
-            headers: {
-              'Content-Type': 'application/json'
-            }
-          }
-        );
+    // Check NextAuth session
+    const nextAuthToken = await getToken({ req });
+
+    // Add auth info to headers for API routes
+    if (req.nextUrl.pathname.startsWith("/api/")) {
+      if (supabaseSession) {
+        res.headers.set("x-user-id", supabaseSession.user.id);
+      }
+      if (nextAuthToken) {
+        res.headers.set("x-session-token", nextAuthToken.sub || "");
       }
 
-      // Add cache control headers
-      res.headers.set('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=30');
+      // Add CORS headers
+      res.headers.append("Access-Control-Allow-Credentials", "true");
+      res.headers.append("Access-Control-Allow-Origin", "*");
+      res.headers.append(
+        "Access-Control-Allow-Methods",
+        "GET,DELETE,PATCH,POST,PUT"
+      );
+      res.headers.append(
+        "Access-Control-Allow-Headers",
+        "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version"
+      );
     }
-  }
 
-  return res;
+    return res;
+  } catch (e) {
+    console.error("Middleware error:", e);
+    return res;
+  }
 }
 
 export const config = {
   matcher: [
-    // Apply to all routes
-    '/((?!_next/static|_next/image|favicon.ico).*)',
+    /*
+     * Match all request paths except for the ones starting with:
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     * Feel free to modify this pattern to include more paths.
+     */
+    "/((?!_next/static|_next/image|favicon.ico).*)",
   ],
 };
 
