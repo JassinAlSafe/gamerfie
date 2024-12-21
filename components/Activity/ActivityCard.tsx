@@ -17,60 +17,56 @@ interface ActivityCardProps {
   index?: number;
 }
 
-export function ActivityCard({ activity, index = 0 }: ActivityCardProps) {
+export function ActivityCard({ activity, index }: ActivityCardProps) {
+  const username = activity.user?.username || "Unknown User";
+  const avatarUrl = activity.user?.avatar_url;
+  const userInitial = username[0].toUpperCase();
+
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3, delay: index * 0.1 }}
-      className="flex items-start gap-4 p-4 bg-gray-800/50 rounded-lg hover:bg-gray-800/70 transition-colors"
-    >
-      <Avatar>
-        <AvatarImage src={activity.user.avatar_url || undefined} />
-        <AvatarFallback>
-          {activity.user.username[0].toUpperCase()}
-        </AvatarFallback>
-      </Avatar>
+    <div className="bg-gray-800/50 rounded-lg p-4">
+      <div className="flex items-start gap-4">
+        <Avatar>
+          <AvatarImage src={avatarUrl || undefined} />
+          <AvatarFallback>{userInitial}</AvatarFallback>
+        </Avatar>
 
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 flex-wrap">
-          <Link
-            href={`/profile/${activity.user.id}`}
-            className="font-medium hover:underline"
-          >
-            {activity.user.username}
-          </Link>
-          {activityIcons[activity.type]}
-          <span className="text-gray-400">{activityText[activity.type]}</span>
-          <Link
-            href={`/game/${activity.game.id}`}
-            className="font-medium text-purple-400 hover:underline truncate"
-          >
-            {activity.game.name}
-          </Link>
-          <Badge variant="secondary" className="ml-auto text-xs">
-            {format(new Date(activity.timestamp), "h:mm a")}
-          </Badge>
-        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <Link
+              href={`/profile/${activity.user?.id || "#"}`}
+              className="font-medium hover:underline"
+            >
+              {username}
+            </Link>
+            {activityIcons[activity.type]}
+            <span className="text-gray-400">{activityText[activity.type]}</span>
+            <Link
+              href={`/game/${activity.game?.id || "#"}`}
+              className="font-medium hover:underline"
+            >
+              {activity.game?.name || "Unknown Game"}
+            </Link>
+          </div>
 
-        <div className="mt-2">
-          {activity.details && activity.type === "achievement" && (
-            <p className="text-sm">🏆 Unlocked: {activity.details.name}</p>
-          )}
+          <p className="text-sm text-gray-400 mt-1">
+            {activity.created_at
+              ? format(new Date(activity.created_at), "MMM d, yyyy 'at' h:mm a")
+              : "Recently"}
+          </p>
 
           {activity.details?.comment && (
-            <p className="text-sm text-gray-300">
+            <p className="mt-2 text-sm text-gray-300">
               &ldquo;{activity.details.comment}&rdquo;
             </p>
           )}
-
-          <div className="flex items-center gap-4 mt-3 pt-2 border-t border-gray-700">
-            <ActivityReactions activity={activity} />
-            <ActivityComments activity={activity} />
-            <ActivityShare activity={activity} />
-          </div>
         </div>
       </div>
-    </motion.div>
+
+      <div className="mt-4 flex items-center gap-2">
+        <ActivityReactions activity={activity} />
+        <ActivityComments activity={activity} />
+        <ActivityShare activity={activity} />
+      </div>
+    </div>
   );
 }

@@ -1,19 +1,19 @@
-import { getServerSession } from "next-auth";
-import { NextResponse } from "next/server";
 import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
 import { cookies } from "next/headers";
+import { NextResponse } from "next/server";
 
 export async function POST(
   request: Request,
   { params }: { params: { id: string } }
 ) {
   try {
-    const session = await getServerSession();
-    if (!session) {
+    const supabase = createRouteHandlerClient({ cookies });
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session?.user) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
-    const supabase = createRouteHandlerClient({ cookies });
     const { emoji } = await request.json();
     if (!emoji) {
       return new NextResponse("Emoji is required", { status: 400 });
@@ -49,12 +49,13 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    const session = await getServerSession();
-    if (!session) {
+    const supabase = createRouteHandlerClient({ cookies });
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session?.user) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
-    const supabase = createRouteHandlerClient({ cookies });
     const { emoji } = await request.json();
     if (!emoji) {
       return new NextResponse("Emoji is required", { status: 400 });

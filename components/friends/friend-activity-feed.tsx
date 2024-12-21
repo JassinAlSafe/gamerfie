@@ -12,7 +12,19 @@ import { motion } from "framer-motion";
 const groupActivitiesByDate = (activities: FriendActivity[]) => {
   return activities.reduce(
     (groups: Record<string, FriendActivity[]>, activity) => {
-      const date = format(new Date(activity.timestamp), "MMMM d, yyyy");
+      let dateToUse: Date;
+      try {
+        dateToUse = new Date(activity.created_at);
+        if (isNaN(dateToUse.getTime())) {
+          console.warn("Invalid created_at date for activity:", activity);
+          dateToUse = new Date();
+        }
+      } catch (error) {
+        console.warn("Error parsing date for activity:", activity);
+        dateToUse = new Date();
+      }
+
+      const date = format(dateToUse, "MMMM d, yyyy");
       if (!groups[date]) {
         groups[date] = [];
       }
@@ -38,6 +50,39 @@ export function FriendActivityFeed() {
     fetchActivities().catch((err) => {
       console.error("Error fetching activities:", err);
     });
+  }, [fetchActivities]);
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+
+    const startPolling = () => {
+      interval = setInterval(() => {
+        if (document.visibilityState === "visible") {
+          fetchActivities().catch((err) => {
+            console.error("Error refetching activities:", err);
+          });
+        }
+      }, 30000); // Poll every 30 seconds
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        fetchActivities().catch((err) => {
+          console.error("Error refetching activities:", err);
+        });
+        startPolling();
+      } else {
+        clearInterval(interval);
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    startPolling();
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
   }, [fetchActivities]);
 
   useEffect(() => {
@@ -83,46 +128,43 @@ export function FriendActivityFeed() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold">Recent Activity</h2>
-        <div className="flex items-center gap-2">
-          <Button
-            variant={filter === "all" ? "default" : "ghost"}
-            size="sm"
-            onClick={() => setFilter("all")}
-          >
-            All
-          </Button>
-          <Button
-            variant={filter === "started_playing" ? "default" : "ghost"}
-            size="sm"
-            onClick={() => setFilter("started_playing")}
-          >
-            Playing
-          </Button>
-          <Button
-            variant={filter === "completed" ? "default" : "ghost"}
-            size="sm"
-            onClick={() => setFilter("completed")}
-          >
-            Completed
-          </Button>
-          <Button
-            variant={filter === "achievement" ? "default" : "ghost"}
-            size="sm"
-            onClick={() => setFilter("achievement")}
-          >
-            Achievements
-          </Button>
-          <Button
-            variant={filter === "review" ? "default" : "ghost"}
-            size="sm"
-            onClick={() => setFilter("review")}
-          >
-            Reviews
-          </Button>
-        </div>
+    <div className="space-y-8">
+      <div className="flex flex-wrap gap-2">
+        <Button
+          variant={filter === "all" ? "default" : "outline"}
+          size="sm"
+          onClick={() => setFilter("all")}
+        >
+          All
+        </Button>
+        <Button
+          variant={filter === "started_playing" ? "default" : "outline"}
+          size="sm"
+          onClick={() => setFilter("started_playing")}
+        >
+          Started Playing
+        </Button>
+        <Button
+          variant={filter === "completed" ? "default" : "outline"}
+          size="sm"
+          onClick={() => setFilter("completed")}
+        >
+          Completed
+        </Button>
+        <Button
+          variant={filter === "achievement" ? "default" : "outline"}
+          size="sm"
+          onClick={() => setFilter("achievement")}
+        >
+          Achievements
+        </Button>
+        <Button
+          variant={filter === "review" ? "default" : "outline"}
+          size="sm"
+          onClick={() => setFilter("review")}
+        >
+          Reviews
+        </Button>
       </div>
 
       {filteredActivities.length === 0 ? (
