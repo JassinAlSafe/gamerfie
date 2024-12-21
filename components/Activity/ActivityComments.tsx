@@ -21,9 +21,13 @@ import { format } from "date-fns";
 
 interface ActivityCommentsProps {
   activity: FriendActivity;
+  showInline?: boolean;
 }
 
-export function ActivityComments({ activity }: ActivityCommentsProps) {
+export function ActivityComments({
+  activity,
+  showInline = false,
+}: ActivityCommentsProps) {
   const supabase = createClientComponentClient();
   const [userId, setUserId] = useState<string | null>(null);
   const { addComment, deleteComment } = useFriendsStore();
@@ -33,7 +37,7 @@ export function ActivityComments({ activity }: ActivityCommentsProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [showAllComments, setShowAllComments] = useState(false);
 
-  const COMMENTS_TO_SHOW = 3;
+  const COMMENTS_TO_SHOW = showInline ? 3 : 2;
   const hasMoreComments = localComments.length > COMMENTS_TO_SHOW;
   const visibleComments = showAllComments
     ? localComments
@@ -105,8 +109,8 @@ export function ActivityComments({ activity }: ActivityCommentsProps) {
     return format(date, "MMM d, yyyy");
   };
 
-  return (
-    <div>
+  if (!showInline) {
+    return (
       <Button
         variant="ghost"
         size="sm"
@@ -123,71 +127,93 @@ export function ActivityComments({ activity }: ActivityCommentsProps) {
             : "Comment"}
         </span>
       </Button>
+    );
+  }
 
+  return (
+    <div className="px-4 py-2">
+      {/* Quick Comment Input */}
+      <div className="flex items-center gap-3 mb-4">
+        <Avatar className="w-8 h-8 flex-shrink-0">
+          <AvatarImage src={undefined} />
+          <AvatarFallback>?</AvatarFallback>
+        </Avatar>
+        <div className="flex-1">
+          <Textarea
+            value={commentContent}
+            onChange={(e) => setCommentContent(e.target.value)}
+            placeholder="Add a comment..."
+            className="bg-gray-800 border-gray-700 text-white min-h-[40px] resize-none"
+            disabled={isLoading}
+            rows={1}
+          />
+        </div>
+        <Button
+          onClick={handleComment}
+          disabled={isLoading || !commentContent.trim()}
+          className="bg-purple-600 text-white hover:bg-purple-500"
+          size="sm"
+        >
+          Post
+        </Button>
+      </div>
+
+      {/* Comments List */}
       {localComments.length > 0 && (
-        <div className="pl-8 mt-4">
-          <div className="relative">
-            <div className="absolute left-4 top-0 bottom-0 w-px bg-gray-800" />
-            <div className="space-y-4">
-              {visibleComments.map((comment) => (
-                <div
-                  key={comment.id}
-                  className="group relative flex gap-3 py-3 hover:bg-gray-800/30 rounded-lg px-3 transition-colors"
-                >
-                  <Avatar className="w-8 h-8 mt-0.5 flex-shrink-0">
-                    <AvatarImage src={comment.user.avatar_url || undefined} />
-                    <AvatarFallback>
-                      {comment.user.username[0].toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-2">
-                      <div>
-                        <span className="font-medium text-sm text-gray-200">
-                          {comment.user.username}
-                        </span>
-                        <span className="ml-2 text-xs text-gray-500">
-                          {formatTimestamp(comment.created_at)}
-                        </span>
-                      </div>
-                      {userId === comment.user_id && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="opacity-0 group-hover:opacity-100 h-6 w-6 p-0 text-gray-400 hover:text-red-400 transition-opacity"
-                          onClick={() => handleDeleteComment(comment.id)}
-                          disabled={isLoading}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      )}
-                    </div>
-                    <p className="text-sm text-gray-300 mt-1 whitespace-pre-wrap break-words">
+        <div className="space-y-4">
+          {visibleComments.map((comment) => (
+            <div key={comment.id} className="group flex gap-3 items-start">
+              <Avatar className="w-8 h-8 flex-shrink-0">
+                <AvatarImage src={comment.user.avatar_url || undefined} />
+                <AvatarFallback>
+                  {comment.user.username[0].toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1">
+                    <span className="font-medium text-sm text-gray-200">
+                      {comment.user.username}
+                    </span>
+                    <p className="text-sm text-gray-300 break-words">
                       {comment.content}
                     </p>
+                    <div className="flex items-center gap-3 mt-1">
+                      <span className="text-xs text-gray-500">
+                        {formatTimestamp(comment.created_at)}
+                      </span>
+                    </div>
                   </div>
-                </div>
-              ))}
-
-              {hasMoreComments && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-gray-400 hover:text-blue-400"
-                  onClick={() => setShowAllComments(!showAllComments)}
-                >
-                  {showAllComments ? (
-                    <>Show Less</>
-                  ) : (
-                    <>
-                      Show {localComments.length - COMMENTS_TO_SHOW} More
-                      Comments
-                    </>
+                  {userId === comment.user_id && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="opacity-0 group-hover:opacity-100 h-6 w-6 p-0 text-gray-400 hover:text-red-400 transition-opacity"
+                      onClick={() => handleDeleteComment(comment.id)}
+                      disabled={isLoading}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
                   )}
-                </Button>
-              )}
+                </div>
+              </div>
             </div>
-          </div>
+          ))}
+
+          {hasMoreComments && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-gray-400 hover:text-blue-400 px-0"
+              onClick={() => setShowAllComments(!showAllComments)}
+            >
+              {showAllComments ? (
+                <>Show Less</>
+              ) : (
+                <>View all {localComments.length} comments</>
+              )}
+            </Button>
+          )}
         </div>
       )}
 

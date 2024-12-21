@@ -23,49 +23,65 @@ export function ActivityCard({ activity, index }: ActivityCardProps) {
   const userInitial = username[0].toUpperCase();
 
   return (
-    <div className="bg-gray-800/50 rounded-lg p-4">
-      <div className="flex items-start gap-4">
-        <Avatar>
-          <AvatarImage src={avatarUrl || undefined} />
-          <AvatarFallback>{userInitial}</AvatarFallback>
-        </Avatar>
+    <div className="bg-gray-800/50 rounded-lg overflow-hidden">
+      {/* Activity Header */}
+      <div className="p-4">
+        <div className="flex items-start gap-4">
+          <Avatar>
+            <AvatarImage src={avatarUrl || undefined} />
+            <AvatarFallback>{userInitial}</AvatarFallback>
+          </Avatar>
 
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <Link
-              href={`/profile/${activity.user?.id || "#"}`}
-              className="font-medium hover:underline"
-            >
-              {username}
-            </Link>
-            {activityIcons[activity.type]}
-            <span className="text-gray-400">{activityText[activity.type]}</span>
-            <Link
-              href={`/game/${activity.game?.id || "#"}`}
-              className="font-medium hover:underline"
-            >
-              {activity.game?.name || "Unknown Game"}
-            </Link>
-          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2">
+              <Link
+                href={`/profile/${activity.user?.id || "#"}`}
+                className="font-medium hover:underline"
+              >
+                {username}
+              </Link>
+              {activityIcons[activity.type]}
+              <span className="text-gray-400">
+                {activityText[activity.type]}
+              </span>
+              <Link
+                href={`/game/${activity.game?.id || "#"}`}
+                className="font-medium hover:underline"
+              >
+                {activity.game?.name || "Unknown Game"}
+              </Link>
+            </div>
 
-          <p className="text-sm text-gray-400 mt-1">
-            {activity.created_at
-              ? format(new Date(activity.created_at), "MMM d, yyyy 'at' h:mm a")
-              : "Recently"}
-          </p>
-
-          {activity.details?.comment && (
-            <p className="mt-2 text-sm text-gray-300">
-              &ldquo;{activity.details.comment}&rdquo;
+            <p className="text-sm text-gray-400 mt-1">
+              {activity.created_at
+                ? format(
+                    new Date(activity.created_at),
+                    "MMM d, yyyy 'at' h:mm a"
+                  )
+                : "Recently"}
             </p>
-          )}
+          </div>
+        </div>
+
+        {activity.details?.comment && (
+          <p className="mt-4 text-sm text-gray-300">
+            &ldquo;{activity.details.comment}&rdquo;
+          </p>
+        )}
+      </div>
+
+      {/* Activity Actions */}
+      <div className="border-t border-gray-700/50">
+        <div className="p-4 flex items-center gap-2">
+          <ActivityReactions activity={activity} />
+          <ActivityComments activity={activity} />
+          <ActivityShare activity={activity} />
         </div>
       </div>
 
-      <div className="mt-4 flex items-center gap-2">
-        <ActivityReactions activity={activity} />
-        <ActivityComments activity={activity} />
-        <ActivityShare activity={activity} />
+      {/* Comments Section */}
+      <div className="border-t border-gray-700/50 bg-gray-800/30">
+        <ActivityComments activity={activity} showInline={true} />
       </div>
     </div>
   );
