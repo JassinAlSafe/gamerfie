@@ -3,6 +3,15 @@ import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { FriendActivity } from '../../../../types/friend';
 
+const COOLDOWN_PERIODS = {
+  started_playing: 24 * 60 * 60, // 24 hours in seconds
+  completed: 0, // No cooldown for completing games
+  achievement: 5 * 60, // 5 minutes in seconds
+  review: 0, // No cooldown for reviews
+  want_to_play: 60 * 60, // 1 hour in seconds
+  progress: 30 * 60 // 30 minutes in seconds
+};
+
 export async function POST(request: Request) {
   const supabase = createRouteHandlerClient({ cookies });
 
@@ -23,6 +32,33 @@ export async function POST(request: Request) {
 
     if (!activity_type) {
       return NextResponse.json({ error: 'Activity type is required' }, { status: 400 });
+    }
+
+    // Check cooldown period
+    const cooldownPeriod = COOLDOWN_PERIODS[activity_type];
+    if (cooldownPeriod > 0) {
+      const { data: recentActivity } = await supabase
+        .from('friend_activities')
+        .select('created_at')
+        .eq('user_id', session.user.id)
+        .eq('game_id', game_id)
+        .eq('activity_type', activity_type)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+
+      if (recentActivity) {
+        const lastActivityTime = new Date(recentActivity.created_at).getTime() / 1000;
+        const currentTime = Date.now() / 1000;
+        const timeSinceLastActivity = currentTime - lastActivityTime;
+
+        if (timeSinceLastActivity < cooldownPeriod) {
+          const remainingTime = Math.ceil((cooldownPeriod - timeSinceLastActivity) / 60);
+          return NextResponse.json({
+            error: `Please wait ${remainingTime} minutes before posting another ${activity_type.replace('_', ' ')} activity for this game.`
+          }, { status: 429 });
+        }
+      }
     }
 
     // First insert the activity

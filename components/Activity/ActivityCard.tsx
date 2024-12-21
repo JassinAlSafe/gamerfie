@@ -22,6 +22,36 @@ export function ActivityCard({ activity, index }: ActivityCardProps) {
   const avatarUrl = activity.user?.avatar_url;
   const userInitial = username[0].toUpperCase();
 
+  const renderAchievementDetails = () => {
+    if (activity.type === "achievement") {
+      if (activity.details?.isBatched) {
+        return (
+          <div className="mt-4 space-y-2">
+            <p className="text-sm text-yellow-400">
+              🏆 Unlocked {activity.details.achievements.length} achievements:
+            </p>
+            <div className="pl-4 space-y-1">
+              {activity.details.achievements.map(
+                (achievement: { name: string }, i: number) => (
+                  <p key={i} className="text-sm text-gray-300">
+                    • {achievement.name}
+                  </p>
+                )
+              )}
+            </div>
+          </div>
+        );
+      } else {
+        return (
+          <p className="mt-4 text-sm text-yellow-400">
+            🏆 Unlocked: {activity.details?.name}
+          </p>
+        );
+      }
+    }
+    return null;
+  };
+
   return (
     <div className="bg-gray-800/50 rounded-lg overflow-hidden">
       {/* Activity Header */}
@@ -63,11 +93,13 @@ export function ActivityCard({ activity, index }: ActivityCardProps) {
           </div>
         </div>
 
-        {activity.details?.comment && (
+        {activity.type === "review" && activity.details?.comment && (
           <p className="mt-4 text-sm text-gray-300">
             &ldquo;{activity.details.comment}&rdquo;
           </p>
         )}
+
+        {renderAchievementDetails()}
       </div>
 
       {/* Activity Actions */}

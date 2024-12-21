@@ -2,7 +2,19 @@ import { create } from 'zustand';
 import { FriendsState, FriendStatus, ActivityType, ActivityDetails, ActivityReaction, ActivityComment } from '../types/friend';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 
-export const useFriendsStore = create<FriendsState>((set, get) => ({
+interface FriendsStore {
+  friends: FriendsState['friends'];
+  isLoading: FriendsState['isLoading'];
+  error: FriendsState['error'];
+  filter: FriendsState['filter'];
+  activities: FriendsState['activities'];
+  isLoadingActivities: FriendsState['isLoadingActivities'];
+  activitiesPage: FriendsState['activitiesPage'];
+  createActivity: (type: ActivityType, gameId: string, details?: any) => Promise<void>;
+  batchAchievements: (gameId: string, achievements: { name: string }[]) => Promise<void>;
+}
+
+export const useFriendsStore = create<FriendsStore>((set, get) => ({
   friends: [],
   isLoading: false,
   error: null,
@@ -73,18 +85,45 @@ export const useFriendsStore = create<FriendsState>((set, get) => ({
   },
 
   // Activity-related functions
-  createActivity: async (activity_type: ActivityType, game_id?: string, details?: ActivityDetails) => {
+  createActivity: async (type: ActivityType, gameId: string, details?: any) => {
     try {
-      set({ isLoadingActivities: true, error: null });
       const response = await fetch('/api/friends/activities/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ activity_type, game_id, details }),
+        body: JSON.stringify({ activity_type: type, game_id: gameId, details }),
       });
-      if (!response.ok) throw new Error('Failed to create activity');
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to create activity');
+      }
+
+      // Fetch updated activities
       await get().fetchActivities();
     } catch (error) {
-      set({ error: (error as Error).message, isLoadingActivities: false });
+      throw error;
+    }
+  },
+
+  batchAchievements: async (gameId: string, achievements: { name: string }[]) => {
+    if (achievements.length === 0) return;
+
+    try {
+      // If there's only one achievement, create a normal activity
+      if (achievements.length === 1) {
+        await get().createActivity('achievement', gameId, {
+          name: achievements[0].name
+        });
+        return;
+      }
+
+      // For multiple achievements, create a batched activity
+      await get().createActivity('achievement', gameId, {
+        name: `${achievements.length} Achievements`,
+        achievements: achievements,
+        isBatched: true
+      });
+    } catch (error) {
       throw error;
     }
   },
