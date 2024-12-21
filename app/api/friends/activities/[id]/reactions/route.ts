@@ -1,19 +1,19 @@
+import { getServerSession } from "next-auth";
+import { NextResponse } from "next/server";
 import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
 import { cookies } from "next/headers";
-import { NextResponse } from "next/server";
 
 export async function POST(
   request: Request,
   { params }: { params: { id: string } }
 ) {
   try {
-    const supabase = createRouteHandlerClient({ cookies });
-    const { data: { session } } = await supabase.auth.getSession();
-
+    const session = await getServerSession();
     if (!session) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
+    const supabase = createRouteHandlerClient({ cookies });
     const { emoji } = await request.json();
     if (!emoji) {
       return new NextResponse("Emoji is required", { status: 400 });
@@ -33,6 +33,7 @@ export async function POST(
       if (error.code === "23505") { // Unique violation
         return new NextResponse("Already reacted with this emoji", { status: 400 });
       }
+      console.error('Error adding reaction:', error);
       throw error;
     }
 
@@ -48,13 +49,12 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    const supabase = createRouteHandlerClient({ cookies });
-    const { data: { session } } = await supabase.auth.getSession();
-
+    const session = await getServerSession();
     if (!session) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
+    const supabase = createRouteHandlerClient({ cookies });
     const { emoji } = await request.json();
     if (!emoji) {
       return new NextResponse("Emoji is required", { status: 400 });
@@ -69,7 +69,10 @@ export async function DELETE(
         emoji,
       });
 
-    if (error) throw error;
+    if (error) {
+      console.error('Error removing reaction:', error);
+      throw error;
+    }
 
     return new NextResponse(null, { status: 204 });
   } catch (error) {

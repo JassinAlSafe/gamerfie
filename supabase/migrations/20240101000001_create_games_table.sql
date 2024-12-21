@@ -7,23 +7,18 @@ BEGIN
 END $$;
 
 -- Create games table
-CREATE TABLE IF NOT EXISTS games (
+CREATE TABLE IF NOT EXISTS public.games (
   id text PRIMARY KEY,
   name text NOT NULL,
-  cover jsonb,
-  rating float,
-  first_release_date bigint,
-  platforms jsonb,
-  genres jsonb,
-  summary text,
-  storyline text,
-  created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
+  cover_url text,
+  created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL,
+  updated_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
 -- Create user_games table if it doesn't exist
 CREATE TABLE IF NOT EXISTS user_games (
   user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE,
-  game_id text REFERENCES games(id) ON DELETE CASCADE,
+  game_id text REFERENCES public.games(id) ON DELETE CASCADE,
   status game_status DEFAULT 'want_to_play',
   play_time float DEFAULT 0,
   user_rating float,
@@ -40,17 +35,17 @@ CREATE INDEX IF NOT EXISTS idx_user_games_game_id ON user_games(game_id);
 CREATE INDEX IF NOT EXISTS idx_user_games_status ON user_games(status); 
 
 -- Enable RLS
-ALTER TABLE games ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.games ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_games ENABLE ROW LEVEL SECURITY;
 
 -- Games table policies
 CREATE POLICY "Games are viewable by everyone"
-  ON games FOR SELECT
+  ON public.games FOR SELECT
   TO authenticated
   USING (true);
 
 CREATE POLICY "Games can be inserted by authenticated users"
-  ON games FOR INSERT
+  ON public.games FOR INSERT
   TO authenticated
   WITH CHECK (true);
 

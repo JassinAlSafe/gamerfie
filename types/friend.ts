@@ -102,7 +102,8 @@ export interface FriendsState {
   activitiesPage: number;
   fetchActivities: () => Promise<void>;
   loadMoreActivities: () => Promise<void>;
-  createActivity: (activity_type: ActivityType, game_id?: string, details?: any) => Promise<void>;
+  getGameActivities: (gameId: string, page?: number) => Promise<FriendActivity[]>;
+  createActivity: (activity_type: ActivityType, game_id?: string, details?: ActivityDetails) => Promise<void>;
   addReaction: (activityId: string, emoji: string) => Promise<void>;
   removeReaction: (activityId: string, emoji: string) => Promise<void>;
   addComment: (activityId: string, content: string) => Promise<void>;

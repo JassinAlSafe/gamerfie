@@ -1,6 +1,5 @@
 import { create } from 'zustand';
-import { FriendsService } from '../services/friends-service';
-import { FriendsState, FriendStatus, ActivityType } from '../types/friend';
+import { FriendsState, FriendStatus, ActivityType, ActivityDetails } from '../types/friend';
 
 export const useFriendsStore = create<FriendsState>((set, get) => ({
   friends: [],
@@ -16,7 +15,9 @@ export const useFriendsStore = create<FriendsState>((set, get) => ({
   fetchFriends: async () => {
     try {
       set({ isLoading: true, error: null });
-      const friends = await FriendsService.getFriends();
+      const response = await fetch('/api/friends');
+      if (!response.ok) throw new Error('Failed to fetch friends');
+      const friends = await response.json();
       set({ friends, isLoading: false });
     } catch (error) {
       set({ error: (error as Error).message, isLoading: false });
@@ -27,7 +28,12 @@ export const useFriendsStore = create<FriendsState>((set, get) => ({
   addFriend: async (request) => {
     try {
       set({ isLoading: true, error: null });
-      await FriendsService.addFriend(request);
+      const response = await fetch('/api/friends', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(request),
+      });
+      if (!response.ok) throw new Error('Failed to add friend');
       await get().fetchFriends();
     } catch (error) {
       set({ error: (error as Error).message, isLoading: false });
@@ -38,7 +44,10 @@ export const useFriendsStore = create<FriendsState>((set, get) => ({
   removeFriend: async (friendId) => {
     try {
       set({ isLoading: true, error: null });
-      await FriendsService.removeFriend(friendId);
+      const response = await fetch(`/api/friends/${friendId}`, {
+        method: 'DELETE',
+      });
+      if (!response.ok) throw new Error('Failed to remove friend');
       await get().fetchFriends();
     } catch (error) {
       set({ error: (error as Error).message, isLoading: false });
@@ -49,7 +58,12 @@ export const useFriendsStore = create<FriendsState>((set, get) => ({
   updateFriendStatus: async (friendId, status) => {
     try {
       set({ isLoading: true, error: null });
-      await FriendsService.updateFriendStatus(friendId, status);
+      const response = await fetch(`/api/friends/${friendId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status }),
+      });
+      if (!response.ok) throw new Error('Failed to update friend status');
       await get().fetchFriends();
     } catch (error) {
       set({ error: (error as Error).message, isLoading: false });
@@ -57,10 +71,16 @@ export const useFriendsStore = create<FriendsState>((set, get) => ({
     }
   },
 
-  createActivity: async (activity_type: ActivityType, game_id?: string, details?: any) => {
+  // Activity-related functions
+  createActivity: async (activity_type: ActivityType, game_id?: string, details?: ActivityDetails) => {
     try {
       set({ isLoadingActivities: true, error: null });
-      await FriendsService.createActivity({ activity_type, game_id, details });
+      const response = await fetch('/api/friends/activities/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ activity_type, game_id, details }),
+      });
+      if (!response.ok) throw new Error('Failed to create activity');
       await get().fetchActivities();
     } catch (error) {
       set({ error: (error as Error).message, isLoadingActivities: false });
@@ -71,7 +91,9 @@ export const useFriendsStore = create<FriendsState>((set, get) => ({
   fetchActivities: async () => {
     try {
       set({ isLoadingActivities: true, error: null });
-      const activities = await FriendsService.getFriendActivities();
+      const response = await fetch('/api/friends/activities?offset=0&include=reactions,comments');
+      if (!response.ok) throw new Error('Failed to fetch activities');
+      const activities = await response.json();
       set({ activities, isLoadingActivities: false, activitiesPage: 1 });
     } catch (error) {
       set({ error: (error as Error).message, isLoadingActivities: false });
@@ -84,7 +106,10 @@ export const useFriendsStore = create<FriendsState>((set, get) => ({
       const page = get().activitiesPage;
       set({ isLoadingActivities: true, error: null });
       
-      const newActivities = await FriendsService.getFriendActivities(page);
+      const response = await fetch(`/api/friends/activities?offset=${page * 20}&include=reactions,comments`);
+      if (!response.ok) throw new Error('Failed to fetch more activities');
+      const newActivities = await response.json();
+      
       set(state => ({ 
         activities: [...state.activities, ...newActivities],
         isLoadingActivities: false,
@@ -96,9 +121,29 @@ export const useFriendsStore = create<FriendsState>((set, get) => ({
     }
   },
 
+  getGameActivities: async (gameId: string, page: number = 1) => {
+    try {
+      set({ isLoadingActivities: true, error: null });
+      const response = await fetch(`/api/games/${gameId}/activities?page=${page}`);
+      if (!response.ok) throw new Error('Failed to fetch game activities');
+      const activities = await response.json();
+      set({ activities, isLoadingActivities: false });
+      return activities;
+    } catch (error) {
+      set({ error: (error as Error).message, isLoadingActivities: false });
+      throw error;
+    }
+  },
+
   addReaction: async (activityId: string, emoji: string) => {
     try {
-      const reaction = await FriendsService.addReaction(activityId, emoji);
+      const response = await fetch(`/api/friends/activities/${activityId}/reactions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ emoji }),
+      });
+      if (!response.ok) throw new Error('Failed to add reaction');
+      const reaction = await response.json();
       set(state => ({
         activities: state.activities.map(activity => {
           if (activity.id === activityId) {
@@ -118,7 +163,12 @@ export const useFriendsStore = create<FriendsState>((set, get) => ({
 
   removeReaction: async (activityId: string, emoji: string) => {
     try {
-      await FriendsService.removeReaction(activityId, emoji);
+      const response = await fetch(`/api/friends/activities/${activityId}/reactions`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ emoji }),
+      });
+      if (!response.ok) throw new Error('Failed to remove reaction');
       set(state => ({
         activities: state.activities.map(activity => {
           if (activity.id === activityId) {
@@ -138,7 +188,13 @@ export const useFriendsStore = create<FriendsState>((set, get) => ({
 
   addComment: async (activityId: string, content: string) => {
     try {
-      const comment = await FriendsService.addComment(activityId, content);
+      const response = await fetch(`/api/friends/activities/${activityId}/comments`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content }),
+      });
+      if (!response.ok) throw new Error('Failed to add comment');
+      const comment = await response.json();
       set(state => ({
         activities: state.activities.map(activity => {
           if (activity.id === activityId) {
@@ -158,7 +214,10 @@ export const useFriendsStore = create<FriendsState>((set, get) => ({
 
   deleteComment: async (commentId: string) => {
     try {
-      await FriendsService.deleteComment(commentId);
+      const response = await fetch(`/api/friends/activities/comments/${commentId}`, {
+        method: 'DELETE',
+      });
+      if (!response.ok) throw new Error('Failed to delete comment');
       set(state => ({
         activities: state.activities.map(activity => ({
           ...activity,

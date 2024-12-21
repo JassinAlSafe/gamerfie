@@ -1,47 +1,67 @@
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
-import { useRouter } from 'next/navigation'
-import { useState, useEffect } from 'react'
-import { User } from '@supabase/supabase-js'
+import { NextAuthOptions } from "next-auth";
+import CredentialsProvider from "next-auth/providers/credentials";
+import { createClient } from "@supabase/supabase-js";
 
-export function useAuth() {
-    const [user, setUser] = useState<User | null>(null)
-    const [loading, setLoading] = useState(true)
-    const router = useRouter()
-    const supabase = createClientComponentClient()
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-    useEffect(() => {
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(
-            (event, session) => {
-                if (session) {
-                    setUser(session.user)
-                } else {
-                    setUser(null)
-                }
-                setLoading(false)
-            }
-        )
-
-        return () => subscription.unsubscribe()
-    }, [supabase])
-
-    const signIn = async (email: string, password: string) => {
-        const { error } = await supabase.auth.signInWithPassword({ email, password })
-        if (error) throw error
-        router.push('/dashboard')
-    }
-
-    const signUp = async (email: string, password: string) => {
-        const { error } = await supabase.auth.signUp({ email, password })
-        if (error) throw error
-        // Note: In a real-world scenario, you might want to handle email verification here
-        router.push('/dashboard')
-    }
-
-    const signOut = async () => {
-        await supabase.auth.signOut()
-        router.push('/')
-    }
-
-    return { user, loading, signIn, signUp, signOut }
+if (!supabaseUrl) {
+  throw new Error("Missing NEXT_PUBLIC_SUPABASE_URL");
 }
+
+if (!supabaseServiceKey) {
+  throw new Error("Missing SUPABASE_SERVICE_ROLE_KEY");
+}
+
+export const authOptions: NextAuthOptions = {
+  providers: [
+    CredentialsProvider({
+      name: "Credentials",
+      credentials: {
+        email: { label: "Email", type: "text" },
+        password: { label: "Password", type: "password" }
+      },
+      async authorize(credentials) {
+        if (!credentials?.email || !credentials?.password) {
+          return null;
+        }
+
+        const supabase = createClient(
+          supabaseUrl,
+          supabaseServiceKey
+        );
+
+        const { data: { user }, error } = await supabase.auth.signInWithPassword({
+          email: credentials.email,
+          password: credentials.password,
+        });
+
+        if (error || !user) {
+          return null;
+        }
+
+        return {
+          id: user.id,
+          email: user.email,
+          name: user.user_metadata.username || user.email,
+          image: user.user_metadata.avatar_url,
+        };
+      }
+    })
+  ],
+  session: {
+    strategy: "jwt",
+  },
+  callbacks: {
+    async session({ session, token }) {
+      if (session?.user && token?.sub) {
+        session.user.id = token.sub;
+      }
+      return session;
+    },
+  },
+  pages: {
+    signIn: "/auth/signin",
+  },
+};
 
