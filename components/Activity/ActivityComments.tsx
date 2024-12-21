@@ -11,11 +11,13 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { FriendActivity } from "@/types/friend";
 import { useFriendsStore } from "@/stores/useFriendsStore";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { toast } from "react-hot-toast";
+import { format } from "date-fns";
 
 interface ActivityCommentsProps {
   activity: FriendActivity;
@@ -193,6 +195,10 @@ export function ActivityComments({ activity }: ActivityCommentsProps) {
         <DialogContent className="sm:max-w-[425px] bg-gray-900 text-white">
           <DialogHeader>
             <DialogTitle>Add a Comment</DialogTitle>
+            <DialogDescription className="text-gray-400">
+              Share your thoughts about this activity. Your comment will be
+              visible to others.
+            </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <Textarea
