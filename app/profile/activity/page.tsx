@@ -23,7 +23,7 @@ export default function ActivityPage() {
   }
 
   if (error) {
-    if (error.message === "No authenticated user") {
+    if (error instanceof Error && error.message === "No authenticated user") {
       return (
         <div className="flex flex-col items-center justify-center min-h-[calc(100vh-4rem)] pt-16 bg-gray-950">
           <h1 className="text-3xl font-bold mb-6 text-white">
@@ -41,7 +41,9 @@ export default function ActivityPage() {
     }
     return (
       <div className="flex items-center justify-center min-h-[calc(100vh-4rem)] pt-16 bg-gray-950 text-red-500">
-        <p className="text-xl font-semibold">Error: {error.message}</p>
+        <p className="text-xl font-semibold">
+          Error: {error instanceof Error ? error.message : "An error occurred"}
+        </p>
       </div>
     );
   }

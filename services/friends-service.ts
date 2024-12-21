@@ -59,14 +59,13 @@ export const FriendsService = {
     return response.json();
   },
 
-  async addReaction(activityId: string, emoji: string): Promise<ActivityReaction> {
+  async addReaction(activityId: string, emoji: string): Promise<void> {
     const response = await fetch(`/api/friends/activities/${activityId}/reactions`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ emoji }),
     });
     if (!response.ok) throw new Error('Failed to add reaction');
-    return response.json();
   },
 
   async removeReaction(activityId: string, emoji: string): Promise<void> {
@@ -78,14 +77,13 @@ export const FriendsService = {
     if (!response.ok) throw new Error('Failed to remove reaction');
   },
 
-  async addComment(activityId: string, content: string): Promise<ActivityComment> {
+  async addComment(activityId: string, content: string): Promise<void> {
     const response = await fetch(`/api/friends/activities/${activityId}/comments`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ content }),
     });
     if (!response.ok) throw new Error('Failed to add comment');
-    return response.json();
   },
 
   async deleteComment(commentId: string): Promise<void> {

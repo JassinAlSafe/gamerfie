@@ -69,6 +69,7 @@ export interface FriendActivity {
   user_id: string;
   game_id: string;
   timestamp: string;
+  created_at: string;
   details?: {
     name?: string;
     comment?: string;

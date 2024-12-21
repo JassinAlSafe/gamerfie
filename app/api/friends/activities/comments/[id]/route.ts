@@ -1,20 +1,21 @@
-import { getServerSession } from "next-auth";
-import { NextResponse } from "next/server";
 import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
 import { cookies } from "next/headers";
+import { NextResponse } from "next/server";
 
 export async function DELETE(
   _request: Request,
   { params }: { params: { id: string } }
 ) {
   try {
-    const session = await getServerSession();
-    if (!session) {
-      return new NextResponse("Unauthorized", { status: 401 });
+    const supabase = createRouteHandlerClient({ cookies });
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    
+    if (sessionError || !session?.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const supabase = createRouteHandlerClient({ cookies });
-    const { error } = await supabase
+    // Delete the comment
+    const { error: deleteError } = await supabase
       .from("activity_comments")
       .delete()
       .match({
@@ -22,14 +23,20 @@ export async function DELETE(
         user_id: session.user.id,
       });
 
-    if (error) {
-      console.error('Error deleting comment:', error);
-      throw error;
+    if (deleteError) {
+      console.error("Error deleting comment:", deleteError);
+      return NextResponse.json(
+        { error: "Failed to delete comment" },
+        { status: 500 }
+      );
     }
 
     return new NextResponse(null, { status: 204 });
   } catch (error) {
     console.error("Error deleting comment:", error);
-    return new NextResponse("Internal Server Error", { status: 500 });
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 }
+    );
   }
 } 

@@ -14,13 +14,36 @@ const groupActivitiesByDate = (activities: FriendActivity[]) => {
     (groups: Record<string, FriendActivity[]>, activity) => {
       let dateToUse: Date;
       try {
-        dateToUse = new Date(activity.created_at);
+        // Try using created_at first, then fall back to timestamp
+        const dateString = activity.created_at || activity.timestamp;
+        dateToUse = new Date(dateString);
+
+        // Check if the date is valid
         if (isNaN(dateToUse.getTime())) {
-          console.warn("Invalid created_at date for activity:", activity);
-          dateToUse = new Date();
+          // Try parsing as Unix timestamp (milliseconds)
+          if (typeof dateString === "number") {
+            dateToUse = new Date(dateString);
+          }
+
+          // If still invalid, use current date
+          if (isNaN(dateToUse.getTime())) {
+            console.warn("Invalid date for activity:", {
+              id: activity.id,
+              created_at: activity.created_at,
+              timestamp: activity.timestamp,
+              type: activity.type,
+            });
+            dateToUse = new Date();
+          }
         }
       } catch (error) {
-        console.warn("Error parsing date for activity:", activity);
+        console.warn("Error parsing date for activity:", {
+          id: activity.id,
+          created_at: activity.created_at,
+          timestamp: activity.timestamp,
+          type: activity.type,
+          error: error instanceof Error ? error.message : "Unknown error",
+        });
         dateToUse = new Date();
       }
 

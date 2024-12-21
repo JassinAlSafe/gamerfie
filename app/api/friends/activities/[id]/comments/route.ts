@@ -1,42 +1,56 @@
-import { getServerSession } from "next-auth";
-import { NextResponse } from "next/server";
 import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
 import { cookies } from "next/headers";
+import { NextResponse } from "next/server";
 
 export async function POST(
   request: Request,
   { params }: { params: { id: string } }
 ) {
   try {
-    const session = await getServerSession();
-    if (!session) {
-      return new NextResponse("Unauthorized", { status: 401 });
+    const supabase = createRouteHandlerClient({ cookies });
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    
+    if (sessionError || !session?.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const supabase = createRouteHandlerClient({ cookies });
     const { content } = await request.json();
     if (!content?.trim()) {
-      return new NextResponse("Comment content is required", { status: 400 });
+      return NextResponse.json({ error: "Comment content is required" }, { status: 400 });
     }
 
-    const { data, error } = await supabase
+    // Insert the comment
+    const { data: comment, error: insertError } = await supabase
       .from("activity_comments")
       .insert({
         activity_id: params.id,
         user_id: session.user.id,
         content: content.trim(),
       })
-      .select("*, user:profiles(username, avatar_url)")
+      .select(`
+        *,
+        user:profiles (
+          id,
+          username,
+          avatar_url
+        )
+      `)
       .single();
 
-    if (error) {
-      console.error('Error adding comment:', error);
-      throw error;
+    if (insertError) {
+      console.error("Error adding comment:", insertError);
+      return NextResponse.json(
+        { error: "Failed to add comment" },
+        { status: 500 }
+      );
     }
 
-    return NextResponse.json(data);
+    return NextResponse.json(comment);
   } catch (error) {
     console.error("Error adding comment:", error);
-    return new NextResponse("Internal Server Error", { status: 500 });
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 }
+    );
   }
 } 

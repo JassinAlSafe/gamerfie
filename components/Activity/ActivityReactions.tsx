@@ -101,8 +101,7 @@ export function ActivityReactions({ activity }: ActivityReactionsProps) {
         // If changing to a different emoji, add the new reaction
         if (isChangingReaction) {
           console.log("Adding new reaction...");
-          const reaction = await addReaction(activity.id, emoji);
-          setLocalReactions((prev) => [...prev, reaction]);
+          await addReaction(activity.id, emoji);
           toast.success("Reaction changed");
         } else {
           toast.success("Reaction removed");
@@ -110,8 +109,7 @@ export function ActivityReactions({ activity }: ActivityReactionsProps) {
       } else {
         // Add new reaction
         console.log("Adding reaction...");
-        const reaction = await addReaction(activity.id, emoji);
-        setLocalReactions((prev) => [...prev, reaction]);
+        await addReaction(activity.id, emoji);
         toast.success("Reaction added");
       }
     } catch (error) {

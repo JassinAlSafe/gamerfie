@@ -1,5 +1,6 @@
 import { create } from 'zustand';
-import { FriendsState, FriendStatus, ActivityType, ActivityDetails } from '../types/friend';
+import { FriendsState, FriendStatus, ActivityType, ActivityDetails, ActivityReaction, ActivityComment } from '../types/friend';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 
 export const useFriendsStore = create<FriendsState>((set, get) => ({
   friends: [],
@@ -127,15 +128,16 @@ export const useFriendsStore = create<FriendsState>((set, get) => ({
       const response = await fetch(`/api/games/${gameId}/activities?page=${page}`);
       if (!response.ok) throw new Error('Failed to fetch game activities');
       const activities = await response.json();
-      set({ activities, isLoadingActivities: false });
       return activities;
     } catch (error) {
       set({ error: (error as Error).message, isLoadingActivities: false });
       throw error;
+    } finally {
+      set({ isLoadingActivities: false });
     }
   },
 
-  addReaction: async (activityId: string, emoji: string) => {
+  addReaction: async (activityId: string, emoji: string): Promise<void> => {
     try {
       const response = await fetch(`/api/friends/activities/${activityId}/reactions`, {
         method: 'POST',
@@ -143,25 +145,15 @@ export const useFriendsStore = create<FriendsState>((set, get) => ({
         body: JSON.stringify({ emoji }),
       });
       if (!response.ok) throw new Error('Failed to add reaction');
-      const reaction = await response.json();
-      set(state => ({
-        activities: state.activities.map(activity => {
-          if (activity.id === activityId) {
-            return {
-              ...activity,
-              reactions: [...(activity.reactions || []), reaction]
-            };
-          }
-          return activity;
-        })
-      }));
+
+      // Fetch updated activities
+      await get().fetchActivities();
     } catch (error) {
-      set({ error: (error as Error).message });
       throw error;
     }
   },
 
-  removeReaction: async (activityId: string, emoji: string) => {
+  removeReaction: async (activityId: string, emoji: string): Promise<void> => {
     try {
       const response = await fetch(`/api/friends/activities/${activityId}/reactions`, {
         method: 'DELETE',
@@ -169,24 +161,15 @@ export const useFriendsStore = create<FriendsState>((set, get) => ({
         body: JSON.stringify({ emoji }),
       });
       if (!response.ok) throw new Error('Failed to remove reaction');
-      set(state => ({
-        activities: state.activities.map(activity => {
-          if (activity.id === activityId) {
-            return {
-              ...activity,
-              reactions: (activity.reactions || []).filter(r => r.emoji !== emoji)
-            };
-          }
-          return activity;
-        })
-      }));
+
+      // Fetch updated activities
+      await get().fetchActivities();
     } catch (error) {
-      set({ error: (error as Error).message });
       throw error;
     }
   },
 
-  addComment: async (activityId: string, content: string) => {
+  addComment: async (activityId: string, content: string): Promise<void> => {
     try {
       const response = await fetch(`/api/friends/activities/${activityId}/comments`, {
         method: 'POST',
@@ -194,39 +177,25 @@ export const useFriendsStore = create<FriendsState>((set, get) => ({
         body: JSON.stringify({ content }),
       });
       if (!response.ok) throw new Error('Failed to add comment');
-      const comment = await response.json();
-      set(state => ({
-        activities: state.activities.map(activity => {
-          if (activity.id === activityId) {
-            return {
-              ...activity,
-              comments: [...(activity.comments || []), comment]
-            };
-          }
-          return activity;
-        })
-      }));
+
+      // Fetch updated activities
+      await get().fetchActivities();
     } catch (error) {
-      set({ error: (error as Error).message });
       throw error;
     }
   },
 
-  deleteComment: async (commentId: string) => {
+  deleteComment: async (commentId: string): Promise<void> => {
     try {
       const response = await fetch(`/api/friends/activities/comments/${commentId}`, {
         method: 'DELETE',
       });
       if (!response.ok) throw new Error('Failed to delete comment');
-      set(state => ({
-        activities: state.activities.map(activity => ({
-          ...activity,
-          comments: (activity.comments || []).filter(c => c.id !== commentId)
-        }))
-      }));
+
+      // Fetch updated activities
+      await get().fetchActivities();
     } catch (error) {
-      set({ error: (error as Error).message });
       throw error;
     }
-  }
+  },
 }));
