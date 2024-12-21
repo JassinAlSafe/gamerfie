@@ -9,7 +9,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { FriendActivity } from "@/types/friend";
+import { FriendActivity, ActivityReaction } from "@/types/friend";
 import { useFriendsStore } from "@/stores/useFriendsStore";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { toast } from "react-hot-toast";
@@ -33,7 +33,7 @@ export function ActivityReactions({ activity }: ActivityReactionsProps) {
   const [userId, setUserId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const { addReaction, removeReaction } = useFriendsStore();
-  const [localReactions, setLocalReactions] = useState(
+  const [localReactions, setLocalReactions] = useState<ActivityReaction[]>(
     activity.reactions || []
   );
 
@@ -82,50 +82,56 @@ export function ActivityReactions({ activity }: ActivityReactionsProps) {
 
     try {
       setIsLoading(true);
-      const hasReacted = localReactions.some(
-        (r) => r.user_id === userId && r.emoji === emoji
-      );
+      const userReaction = localReactions.find((r) => r.user_id === userId);
+      const isChangingReaction = userReaction && userReaction.emoji !== emoji;
 
       console.log("Reaction state:", {
-        hasReacted,
-        matchingReactions: localReactions.filter(
-          (r) => r.user_id === userId && r.emoji === emoji
-        ),
+        userReaction,
+        isChangingReaction,
       });
 
-      // Make the API call first
-      if (hasReacted) {
-        console.log("Removing reaction...");
-        await removeReaction(activity.id, emoji);
-        // Update local state after successful API call
+      if (userReaction) {
+        // Remove existing reaction
+        console.log("Removing existing reaction...");
+        await removeReaction(activity.id, userReaction.emoji);
         setLocalReactions((prev) =>
-          prev.filter((r) => !(r.user_id === userId && r.emoji === emoji))
+          prev.filter((r) => !(r.user_id === userId))
         );
-        toast.success("Reaction removed");
+
+        // If changing to a different emoji, add the new reaction
+        if (isChangingReaction) {
+          console.log("Adding new reaction...");
+          const reaction = await addReaction(activity.id, emoji);
+          setLocalReactions((prev) => [...prev, reaction]);
+          toast.success("Reaction changed");
+        } else {
+          toast.success("Reaction removed");
+        }
       } else {
+        // Add new reaction
         console.log("Adding reaction...");
-        await addReaction(activity.id, emoji);
-        // Update local state after successful API call
-        setLocalReactions((prev) => [
-          ...prev,
-          { user_id: userId, emoji, activity_id: activity.id },
-        ]);
+        const reaction = await addReaction(activity.id, emoji);
+        setLocalReactions((prev) => [...prev, reaction]);
         toast.success("Reaction added");
       }
     } catch (error) {
       console.error("Reaction error:", error);
       console.error("Error stack:", error.stack);
-      if ((error as Error).message === "Already reacted with this emoji") {
-        toast.error("You've already reacted with this emoji");
-        // Refresh local state to match server state
-        setLocalReactions(activity.reactions || []);
-      } else {
-        toast.error("Failed to update reaction");
-      }
+      toast.error("Failed to update reaction");
+      // Refresh local state to match server state
+      setLocalReactions(activity.reactions || []);
     } finally {
       setIsLoading(false);
     }
   };
+
+  // Group and count valid reactions
+  const reactionCounts = localReactions.reduce((acc, reaction) => {
+    if (reaction && reaction.emoji) {
+      acc[reaction.emoji] = (acc[reaction.emoji] || 0) + 1;
+    }
+    return acc;
+  }, {} as Record<string, number>);
 
   return (
     <>
@@ -143,37 +149,32 @@ export function ActivityReactions({ activity }: ActivityReactionsProps) {
         </PopoverTrigger>
         <PopoverContent className="w-full p-2" align="start">
           <div className="flex flex-wrap gap-2">
-            {Object.entries(reactionEmojis).map(([emoji, label]) => (
-              <Button
-                key={emoji}
-                variant="ghost"
-                size="sm"
-                disabled={isLoading}
-                className={cn(
-                  localReactions.some(
-                    (r) => r.user_id === userId && r.emoji === emoji
-                  ) && "bg-purple-500/20"
-                )}
-                onClick={() => handleReaction(emoji)}
-              >
-                {emoji}
-              </Button>
-            ))}
+            {Object.entries(reactionEmojis).map(([emoji, label]) => {
+              const userReaction = localReactions.find(
+                (r) => r.user_id === userId
+              );
+              const isSelected = userReaction?.emoji === emoji;
+
+              return (
+                <Button
+                  key={emoji}
+                  variant="ghost"
+                  size="sm"
+                  disabled={isLoading}
+                  className={cn(isSelected && "bg-purple-500/20")}
+                  onClick={() => handleReaction(emoji)}
+                >
+                  {emoji}
+                </Button>
+              );
+            })}
           </div>
         </PopoverContent>
       </Popover>
 
-      {localReactions.length > 0 && (
+      {Object.keys(reactionCounts).length > 0 && (
         <div className="flex flex-wrap gap-1">
-          {Object.entries(
-            localReactions.reduce(
-              (acc, r) => ({
-                ...acc,
-                [r.emoji]: (acc[r.emoji] || 0) + 1,
-              }),
-              {} as Record<string, number>
-            )
-          ).map(([emoji, count]) => (
+          {Object.entries(reactionCounts).map(([emoji, count]) => (
             <Badge key={emoji} variant="secondary" className="gap-1">
               {emoji} {count}
             </Badge>
