@@ -9,29 +9,10 @@ import { ProfileHeader } from "@/components/profile/profile-header";
 import { ProfileNav } from "@/components/profile/profile-nav";
 import { useFriendsStore } from "@/stores/useFriendsStore";
 import { useEffect } from "react";
-import {
-  Users,
-  Trophy,
-  PlayCircle,
-  CheckCircle,
-  MessageCircle,
-} from "lucide-react";
+import { Users } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { ActivityType } from "@/types/friend";
-
-const activityIcons: Record<ActivityType, React.ReactNode> = {
-  started_playing: <PlayCircle className="w-5 h-5 text-blue-400" />,
-  completed: <CheckCircle className="w-5 h-5 text-green-400" />,
-  achievement: <Trophy className="w-5 h-5 text-yellow-400" />,
-  review: <MessageCircle className="w-5 h-5 text-purple-400" />,
-};
-
-const activityText: Record<ActivityType, string> = {
-  started_playing: "started playing",
-  completed: "completed",
-  achievement: "unlocked an achievement in",
-  review: "reviewed",
-};
+import { activityIcons, activityText } from "@/lib/activity-constants";
 
 export default function ProfilePage() {
   const { profile, isLoading, error, gameStats, updateProfile } = useProfile();
