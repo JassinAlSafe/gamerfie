@@ -18,11 +18,11 @@ export default function ChallengesPage() {
   }, [fetchChallenges]);
 
   return (
-    <div className="relative min-h-screen pt-20">
+    <div className="relative min-h-screen">
       <BackgroundBeams className="absolute top-0 left-0 w-full h-full" />
 
       {/* Hero Section */}
-      <div className="relative w-full flex flex-col items-center justify-center text-center px-4 py-16">
+      <div className="relative w-full flex flex-col items-center justify-center text-center px-4 py-24 mt-16">
         <div className="absolute inset-0 w-full h-48">
           <SparklesCore
             background="transparent"

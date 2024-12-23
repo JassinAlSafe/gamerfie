@@ -32,20 +32,39 @@ import {
 import Link from "next/link";
 import { useToast } from "@/components/ui/use-toast";
 
-const createChallengeSchema = z.object({
-  title: z.string().min(3).max(100),
-  description: z.string().min(10).max(500),
-  type: z.enum(["competitive", "collaborative"]),
-  start_date: z.date(),
-  end_date: z.date(),
-  goal: z.object({
-    type: z.enum(["complete_games", "win_games", "achieve_score"]),
-    target: z.number().min(1),
-  }),
-  max_participants: z.number().min(2).optional(),
-  rewards: z.array(z.string()).optional(),
-  rules: z.array(z.string()).optional(),
-});
+const createChallengeSchema = z
+  .object({
+    title: z
+      .string()
+      .min(3, "Title must be at least 3 characters")
+      .max(100, "Title must be less than 100 characters"),
+    description: z
+      .string()
+      .min(10, "Description must be at least 10 characters")
+      .max(500, "Description must be less than 500 characters"),
+    type: z.enum(["competitive", "collaborative"]),
+    start_date: z.date().min(new Date(), "Start date must be in the future"),
+    end_date: z.date(),
+    goal: z.object({
+      type: z.enum(["complete_games", "win_games", "achieve_score"]),
+      target: z.number().min(1, "Target must be at least 1"),
+    }),
+    max_participants: z
+      .number()
+      .min(2, "Must allow at least 2 participants")
+      .optional(),
+    rewards: z.array(z.string()).min(1, "Add at least one reward"),
+    rules: z.array(z.string()).min(1, "Add at least one rule"),
+  })
+  .refine(
+    (data) => {
+      return data.end_date > data.start_date;
+    },
+    {
+      message: "End date must be after start date",
+      path: ["end_date"],
+    }
+  );
 
 type CreateChallengeForm = z.infer<typeof createChallengeSchema>;
 
@@ -83,8 +102,9 @@ export function CreateChallenge({ onSubmit }: CreateChallengeProps) {
 
   const handleAddReward = () => {
     if (newReward.trim()) {
-      setRewards([...rewards, newReward.trim()]);
-      setValue("rewards", [...rewards, newReward.trim()]);
+      const updatedRewards = [...rewards, newReward.trim()];
+      setRewards(updatedRewards);
+      setValue("rewards", updatedRewards);
       setNewReward("");
     }
   };
@@ -97,8 +117,9 @@ export function CreateChallenge({ onSubmit }: CreateChallengeProps) {
 
   const handleAddRule = () => {
     if (newRule.trim()) {
-      setRules([...rules, newRule.trim()]);
-      setValue("rules", [...rules, newRule.trim()]);
+      const updatedRules = [...rules, newRule.trim()];
+      setRules(updatedRules);
+      setValue("rules", updatedRules);
       setNewRule("");
     }
   };
@@ -112,10 +133,10 @@ export function CreateChallenge({ onSubmit }: CreateChallengeProps) {
   const onFormSubmit = async (data: CreateChallengeForm) => {
     try {
       setIsSubmitting(true);
-      await onSubmit(data);
-      toast({
-        title: "Success",
-        description: "Challenge created successfully!",
+      await onSubmit({
+        ...data,
+        rewards: rewards,
+        rules: rules,
       });
     } catch (error) {
       toast({
@@ -140,7 +161,7 @@ export function CreateChallenge({ onSubmit }: CreateChallengeProps) {
         </Link>
       </div>
 
-      <Card className="p-6 bg-gray-800/50 border-gray-700/50">
+      <Card className="p-6 bg-gray-800/50 border-gray-700/50 backdrop-blur-sm">
         <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-8">
           <div className="space-y-2">
             <div className="flex items-center gap-2">
@@ -154,43 +175,50 @@ export function CreateChallenge({ onSubmit }: CreateChallengeProps) {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {/* Left Column - Basic Info */}
-            <div className="space-y-4">
-              <div>
+            <div className="space-y-6">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-200">
+                  Challenge Title
+                </label>
                 <Input
-                  placeholder="Challenge Title"
-                  className="bg-gray-800/30 border-gray-700/30 h-9"
+                  placeholder="Enter a catchy title..."
+                  className="bg-gray-800/30 border-gray-700/30 h-9 focus:border-purple-500/50"
                   {...register("title")}
                 />
                 {errors.title && (
-                  <p className="mt-1 text-sm text-red-400">
-                    {errors.title.message}
-                  </p>
+                  <p className="text-sm text-red-400">{errors.title.message}</p>
                 )}
               </div>
 
-              <div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-200">
+                  Description
+                </label>
                 <Textarea
-                  placeholder="Challenge Description"
-                  className="bg-gray-800/30 border-gray-700/30 min-h-[100px] resize-none"
+                  placeholder="Describe your challenge..."
+                  className="bg-gray-800/30 border-gray-700/30 min-h-[120px] resize-none focus:border-purple-500/50"
                   {...register("description")}
                 />
                 {errors.description && (
-                  <p className="mt-1 text-sm text-red-400">
+                  <p className="text-sm text-red-400">
                     {errors.description.message}
                   </p>
                 )}
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-200">
+                    Type
+                  </label>
                   <Select
                     value={watch("type")}
                     onValueChange={(value) => setValue("type", value as any)}
                   >
-                    <SelectTrigger className="bg-gray-800/30 border-gray-700/30 h-9">
-                      <SelectValue placeholder="Challenge Type" />
+                    <SelectTrigger className="bg-gray-800/30 border-gray-700/30 h-9 focus:border-purple-500/50">
+                      <SelectValue placeholder="Select type" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="competitive">Competitive</SelectItem>
@@ -200,21 +228,24 @@ export function CreateChallenge({ onSubmit }: CreateChallengeProps) {
                     </SelectContent>
                   </Select>
                   {errors.type && (
-                    <p className="mt-1 text-sm text-red-400">
+                    <p className="text-sm text-red-400">
                       {errors.type.message}
                     </p>
                   )}
                 </div>
 
-                <div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-200">
+                    Max Participants
+                  </label>
                   <Input
                     type="number"
-                    placeholder="Max Participants"
-                    className="bg-gray-800/30 border-gray-700/30 h-9"
+                    placeholder="e.g., 10"
+                    className="bg-gray-800/30 border-gray-700/30 h-9 focus:border-purple-500/50"
                     {...register("max_participants", { valueAsNumber: true })}
                   />
                   {errors.max_participants && (
-                    <p className="mt-1 text-sm text-red-400">
+                    <p className="text-sm text-red-400">
                       {errors.max_participants.message}
                     </p>
                   )}
@@ -222,27 +253,33 @@ export function CreateChallenge({ onSubmit }: CreateChallengeProps) {
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-200">
+                    Start Date
+                  </label>
                   <DatePicker
                     value={watch("start_date")}
                     onChange={(date) => setValue("start_date", date)}
-                    placeholder="Start Date"
+                    placeholder="Select date"
                   />
                   {errors.start_date && (
-                    <p className="mt-1 text-sm text-red-400">
+                    <p className="text-sm text-red-400">
                       {errors.start_date.message}
                     </p>
                   )}
                 </div>
 
-                <div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-200">
+                    End Date
+                  </label>
                   <DatePicker
                     value={watch("end_date")}
                     onChange={(date) => setValue("end_date", date)}
-                    placeholder="End Date"
+                    placeholder="Select date"
                   />
                   {errors.end_date && (
-                    <p className="mt-1 text-sm text-red-400">
+                    <p className="text-sm text-red-400">
                       {errors.end_date.message}
                     </p>
                   )}
@@ -250,15 +287,18 @@ export function CreateChallenge({ onSubmit }: CreateChallengeProps) {
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-200">
+                    Goal Type
+                  </label>
                   <Select
                     value={watch("goal.type")}
                     onValueChange={(value) =>
                       setValue("goal.type", value as any)
                     }
                   >
-                    <SelectTrigger className="bg-gray-800/30 border-gray-700/30 h-9">
-                      <SelectValue placeholder="Goal Type" />
+                    <SelectTrigger className="bg-gray-800/30 border-gray-700/30 h-9 focus:border-purple-500/50">
+                      <SelectValue placeholder="Select goal" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="complete_games">
@@ -271,21 +311,24 @@ export function CreateChallenge({ onSubmit }: CreateChallengeProps) {
                     </SelectContent>
                   </Select>
                   {errors.goal?.type && (
-                    <p className="mt-1 text-sm text-red-400">
+                    <p className="text-sm text-red-400">
                       {errors.goal.type.message}
                     </p>
                   )}
                 </div>
 
-                <div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-200">
+                    Target
+                  </label>
                   <Input
                     type="number"
-                    placeholder="Goal Target"
-                    className="bg-gray-800/30 border-gray-700/30 h-9"
+                    placeholder="e.g., 100"
+                    className="bg-gray-800/30 border-gray-700/30 h-9 focus:border-purple-500/50"
                     {...register("goal.target", { valueAsNumber: true })}
                   />
                   {errors.goal?.target && (
-                    <p className="mt-1 text-sm text-red-400">
+                    <p className="text-sm text-red-400">
                       {errors.goal.target.message}
                     </p>
                   )}
@@ -294,42 +337,55 @@ export function CreateChallenge({ onSubmit }: CreateChallengeProps) {
             </div>
 
             {/* Right Column - Rewards & Rules */}
-            <div className="space-y-6">
+            <div className="space-y-8">
               <div className="space-y-4">
-                <div className="flex items-center gap-2">
-                  <Trophy className="w-5 h-5 text-purple-400" />
-                  <h2 className="text-lg font-semibold">Rewards</h2>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Trophy className="w-5 h-5 text-purple-400" />
+                    <h2 className="text-lg font-semibold">Rewards</h2>
+                  </div>
+                  {errors.rewards && (
+                    <p className="text-sm text-red-400">
+                      {errors.rewards.message}
+                    </p>
+                  )}
                 </div>
                 <div className="flex gap-2">
                   <Input
-                    placeholder="Add a reward"
+                    placeholder="Add a reward..."
                     value={newReward}
                     onChange={(e) => setNewReward(e.target.value)}
-                    className="bg-gray-800/30 border-gray-700/30 h-9"
+                    className="bg-gray-800/30 border-gray-700/30 h-9 focus:border-purple-500/50"
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        handleAddReward();
+                      }
+                    }}
                   />
                   <Button
                     type="button"
                     variant="outline"
                     size="icon"
                     onClick={handleAddReward}
-                    className="bg-gray-800/30 border-gray-700/30 hover:bg-gray-800/50 h-9 w-9"
+                    className="bg-gray-800/30 border-gray-700/30 hover:bg-gray-800/50 h-9 w-9 flex items-center justify-center"
                   >
                     <Plus className="w-4 h-4" />
                   </Button>
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-2 max-h-[200px] overflow-y-auto custom-scrollbar">
                   {rewards.map((reward, index) => (
                     <div
                       key={index}
-                      className="flex items-center justify-between p-2 rounded-md bg-gray-800/30 border border-gray-700/30"
+                      className="flex items-center justify-between p-2 rounded-md bg-gray-800/30 border border-gray-700/30 group hover:border-purple-500/30"
                     >
-                      <span>{reward}</span>
+                      <span className="text-sm">{reward}</span>
                       <Button
                         type="button"
                         variant="ghost"
                         size="icon"
                         onClick={() => handleRemoveReward(index)}
-                        className="hover:bg-gray-700/30 h-8 w-8"
+                        className="opacity-0 group-hover:opacity-100 hover:bg-gray-700/30 h-8 w-8"
                       >
                         <X className="w-4 h-4" />
                       </Button>
@@ -339,40 +395,53 @@ export function CreateChallenge({ onSubmit }: CreateChallengeProps) {
               </div>
 
               <div className="space-y-4">
-                <div className="flex items-center gap-2">
-                  <Flag className="w-5 h-5 text-purple-400" />
-                  <h2 className="text-lg font-semibold">Rules</h2>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Flag className="w-5 h-5 text-purple-400" />
+                    <h2 className="text-lg font-semibold">Rules</h2>
+                  </div>
+                  {errors.rules && (
+                    <p className="text-sm text-red-400">
+                      {errors.rules.message}
+                    </p>
+                  )}
                 </div>
                 <div className="flex gap-2">
                   <Input
-                    placeholder="Add a rule"
+                    placeholder="Add a rule..."
                     value={newRule}
                     onChange={(e) => setNewRule(e.target.value)}
-                    className="bg-gray-800/30 border-gray-700/30 h-9"
+                    className="bg-gray-800/30 border-gray-700/30 h-9 focus:border-purple-500/50"
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        handleAddRule();
+                      }
+                    }}
                   />
                   <Button
                     type="button"
                     variant="outline"
                     size="icon"
                     onClick={handleAddRule}
-                    className="bg-gray-800/30 border-gray-700/30 hover:bg-gray-800/50 h-9 w-9"
+                    className="bg-gray-800/30 border-gray-700/30 hover:bg-gray-800/50 h-9 w-9 flex items-center justify-center"
                   >
                     <Plus className="w-4 h-4" />
                   </Button>
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-2 max-h-[200px] overflow-y-auto custom-scrollbar">
                   {rules.map((rule, index) => (
                     <div
                       key={index}
-                      className="flex items-center justify-between p-2 rounded-md bg-gray-800/30 border border-gray-700/30"
+                      className="flex items-center justify-between p-2 rounded-md bg-gray-800/30 border border-gray-700/30 group hover:border-purple-500/30"
                     >
-                      <span>{rule}</span>
+                      <span className="text-sm">{rule}</span>
                       <Button
                         type="button"
                         variant="ghost"
                         size="icon"
                         onClick={() => handleRemoveRule(index)}
-                        className="hover:bg-gray-700/30 h-8 w-8"
+                        className="opacity-0 group-hover:opacity-100 hover:bg-gray-700/30 h-8 w-8"
                       >
                         <X className="w-4 h-4" />
                       </Button>
@@ -383,7 +452,7 @@ export function CreateChallenge({ onSubmit }: CreateChallengeProps) {
             </div>
           </div>
 
-          <div className="flex justify-end">
+          <div className="flex justify-end pt-4">
             <Button
               type="submit"
               disabled={isSubmitting}

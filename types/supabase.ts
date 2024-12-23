@@ -36,5 +36,15 @@ export interface Database {
       }
       // ... other tables
     }
+    Functions: {
+      increment_participants_count: {
+        Args: { challenge_id: string };
+        Returns: void;
+      };
+      decrement_participants_count: {
+        Args: { challenge_id: string };
+        Returns: void;
+      };
+    };
   }
 } 
