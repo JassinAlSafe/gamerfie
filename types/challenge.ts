@@ -9,34 +9,31 @@ export type ChallengeGoalType =
   | 'review_games'
   | 'score_points';
 
-export interface ChallengeGoal {
-  type: ChallengeGoalType;
-  target: number;
-  current?: number;
-}
+export type RewardType = 'badge' | 'points' | 'title';
 
-export interface ChallengeReward {
-  type: 'badge' | 'points' | 'title';
-  name: string;
-  description: string;
-  image_url?: string;
+export interface User {
+  id: string;
+  username: string;
+  avatar_url: string | null;
 }
 
 export interface ChallengeParticipant {
-  user_id: string;
-  username: string;
-  avatar_url?: string;
+  user: User;
   joined_at: string;
   progress: number;
-  rank?: number;
   completed: boolean;
+}
+
+export interface ChallengeReward {
+  id: string;
+  type: RewardType;
+  name: string;
+  description: string;
 }
 
 export interface ChallengeRule {
   id: string;
   rule: string;
-  created_at: string;
-  challenge_id: string;
 }
 
 export interface Challenge {
@@ -45,19 +42,28 @@ export interface Challenge {
   description: string;
   type: ChallengeType;
   status: ChallengeStatus;
-  creator_id: string;
-  created_at: string;
   start_date: string;
   end_date: string;
-  goal: ChallengeGoal;
-  rewards: ChallengeReward[];
+  goal_type: ChallengeGoalType;
+  goal_target: number;
+  min_participants: number | null;
+  max_participants: number | null;
+  creator: User;
   participants: ChallengeParticipant[];
-  min_participants?: number;
-  max_participants?: number;
-  total_progress?: number; // For collaborative challenges
+  rewards: ChallengeReward[];
   rules: ChallengeRule[];
-  game_id?: string; // Optional: If challenge is specific to a game
-  tags?: string[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ClaimedReward {
+  id: string;
+  name: string;
+  description: string;
+  type: RewardType;
+  challenge_id: string;
+  challenge_title: string;
+  claimed_at: string;
 }
 
 export interface CreateChallengeInput {
@@ -70,7 +76,7 @@ export interface CreateChallengeInput {
     type: ChallengeGoalType;
     target: number;
   };
-  rewards: Omit<ChallengeReward, 'image_url'>[];
+  rewards: Omit<ChallengeReward, 'id' | 'image_url'>[];
   min_participants?: number;
   max_participants?: number;
   rules?: string[];
@@ -104,14 +110,16 @@ export interface ChallengeProgress {
   milestones_reached?: string[];
 }
 
+export interface LeaderboardEntry {
+  rank: number;
+  user_id: string;
+  username: string;
+  avatar_url: string;
+  progress: number;
+  completed: boolean;
+}
+
 export interface ChallengeLeaderboard {
   challenge_id: string;
-  rankings: {
-    rank: number;
-    user_id: string;
-    username: string;
-    avatar_url?: string;
-    progress: number;
-    completed: boolean;
-  }[];
+  rankings: LeaderboardEntry[];
 } 

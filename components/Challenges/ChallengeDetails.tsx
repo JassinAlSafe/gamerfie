@@ -41,9 +41,7 @@ interface ChallengeParticipantData {
 }
 
 interface ChallengeDetailsProps {
-  challenge: Omit<Challenge, "participants"> & {
-    participants: ChallengeParticipantData[];
-  };
+  challenge: Challenge;
   isLoading: boolean;
   error: string | null;
   onShare: () => void;
@@ -303,10 +301,13 @@ export function ChallengeDetails({
                 </div>
                 <div>
                   <p className="text-sm text-gray-400">Goal</p>
-                  <p className="font-medium">
-                    {challenge.goal?.target || 0}{" "}
-                    {challenge.goal?.type || "complete_games"}
-                  </p>
+                  <div className="flex items-center gap-2">
+                    <Target className="w-4 h-4 text-gray-400" />
+                    <span className="text-gray-400">
+                      {challenge.goal_target}{" "}
+                      {challenge.goal_type.replace(/_/g, " ")}
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>

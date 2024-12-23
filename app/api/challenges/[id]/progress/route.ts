@@ -1,42 +1,30 @@
-import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
 import { cookies } from "next/headers";
+import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
 import { NextResponse } from "next/server";
 
-interface RouteParams {
-  params: {
-    id: string;
-  };
-}
-
-export async function PUT(request: Request, { params }: RouteParams) {
+export async function POST(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
   try {
     const supabase = createRouteHandlerClient({ cookies });
-    const { data: { session } } = await supabase.auth.getSession();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
 
     if (!session) {
       return NextResponse.json(
-        { error: "Unauthorized" },
+        { error: "Not authenticated" },
         { status: 401 }
       );
     }
 
-    // Check if challenge is active
-    const { data: challenge, error: challengeError } = await supabase
-      .from("challenges")
-      .select("status")
-      .eq("id", params.id)
-      .single();
+    const json = await request.json();
+    const { progress } = json;
 
-    if (challengeError) {
+    if (typeof progress !== "number" || progress < 0 || progress > 100) {
       return NextResponse.json(
-        { error: "Challenge not found" },
-        { status: 404 }
-      );
-    }
-
-    if (challenge.status !== "active") {
-      return NextResponse.json(
-        { error: "Challenge is not active" },
+        { error: "Invalid progress value" },
         { status: 400 }
       );
     }
@@ -47,24 +35,20 @@ export async function PUT(request: Request, { params }: RouteParams) {
       .select("*")
       .eq("challenge_id", params.id)
       .eq("user_id", session.user.id)
-      .maybeSingle();
+      .single();
 
-    if (participantError) throw participantError;
+    if (participantError) {
+      console.error("Error checking participant:", participantError);
+      return NextResponse.json(
+        { error: "Failed to check participant status" },
+        { status: 500 }
+      );
+    }
 
     if (!participant) {
       return NextResponse.json(
         { error: "Not a participant in this challenge" },
-        { status: 400 }
-      );
-    }
-
-    const json = await request.json();
-    const progress = json.progress;
-
-    if (typeof progress !== "number" || progress < 0 || progress > 100) {
-      return NextResponse.json(
-        { error: "Invalid progress value" },
-        { status: 400 }
+        { status: 403 }
       );
     }
 
@@ -73,19 +57,25 @@ export async function PUT(request: Request, { params }: RouteParams) {
       .from("challenge_participants")
       .update({
         progress,
-        completed: progress >= 100,
+        completed: progress === 100,
         updated_at: new Date().toISOString(),
       })
       .eq("challenge_id", params.id)
       .eq("user_id", session.user.id);
 
-    if (updateError) throw updateError;
+    if (updateError) {
+      console.error("Error updating progress:", updateError);
+      return NextResponse.json(
+        { error: "Failed to update progress" },
+        { status: 500 }
+      );
+    }
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ message: "Progress updated successfully" });
   } catch (error) {
-    console.error("Failed to update progress:", error);
+    console.error("Error in progress update:", error);
     return NextResponse.json(
-      { error: "Failed to update progress" },
+      { error: "Internal server error" },
       { status: 500 }
     );
   }

@@ -1,49 +1,44 @@
-import { geistSans, geistMono } from "./utils/fonts";
-import { siteMetadata } from "./config/metadata";
+"use client";
+
+import { Inter } from "next/font/google";
 import "./globals.css";
-import "../styles/game-card.css";
+import { Toaster } from "@/components/ui/toaster";
 import FloatingHeader from "@/components/ui/FloatingHeader";
-import Providers from "./providers";
-import { Footer } from "@/components/Footer";
-import { Toaster } from "react-hot-toast";
-import "@/styles/carousel.css";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
-import AuthProvider from "@/components/auth/AuthProvider";
+import { ThemeProvider } from "next-themes";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { useState } from "react";
 
-export const metadata = siteMetadata;
+const inter = Inter({ subsets: ["latin"] });
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const session = await getServerSession(authOptions);
+  const [queryClient] = useState(
+    () =>
+      new QueryClient({
+        defaultOptions: {
+          queries: {
+            staleTime: 60 * 1000, // 1 minute
+            refetchOnWindowFocus: false,
+          },
+        },
+      })
+  );
 
   return (
     <html lang="en" suppressHydrationWarning>
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen bg-gray-950`}
-      >
-        <AuthProvider session={session}>
-          <Providers>
-            <div className="flex flex-col min-h-screen">
+      <body className={inter.className}>
+        <QueryClientProvider client={queryClient}>
+          <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
+            <div className="min-h-screen flex flex-col">
               <FloatingHeader />
-              <main className="flex-grow">{children}</main>
-              <Footer />
+              <main className="flex-1 pt-16">{children}</main>
             </div>
-          </Providers>
-        </AuthProvider>
-        <Toaster
-          position="bottom-right"
-          toastOptions={{
-            duration: 3000,
-            style: {
-              background: "#333",
-              color: "#fff",
-            },
-          }}
-        />
+            <Toaster />
+          </ThemeProvider>
+        </QueryClientProvider>
       </body>
     </html>
   );

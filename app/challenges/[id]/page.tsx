@@ -1,156 +1,330 @@
 "use client";
 
-import { Metadata } from "next";
+import { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
+import { useChallengesStore } from "@/store/challenges";
+import { useLeaderboard } from "@/store/leaderboard";
+import { useUser } from "@/store/user";
 import { ChallengeDetails } from "@/components/Challenges/ChallengeDetails";
 import { ChallengeLeaderboard } from "@/components/Challenges/ChallengeLeaderboard";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
-import { useEffect, useState } from "react";
-import {
-  Challenge,
-  ChallengeLeaderboard as LeaderboardType,
-} from "@/types/challenge";
-import { ChallengeServices } from "@/lib/services/ChallengeServices";
+import { ProgressTracker } from "@/components/Challenges/ProgressTracker";
+import { RewardClaimer } from "@/components/Challenges/RewardClaimer";
 import { BackgroundBeams } from "@/components/ui/background-beams";
-import { Trophy } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Share2, AlertTriangle, Loader2 } from "lucide-react";
+import { toast } from "@/components/ui/use-toast";
 
-interface ChallengePageProps {
-  params: {
-    id: string;
-  };
-}
-
-function ClientChallengePage({ challengeId }: { challengeId: string }) {
-  const [challenge, setChallenge] = useState<Challenge | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [leaderboard, setLeaderboard] = useState<LeaderboardType | null>(null);
-  const [isLeaderboardLoading, setIsLeaderboardLoading] = useState(true);
-  const [leaderboardError, setLeaderboardError] = useState<string | null>(null);
-
-  const fetchChallenge = async () => {
-    try {
-      setIsLoading(true);
-      const data = await ChallengeServices.getChallengeById(challengeId);
-      console.log("Fetched challenge data:", data);
-      setChallenge(data);
-      setError(null);
-    } catch (err) {
-      console.error("Error fetching challenge:", err);
-      setError(err instanceof Error ? err.message : "Failed to load challenge");
-      setChallenge(null);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const fetchLeaderboard = async () => {
-    try {
-      setIsLeaderboardLoading(true);
-      const data = await ChallengeServices.getLeaderboard(challengeId);
-      console.log("Fetched leaderboard data:", data);
-      setLeaderboard(data);
-      setLeaderboardError(null);
-    } catch (err) {
-      console.error("Error fetching leaderboard:", err);
-      setLeaderboardError(
-        err instanceof Error ? err.message : "Failed to load leaderboard"
-      );
-      setLeaderboard(null);
-    } finally {
-      setIsLeaderboardLoading(false);
-    }
-  };
+export default function ChallengePage() {
+  const params = useParams<{ id: string }>();
+  const { user, fetchUser, isLoading: isUserLoading } = useUser();
+  const { challenge, fetchChallenge, error, isLoading } = useChallengesStore();
+  const { leaderboard, fetchLeaderboard } = useLeaderboard();
+  const [updating, setUpdating] = useState(false);
 
   useEffect(() => {
-    fetchChallenge();
-    fetchLeaderboard();
-  }, [challengeId]);
+    if (params.id) {
+      fetchUser();
+      fetchChallenge(params.id);
+      fetchLeaderboard(params.id);
+    }
+  }, [params.id, fetchChallenge, fetchLeaderboard, fetchUser]);
+
+  const handleProgressUpdate = async (progress: number) => {
+    try {
+      setUpdating(true);
+      const response = await fetch(`/api/challenges/${params.id}/progress`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ progress }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to update progress");
+      }
+
+      await fetchChallenge(params.id);
+      await fetchLeaderboard(params.id);
+      toast({
+        title: "Success",
+        description: "Your challenge progress has been updated.",
+      });
+    } catch (error) {
+      console.error("Error updating progress:", error);
+      toast({
+        title: "Error",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Failed to update progress. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const handleClaimRewards = async () => {
+    try {
+      setUpdating(true);
+      const response = await fetch(`/api/challenges/${params.id}/claim`, {
+        method: "POST",
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to claim rewards");
+      }
+
+      await fetchChallenge(params.id);
+      toast({
+        title: "Success",
+        description:
+          "Congratulations! You've successfully claimed your rewards.",
+      });
+    } catch (error) {
+      console.error("Error claiming rewards:", error);
+      toast({
+        title: "Error",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Failed to claim rewards. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setUpdating(false);
+    }
+  };
 
   const handleShare = () => {
-    if (typeof window !== "undefined") {
-      navigator.clipboard.writeText(window.location.href);
+    if (navigator.share) {
+      navigator
+        .share({
+          title: challenge?.title,
+          text: `Check out this challenge: ${challenge?.title}`,
+          url: window.location.href,
+        })
+        .then(() => {
+          toast({
+            title: "Shared Successfully",
+            description: "The challenge has been shared.",
+          });
+        })
+        .catch((error) => {
+          console.error("Error sharing:", error);
+        });
+    } else {
+      navigator.clipboard.writeText(window.location.href).then(() => {
+        toast({
+          title: "Link Copied",
+          description: "The challenge link has been copied to your clipboard.",
+        });
+      });
+    }
+  };
+
+  const handleJoinChallenge = async () => {
+    try {
+      setUpdating(true);
+      const response = await fetch(`/api/challenges/${params.id}/join`, {
+        method: "POST",
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to join challenge");
+      }
+
+      await fetchChallenge(params.id);
+      await fetchLeaderboard(params.id);
+      toast({
+        title: "Success",
+        description: "You've joined the challenge!",
+      });
+    } catch (error) {
+      console.error("Error joining challenge:", error);
+      toast({
+        title: "Error",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Failed to join challenge. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setUpdating(false);
     }
   };
 
   if (error) {
     return (
-      <div className="relative min-h-screen">
-        <BackgroundBeams className="absolute top-0 left-0 w-full h-full" />
-        <div className="relative container py-24 mt-16">
-          <div className="max-w-md mx-auto bg-gray-800/50 border border-gray-700/50 rounded-lg p-8 text-center">
-            <p className="text-red-400 text-lg">Error: {error}</p>
-            <button
-              onClick={fetchChallenge}
-              className="mt-4 px-4 py-2 bg-purple-500/10 text-purple-400 border border-purple-500/20 rounded-md hover:bg-purple-500/20 transition-colors"
-            >
-              Try Again
-            </button>
-          </div>
+      <div className="container">
+        <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
+
+  if (isLoading || isUserLoading || !challenge) {
+    return (
+      <div className="container">
+        <div className="space-y-8">
+          <Skeleton className="h-64 w-full" />
+          <Skeleton className="h-96 w-full" />
         </div>
       </div>
     );
   }
 
-  if (isLoading || !challenge) {
-    return (
-      <div className="relative min-h-screen">
-        <BackgroundBeams className="absolute top-0 left-0 w-full h-full" />
-        <div className="relative container py-24 mt-16">
-          <div className="flex flex-col items-center justify-center">
-            <div className="animate-spin h-12 w-12 border-4 border-purple-500 border-t-transparent rounded-full" />
-            <p className="mt-4 text-gray-400">Loading challenge details...</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const userParticipant = challenge.participants?.find(
+    (p) => p.user?.id === user?.id
+  );
+
+  const hasClaimedRewards = false; // We'll implement this later with the claimed_rewards table
 
   return (
-    <div className="relative min-h-screen">
-      <BackgroundBeams className="absolute top-0 left-0 w-full h-full opacity-50" />
-      <div className="relative">
-        {/* Main content */}
-        <div className="container py-24 mt-16 px-6 lg:px-8">
-          <div className="space-y-8">
-            {/* Challenge Details */}
-            <div>
-              <ChallengeDetails
-                challenge={challenge}
-                isLoading={isLoading}
-                error={error}
-                onShare={handleShare}
-                onChallengeUpdate={async () => {
-                  await Promise.all([fetchChallenge(), fetchLeaderboard()]);
-                }}
-              />
-            </div>
-
-            {/* Leaderboard Section */}
-            <div className="bg-gray-900/50 rounded-xl border border-gray-800/50 p-6">
-              <div className="max-w-5xl mx-auto">
-                <h2 className="text-2xl font-bold mb-6 flex items-center gap-3">
-                  <div className="p-2 bg-purple-500/10 rounded-lg">
-                    <Trophy className="w-6 h-6 text-purple-400" />
-                  </div>
-                  Leaderboard
-                </h2>
-                <div className="h-[400px] overflow-auto rounded-lg">
-                  <ChallengeLeaderboard
-                    challengeId={challengeId}
-                    isLoading={isLeaderboardLoading}
-                    error={leaderboardError}
-                    rankings={leaderboard?.rankings || []}
-                  />
+    <div className="relative min-h-screen bg-background">
+      <BackgroundBeams />
+      <div className="container relative z-10">
+        <div className="space-y-6">
+          <Card className="border-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+            <CardHeader>
+              <div className="flex justify-between items-center">
+                <CardTitle className="text-3xl font-bold">
+                  {challenge.title}
+                </CardTitle>
+                <div className="flex items-center gap-2">
+                  {!userParticipant &&
+                    (challenge.status === "upcoming" ||
+                      challenge.status === "active") && (
+                      <Button
+                        onClick={handleJoinChallenge}
+                        disabled={updating}
+                        className="bg-purple-500 hover:bg-purple-600"
+                      >
+                        {updating ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            Joining...
+                          </>
+                        ) : (
+                          "Join Challenge"
+                        )}
+                      </Button>
+                    )}
+                  {!userParticipant &&
+                    challenge.status !== "upcoming" &&
+                    challenge.status !== "active" && (
+                      <Alert variant="warning" className="mb-4">
+                        <AlertTriangle className="h-4 w-4" />
+                        <AlertTitle>Challenge Not Joinable</AlertTitle>
+                        <AlertDescription>
+                          This challenge is{" "}
+                          {challenge.status === "completed"
+                            ? "already completed"
+                            : "not open for joining"}
+                          .
+                        </AlertDescription>
+                      </Alert>
+                    )}
+                  <Button
+                    onClick={handleShare}
+                    variant="outline"
+                    className="bg-background/50 backdrop-blur supports-[backdrop-filter]:bg-background/30"
+                  >
+                    <Share2 className="mr-2 h-4 w-4" /> Share
+                  </Button>
                 </div>
               </div>
-            </div>
-          </div>
+            </CardHeader>
+            <CardContent>
+              {!userParticipant &&
+                challenge.status !== "upcoming" &&
+                challenge.status !== "active" && (
+                  <Alert variant="warning" className="mb-4">
+                    <AlertTriangle className="h-4 w-4" />
+                    <AlertTitle>Challenge Not Joinable</AlertTitle>
+                    <AlertDescription>
+                      This challenge is{" "}
+                      {challenge.status === "completed"
+                        ? "already completed"
+                        : "not open for joining"}
+                      .
+                    </AlertDescription>
+                  </Alert>
+                )}
+              <ChallengeDetails
+                challenge={challenge}
+                isLoading={false}
+                error={null}
+                onShare={handleShare}
+              />
+            </CardContent>
+          </Card>
+
+          {userParticipant && (
+            <Tabs defaultValue="progress" className="w-full">
+              <TabsList className="grid w-full grid-cols-2 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+                <TabsTrigger value="progress">Your Progress</TabsTrigger>
+                <TabsTrigger value="rewards">Rewards</TabsTrigger>
+              </TabsList>
+              <TabsContent value="progress">
+                <Card className="border-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+                  <CardHeader>
+                    <CardTitle>Your Progress</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ProgressTracker
+                      challengeId={params.id}
+                      currentProgress={userParticipant.progress}
+                      onProgressUpdate={handleProgressUpdate}
+                      isLoading={updating}
+                    />
+                  </CardContent>
+                </Card>
+              </TabsContent>
+              <TabsContent value="rewards">
+                <Card className="border-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+                  <CardHeader>
+                    <CardTitle>Claim Your Rewards</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <RewardClaimer
+                      challengeId={params.id}
+                      rewards={challenge.rewards}
+                      onClaimRewards={handleClaimRewards}
+                      isCompleted={userParticipant.completed}
+                      isClaimed={hasClaimedRewards}
+                      isLoading={updating}
+                    />
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </Tabs>
+          )}
+
+          {leaderboard && (
+            <Card className="border-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+              <CardHeader>
+                <CardTitle>Leaderboard</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ChallengeLeaderboard leaderboard={leaderboard} />
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
     </div>
   );
-}
-
-export default function ChallengePage({ params }: ChallengePageProps) {
-  return <ClientChallengePage challengeId={params.id} />;
 }

@@ -2,40 +2,68 @@ import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
-interface RouteParams {
-  params: {
-    id: string;
-  };
-}
-
-export async function GET(request: Request, { params }: RouteParams) {
+export async function GET(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
   try {
     const supabase = createRouteHandlerClient({ cookies });
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
 
-    const { data: challenge, error } = await supabase
+    if (!session) {
+      return NextResponse.json(
+        { error: "Not authenticated" },
+        { status: 401 }
+      );
+    }
+
+    // Get challenge with all related data
+    const { data: challenge, error: challengeError } = await supabase
       .from("challenges")
       .select(`
         *,
-        creator:creator_id(id, username, avatar_url),
+        creator:creator_id(
+          id,
+          username,
+          avatar_url
+        ),
         participants:challenge_participants(
-          user:user_id(id, username, avatar_url),
+          user:profiles(
+            id,
+            username,
+            avatar_url
+          ),
           joined_at,
           progress,
           completed
         ),
         rewards:challenge_rewards(*),
-        rules:challenge_rules(*),
-        tags:challenge_tags(*)
+        rules:challenge_rules(*)
       `)
       .eq("id", params.id)
       .single();
 
-    if (error) throw error;
+    if (challengeError) {
+      return NextResponse.json(
+        { error: "Failed to fetch challenge", details: challengeError },
+        { status: 500 }
+      );
+    }
+
+    if (!challenge) {
+      return NextResponse.json(
+        { error: "Challenge not found" },
+        { status: 404 }
+      );
+    }
 
     return NextResponse.json(challenge);
   } catch (error) {
+    console.error("Error fetching challenge:", error);
     return NextResponse.json(
-      { error: "Failed to fetch challenge" },
+      { error: "Internal server error" },
       { status: 500 }
     );
   }
@@ -84,7 +112,11 @@ export async function PUT(request: Request, { params }: RouteParams) {
         *,
         creator:creator_id(id, username, avatar_url),
         participants:challenge_participants(
-          user:user_id(id, username, avatar_url),
+          user:profiles(
+            id,
+            username,
+            avatar_url
+          ),
           joined_at,
           progress,
           completed

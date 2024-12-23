@@ -183,7 +183,8 @@ export default function ProfileChallengesPage() {
                           <div className="flex items-center gap-1 text-gray-400">
                             <Target className="w-4 h-4" />
                             <span>
-                              {challenge.goal.target} {challenge.goal.type}
+                              {challenge.goal_target}{" "}
+                              {challenge.goal_type.replace(/_/g, " ")}
                             </span>
                           </div>
                           <div className="flex items-center gap-1 text-gray-400">
@@ -196,16 +197,11 @@ export default function ProfileChallengesPage() {
                           <div className="flex items-center justify-between text-sm">
                             <span className="text-gray-400">Progress</span>
                             <span className="text-purple-400">
-                              {challenge.challenge_participants?.[0]
-                                ?.progress || 0}
-                              %
+                              {challenge.participants?.[0]?.progress || 0}%
                             </span>
                           </div>
                           <Progress
-                            value={
-                              challenge.challenge_participants?.[0]?.progress ||
-                              0
-                            }
+                            value={challenge.participants?.[0]?.progress || 0}
                             className="h-2"
                           />
                         </div>

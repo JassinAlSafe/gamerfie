@@ -45,15 +45,27 @@ const createChallengeSchema = z
     type: z.enum(["competitive", "collaborative"]),
     start_date: z.date().min(new Date(), "Start date must be in the future"),
     end_date: z.date(),
-    goal: z.object({
-      type: z.enum(["complete_games", "win_games", "achieve_score"]),
-      target: z.number().min(1, "Target must be at least 1"),
-    }),
+    goal_type: z.enum([
+      "complete_games",
+      "achieve_trophies",
+      "play_time",
+      "review_games",
+      "score_points",
+    ]),
+    goal_target: z.number().min(1, "Target must be at least 1"),
     max_participants: z
       .number()
       .min(2, "Must allow at least 2 participants")
       .optional(),
-    rewards: z.array(z.string()).min(1, "Add at least one reward"),
+    rewards: z
+      .array(
+        z.object({
+          type: z.enum(["badge", "points", "title"]),
+          name: z.string().min(1, "Reward name is required"),
+          description: z.string().min(1, "Reward description is required"),
+        })
+      )
+      .min(1, "Add at least one reward"),
     rules: z.array(z.string()).min(1, "Add at least one rule"),
   })
   .refine(
@@ -68,6 +80,12 @@ const createChallengeSchema = z
 
 type CreateChallengeForm = z.infer<typeof createChallengeSchema>;
 
+interface Reward {
+  type: "badge" | "points" | "title";
+  name: string;
+  description: string;
+}
+
 interface CreateChallengeProps {
   onSubmit: (data: CreateChallengeForm) => Promise<void>;
 }
@@ -75,9 +93,13 @@ interface CreateChallengeProps {
 export function CreateChallenge({ onSubmit }: CreateChallengeProps) {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [rewards, setRewards] = useState<string[]>([]);
+  const [rewards, setRewards] = useState<Reward[]>([]);
   const [rules, setRules] = useState<string[]>([]);
-  const [newReward, setNewReward] = useState("");
+  const [newReward, setNewReward] = useState<Reward>({
+    type: "badge",
+    name: "",
+    description: "",
+  });
   const [newRule, setNewRule] = useState("");
 
   const {
@@ -90,10 +112,8 @@ export function CreateChallenge({ onSubmit }: CreateChallengeProps) {
     resolver: zodResolver(createChallengeSchema),
     defaultValues: {
       type: "competitive",
-      goal: {
-        type: "complete_games",
-        target: 10,
-      },
+      goal_type: "complete_games",
+      goal_target: 10,
       max_participants: 10,
       rewards: [],
       rules: [],
@@ -101,11 +121,15 @@ export function CreateChallenge({ onSubmit }: CreateChallengeProps) {
   });
 
   const handleAddReward = () => {
-    if (newReward.trim()) {
-      const updatedRewards = [...rewards, newReward.trim()];
+    if (newReward.name.trim() && newReward.description.trim()) {
+      const updatedRewards = [...rewards, { ...newReward }];
       setRewards(updatedRewards);
       setValue("rewards", updatedRewards);
-      setNewReward("");
+      setNewReward({
+        type: "badge",
+        name: "",
+        description: "",
+      });
     }
   };
 
@@ -133,15 +157,45 @@ export function CreateChallenge({ onSubmit }: CreateChallengeProps) {
   const onFormSubmit = async (data: CreateChallengeForm) => {
     try {
       setIsSubmitting(true);
-      await onSubmit({
+      console.log("Submitting challenge data:", {
         ...data,
         rewards: rewards,
         rules: rules,
       });
+
+      const response = await fetch("/api/challenges", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          ...data,
+          rewards: rewards,
+          rules: rules,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || "Failed to create challenge");
+      }
+
+      toast({
+        title: "Success",
+        description: "Challenge created successfully!",
+      });
+
+      // Redirect to the challenges page
+      window.location.href = "/challenges";
     } catch (error) {
+      console.error("Error creating challenge:", error);
       toast({
         title: "Error",
-        description: "Failed to create challenge. Please try again.",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Failed to create challenge. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -292,9 +346,9 @@ export function CreateChallenge({ onSubmit }: CreateChallengeProps) {
                     Goal Type
                   </label>
                   <Select
-                    value={watch("goal.type")}
+                    value={watch("goal_type")}
                     onValueChange={(value) =>
-                      setValue("goal.type", value as any)
+                      setValue("goal_type", value as any)
                     }
                   >
                     <SelectTrigger className="bg-gray-800/30 border-gray-700/30 h-9 focus:border-purple-500/50">
@@ -304,15 +358,17 @@ export function CreateChallenge({ onSubmit }: CreateChallengeProps) {
                       <SelectItem value="complete_games">
                         Complete Games
                       </SelectItem>
-                      <SelectItem value="win_games">Win Games</SelectItem>
-                      <SelectItem value="achieve_score">
-                        Achieve Score
+                      <SelectItem value="achieve_trophies">
+                        Achieve Trophies
                       </SelectItem>
+                      <SelectItem value="play_time">Play Time</SelectItem>
+                      <SelectItem value="review_games">Review Games</SelectItem>
+                      <SelectItem value="score_points">Score Points</SelectItem>
                     </SelectContent>
                   </Select>
-                  {errors.goal?.type && (
+                  {errors.goal_type && (
                     <p className="text-sm text-red-400">
-                      {errors.goal.type.message}
+                      {errors.goal_type.message}
                     </p>
                   )}
                 </div>
@@ -325,11 +381,11 @@ export function CreateChallenge({ onSubmit }: CreateChallengeProps) {
                     type="number"
                     placeholder="e.g., 100"
                     className="bg-gray-800/30 border-gray-700/30 h-9 focus:border-purple-500/50"
-                    {...register("goal.target", { valueAsNumber: true })}
+                    {...register("goal_target", { valueAsNumber: true })}
                   />
-                  {errors.goal?.target && (
+                  {errors.goal_target && (
                     <p className="text-sm text-red-400">
-                      {errors.goal.target.message}
+                      {errors.goal_target.message}
                     </p>
                   )}
                 </div>
@@ -350,47 +406,92 @@ export function CreateChallenge({ onSubmit }: CreateChallengeProps) {
                     </p>
                   )}
                 </div>
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="Add a reward..."
-                    value={newReward}
-                    onChange={(e) => setNewReward(e.target.value)}
-                    className="bg-gray-800/30 border-gray-700/30 h-9 focus:border-purple-500/50"
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        e.preventDefault();
-                        handleAddReward();
+
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Select
+                        value={newReward.type}
+                        onValueChange={(value) =>
+                          setNewReward({
+                            ...newReward,
+                            type: value as "badge" | "points" | "title",
+                          })
+                        }
+                      >
+                        <SelectTrigger className="bg-gray-800/30 border-gray-700/30 h-9 focus:border-purple-500/50">
+                          <SelectValue placeholder="Select reward type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="badge">Badge</SelectItem>
+                          <SelectItem value="points">Points</SelectItem>
+                          <SelectItem value="title">Title</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <Input
+                      placeholder="Reward name"
+                      value={newReward.name}
+                      onChange={(e) =>
+                        setNewReward({ ...newReward, name: e.target.value })
                       }
-                    }}
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    onClick={handleAddReward}
-                    className="bg-gray-800/30 border-gray-700/30 hover:bg-gray-800/50 h-9 w-9 flex items-center justify-center"
-                  >
-                    <Plus className="w-4 h-4" />
-                  </Button>
+                      className="bg-gray-800/30 border-gray-700/30 h-9 focus:border-purple-500/50"
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Reward description"
+                      value={newReward.description}
+                      onChange={(e) =>
+                        setNewReward({
+                          ...newReward,
+                          description: e.target.value,
+                        })
+                      }
+                      className="bg-gray-800/30 border-gray-700/30 h-9 focus:border-purple-500/50"
+                    />
+                    <Button
+                      type="button"
+                      onClick={handleAddReward}
+                      variant="outline"
+                      size="sm"
+                      className="shrink-0"
+                    >
+                      Add
+                    </Button>
+                  </div>
                 </div>
-                <div className="space-y-2 max-h-[200px] overflow-y-auto custom-scrollbar">
+
+                <div className="space-y-2">
                   {rewards.map((reward, index) => (
                     <div
                       key={index}
-                      className="flex items-center justify-between p-2 rounded-md bg-gray-800/30 border border-gray-700/30 group hover:border-purple-500/30"
+                      className="flex items-center justify-between bg-gray-800/30 rounded-md p-2"
                     >
-                      <span className="text-sm">{reward}</span>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline" className="capitalize">
+                          {reward.type}
+                        </Badge>
+                        <span className="font-medium">{reward.name}</span>
+                        <span className="text-sm text-gray-400">
+                          - {reward.description}
+                        </span>
+                      </div>
                       <Button
                         type="button"
                         variant="ghost"
-                        size="icon"
+                        size="sm"
                         onClick={() => handleRemoveReward(index)}
-                        className="opacity-0 group-hover:opacity-100 hover:bg-gray-700/30 h-8 w-8"
                       >
                         <X className="w-4 h-4" />
                       </Button>
                     </div>
                   ))}
+                  {errors.rewards && (
+                    <p className="text-sm text-red-400">
+                      {errors.rewards.message}
+                    </p>
+                  )}
                 </div>
               </div>
 

@@ -67,12 +67,23 @@ CREATE TABLE challenge_tags (
     PRIMARY KEY (challenge_id, tag)
 );
 
+-- Create claimed rewards table
+CREATE TABLE claimed_rewards (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
+    challenge_id UUID REFERENCES challenges(id) ON DELETE CASCADE,
+    reward_id UUID REFERENCES challenge_rewards(id) ON DELETE CASCADE,
+    claimed_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    UNIQUE(user_id, challenge_id, reward_id)
+);
+
 -- Create RLS policies
 ALTER TABLE challenges ENABLE ROW LEVEL SECURITY;
 ALTER TABLE challenge_participants ENABLE ROW LEVEL SECURITY;
 ALTER TABLE challenge_rewards ENABLE ROW LEVEL SECURITY;
 ALTER TABLE challenge_rules ENABLE ROW LEVEL SECURITY;
 ALTER TABLE challenge_tags ENABLE ROW LEVEL SECURITY;
+ALTER TABLE claimed_rewards ENABLE ROW LEVEL SECURITY;
 
 -- Challenges policies
 CREATE POLICY "Challenges are viewable by everyone"
@@ -168,6 +179,23 @@ CREATE POLICY "Only challenge creators can manage tags"
             AND creator_id IN (
                 SELECT id FROM profiles WHERE id = auth.uid()
             )
+        )
+    );
+
+-- Claimed rewards policies
+CREATE POLICY "Claimed rewards are viewable by everyone"
+    ON claimed_rewards FOR SELECT
+    USING (true);
+
+CREATE POLICY "Users can claim rewards"
+    ON claimed_rewards FOR INSERT
+    WITH CHECK (
+        auth.uid() = user_id AND
+        EXISTS (
+            SELECT 1 FROM challenge_participants
+            WHERE challenge_id = claimed_rewards.challenge_id
+            AND user_id = claimed_rewards.user_id
+            AND completed = true
         )
     );
 

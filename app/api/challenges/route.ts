@@ -1,6 +1,34 @@
 import { cookies } from "next/headers";
 import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
 import { NextResponse } from "next/server";
+import { z } from "zod";
+
+// Validation schema for the API request
+const createChallengeSchema = z.object({
+  title: z.string().min(1),
+  description: z.string().min(1),
+  type: z.enum(["competitive", "collaborative"]),
+  start_date: z.string().datetime(),
+  end_date: z.string().datetime(),
+  goal_type: z.enum(["complete_games", "achieve_trophies", "play_time", "review_games", "score_points"]),
+  goal_target: z.number().positive(),
+  max_participants: z.number().positive().optional(),
+  rewards: z.array(
+    z.object({
+      type: z.enum(["badge", "points", "title"]),
+      name: z.string().min(1),
+      description: z.string().min(1),
+    })
+  ),
+  rules: z.array(
+    z.union([
+      z.string(),
+      z.object({
+        rule: z.string().min(1),
+      }),
+    ])
+  ),
+});
 
 export async function GET() {
   try {
@@ -35,187 +63,211 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    console.log("Starting challenge creation process...");
     const supabase = createRouteHandlerClient({ cookies });
     
     // Check authentication
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-    if (sessionError) {
-      console.error("Session error:", sessionError);
-      return NextResponse.json(
-        { error: "Authentication error" },
-        { status: 401 }
-      );
-    }
-    
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
     if (!session) {
-      console.log("No session found");
+      console.error("Authentication error: No session found");
       return NextResponse.json(
-        { error: "Unauthorized" },
+        { error: "Not authenticated" },
         { status: 401 }
       );
     }
 
-    console.log("User authenticated:", session.user.id);
+    // Parse and validate request data
+    let json;
+    try {
+      json = await request.json();
+      console.log("Raw request data:", json);
+    } catch (error) {
+      console.error("Failed to parse request JSON:", error);
+      return NextResponse.json(
+        { error: "Invalid JSON data" },
+        { status: 400 }
+      );
+    }
 
-    // Get user's profile
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('id')
-      .eq('id', session.user.id)
+    // Format dates
+    const formattedData = {
+      ...json,
+      start_date: json.start_date instanceof Date ? json.start_date.toISOString() : json.start_date,
+      end_date: json.end_date instanceof Date ? json.end_date.toISOString() : json.end_date,
+    };
+
+    console.log("Formatted data:", formattedData);
+
+    // Validate data against schema
+    const result = createChallengeSchema.safeParse(formattedData);
+
+    if (!result.success) {
+      console.error("Validation errors:", JSON.stringify(result.error.errors, null, 2));
+      return NextResponse.json(
+        { 
+          error: "Invalid request data",
+          details: result.error.errors
+        },
+        { status: 400 }
+      );
+    }
+
+    // Get user data
+    const { data: userData, error: userError } = await supabase
+      .from("profiles")
+      .select("username, avatar_url")
+      .eq("id", session.user.id)
       .single();
 
-    if (profileError || !profile) {
-      console.error("Profile error:", profileError);
+    if (userError || !userData) {
+      console.error("User profile error:", userError);
       return NextResponse.json(
         { error: "User profile not found" },
         { status: 404 }
       );
     }
 
-    console.log("User profile found:", profile.id);
-
-    const json = await request.json();
-    console.log("Received challenge data:", json);
-
-    const { rewards, rules, tags, goal, start_date, end_date, ...challengeData } = json;
-
-    // Prepare challenge data with flattened goal and formatted dates
-    const challengeWithGoal = {
-      ...challengeData,
-      goal_type: goal.type,
-      goal_target: goal.target,
-      creator_id: profile.id,
+    // Create challenge
+    const challengeData = {
+      title: result.data.title,
+      description: result.data.description,
+      type: result.data.type,
       status: "upcoming",
-      start_date: new Date(start_date).toISOString(),
-      end_date: new Date(end_date).toISOString(),
+      start_date: result.data.start_date,
+      end_date: result.data.end_date,
+      goal_type: result.data.goal_type,
+      goal_target: result.data.goal_target,
+      min_participants: 2,
+      max_participants: result.data.max_participants || null,
+      game_id: null,
+      creator_id: session.user.id,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
     };
 
-    console.log("Creating challenge with data:", challengeWithGoal);
+    console.log("Creating challenge with data:", challengeData);
 
-    // Create challenge
     const { data: challenge, error: challengeError } = await supabase
       .from("challenges")
-      .insert(challengeWithGoal)
+      .insert(challengeData)
       .select()
       .single();
 
     if (challengeError) {
       console.error("Challenge creation error:", challengeError);
       return NextResponse.json(
-        { error: challengeError.message },
+        { error: "Failed to create challenge", details: challengeError },
         { status: 500 }
       );
     }
 
-    console.log("Challenge created successfully:", challenge);
+    console.log("Created challenge:", challenge);
 
-    // Create rewards if any
-    if (rewards?.length > 0) {
-      console.log("Creating rewards:", rewards);
+    // Insert rewards
+    if (result.data.rewards.length > 0) {
+      const rewardsData = result.data.rewards.map((reward) => ({
+        challenge_id: challenge.id,
+        type: reward.type,
+        name: reward.name,
+        description: reward.description,
+        created_at: new Date().toISOString()
+      }));
+
+      console.log("Creating rewards:", rewardsData);
+
       const { error: rewardsError } = await supabase
         .from("challenge_rewards")
-        .insert(
-          rewards.map((reward: any) => ({
-            ...reward,
-            challenge_id: challenge.id,
-          }))
-        );
+        .insert(rewardsData);
 
       if (rewardsError) {
         console.error("Rewards creation error:", rewardsError);
         return NextResponse.json(
-          { error: rewardsError.message },
+          { error: "Failed to create rewards", details: rewardsError },
           { status: 500 }
         );
       }
     }
 
-    // Create rules if any
-    if (rules?.length > 0) {
-      console.log("Creating rules:", rules);
+    // Insert rules
+    if (result.data.rules.length > 0) {
+      const rulesData = result.data.rules.map((rule) => ({
+        challenge_id: challenge.id,
+        rule: typeof rule === 'string' ? rule : rule.rule,
+        created_at: new Date().toISOString()
+      }));
+
+      console.log("Creating rules:", rulesData);
+
       const { error: rulesError } = await supabase
         .from("challenge_rules")
-        .insert(
-          rules.map((rule: string) => ({
-            rule,
-            challenge_id: challenge.id,
-          }))
-        );
+        .insert(rulesData);
 
       if (rulesError) {
         console.error("Rules creation error:", rulesError);
         return NextResponse.json(
-          { error: rulesError.message },
+          { error: "Failed to create rules", details: rulesError },
           { status: 500 }
         );
       }
     }
 
-    // Create tags if any
-    if (tags?.length > 0) {
-      console.log("Creating tags:", tags);
-      const { error: tagsError } = await supabase
-        .from("challenge_tags")
-        .insert(
-          tags.map((tag: string) => ({
-            tag,
-            challenge_id: challenge.id,
-          }))
-        );
+    // Add creator as participant
+    const participantData = {
+      challenge_id: challenge.id,
+      user_id: session.user.id,
+      progress: 0,
+      completed: false,
+      joined_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
 
-      if (tagsError) {
-        console.error("Tags creation error:", tagsError);
-        return NextResponse.json(
-          { error: tagsError.message },
-          { status: 500 }
-        );
-      }
-    }
+    console.log("Adding creator as participant:", participantData);
 
-    // Fetch complete challenge data
-    console.log("Fetching complete challenge data...");
-    const { data: completeChallenge, error: fetchError } = await supabase
-      .from("challenges")
-      .select(`
-        *,
-        creator:creator_id(id, username, avatar_url),
-        participants:challenge_participants(
-          user:user_id(id, username, avatar_url),
-          joined_at,
-          progress,
-          completed
-        ),
-        rewards:challenge_rewards(*),
-        rules:challenge_rules(*),
-        tags:challenge_tags(*)
-      `)
-      .eq("id", challenge.id)
-      .single();
+    const { error: participantError } = await supabase
+      .from("challenge_participants")
+      .insert(participantData);
 
-    if (fetchError) {
-      console.error("Fetch complete challenge error:", fetchError);
+    if (participantError) {
+      console.error("Participant creation error:", participantError);
       return NextResponse.json(
-        { error: fetchError.message },
+        { error: "Failed to add creator as participant", details: participantError },
         { status: 500 }
       );
     }
 
-    // Transform the response to match the expected format
-    const responseData = {
-      ...completeChallenge,
-      goal: {
-        type: completeChallenge.goal_type,
-        target: completeChallenge.goal_target
+    const response = {
+      message: "Challenge created successfully",
+      challenge: {
+        ...challenge,
+        creator: {
+          id: session.user.id,
+          username: userData.username,
+          avatar_url: userData.avatar_url,
+        },
+        participants: [{
+          user: {
+            id: session.user.id,
+            username: userData.username,
+            avatar_url: userData.avatar_url,
+          },
+          joined_at: new Date().toISOString(),
+          progress: 0,
+          completed: false,
+        }],
+        rewards: result.data.rewards,
+        rules: result.data.rules,
       }
     };
 
-    console.log("Challenge creation completed successfully");
-    return NextResponse.json(responseData);
+    console.log("Sending response:", response);
+    return NextResponse.json(response);
+
   } catch (error) {
-    console.error("Failed to create challenge:", error);
+    console.error("Unhandled error in challenge creation:", error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to create challenge" },
+      { error: "Internal server error", details: error instanceof Error ? error.message : "Unknown error" },
       { status: 500 }
     );
   }
