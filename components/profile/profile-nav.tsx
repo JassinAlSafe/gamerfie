@@ -13,11 +13,13 @@ import {
   Users,
   Heart,
   Trophy,
+  Target,
 } from "lucide-react";
 
 const navItems = [
   { label: "Profile", href: "/profile", icon: User },
   { label: "Games", href: "/profile/games", icon: Gamepad2 },
+  { label: "Challenges", href: "/profile/challenges", icon: Target },
   { label: "Journal", href: "/profile/journal", icon: BookText },
   { label: "Activity", href: "/profile/activity", icon: Activity },
   { label: "Reviews", href: "/profile/reviews", icon: Star },

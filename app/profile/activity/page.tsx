@@ -16,7 +16,7 @@ export default function ActivityPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[calc(100vh-4rem)] pt-16 bg-gray-950">
+      <div className="flex items-center justify-center min-h-screen">
         <LoadingSpinner />
       </div>
     );
@@ -25,7 +25,7 @@ export default function ActivityPage() {
   if (error) {
     if (error instanceof Error && error.message === "No authenticated user") {
       return (
-        <div className="flex flex-col items-center justify-center min-h-[calc(100vh-4rem)] pt-16 bg-gray-950">
+        <div className="flex flex-col items-center justify-center min-h-screen">
           <h1 className="text-3xl font-bold mb-6 text-white">
             Please sign in to view your profile
           </h1>
@@ -40,7 +40,7 @@ export default function ActivityPage() {
       );
     }
     return (
-      <div className="flex items-center justify-center min-h-[calc(100vh-4rem)] pt-16 bg-gray-950 text-red-500">
+      <div className="flex items-center justify-center min-h-screen text-red-500">
         <p className="text-xl font-semibold">
           Error: {error instanceof Error ? error.message : "An error occurred"}
         </p>
@@ -50,24 +50,23 @@ export default function ActivityPage() {
 
   if (!profile) {
     return (
-      <div className="flex items-center justify-center min-h-[calc(100vh-4rem)] pt-16 bg-gray-950 text-white">
+      <div className="flex items-center justify-center min-h-screen text-white">
         <p className="text-xl font-semibold">Profile not found</p>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col min-h-[calc(100vh-4rem)] pt-16 bg-gray-950">
-      {/* Hero Section */}
-      <div className="relative">
-        {/* Background Gradient */}
-        <div className="absolute inset-0 h-[300px] bg-gradient-to-b from-purple-900 via-indigo-900 to-gray-950" />
+    <div className="flex flex-col min-h-screen bg-gray-950">
+      {/* Hero Section with Gradient */}
+      <div className="absolute inset-x-0 top-16 h-[300px] bg-gradient-to-b from-purple-900 via-indigo-900 to-gray-950" />
 
-        {/* Profile Content */}
-        <div className="relative">
+      {/* Main Content Container */}
+      <div className="relative flex flex-col flex-grow">
+        {/* Profile Header Section */}
+        <div className="pt-8">
           <Toaster position="top-center" />
-          {/* Profile Info and Stats */}
-          <div className="max-w-7xl mx-auto px-4 pt-8">
+          <div className="max-w-7xl mx-auto px-4">
             <ProfileHeader
               profile={profile}
               stats={
@@ -80,20 +79,20 @@ export default function ActivityPage() {
               onProfileUpdate={() => {}}
             />
           </div>
+        </div>
 
-          {/* Navigation */}
-          <div className="sticky top-16 z-40 bg-gray-950/80 backdrop-blur-md border-b border-white/5 mt-8">
-            <div className="max-w-7xl mx-auto px-4">
-              <ProfileNav />
-            </div>
+        {/* Sticky Navigation */}
+        <div className="sticky top-16 z-40 bg-gray-950/80 backdrop-blur-md border-b border-white/5 mt-8">
+          <div className="max-w-7xl mx-auto px-4">
+            <ProfileNav />
           </div>
+        </div>
 
-          {/* Main Content */}
-          <div className="flex-grow bg-gray-950">
-            <div className="max-w-7xl mx-auto px-4 py-8">
-              <div className="bg-gray-900/50 rounded-xl p-6 backdrop-blur-sm border border-white/5">
-                <FriendActivityFeed />
-              </div>
+        {/* Activity Feed */}
+        <div className="flex-grow">
+          <div className="max-w-7xl mx-auto px-4 py-8">
+            <div className="bg-gray-900/50 rounded-xl p-6 backdrop-blur-sm border border-white/5">
+              <FriendActivityFeed />
             </div>
           </div>
         </div>

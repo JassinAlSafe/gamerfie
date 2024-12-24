@@ -2,118 +2,106 @@
 import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 
-export const SparklesCore = ({
-  id,
-  className,
-  background,
-  minSize,
-  maxSize,
-  particleDensity,
-  particleColor,
-}: {
+interface SparkleType {
   id: string;
-  className?: string;
+  createdAt: number;
+  color: string;
+  size: number;
+  style: {
+    top: string;
+    left: string;
+    zIndex: number;
+  };
+}
+
+export const SparklesCore = ({
+  background = "transparent",
+  minSize = 0.4,
+  maxSize = 1,
+  particleDensity = 1000,
+  particleColor = "#FFF",
+  className,
+}: {
   background?: string;
   minSize?: number;
   maxSize?: number;
   particleDensity?: number;
   particleColor?: string;
+  className?: string;
 }) => {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [context, setContext] = useState<CanvasRenderingContext2D | null>(null);
-  const [particles, setParticles] = useState<Array<Particle>>([]);
-  const animationRef = useRef<number>();
+  const [sparks, setSparks] = useState<SparkleType[]>([]);
+  const [density, setDensity] = useState(particleDensity);
+  const frame = useRef<number>(0);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!canvasRef.current) return;
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext("2d");
-    setContext(ctx);
+    setDensity(particleDensity);
+  }, [particleDensity]);
 
-    const handleResize = () => {
-      if (canvas) {
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-      }
+  const createSpark = (): SparkleType => {
+    const containerWidth = containerRef.current?.offsetWidth || 0;
+    const containerHeight = containerRef.current?.offsetHeight || 0;
+
+    return {
+      id: Math.random().toString(36).slice(2),
+      createdAt: Date.now(),
+      color: particleColor,
+      size: Math.random() * (maxSize - minSize) + minSize,
+      style: {
+        top: Math.random() * containerHeight + "px",
+        left: Math.random() * containerWidth + "px",
+        zIndex: Math.floor(Math.random() * 3),
+      },
     };
-
-    handleResize();
-    window.addEventListener("resize", handleResize);
-
-    const particleCount = particleDensity || 50;
-    const minParticleSize = minSize || 0.5;
-    const maxParticleSize = maxSize || 1.5;
-
-    const newParticles = Array.from({ length: particleCount }, () => ({
-      x: Math.random() * canvas.width,
-      y: Math.random() * canvas.height,
-      size: Math.random() * (maxParticleSize - minParticleSize) + minParticleSize,
-      speedX: Math.random() * 0.5 - 0.25,
-      speedY: Math.random() * 0.5 - 0.25,
-    }));
-
-    setParticles(newParticles);
-
-    return () => {
-      window.removeEventListener("resize", handleResize);
-      if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current);
-      }
-    };
-  }, [minSize, maxSize, particleDensity]);
+  };
 
   useEffect(() => {
-    if (!context || !canvasRef.current) return;
-
     const animate = () => {
-      if (!context || !canvasRef.current) return;
-      context.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+      frame.current = requestAnimationFrame(animate);
+      const now = Date.now();
 
-      particles.forEach((particle) => {
-        if (!context || !canvasRef.current) return;
+      setSparks((prevSparks) => {
+        const newSparks = prevSparks.filter(
+          (spark) => now - spark.createdAt < 1000
+        );
 
-        particle.x += particle.speedX;
-        particle.y += particle.speedY;
+        if (newSparks.length < density) {
+          return [...newSparks, createSpark()];
+        }
 
-        if (particle.x < 0) particle.x = canvasRef.current.width;
-        if (particle.x > canvasRef.current.width) particle.x = 0;
-        if (particle.y < 0) particle.y = canvasRef.current.height;
-        if (particle.y > canvasRef.current.height) particle.y = 0;
-
-        context.beginPath();
-        context.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
-        context.fillStyle = particleColor || "#ffffff";
-        context.fill();
+        return newSparks;
       });
-
-      animationRef.current = requestAnimationFrame(animate);
     };
 
-    animate();
+    frame.current = requestAnimationFrame(animate);
 
     return () => {
-      if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current);
+      if (frame.current) {
+        cancelAnimationFrame(frame.current);
       }
     };
-  }, [context, particles, particleColor]);
+  }, [density, maxSize, minSize, particleColor]);
 
   return (
-    <canvas
-      ref={canvasRef}
-      id={id}
-      className={cn("pointer-events-none", className)}
-      style={{
-        background: background || "transparent",
-      }}
-    ></canvas>
+    <div
+      ref={containerRef}
+      className={cn("absolute inset-0 overflow-hidden", className)}
+      style={{ background }}
+    >
+      {sparks.map((spark) => (
+        <span
+          key={spark.id}
+          className="absolute animate-glow pointer-events-none"
+          style={{
+            ...spark.style,
+            background: spark.color,
+            width: `${spark.size}px`,
+            height: `${spark.size}px`,
+            borderRadius: "50%",
+            transform: "scale(0)",
+          }}
+        />
+      ))}
+    </div>
   );
 };
-
-interface Particle {
-  x: number;
-  y: number;
-  size: number;
-  speedX: number;
-  speedY: number;
-} 

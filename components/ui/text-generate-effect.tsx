@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect } from "react";
-import { motion, stagger, useAnimate } from "framer-motion";
+import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 
 export const TextGenerateEffect = ({
@@ -11,34 +11,30 @@ export const TextGenerateEffect = ({
   words: string;
   className?: string;
 }) => {
-  const [scope, animate] = useAnimate();
-  const wordsArray = words.split(" ");
+  const [wordArray, setWordArray] = useState<string[]>([]);
 
   useEffect(() => {
-    animate(
-      "span",
-      {
-        opacity: 1,
-      },
-      {
-        duration: 2,
-        delay: stagger(0.1),
-      }
-    );
-  }, [animate]);
+    setWordArray(words.split(" "));
+  }, [words]);
 
   return (
-    <motion.div ref={scope} className={cn("font-bold", className)}>
-      {wordsArray.map((word, idx) => {
+    <span className={cn("inline-block", className)}>
+      {wordArray.map((word, idx) => {
         return (
           <motion.span
             key={word + idx}
-            className="opacity-0 inline-block mr-1.5"
+            className="text-gray-300 dark:text-gray-300 inline-block mr-2.5"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{
+              duration: 0.25,
+              delay: idx * 0.1,
+            }}
           >
             {word}
           </motion.span>
         );
       })}
-    </motion.div>
+    </span>
   );
-}; 
+};
