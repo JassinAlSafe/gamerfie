@@ -2,8 +2,15 @@
 
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
+import { cn } from "@/lib/utils";
 
-export const TextGenerateEffect = ({ words }: { words: string }) => {
+export const TextGenerateEffect = ({
+  words,
+  className,
+}: {
+  words: string;
+  className?: string;
+}) => {
   const [wordArray, setWordArray] = useState<string[]>([]);
 
   useEffect(() => {
@@ -11,7 +18,7 @@ export const TextGenerateEffect = ({ words }: { words: string }) => {
   }, [words]);
 
   return (
-    <span className="inline-block">
+    <span className={cn("inline-block", className)}>
       {wordArray.map((word, idx) => {
         return (
           <motion.span

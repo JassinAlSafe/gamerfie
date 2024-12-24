@@ -10,5 +10,9 @@ export default function ProfileLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return children;
+  return (
+    <div className="min-h-screen bg-gray-950">
+      <main>{children}</main>
+    </div>
+  );
 }

@@ -1,33 +1,155 @@
 "use client";
 
-import React, { useCallback, useMemo } from "react";
+import React, { useCallback, useMemo, Suspense } from "react";
+import dynamic from "next/dynamic";
 import PopularGamesSection from "@/components/PopularGamesSection";
 import { Button } from "@/components/ui/button";
-import { Search, Sparkles, Calendar, Flame, Star, Users } from "lucide-react";
+import {
+  Search,
+  Sparkles,
+  Calendar,
+  Flame,
+  Star,
+  Users,
+  ArrowUp,
+} from "lucide-react";
 import { TracingBeam } from "@/components/ui/tracing-beam";
 import { TextGenerateEffect } from "@/components/ui/text-generate-effect";
 import { motion, AnimatePresence } from "framer-motion";
 import { Input } from "@/components/ui/input";
-import { useGamesStore } from '@/stores/useGamesStore';
-import { useDebounce } from '@/hooks/useDebounce';
-import { useRouter } from 'next/navigation';
-import { Skeleton } from "@/components/ui/skeleton";
+import { useGamesStore } from "@/stores/useGamesStore";
+import { useDebounce } from "@/hooks/useDebounce";
+import { useRouter } from "next/navigation";
 import { ErrorBoundary } from "react-error-boundary";
-import { formatRating } from '@/utils/game-utils';
-import { Suspense } from 'react';
+import { Footer } from "@/components/Footer";
+
+// Dynamically import heavy components
+const BackToTopButton = dynamic(() => import("@/components/BackToTopButton"), {
+  ssr: false,
+  loading: () => null,
+});
 
 const categories = [
-  { id: 'popular', label: 'Popular Games', icon: Flame, color: 'text-orange-500' },
-  { id: 'upcoming', label: 'Upcoming Games', icon: Calendar, color: 'text-purple-500' },
-  { id: 'recent', label: 'New Releases', icon: Sparkles, color: 'text-yellow-500' }
+  {
+    id: "popular",
+    label: "Popular Games",
+    icon: Flame,
+    color: "text-orange-500",
+  },
+  {
+    id: "upcoming",
+    label: "Upcoming Games",
+    icon: Calendar,
+    color: "text-purple-500",
+  },
+  {
+    id: "recent",
+    label: "New Releases",
+    icon: Sparkles,
+    color: "text-yellow-500",
+  },
 ] as const;
 
-function ErrorFallback({ error, resetErrorBoundary }: { error: Error, resetErrorBoundary: () => void }) {
+function ErrorFallback({
+  error,
+  resetErrorBoundary,
+}: {
+  error: Error;
+  resetErrorBoundary: () => void;
+}) {
   return (
     <div className="text-center p-4 rounded-lg bg-red-500/10 border border-red-500/20">
       <p className="text-red-400">Something went wrong:</p>
       <pre className="text-sm text-red-300">{error.message}</pre>
-      <Button onClick={resetErrorBoundary} className="mt-4">Try again</Button>
+      <Button onClick={resetErrorBoundary} className="mt-4">
+        Try again
+      </Button>
+    </div>
+  );
+}
+
+// Loading skeleton for the hero section
+function HeroSkeleton() {
+  return (
+    <div className="relative flex flex-col items-center justify-center min-h-[50vh] text-center animate-pulse">
+      <div className="max-w-4xl mx-auto mb-8">
+        <div className="h-20 bg-gray-800/50 rounded-lg mb-6 w-3/4 mx-auto" />
+        <div className="h-6 bg-gray-800/50 rounded w-2/3 mx-auto mb-12" />
+        <div className="relative max-w-2xl mx-auto">
+          <div className="h-16 bg-gray-800/50 rounded-full mb-6" />
+          <div className="flex justify-center gap-3">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-10 w-32 bg-gray-800/50 rounded-full" />
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Loading skeleton for game categories
+function GameCategoriesSkeleton() {
+  return (
+    <div className="space-y-24">
+      {[1, 2, 3].map((section) => (
+        <div key={section} className="space-y-6">
+          <div className="h-8 bg-gray-800/50 rounded w-48" />
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="aspect-[3/4] rounded-lg bg-gray-800/50" />
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// Hero section component
+function HeroSection({
+  searchQuery,
+  handleSearchChange,
+  handleKeyPress,
+  searchButton,
+  categoryButtons,
+}: any) {
+  return (
+    <div className="relative flex flex-col items-center justify-center min-h-[50vh] text-center">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="max-w-4xl mx-auto mb-8"
+      >
+        <h1 className="text-5xl md:text-7xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-500 via-pink-500 to-cyan-500 mb-6">
+          Discover Your Next Gaming Adventure
+        </h1>
+        <TextGenerateEffect
+          words="Explore trending games, connect with fellow gamers, and keep track of your gaming journey."
+          className="text-gray-300 text-xl mb-12"
+        />
+        <div className="relative max-w-2xl mx-auto">
+          <div className="relative group">
+            <Search
+              className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 group-hover:text-white/70 transition-colors duration-200"
+              size={24}
+            />
+            <Input
+              type="text"
+              placeholder="Search for games..."
+              value={searchQuery}
+              onChange={handleSearchChange}
+              onKeyPress={handleKeyPress}
+              className="w-full bg-white/5 border-white/10 text-white placeholder:text-gray-400 pl-14 pr-24 py-7 rounded-full 
+                       focus:ring-2 focus:ring-purple-500/50 focus:bg-white/10 text-xl
+                       hover:bg-white/10 transition-all duration-200 shadow-lg"
+            />
+            {searchButton}
+          </div>
+          {categoryButtons}
+        </div>
+      </motion.div>
     </div>
   );
 }
@@ -39,29 +161,38 @@ export default function ExplorePage() {
 
   const handleSearch = useCallback(() => {
     if (debouncedSearch.trim()) {
-      setSelectedCategory('all');
+      setSelectedCategory("all");
       router.push(`/all-games?search=${encodeURIComponent(debouncedSearch)}`);
     }
   }, [debouncedSearch, router, setSelectedCategory]);
 
-  const handleKeyPress = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      handleSearch();
-    }
-  }, [handleSearch]);
+  const handleKeyPress = useCallback(
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === "Enter") {
+        handleSearch();
+      }
+    },
+    [handleSearch]
+  );
 
-  const handleCategoryClick = useCallback((category: string) => {
-    setSelectedCategory(category);
-    router.push(`/all-games?category=${category}`);
-  }, [router, setSelectedCategory]);
+  const handleCategoryClick = useCallback(
+    (category: string) => {
+      setSelectedCategory(category);
+      router.push(`/all-games?category=${category}`);
+    },
+    [router, setSelectedCategory]
+  );
 
-  const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchQuery(e.target.value);
-  }, [setSearchQuery]);
+  const handleSearchChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      setSearchQuery(e.target.value);
+    },
+    [setSearchQuery]
+  );
 
   const searchButton = useMemo(() => {
     if (!searchQuery) return null;
-    
+
     return (
       <AnimatePresence>
         <motion.div
@@ -83,92 +214,84 @@ export default function ExplorePage() {
     );
   }, [searchQuery, handleSearch]);
 
-  const categoryButtons = useMemo(() => (
-    <div className="mt-4 flex flex-wrap gap-2 justify-center">
-      {categories.map(({ id, label }) => (
-        <Button 
-          key={id}
-          variant="ghost" 
-          size="sm" 
-          className="bg-white/5 hover:bg-white/10 text-gray-300"
-          onClick={() => handleCategoryClick(id)}
-        >
-          {label}
-        </Button>
-      ))}
-    </div>
-  ), [handleCategoryClick]);
+  const categoryButtons = useMemo(
+    () => (
+      <div className="mt-6 flex flex-wrap gap-3 justify-center">
+        {categories.map(({ id, label, icon: Icon, color }) => (
+          <Button
+            key={id}
+            variant="ghost"
+            size="sm"
+            className={`bg-white/5 hover:bg-white/10 text-gray-300 flex items-center space-x-2 px-4 py-2 rounded-full transition-all duration-200 hover:scale-105`}
+            onClick={() => handleCategoryClick(id)}
+          >
+            <Icon className={`w-4 h-4 ${color}`} />
+            <span>{label}</span>
+          </Button>
+        ))}
+      </div>
+    ),
+    [handleCategoryClick]
+  );
 
-  const gameCategories = useMemo(() => (
-    <div className="space-y-24">
-      {categories.map(({ id, label, icon: Icon, color }) => (
-        <ErrorBoundary 
-          key={id}
-          FallbackComponent={ErrorFallback}
-          onReset={() => {
-            // Reset the error boundary state
-          }}
-        >
-          <Suspense fallback={
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} className="aspect-[3/4] rounded-lg bg-gray-800/50 animate-pulse" />
-              ))}
-            </div>
-          }>
-            <PopularGamesSection category={id === 'recent' ? 'new' : id} />
-          </Suspense>
-        </ErrorBoundary>
-      ))}
-    </div>
-  ), [handleCategoryClick]);
+  const gameCategories = useMemo(
+    () => (
+      <div className="space-y-12">
+        {categories.map(({ id }) => (
+          <ErrorBoundary
+            key={id}
+            FallbackComponent={ErrorFallback}
+            onReset={() => {
+              // Reset the error boundary state
+            }}
+          >
+            <Suspense
+              fallback={
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                  {Array.from({ length: 6 }).map((_, i) => (
+                    <div
+                      key={i}
+                      className="aspect-[3/4] rounded-lg bg-gray-800/50 animate-pulse"
+                    />
+                  ))}
+                </div>
+              }
+            >
+              <PopularGamesSection category={id === "recent" ? "new" : id} />
+            </Suspense>
+          </ErrorBoundary>
+        ))}
+      </div>
+    ),
+    []
+  );
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-950 pt-28">
-      <TracingBeam className="px-4">
-        <div className="relative z-10 max-w-7xl mx-auto space-y-24">
-          {/* Hero Section */}
-          <div className="relative flex flex-col items-center justify-center min-h-[40vh] text-center">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-              className="max-w-3xl mx-auto mb-8"
-            >
-              <h1 className="text-4xl md:text-6xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-500 via-pink-500 to-cyan-500 mb-6">
-                Discover Your Next Gaming Adventure
-              </h1>
-              <TextGenerateEffect
-                words="Explore trending games, connect with fellow gamers, and keep track of your gaming journey."
-                className="text-gray-400 text-lg mb-8"
-              />
-              <div className="relative max-w-xl mx-auto">
-                <div className="relative group">
-                  <Search
-                    className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 group-hover:text-white/70 transition-colors duration-200"
-                    size={20}
-                  />
-                  <Input
-                    type="text"
-                    placeholder="Search for games..."
-                    value={searchQuery}
-                    onChange={handleSearchChange}
-                    onKeyPress={handleKeyPress}
-                    className="w-full bg-white/5 border-white/10 text-white placeholder:text-gray-400 pl-12 pr-24 py-6 rounded-2xl 
-                             focus:ring-2 focus:ring-purple-500/50 focus:bg-white/10 text-lg
-                             hover:bg-white/10 transition-all duration-200"
-                  />
-                  {searchButton}
-                </div>
-                {categoryButtons}
-              </div>
-            </motion.div>
-          </div>
+    <div className="min-h-screen bg-[#0B0F15]">
+      <div className="fixed inset-0 bg-gradient-to-b from-[#0B0F15] via-gray-900 to-[#0B0F15] pointer-events-none" />
 
-          {/* Game Categories */}
-          {gameCategories}
-        </div>
-      </TracingBeam>
+      <div className="relative z-10 pt-28">
+        <TracingBeam className="px-4">
+          <div className="relative z-10 max-w-7xl mx-auto space-y-12">
+            <Suspense fallback={<HeroSkeleton />}>
+              <HeroSection
+                searchQuery={searchQuery}
+                handleSearchChange={handleSearchChange}
+                handleKeyPress={handleKeyPress}
+                searchButton={searchButton}
+                categoryButtons={categoryButtons}
+              />
+            </Suspense>
+
+            <Suspense fallback={<GameCategoriesSkeleton />}>
+              {gameCategories}
+            </Suspense>
+          </div>
+        </TracingBeam>
+
+        <BackToTopButton />
+        <Footer />
+      </div>
     </div>
   );
 }

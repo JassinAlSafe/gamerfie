@@ -5,21 +5,24 @@ import { useProfile } from "@/hooks/use-profile";
 import { ProfileHeader } from "@/components/profile/profile-header";
 import { ProfileNav } from "@/components/profile/profile-nav";
 import { GamesTab } from "@/components/profile/games-tab";
-import { GameFilters, GameFilters as GameFiltersType } from "@/components/profile/game-filters";
+import {
+  GameFilters,
+  GameFilters as GameFiltersType,
+} from "@/components/profile/game-filters";
 import LoadingSpinner from "@/components/loadingSpinner";
 import { fetchUserGames } from "@/utils/game-utils";
 
 export default function ProfileGamesPage() {
   const { profile, isLoading, error, gameStats } = useProfile();
   const [filters, setFilters] = useState<GameFiltersType>({
-    status: 'all',
-    sortBy: 'recent',
-    sortOrder: 'desc',
+    status: "all",
+    sortBy: "recent",
+    sortOrder: "desc",
   });
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[calc(100vh-4rem)] pt-16 bg-gray-950">
+      <div className="flex items-center justify-center min-h-screen">
         <LoadingSpinner size="lg" />
       </div>
     );
@@ -27,7 +30,7 @@ export default function ProfileGamesPage() {
 
   if (error || !profile) {
     return (
-      <div className="flex items-center justify-center min-h-[calc(100vh-4rem)] pt-16 bg-gray-950 text-red-500">
+      <div className="flex items-center justify-center min-h-screen text-red-500">
         <p className="text-xl font-semibold">
           {error?.message || "Profile not found"}
         </p>
@@ -36,15 +39,14 @@ export default function ProfileGamesPage() {
   }
 
   return (
-    <div className="flex flex-col min-h-[calc(100vh-4rem)] pt-16 bg-gray-950">
-      {/* Hero Section */}
-      <div className="relative">
-        {/* Background Gradient */}
-        <div className="absolute inset-0 h-[300px] bg-gradient-to-b from-purple-900 via-indigo-900 to-gray-950" />
-        
-        {/* Profile Content */}
-        <div className="relative pt-8">
-          {/* Profile Info and Stats */}
+    <div className="flex flex-col min-h-screen bg-gray-950">
+      {/* Hero Section with Gradient */}
+      <div className="absolute inset-x-0 top-16 h-[300px] bg-gradient-to-b from-purple-900 via-indigo-900 to-gray-950" />
+
+      {/* Main Content Container */}
+      <div className="relative flex flex-col flex-grow">
+        {/* Profile Header Section */}
+        <div className="pt-8">
           <div className="max-w-7xl mx-auto px-4">
             <ProfileHeader
               profile={profile}
@@ -55,23 +57,23 @@ export default function ProfileGamesPage() {
           </div>
         </div>
 
-        {/* Navigation */}
+        {/* Sticky Navigation */}
         <div className="sticky top-16 z-40 bg-gray-950/80 backdrop-blur-md border-b border-white/5 mt-8">
           <div className="max-w-7xl mx-auto px-4">
             <ProfileNav />
           </div>
         </div>
-      </div>
 
-      {/* Games Grid */}
-      <div className="flex-grow bg-gray-950">
-        <div className="max-w-7xl mx-auto px-4 py-8">
-          <div className="flex flex-col space-y-6">
-            <GameFilters onFilterChange={setFilters} />
-            <GamesTab userId={profile.id} filters={filters} />
+        {/* Games Grid */}
+        <div className="flex-grow">
+          <div className="max-w-7xl mx-auto px-4 py-8">
+            <div className="flex flex-col space-y-6">
+              <GameFilters onFilterChange={setFilters} />
+              <GamesTab userId={profile.id} filters={filters} />
+            </div>
           </div>
         </div>
       </div>
     </div>
   );
-} 
+}
