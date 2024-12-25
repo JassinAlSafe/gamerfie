@@ -1,48 +1,26 @@
 import { cn } from "@/lib/utils";
-import { Progress } from "./progress";
 
 interface ProgressIndicatorProps {
   value: number;
-  variant?: 'default' | 'success' | 'warning' | 'achievement';
-  size?: 'sm' | 'md' | 'lg';
-  className?: string;
+  variant?: "default" | "achievement" | "challenge";
 }
 
-export function ProgressIndicator({ 
-  value, 
-  variant = 'default',
-  size = 'md',
-  className
+export function ProgressIndicator({
+  value,
+  variant = "default",
 }: ProgressIndicatorProps) {
-  const getProgressColor = () => {
-    if (variant === 'achievement') return 'bg-yellow-500';
-    if (value === 100) return 'bg-green-500';
-    if (value >= 75) return 'bg-blue-500';
-    if (value >= 50) return 'bg-purple-500';
-    if (value >= 25) return 'bg-orange-500';
-    return 'bg-red-500';
-  };
-
-  const getHeight = () => {
-    switch (size) {
-      case 'sm': return 'h-1.5';
-      case 'lg': return 'h-3';
-      default: return 'h-2';
-    }
-  };
-
   return (
-    <Progress 
-      value={value} 
-      className={cn(
-        "w-full overflow-hidden rounded-full bg-gray-800/50",
-        getHeight(),
-        className
-      )}
-      indicatorClassName={cn(
-        getProgressColor(),
-        "transition-all duration-300"
-      )}
-    />
+    <div className="relative w-full h-2 bg-gray-800/50 rounded-full overflow-hidden">
+      <div
+        className={cn(
+          "absolute inset-y-0 left-0 transition-all duration-300",
+          variant === "achievement" && "bg-yellow-500",
+          variant === "challenge" && "bg-purple-500",
+          variant === "default" && "bg-blue-500"
+        )}
+        style={{ width: `${value}%` }}
+        data-variant={variant}
+      />
+    </div>
   );
-} 
+}

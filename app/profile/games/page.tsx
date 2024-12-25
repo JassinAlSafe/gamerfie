@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useProfile } from "@/hooks/use-profile";
+import { useSettings } from "@/hooks/use-settings";
 import { ProfileHeader } from "@/components/profile/profile-header";
 import { ProfileNav } from "@/components/profile/profile-nav";
 import { GamesTab } from "@/components/profile/games-tab";
@@ -13,14 +14,23 @@ import LoadingSpinner from "@/components/loadingSpinner";
 import { fetchUserGames } from "@/utils/game-utils";
 
 export default function ProfileGamesPage() {
-  const { profile, isLoading, error, gameStats } = useProfile();
-  const [filters, setFilters] = useState<GameFiltersType>({
+  const { profile, isLoading: profileLoading, error, gameStats } = useProfile();
+  const { settings } = useSettings();
+  const [filters, setFilters] = useState<GameFilters>({
     status: "all",
     sortBy: "recent",
     sortOrder: "desc",
+    view: settings.gamesView
   });
 
-  if (isLoading) {
+  useEffect(() => {
+    setFilters(prev => ({
+      ...prev,
+      view: settings.gamesView
+    }));
+  }, [settings.gamesView]);
+
+  if (profileLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <LoadingSpinner size="lg" />

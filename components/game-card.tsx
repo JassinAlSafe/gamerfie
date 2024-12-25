@@ -1,122 +1,187 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
-import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { MoreHorizontal, Clock } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Button } from "@/components/ui/button";
-import { Gamepad2, MoreHorizontal } from "lucide-react";
-import { type GameStatus } from "@/types/game";
-import { type GameCardProps } from "@/types/game";
+import { ProcessedGame, GameStatus } from "@/types/game";
 
-export function GameCard({ game, index, onStatusChange }: GameCardProps) {
-  if (!game?.id) {
-    console.warn('Invalid game data:', game);
-    return null;
-  }
+interface GameCardProps {
+  game: ProcessedGame;
+  view?: "grid" | "list";
+  onStatusChange?: (status: GameStatus) => void;
+}
 
-  const getHighQualityImageUrl = (url: string) => {
-    return url.startsWith("//")
-      ? `https:${url.replace("/t_thumb/", "/t_cover_big/")}`
-      : url.replace("/t_thumb/", "/t_cover_big/");
-  };
+export function GameCard({
+  game,
+  view = "grid",
+  onStatusChange,
+}: GameCardProps) {
+  // Transform IGDB cover URL to get the highest quality version
+  const baseImageUrl =
+    game.cover?.url || game.cover_url || "/images/placeholder-game.jpg";
+  const imageUrl = baseImageUrl.replace("/t_thumb/", "/t_cover_big/");
+  const statusOptions: GameStatus[] = [
+    "playing",
+    "completed",
+    "want_to_play",
+    "dropped",
+  ];
 
-  const statusLabels: Record<GameStatus, string> = {
-    playing: "Currently Playing",
-    completed: "Completed",
-    want_to_play: "Want to Play",
-    dropped: "Dropped",
-  };
+  if (view === "list") {
+    return (
+      <div className="group flex items-center bg-gray-900/40 hover:bg-gray-900/60 transition-all duration-200 overflow-hidden rounded-lg">
+        {/* Cover image - using game cover aspect ratio (3:4) */}
+        <div className="relative w-[84px] h-[112px] flex-shrink-0">
+          <Image
+            src={imageUrl}
+            alt={game.name}
+            fill
+            sizes="84px"
+            className="object-cover transition-transform duration-200 group-hover:scale-105"
+            quality={100}
+            priority
+          />
+        </div>
 
-  return (
-    <div className="space-y-4">
-      <Card className="group relative overflow-hidden transition-all hover:shadow-xl dark:hover:shadow-primary/10">
-        <Link href={`/game/${game.id}`} className="relative block">
-          <div className="relative aspect-[3/4] overflow-hidden">
-            {game.cover?.url ? (
-              <Image
-                src={getHighQualityImageUrl(game.cover.url)}
-                alt={game.name}
-                fill
-                priority={game.isPriority}
-                className="object-cover transition-transform duration-300 group-hover:scale-105"
-                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-              />
-            ) : (
-              <div className="flex h-full items-center justify-center bg-muted">
-                <Gamepad2 className="h-16 w-16 text-muted-foreground" />
-              </div>
-            )}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
-
-            <div className="absolute bottom-4 left-4 right-4">
-              <div className="flex flex-col gap-2">
-                <h3 className="text-lg font-semibold text-white line-clamp-2">
-                  {game.name}
-                </h3>
-                {game.platforms && game.platforms.length > 0 && (
-                  <div className="flex flex-wrap gap-1">
-                    {game.platforms.map((platform) => (
-                      <Badge
-                        key={platform.id}
-                        variant="secondary"
-                        className="bg-black/50 text-xs hover:bg-black/70"
-                      >
-                        {platform.name}
-                      </Badge>
-                    ))}
-                  </div>
-                )}
-              </div>
+        <div className="flex flex-1 items-center justify-between px-4 py-3">
+          <div className="flex flex-col min-w-0">
+            <h3 className="text-base font-medium text-white truncate pr-4">
+              {game.name}
+            </h3>
+            <div className="flex items-center gap-2 mt-1">
+              {game.status && (
+                <Badge variant="secondary" className="text-xs bg-gray-800/50">
+                  {game.status.charAt(0).toUpperCase() +
+                    game.status.slice(1).replace("_", " ")}
+                </Badge>
+              )}
+              {game.first_release_date && (
+                <span className="text-xs text-gray-400">
+                  {new Date(game.first_release_date * 1000).getFullYear()}
+                </span>
+              )}
             </div>
           </div>
-        </Link>
 
-        <div className="absolute right-2 top-2">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 bg-black/50 text-white hover:bg-black/70"
-              >
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48">
-              {(Object.entries(statusLabels) as [GameStatus, string][]).map(
-                ([value, label]) => (
-                  <DropdownMenuItem
-                    key={value}
-                    onClick={() => onStatusChange(value)}
-                    className={game.status === value ? "bg-accent" : ""}
+          {onStatusChange && (
+            <div className="flex-shrink-0">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="opacity-0 group-hover:opacity-100 transition-opacity"
                   >
-                    {label}
-                  </DropdownMenuItem>
-                )
-              )}
-              <DropdownMenuItem className="text-destructive" onClick={() => onStatusChange('dropped')}>
-                Remove from Library
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+                    <MoreHorizontal className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-[160px]">
+                  {statusOptions.map((status) => (
+                    <DropdownMenuItem
+                      key={status}
+                      onClick={() => onStatusChange(status)}
+                      className="text-sm"
+                    >
+                      {status.charAt(0).toUpperCase() +
+                        status.slice(1).replace("_", " ")}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          )}
         </div>
+      </div>
+    );
+  }
 
-        <div className="absolute left-2 top-2">
-          <Badge
-            variant="secondary"
-            className="bg-black/50 text-white border-none"
-          >
-            {statusLabels[game.status]}
-          </Badge>
+  // Enhanced Grid View
+  return (
+    <div className="group relative bg-gray-900/40 rounded-xl overflow-hidden transition-all duration-300 hover:transform hover:scale-[1.02] hover:shadow-xl">
+      {/* Main Image Container */}
+      <div className="relative aspect-[3/4] overflow-hidden">
+        <Image
+          src={imageUrl}
+          alt={game.name}
+          fill
+          sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"
+          className="object-cover transition-transform duration-300 group-hover:scale-105"
+          quality={100}
+          priority
+        />
+
+        {/* Overlay Gradient */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+
+        {/* Status Badge - Top Right */}
+        {game.status && (
+          <div className="absolute top-3 right-3 px-2.5 py-1 text-xs font-medium bg-black/80 text-white rounded-full backdrop-blur-sm border border-white/10">
+            {game.status.charAt(0).toUpperCase() +
+              game.status.slice(1).replace("_", " ")}
+          </div>
+        )}
+
+        {/* Game Info - Bottom */}
+        <div className="absolute bottom-0 left-0 right-0 p-4 transform translate-y-2 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300">
+          <h3 className="text-lg font-semibold text-white truncate mb-2">
+            {game.name}
+          </h3>
+
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              {game.first_release_date && (
+                <span className="text-sm text-gray-300/90">
+                  {new Date(game.first_release_date * 1000).getFullYear()}
+                </span>
+              )}
+              {game.playTime && (
+                <div className="flex items-center gap-1 text-sm text-gray-300/90">
+                  <Clock className="w-4 h-4" />
+                  <span>{game.playTime}h</span>
+                </div>
+              )}
+            </div>
+
+            {/* Action Button */}
+            {onStatusChange && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className="bg-white/10 hover:bg-white/20 text-white border-none px-3"
+                  >
+                    <span className="mr-2">Status</span>
+                    <MoreHorizontal className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  align="end"
+                  className="w-[160px] bg-gray-900/95 border border-white/10 backdrop-blur-sm"
+                >
+                  {statusOptions.map((status) => (
+                    <DropdownMenuItem
+                      key={status}
+                      onClick={() => onStatusChange(status)}
+                      className="text-sm text-gray-100 focus:text-white focus:bg-white/10 cursor-pointer"
+                    >
+                      {status.charAt(0).toUpperCase() +
+                        status.slice(1).replace("_", " ")}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+          </div>
         </div>
-      </Card>
+      </div>
     </div>
   );
 }

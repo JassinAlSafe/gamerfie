@@ -7,11 +7,12 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Loader2, Save } from "lucide-react";
+import { Loader2, Save, LayoutGrid, List } from "lucide-react";
 import { toast } from "react-hot-toast";
 import LoadingSpinner from "@/components/loadingSpinner";
 import { UserSettings, defaultSettings } from "@/types/settings";
 import { cn } from "@/lib/utils";
+import { useSettings } from "@/hooks/use-settings";
 
 interface SettingsSection {
   id: string;
@@ -25,6 +26,7 @@ export default function SettingsPage() {
   const [hasChanges, setHasChanges] = useState(false);
   const [settings, setSettings] = useState<UserSettings>(defaultSettings);
   const [activeSection, setActiveSection] = useState('general');
+  const { settings: userSettings, updateSettings } = useSettings();
 
   // Load settings from profile when available
   useEffect(() => {
