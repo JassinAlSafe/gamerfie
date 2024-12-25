@@ -54,6 +54,7 @@ export async function GET() {
         goal_target,
         min_participants,
         max_participants,
+        requirements,
         created_at,
         updated_at,
         creator:creator_id (

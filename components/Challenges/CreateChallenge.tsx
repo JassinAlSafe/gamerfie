@@ -43,7 +43,12 @@ const createChallengeSchema = z
       .min(10, "Description must be at least 10 characters")
       .max(500, "Description must be less than 500 characters"),
     type: z.enum(["competitive", "collaborative"]),
-    start_date: z.date().min(new Date(), "Start date must be in the future"),
+    start_date: z
+      .date()
+      .min(
+        new Date(new Date().setHours(0, 0, 0, 0)),
+        "Start date cannot be in the past"
+      ),
     end_date: z.date(),
     goal_type: z.enum([
       "complete_games",
@@ -56,6 +61,14 @@ const createChallengeSchema = z
     max_participants: z
       .number()
       .min(2, "Must allow at least 2 participants")
+      .optional(),
+    requirements: z
+      .object({
+        genre: z.string().optional(),
+        platform: z.string().optional(),
+        minRating: z.number().optional(),
+        releaseYear: z.number().optional(),
+      })
       .optional(),
     rewards: z
       .array(
@@ -113,8 +126,12 @@ export function CreateChallenge({ onSubmit }: CreateChallengeProps) {
     defaultValues: {
       type: "competitive",
       goal_type: "complete_games",
-      goal_target: 10,
-      max_participants: 10,
+      requirements: {
+        genre: "",
+        platform: "",
+        minRating: undefined,
+        releaseYear: undefined,
+      },
       rewards: [],
       rules: [],
     },
@@ -549,6 +566,86 @@ export function CreateChallenge({ onSubmit }: CreateChallengeProps) {
                     </div>
                   ))}
                 </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Add Requirements Section */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <Target className="w-5 h-5 text-purple-400" />
+              <h2 className="text-lg font-semibold">Requirements</h2>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-200">
+                  Genre
+                </label>
+                <Input
+                  placeholder="e.g., RPG"
+                  className="bg-gray-800/30 border-gray-700/30 h-9 focus:border-purple-500/50"
+                  {...register("requirements.genre")}
+                />
+                {errors.requirements?.genre && (
+                  <p className="text-sm text-red-400">
+                    {errors.requirements.genre.message}
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-200">
+                  Platform
+                </label>
+                <Input
+                  placeholder="e.g., PC"
+                  className="bg-gray-800/30 border-gray-700/30 h-9 focus:border-purple-500/50"
+                  {...register("requirements.platform")}
+                />
+                {errors.requirements?.platform && (
+                  <p className="text-sm text-red-400">
+                    {errors.requirements.platform.message}
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-200">
+                  Minimum Rating
+                </label>
+                <Input
+                  type="number"
+                  placeholder="e.g., 80"
+                  className="bg-gray-800/30 border-gray-700/30 h-9 focus:border-purple-500/50"
+                  {...register("requirements.minRating", {
+                    valueAsNumber: true,
+                  })}
+                />
+                {errors.requirements?.minRating && (
+                  <p className="text-sm text-red-400">
+                    {errors.requirements.minRating.message}
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-200">
+                  Release Year
+                </label>
+                <Input
+                  type="number"
+                  placeholder="e.g., 2024"
+                  className="bg-gray-800/30 border-gray-700/30 h-9 focus:border-purple-500/50"
+                  {...register("requirements.releaseYear", {
+                    valueAsNumber: true,
+                  })}
+                />
+                {errors.requirements?.releaseYear && (
+                  <p className="text-sm text-red-400">
+                    {errors.requirements.releaseYear.message}
+                  </p>
+                )}
               </div>
             </div>
           </div>
