@@ -5,7 +5,15 @@ import { useQuery } from "@tanstack/react-query";
 import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Star, Users, Gamepad2, ArrowLeft, Loader2, Filter, Search } from "lucide-react";
+import {
+  Star,
+  Users,
+  Gamepad2,
+  ArrowLeft,
+  Loader2,
+  Filter,
+  Search,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -25,10 +33,10 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
-import { useGamesStore } from '@/stores/useGamesStore';
-import { useDebounce } from '@/hooks/useDebounce';
-import { formatRating } from '@/utils/game-utils';
-import { useSearchParams } from 'next/navigation';
+import { useGamesStore } from "@/stores/useGamesStore";
+import { useDebounce } from "@/hooks/useDebounce";
+import { formatRating } from "@/utils/game-utils";
+import { useSearchParams } from "next/navigation";
 
 interface Platform {
   id: number;
@@ -58,7 +66,7 @@ const gameCategories = {
   upcoming: "Upcoming Games",
   classic: "Classic Games",
   indie: "Indie Games",
-  anticipated: "Most Anticipated"
+  anticipated: "Most Anticipated",
 };
 
 export default function AllGamesPage() {
@@ -69,36 +77,50 @@ export default function AllGamesPage() {
     selectedPlatform,
     selectedGenre,
     selectedCategory,
+    selectedYear,
     setCurrentPage,
     setSortBy,
     setSearchQuery,
     setSelectedPlatform,
     setSelectedGenre,
     setSelectedCategory,
+    setSelectedYear,
     setGames,
     setTotalPages,
     setTotalGames,
     resetFilters,
     setLoading,
-    setError: setStoreError
+    setError: setStoreError,
   } = useGamesStore();
 
   const searchParams = useSearchParams();
-  const category = searchParams.get('category') || 'all';
+  const category = searchParams.get("category") || "all";
 
   // Debounce the search query
   const debouncedSearch = useDebounce(searchQuery);
 
   // Combine all active filters for the query key
-  const queryKey = useMemo(() => [
-    "allGames",
-    currentPage,
-    sortBy,
-    selectedPlatform,
-    selectedGenre,
-    selectedCategory,
-    debouncedSearch
-  ], [currentPage, sortBy, selectedPlatform, selectedGenre, selectedCategory, debouncedSearch]);
+  const queryKey = useMemo(
+    () => [
+      "allGames",
+      currentPage,
+      sortBy,
+      selectedPlatform,
+      selectedGenre,
+      selectedCategory,
+      selectedYear,
+      debouncedSearch,
+    ],
+    [
+      currentPage,
+      sortBy,
+      selectedPlatform,
+      selectedGenre,
+      selectedCategory,
+      selectedYear,
+      debouncedSearch,
+    ]
+  );
 
   const { data, isLoading, error } = useQuery({
     queryKey,
@@ -111,8 +133,9 @@ export default function AllGamesPage() {
           platform: selectedPlatform,
           genre: selectedGenre,
           category: selectedCategory,
+          year: selectedYear,
           sort: sortBy,
-          search: debouncedSearch
+          search: debouncedSearch,
         });
 
         const response = await fetch(`/api/games?${params.toString()}`);
@@ -126,7 +149,8 @@ export default function AllGamesPage() {
         setTotalGames(data.totalGames);
         return data;
       } catch (error) {
-        const message = error instanceof Error ? error.message : "Failed to fetch games";
+        const message =
+          error instanceof Error ? error.message : "Failed to fetch games";
         setStoreError(message);
         throw error;
       } finally {
@@ -139,19 +163,19 @@ export default function AllGamesPage() {
   // Extract unique platforms and genres from the current games
   const { platforms, genres } = useMemo(() => {
     if (!data?.games) return { platforms: [], genres: [] };
-    
+
     const platformsSet = new Set<string>();
     const genresSet = new Set<string>();
-    
+
     data.games.forEach((game: Game) => {
-      game.platforms?.forEach(platform => {
+      game.platforms?.forEach((platform) => {
         platformsSet.add(platform.name);
       });
-      game.genres?.forEach(genre => {
+      game.genres?.forEach((genre) => {
         genresSet.add(genre.name);
       });
     });
-    
+
     return {
       platforms: Array.from(platformsSet).sort(),
       genres: Array.from(genresSet).sort(),
@@ -163,12 +187,14 @@ export default function AllGamesPage() {
     if (!data?.games) return [];
     return data.games.map((game: Game) => ({
       ...game,
-      cover: game.cover ? {
-        ...game.cover,
-        url: game.cover.url.includes('t_cover_big_2x') 
-          ? game.cover.url 
-          : game.cover.url.replace(/t_[a-zA-Z_]+/, 't_cover_big_2x')
-      } : undefined
+      cover: game.cover
+        ? {
+            ...game.cover,
+            url: game.cover.url.includes("t_cover_big_2x")
+              ? game.cover.url
+              : game.cover.url.replace(/t_[a-zA-Z_]+/, "t_cover_big_2x"),
+          }
+        : undefined,
     }));
   }, [data]);
 
@@ -182,14 +208,19 @@ export default function AllGamesPage() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  const years = useMemo(() => {
+    const currentYear = new Date().getFullYear();
+    return Array.from({ length: 30 }, (_, i) => currentYear - i);
+  }, []);
+
   if (error) {
     return (
       <div className="min-h-screen bg-gray-950 pt-28 px-4">
         <div className="max-w-7xl mx-auto">
           <div className="text-center text-red-500">
             <p>Error loading games: {error.message}</p>
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               className="mt-4"
               onClick={handleResetFilters}
             >
@@ -208,15 +239,22 @@ export default function AllGamesPage() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Link href="/explore">
-              <Button variant="ghost" size="icon" className="text-gray-400 hover:text-white">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-gray-400 hover:text-white"
+              >
                 <ArrowLeft className="h-5 w-5" />
               </Button>
             </Link>
             <h1 className="text-3xl font-bold text-white">All Games</h1>
           </div>
-          {(selectedPlatform !== "all" || selectedGenre !== "all" || selectedCategory !== "all" || searchQuery) && (
-            <Button 
-              variant="outline" 
+          {(selectedPlatform !== "all" ||
+            selectedGenre !== "all" ||
+            selectedCategory !== "all" ||
+            searchQuery) && (
+            <Button
+              variant="outline"
               size="sm"
               onClick={handleResetFilters}
               className="text-gray-400 hover:text-white"
@@ -244,18 +282,20 @@ export default function AllGamesPage() {
               <Loader2 className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 animate-spin text-purple-500" />
             )}
           </div>
-          
+
           <Select value={selectedCategory} onValueChange={setSelectedCategory}>
             <SelectTrigger className="w-full sm:w-[200px] bg-gray-900/50 border-gray-800">
               <SelectValue placeholder="Category" />
             </SelectTrigger>
             <SelectContent>
               {Object.entries(gameCategories).map(([value, label]) => (
-                <SelectItem key={`category-${value}`} value={value}>{label}</SelectItem>
+                <SelectItem key={`category-${value}`} value={value}>
+                  {label}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
-          
+
           <Select value={sortBy} onValueChange={setSortBy}>
             <SelectTrigger className="w-full sm:w-[200px] bg-gray-900/50 border-gray-800">
               <SelectValue placeholder="Sort by" />
@@ -270,7 +310,10 @@ export default function AllGamesPage() {
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="bg-gray-900/50 border-gray-800">
+              <Button
+                variant="outline"
+                className="bg-gray-900/50 border-gray-800"
+              >
                 <Filter className="w-4 h-4 mr-2" />
                 Filters
               </Button>
@@ -331,10 +374,27 @@ export default function AllGamesPage() {
               </div>
             </DropdownMenuContent>
           </DropdownMenu>
+
+          <Select value={selectedYear} onValueChange={setSelectedYear}>
+            <SelectTrigger className="w-full sm:w-[200px] bg-gray-900/50 border-gray-800">
+              <SelectValue placeholder="Release Year" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Years</SelectItem>
+              {years.map((year) => (
+                <SelectItem key={year} value={year.toString()}>
+                  {year}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Active Filters */}
-        {(selectedPlatform !== "all" || selectedGenre !== "all" || selectedCategory !== "all" || searchQuery) && (
+        {(selectedPlatform !== "all" ||
+          selectedGenre !== "all" ||
+          selectedCategory !== "all" ||
+          searchQuery) && (
           <div className="flex flex-wrap gap-2">
             {searchQuery && (
               <Badge
@@ -351,7 +411,12 @@ export default function AllGamesPage() {
                 className="bg-green-500/20 text-green-300 hover:bg-green-500/30"
                 onClick={() => setSelectedCategory("all")}
               >
-                {gameCategories[selectedCategory as keyof typeof gameCategories]} ×
+                {
+                  gameCategories[
+                    selectedCategory as keyof typeof gameCategories
+                  ]
+                }{" "}
+                ×
               </Badge>
             )}
             {selectedPlatform !== "all" && (
@@ -380,7 +445,9 @@ export default function AllGamesPage() {
           {isLoading ? (
             <span>Searching...</span>
           ) : (
-            `${data?.totalGames.toLocaleString()} Games • Page ${currentPage} of ${data?.totalPages}`
+            `${data?.totalGames.toLocaleString()} Games • Page ${currentPage} of ${
+              data?.totalPages
+            }`
           )}
         </div>
 
@@ -424,7 +491,9 @@ export default function AllGamesPage() {
                           {game.rating && (
                             <div className="flex items-center text-yellow-400">
                               <Star className="h-3 w-3 mr-1 fill-current" />
-                              <span className="text-xs">{Math.round(game.rating)}</span>
+                              <span className="text-xs">
+                                {Math.round(game.rating)}
+                              </span>
                             </div>
                           )}
                           {game.total_rating_count && (
@@ -432,7 +501,9 @@ export default function AllGamesPage() {
                               <Users className="h-3 w-3 mr-1" />
                               <span className="text-xs">
                                 {game.total_rating_count > 1000
-                                  ? `${(game.total_rating_count / 1000).toFixed(1)}k`
+                                  ? `${(game.total_rating_count / 1000).toFixed(
+                                      1
+                                    )}k`
                                   : game.total_rating_count}
                               </span>
                             </div>
@@ -467,7 +538,8 @@ export default function AllGamesPage() {
                   Previous
                 </Button>
                 <span className="text-gray-400">
-                  Page {currentPage.toLocaleString()} of {data.totalPages.toLocaleString()}
+                  Page {currentPage.toLocaleString()} of{" "}
+                  {data.totalPages.toLocaleString()}
                 </span>
                 <Button
                   variant="outline"

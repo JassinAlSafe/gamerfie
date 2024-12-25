@@ -49,6 +49,7 @@ import { useRouter } from "next/navigation";
 import { StatusDialog } from "@/components/game/status-dialog";
 import { GameStats } from "@/components/game/game-stats";
 import { CommunityStats } from "@/components/game/community-stats";
+import { ChallengesSection } from "@/components/game/challenges-section";
 
 const getHighQualityImageUrl = (url: string) => {
   return url.startsWith("//")
@@ -514,6 +515,12 @@ export const GameDetails = memo(function GameDetails({ game }: { game: Game }) {
                 Achievements
               </TabsTrigger>
               <TabsTrigger
+                value="challenges"
+                className="px-4 py-3 text-gray-400 data-[state=active]:text-white data-[state=active]:border-b-2 data-[state=active]:border-purple-500 rounded-none bg-transparent"
+              >
+                Challenges
+              </TabsTrigger>
+              <TabsTrigger
                 value="activity"
                 className="px-4 py-3 text-gray-400 data-[state=active]:text-white data-[state=active]:border-b-2 data-[state=active]:border-purple-500 rounded-none bg-transparent"
               >
@@ -671,6 +678,12 @@ export const GameDetails = memo(function GameDetails({ game }: { game: Game }) {
                     Achievements
                   </h3>
                   <AchievementsSection achievements={game.achievements || []} />
+                </div>
+              </TabsContent>
+
+              <TabsContent value="challenges" className="mt-0">
+                <div className="bg-gray-900/50 rounded-xl p-6 backdrop-blur-sm border border-white/10">
+                  <ChallengesSection game={game} />
                 </div>
               </TabsContent>
 

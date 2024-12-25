@@ -143,6 +143,7 @@ export async function POST(request: Request) {
       max_participants: result.data.max_participants || null,
       game_id: null,
       creator_id: session.user.id,
+      requirements: result.data.requirements || {},
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     };

@@ -64,6 +64,10 @@ export interface GameFilters {
   isAnticipated?: boolean;
   sortBy?: 'rating' | 'popularity' | 'name' | 'release';
   search?: string;
+  releaseYear?: {
+    start: number;
+    end: number;
+  };
 }
 
 export interface SortOption {

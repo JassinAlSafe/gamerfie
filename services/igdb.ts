@@ -59,6 +59,12 @@ export class IGDBService {
         conditions.push(`genres.name = "${filters.genre}"`);
       }
 
+      // Add release year filter
+      if (filters?.releaseYear) {
+        conditions.push(`first_release_date >= ${filters.releaseYear.start}`);
+        conditions.push(`first_release_date <= ${filters.releaseYear.end}`);
+      }
+
       // Add time range filters
       if (filters?.timeRange) {
         const now = Math.floor(Date.now() / 1000);

@@ -11,6 +11,7 @@ interface GamesState {
   selectedPlatform: string;
   selectedGenre: string;
   selectedCategory: string;
+  selectedYear: string;
   searchQuery: string;
   isLoading: boolean;
   error: string | null;
@@ -24,6 +25,7 @@ interface GamesState {
   setSelectedPlatform: (platform: string) => void;
   setSelectedGenre: (genre: string) => void;
   setSelectedCategory: (category: string) => void;
+  setSelectedYear: (year: string) => void;
   setSearchQuery: (query: string) => void;
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
@@ -41,6 +43,7 @@ export const useGamesStore = create<GamesState>()(
       selectedPlatform: 'all',
       selectedGenre: 'all',
       selectedCategory: 'all',
+      selectedYear: 'all',
       searchQuery: '',
       isLoading: false,
       error: null,
@@ -54,6 +57,7 @@ export const useGamesStore = create<GamesState>()(
       setSelectedPlatform: (platform) => set({ selectedPlatform: platform }),
       setSelectedGenre: (genre) => set({ selectedGenre: genre }),
       setSelectedCategory: (category) => set({ selectedCategory: category }),
+      setSelectedYear: (year) => set({ selectedYear: year }),
       setSearchQuery: (query) => set({ searchQuery: query }),
       setLoading: (loading) => set({ isLoading: loading }),
       setError: (error) => set({ error }),
@@ -61,6 +65,7 @@ export const useGamesStore = create<GamesState>()(
         selectedPlatform: 'all',
         selectedGenre: 'all',
         selectedCategory: 'all',
+        selectedYear: 'all',
         searchQuery: '',
         currentPage: 1
       })
@@ -71,7 +76,8 @@ export const useGamesStore = create<GamesState>()(
         sortBy: state.sortBy,
         selectedPlatform: state.selectedPlatform,
         selectedGenre: state.selectedGenre,
-        selectedCategory: state.selectedCategory
+        selectedCategory: state.selectedCategory,
+        selectedYear: state.selectedYear
       })
     }
   )

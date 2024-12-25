@@ -9,6 +9,7 @@ export async function GET(request: NextRequest) {
     const platform = searchParams.get('platform');
     const genre = searchParams.get('genre');
     const category = searchParams.get('category');
+    const year = searchParams.get('year');
     const sort = searchParams.get('sort') || 'rating';
     const search = searchParams.get('search') || '';
 
@@ -28,6 +29,16 @@ export async function GET(request: NextRequest) {
     // Add genre filter if specified
     if (genre && genre !== 'all') {
       filters.genre = genre;
+    }
+
+    // Add year filter if specified
+    if (year && year !== 'all') {
+      const yearStart = new Date(`${year}-01-01`).getTime() / 1000;
+      const yearEnd = new Date(`${year}-12-31`).getTime() / 1000;
+      filters.releaseYear = {
+        start: yearStart,
+        end: yearEnd
+      };
     }
 
     // Add category-specific filters
