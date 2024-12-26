@@ -46,6 +46,13 @@ export interface Game {
   websites?: any[];
   relatedGames?: Game[];
   activities?: GameActivity[];
+  involved_companies?: {
+    id: number;
+    company: {
+      id: number;
+      name: string;
+    };
+  }[];
 }
 
 export interface UserGame {
@@ -60,7 +67,7 @@ export interface UserGame {
   created_at: string;
 }
 
-export type GameStatus = 'playing' | 'completed' | 'want_to_play' | 'dropped';
+export type GameStatus = "playing" | "completed" | "want_to_play" | "dropped";
 
 export interface Platform {
   id: number;

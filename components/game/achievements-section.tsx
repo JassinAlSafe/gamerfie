@@ -1,32 +1,66 @@
-import React from 'react';
-import { Trophy, AlertCircle } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
-import { Achievement } from '@/types/game';
+import React, { useEffect, useState } from "react";
+import { Trophy, AlertCircle } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Achievement } from "@/types/game";
+import { LoadingSpinner } from "@/components/loadingSpinner";
 
 interface AchievementsSectionProps {
-  achievements: Achievement[];
+  gameId: string;
 }
 
-export function AchievementsSection({ achievements }: AchievementsSectionProps) {
-  // Debug log
-  console.log('Achievements in component:', achievements);
+export function AchievementsSection({ gameId }: AchievementsSectionProps) {
+  const [achievements, setAchievements] = useState<Achievement[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  if (!Array.isArray(achievements)) {
-    console.error('Achievements is not an array:', achievements);
+  useEffect(() => {
+    const fetchAchievements = async () => {
+      try {
+        setIsLoading(true);
+        const response = await fetch(`/api/games/${gameId}/achievements`);
+        if (!response.ok) throw new Error("Failed to fetch achievements");
+        const data = await response.json();
+        setAchievements(data);
+      } catch (err) {
+        console.error("Error fetching achievements:", err);
+        setError(
+          err instanceof Error ? err.message : "Failed to fetch achievements"
+        );
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchAchievements();
+  }, [gameId]);
+
+  if (isLoading) {
     return (
-      <div className="text-center py-12 text-gray-400">
-        <AlertCircle className="w-12 h-12 mx-auto mb-4 opacity-50" />
-        <p>Error loading achievements</p>
+      <div className="flex justify-center items-center py-12">
+        <LoadingSpinner />
       </div>
     );
   }
 
-  if (achievements.length === 0) {
+  if (error) {
+    return (
+      <div className="text-center py-12 text-gray-400">
+        <AlertCircle className="w-12 h-12 mx-auto mb-4 opacity-50" />
+        <p>Error loading achievements</p>
+        <p className="text-sm mt-2 text-gray-500">{error}</p>
+      </div>
+    );
+  }
+
+  if (!achievements || achievements.length === 0) {
     return (
       <div className="text-center py-12 text-gray-400">
         <Trophy className="w-12 h-12 mx-auto mb-4 opacity-50" />
         <p>No achievements available for this game.</p>
-        <p className="text-sm mt-2 text-gray-500">This game might not have achievements or they haven't been added to the database yet.</p>
+        <p className="text-sm mt-2 text-gray-500">
+          This game might not have achievements or they haven't been added to
+          the database yet.
+        </p>
       </div>
     );
   }
@@ -43,14 +77,17 @@ export function AchievementsSection({ achievements }: AchievementsSectionProps) 
           </div>
           <div className="flex-grow">
             <h4 className="font-medium text-white group-hover:text-purple-400 transition-colors">
-              {achievement.name || 'Unnamed Achievement'}
+              {achievement.name || "Unnamed Achievement"}
             </h4>
             <p className="text-sm text-gray-400 line-clamp-2">
-              {achievement.description || 'No description available'}
+              {achievement.description || "No description available"}
             </p>
           </div>
           <div className="ml-auto">
-            <Badge variant="secondary" className="bg-purple-500/10 text-purple-400">
+            <Badge
+              variant="secondary"
+              className="bg-purple-500/10 text-purple-400"
+            >
               {achievement.points || 0}G
             </Badge>
           </div>
@@ -58,4 +95,4 @@ export function AchievementsSection({ achievements }: AchievementsSectionProps) 
       ))}
     </div>
   );
-} 
+}

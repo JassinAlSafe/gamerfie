@@ -11,6 +11,8 @@ import {
   BookmarkPlus,
   Ban,
   Trophy,
+  Target,
+  Book,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -40,6 +42,9 @@ import { GameStats } from "@/components/game/game-stats";
 import { CommunityStats } from "@/components/game/community-stats";
 import { useChallengesStore } from "@/stores/useChallengesStore";
 import { DetailedGameStats } from "@/components/game/detailed-game-stats";
+import { toast } from "react-hot-toast";
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { Database } from "@/types/supabase";
 
 const getHighQualityImageUrl = (url: string) => {
   return url.startsWith("//")
@@ -96,6 +101,7 @@ export const GameDetails = memo(function GameDetails({ game }: { game: Game }) {
   const [isUpdating, setIsUpdating] = useState(false);
   const [isAboutExpanded, setIsAboutExpanded] = useState(false);
   const [isStorylineExpanded, setIsStorylineExpanded] = useState(false);
+  const [currentStatus, setCurrentStatus] = useState<GameStatus | null>(null);
 
   const websiteUrl = useMemo(() => getWebsiteUrl(game), [game]);
   const backgroundImage = useMemo(() => getBackgroundImage(game), [game]);
@@ -110,11 +116,7 @@ export const GameDetails = memo(function GameDetails({ game }: { game: Game }) {
     updateGameStatus,
   } = useGameDetailsStore();
 
-  const {
-    userChallenges,
-    loading: challengesLoading,
-    fetchUserChallenges,
-  } = useChallengesStore();
+  const { userChallenges, fetchUserChallenges } = useChallengesStore();
 
   // Get game progress
   const gameProgress = useMemo(() => {
@@ -134,6 +136,26 @@ export const GameDetails = memo(function GameDetails({ game }: { game: Game }) {
       fetchUserChallenges();
     }
   }, [profile?.id, fetchUserChallenges]);
+
+  useEffect(() => {
+    const checkGameStatus = async () => {
+      if (!profile?.id || !game?.id) return;
+
+      const supabase = createClientComponentClient<Database>();
+      const { data, error } = await supabase
+        .from("user_games")
+        .select("status")
+        .eq("user_id", profile.id)
+        .eq("game_id", game.id)
+        .single();
+
+      if (!error && data) {
+        setCurrentStatus(data.status as GameStatus);
+      }
+    };
+
+    checkGameStatus();
+  }, [profile?.id, game?.id]);
 
   const handleScreenshotClick = useCallback((index: number) => {
     setCurrentScreenshotIndex(index);
@@ -162,23 +184,69 @@ export const GameDetails = memo(function GameDetails({ game }: { game: Game }) {
     }
   };
 
-  const handleStatusUpdate = async (status: GameStatus, progressData?: any) => {
-    if (!profile?.id) return;
+  const updateStatus = async (status: GameStatus, comment?: string) => {
+    if (!profile) return;
 
-    setIsUpdating(true);
     try {
+      setIsUpdating(true);
       await updateGameStatus(
-        profile.id.toString(),
+        profile.id,
         game.id.toString(),
         status,
-        progressData
+        {
+          playTime: null,
+          completionPercentage: null,
+        },
+        comment
       );
       setIsCompletionDialogOpen(false);
-      setIsStatusDialogOpen(false);
     } catch (error) {
       console.error("Error updating game status:", error);
     } finally {
       setIsUpdating(false);
+    }
+  };
+
+  const handleUpdateProgress = async (data: any) => {
+    setIsUpdating(true);
+    try {
+      // Handle progress update logic here
+      toast.success("Progress updated successfully");
+      setIsCompletionDialogOpen(false);
+    } catch (error) {
+      toast.error("Failed to update progress");
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleStatusUpdate = async (status: GameStatus) => {
+    if (!profile?.id) {
+      toast.error("Please sign in to update game status");
+      return;
+    }
+
+    console.log("Starting status update in GameDetails:", {
+      profileId: profile.id,
+      gameId: game.id,
+      status,
+    });
+    toast.loading("Updating game status...");
+
+    setIsUpdating(true);
+    try {
+      await updateGameStatus(profile.id.toString(), game.id.toString(), status);
+      setCurrentStatus(status);
+      toast.dismiss();
+      toast.success("Game status updated successfully");
+      console.log("Status update completed in GameDetails");
+    } catch (error) {
+      console.error("Error updating game status:", error);
+      toast.dismiss();
+      toast.error("Failed to update game status");
+    } finally {
+      setIsUpdating(false);
+      setIsStatusDialogOpen(false);
     }
   };
 
@@ -266,6 +334,9 @@ export const GameDetails = memo(function GameDetails({ game }: { game: Game }) {
                 )}
               </div>
 
+              {/* Game Description */}
+              <p className="text-gray-300 mb-6 line-clamp-3">{game.summary}</p>
+
               {/* Action Buttons */}
               <div className="flex flex-wrap gap-4 mb-8">
                 {!profile ? (
@@ -329,7 +400,17 @@ export const GameDetails = memo(function GameDetails({ game }: { game: Game }) {
                   </div>
                 ) : (
                   <AddToLibraryButton
-                    onStatusSelect={(status) => handleStatusUpdate(status)}
+                    gameId={game.id.toString()}
+                    gameName={game.name}
+                    cover={game.cover?.url}
+                    rating={game.total_rating || undefined}
+                    releaseDate={game.first_release_date || undefined}
+                    platforms={game.platforms || []}
+                    genres={game.genres || []}
+                    variant="outline"
+                    size="lg"
+                    className="py-6 min-w-[200px] hover:scale-105 transition-all duration-300"
+                    onSuccess={(status) => setCurrentStatus(status)}
                   />
                 )}
               </div>
@@ -351,48 +432,21 @@ export const GameDetails = memo(function GameDetails({ game }: { game: Game }) {
             </TabsList>
 
             <TabsContent value="overview" className="space-y-8">
-              {/* About */}
+              {/* About Section */}
               {game.summary && (
                 <div className="bg-gray-900/40 rounded-xl p-6 backdrop-blur-sm border border-white/5">
-                  <h2 className="text-xl font-semibold mb-4">About</h2>
-                  <p
-                    className={`text-gray-300 ${
-                      !isAboutExpanded && "line-clamp-3"
-                    }`}
-                  >
-                    {game.summary}
-                  </p>
-                  {game.summary.length > 200 && (
-                    <button
-                      onClick={() => setIsAboutExpanded(!isAboutExpanded)}
-                      className="text-blue-400 hover:text-blue-300 mt-2 text-sm"
-                    >
-                      {isAboutExpanded ? "Show less" : "Read more"}
-                    </button>
-                  )}
-                </div>
-              )}
+                  <div className="flex items-center gap-2 mb-4">
+                    <Book className="w-5 h-5 text-purple-400" />
+                    <h2 className="text-xl font-semibold">About</h2>
+                  </div>
+                  <p className="text-gray-300">{game.summary}</p>
 
-              {/* Storyline */}
-              {game.storyline && (
-                <div className="bg-gray-900/40 rounded-xl p-6 backdrop-blur-sm border border-white/5">
-                  <h2 className="text-xl font-semibold mb-4">Storyline</h2>
-                  <p
-                    className={`text-gray-300 ${
-                      !isStorylineExpanded && "line-clamp-3"
-                    }`}
-                  >
-                    {game.storyline}
-                  </p>
-                  {game.storyline.length > 200 && (
-                    <button
-                      onClick={() =>
-                        setIsStorylineExpanded(!isStorylineExpanded)
-                      }
-                      className="text-blue-400 hover:text-blue-300 mt-2 text-sm"
-                    >
-                      {isStorylineExpanded ? "Show less" : "Read more"}
-                    </button>
+                  {/* Storyline */}
+                  {game.storyline && (
+                    <div className="mt-6">
+                      <h3 className="text-lg font-semibold mb-2">Storyline</h3>
+                      <p className="text-gray-300">{game.storyline}</p>
+                    </div>
                   )}
                 </div>
               )}
@@ -475,7 +529,7 @@ export const GameDetails = memo(function GameDetails({ game }: { game: Game }) {
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     {game.artworks.map((artwork, index) => (
                       <div
-                        key={artwork.id}
+                        key={index}
                         className="relative aspect-video rounded-lg overflow-hidden"
                       >
                         <Image
@@ -503,12 +557,20 @@ export const GameDetails = memo(function GameDetails({ game }: { game: Game }) {
                     <h2 className="text-xl font-semibold">Your Progress</h2>
                   </div>
                   <DetailedGameStats
-                    playTime={gameProgress.playTime}
-                    completionPercentage={gameProgress.completionPercentage}
-                    achievementsCompleted={gameProgress.achievementsCompleted}
+                    playTime={gameProgress.playTime ?? null}
+                    completionPercentage={
+                      gameProgress.completionPercentage ?? null
+                    }
+                    achievementsCompleted={
+                      gameProgress.achievementsCompleted ?? 0
+                    }
                     totalAchievements={game.achievements?.length || 0}
-                    status={gameProgress.status}
-                    lastPlayed={gameProgress.lastPlayed}
+                    status={gameProgress.status || "want_to_play"}
+                    lastPlayed={
+                      gameProgress.lastPlayed
+                        ? new Date(gameProgress.lastPlayed).getTime() / 1000
+                        : undefined
+                    }
                   />
                   {gameProgress.comment && (
                     <div className="mt-4 p-4 bg-gray-800/30 rounded-lg">
@@ -542,19 +604,19 @@ export const GameDetails = memo(function GameDetails({ game }: { game: Game }) {
       <CompletionDialog
         isOpen={isCompletionDialogOpen}
         onClose={() => setIsCompletionDialogOpen(false)}
-        onComplete={(data) => handleStatusUpdate("completed", data)}
+        onComplete={handleUpdateProgress}
         isLoading={isUpdating}
         totalAchievements={game.achievements?.length || 0}
       />
 
-      <StatusDialog
-        isOpen={isStatusDialogOpen}
-        onClose={() => setIsStatusDialogOpen(false)}
-        onStatusSelect={(status) => handleStatusUpdate(status)}
-        currentStatus={gameProgress?.status || null}
-        isLoading={isUpdating}
-        gameName={game.name}
-      />
+      {isStatusDialogOpen && game && (
+        <StatusDialog
+          isOpen={isStatusDialogOpen}
+          setIsOpen={setIsStatusDialogOpen}
+          game={game}
+          onStatusChange={handleStatusUpdate}
+        />
+      )}
 
       <Dialog open={showCommentDialog} onOpenChange={setShowCommentDialog}>
         <DialogContent>

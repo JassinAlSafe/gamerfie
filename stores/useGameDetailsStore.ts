@@ -3,14 +3,21 @@ import { persist } from 'zustand/middleware'
 import { Game, GameStatus } from '@/types/game'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import toast from 'react-hot-toast'
+import { supabase } from "@/lib/supabase"
 
 interface GameProgress {
-  playTime: number
-  completionPercentage: number
-  achievementsCompleted: number
+  playTime: number | null
+  completionPercentage: number | null
+  achievementsCompleted: number | null
   status: GameStatus | null
   lastPlayed: string | null
   notes: string | null
+  comment?: string
+  progress?: any
+  created_at?: string
+  updated_at?: string
+  user_id?: string
+  game_id?: string
 }
 
 interface GameDetailsState {
@@ -22,7 +29,7 @@ interface GameDetailsState {
   // Game Progress
   progress: Record<string, GameProgress> // key: `${userId}-${gameId}`
   progressLoading: boolean
-  progressError: string | null
+  progressError: Error | null
 
   // Game Details Actions
   setGame: (game: Game) => void
@@ -37,8 +44,8 @@ interface GameDetailsState {
     userId: string,
     gameId: string,
     status: GameStatus,
-    progress?: Partial<Omit<GameProgress, 'status'>>,
-    notes?: string
+    progressData?: any,
+    comment?: string
   ) => Promise<void>
   resetProgress: () => void
 }
@@ -126,102 +133,96 @@ export const useGameDetailsStore = create<GameDetailsState>()(
 
       // Game Progress Actions
       fetchProgress: async (userId, gameId) => {
-        const supabase = createClientComponentClient()
-        const progressKey = getProgressKey(userId, gameId)
-
-        set({ progressLoading: true, progressError: null })
-
         try {
+          set({ progressLoading: true, progressError: null })
           const { data, error } = await supabase
-            .from('user_games')
-            .select('*')
-            .eq('user_id', userId)
-            .eq('game_id', gameId)
+            .from("user_games")
+            .select("*")
+            .eq("user_id", userId)
+            .eq("game_id", gameId)
             .single()
 
           if (error) throw error
 
-          if (data) {
-            set((state) => ({
-              progress: {
-                ...state.progress,
-                [progressKey]: {
-                  playTime: data.play_time || 0,
-                  completionPercentage: data.completion_percentage || 0,
-                  achievementsCompleted: data.achievements_completed || 0,
-                  status: data.status as GameStatus,
-                  lastPlayed: data.last_played_at,
-                  notes: data.notes
-                }
-              },
-              progressLoading: false
-            }))
-          } else {
-            set((state) => ({
-              progress: {
-                ...state.progress,
-                [progressKey]: {
-                  playTime: 0,
-                  completionPercentage: 0,
-                  achievementsCompleted: 0,
-                  status: null,
-                  lastPlayed: null,
-                  notes: null
-                }
-              },
-              progressLoading: false
-            }))
-          }
-        } catch (error) {
-          console.error('Error fetching game progress:', error)
-          set({
-            progressError: 'Failed to fetch game progress',
-            progressLoading: false
-          })
-          toast.error('Failed to fetch game progress')
-        }
-      },
-
-      updateGameStatus: async (userId, gameId, status, progress = {}, notes) => {
-        const supabase = createClientComponentClient()
-        const progressKey = getProgressKey(userId, gameId)
-
-        try {
-          const updateData = {
-            status,
-            ...progress,
-            ...(notes && { notes }),
-            last_played_at: new Date().toISOString()
+          const key = getProgressKey(userId, gameId)
+          const progressData: GameProgress = {
+            playTime: typeof data?.play_time === 'number' ? data.play_time : null,
+            completionPercentage: typeof data?.completion_percentage === 'number' ? data.completion_percentage : null,
+            achievementsCompleted: typeof data?.achievements_completed === 'number' ? data.achievements_completed : null,
+            status: data?.status as GameStatus | null,
+            lastPlayed: typeof data?.last_played === 'string' ? data.last_played : null,
+            notes: typeof data?.notes === 'string' ? data.notes : null,
+            comment: typeof data?.comment === 'string' ? data.comment : undefined,
+            progress: data?.progress,
+            created_at: typeof data?.created_at === 'string' ? data.created_at : undefined,
+            updated_at: typeof data?.updated_at === 'string' ? data.updated_at : undefined,
+            user_id: typeof data?.user_id === 'string' ? data.user_id : undefined,
+            game_id: typeof data?.game_id === 'string' ? data.game_id : undefined
           }
 
-          const { error } = await supabase
-            .from('user_games')
-            .upsert({
-              user_id: userId,
-              game_id: gameId,
-              ...updateData
-            })
-
-          if (error) throw error
-
-          // Update local state
           set((state) => ({
             progress: {
               ...state.progress,
-              [progressKey]: {
-                ...state.progress[progressKey],
-                status,
-                ...progress,
-                ...(notes && { notes }),
-                lastPlayed: new Date().toISOString()
-              }
-            }
+              [key]: progressData,
+            },
           }))
-
-          toast.success('Game status updated successfully')
         } catch (error) {
-          console.error('Error updating game status:', error)
-          toast.error('Failed to update game status')
+          set({ progressError: error as Error })
+        } finally {
+          set({ progressLoading: false })
+        }
+      },
+
+      updateGameStatus: async (
+        userId: string,
+        gameId: string,
+        status: GameStatus,
+        progressData?: any,
+        comment?: string
+      ) => {
+        try {
+          // First check if the record exists
+          const { data: existingRecord } = await supabase
+            .from("user_games")
+            .select("*")
+            .eq("user_id", userId)
+            .eq("game_id", gameId)
+            .single()
+
+          const updateData = {
+            status,
+            ...(progressData && { progress: progressData }),
+            ...(comment && { comment }),
+            updated_at: new Date().toISOString(),
+          }
+
+          if (existingRecord) {
+            // Update existing record
+            const { error } = await supabase
+              .from("user_games")
+              .update(updateData)
+              .eq("user_id", userId)
+              .eq("game_id", gameId)
+
+            if (error) throw error
+          } else {
+            // Insert new record
+            const { error } = await supabase.from("user_games").insert([
+              {
+                user_id: userId,
+                game_id: gameId,
+                ...updateData,
+                created_at: new Date().toISOString(),
+              },
+            ])
+
+            if (error) throw error
+          }
+
+          // Refresh the progress after update
+          await get().fetchProgress(userId, gameId)
+        } catch (error) {
+          console.error("Error updating game status:", error)
           throw error
         }
       },
