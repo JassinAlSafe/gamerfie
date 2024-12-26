@@ -15,8 +15,9 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useProfile } from "@/hooks/use-profile";
-import { Game, GameStatus, ProcessedGame, UserGame } from "@/types/game";
+import { Game, GameStatus, UserGame } from "@/types/game";
+import type { GameFilters } from "@/components/profile/game-filters";
+import { useSettingsStore } from "@/stores/useSettingsStore";
 
 interface GameWithUserData extends UserGame {
   game: Game;
@@ -33,12 +34,176 @@ interface GameResponse {
   game: Game[];
 }
 
-export function GamesTab() {
+interface GamesTabProps {
+  filters: GameFilters;
+}
+
+// List View Component
+const GameListItem = ({ game }: { game: GameWithUserData }) => {
+  const router = useRouter();
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="group flex items-center space-x-4 bg-gray-900/50 p-4 rounded-xl hover:bg-gray-800/70 transition-all duration-300 shadow-lg hover:shadow-xl border border-white/10 hover:border-purple-500/20 backdrop-blur-sm cursor-pointer"
+      onClick={() => router.push(`/game/${game.game_id}`)}
+    >
+      <div className="relative w-20 h-24 flex-shrink-0 overflow-hidden rounded-lg ring-2 ring-white/5 group-hover:ring-purple-500/20 transition-all duration-300">
+        {game.game.cover_url ? (
+          <Image
+            src={game.game.cover_url}
+            alt={game.game.name}
+            fill
+            className="object-cover transition-transform duration-300 group-hover:scale-105"
+            onError={(e) => {
+              console.error("Image load error:", e);
+            }}
+          />
+        ) : (
+          <div className="flex items-center justify-center h-full bg-gray-800">
+            <Gamepad2 className="w-10 h-10 text-gray-600" />
+          </div>
+        )}
+      </div>
+      <div className="flex-grow min-w-0">
+        <h3 className="text-lg font-semibold text-white truncate group-hover:text-purple-400 transition-colors duration-200">
+          {game.game.name}
+        </h3>
+        <div className="flex items-center mt-2 space-x-4">
+          <div className="flex items-center space-x-2">
+            <span
+              className={`w-2 h-2 rounded-full ${getStatusColor(game.status)}`}
+            />
+            <span className="text-sm text-gray-400 group-hover:text-gray-300 transition-colors duration-200">
+              {formatStatus(game.status)}
+            </span>
+          </div>
+          <div className="flex items-center text-sm text-gray-400 group-hover:text-gray-300 transition-colors duration-200">
+            <Clock className="w-4 h-4 mr-1" />
+            {game.play_time}h
+          </div>
+          <div className="flex items-center text-sm text-gray-400 group-hover:text-gray-300 transition-colors duration-200">
+            <BarChart3 className="w-4 h-4 mr-1" />
+            {game.completion_percentage}%
+          </div>
+        </div>
+      </div>
+      <StatusDropdown
+        status={game.status}
+        onStatusChange={(newStatus) =>
+          handleStatusChange(game.game_id, newStatus)
+        }
+      />
+    </motion.div>
+  );
+};
+
+// Grid View Component
+const GameGridItem = ({ game }: { game: GameWithUserData }) => {
+  const router = useRouter();
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="group relative cursor-pointer rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 border border-white/10 hover:border-purple-500/20 backdrop-blur-sm"
+      onClick={() => router.push(`/game/${game.game_id}`)}
+    >
+      <div className="aspect-[3/4] bg-gray-900/80 relative">
+        {game.game.cover_url ? (
+          <Image
+            src={game.game.cover_url.replace(/t_[a-zA-Z_]+/, "t_cover_big_2x")}
+            alt={game.game.name}
+            fill
+            sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
+            quality={90}
+            priority={true}
+            className="object-cover transition-transform duration-300 group-hover:scale-105"
+            onError={(e) => {
+              console.error("Grid image load error:", e);
+            }}
+          />
+        ) : (
+          <div className="flex items-center justify-center h-full bg-gray-800">
+            <Gamepad2 className="w-16 h-16 text-gray-600" />
+          </div>
+        )}
+        <div className="absolute inset-0 bg-gradient-to-t from-gray-950 via-gray-900/80 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300">
+          <div className="absolute bottom-0 left-0 right-0 p-6">
+            <h3 className="text-white font-bold text-xl mb-3 line-clamp-2">
+              {game.game.name}
+            </h3>
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center space-x-2">
+                <span
+                  className={`w-2.5 h-2.5 rounded-full ${getStatusColor(
+                    game.status
+                  )}`}
+                />
+                <p className="text-gray-200 text-sm font-medium">
+                  {formatStatus(game.status)}
+                </p>
+              </div>
+              <StatusDropdown
+                status={game.status}
+                onStatusChange={(newStatus) =>
+                  handleStatusChange(game.game_id, newStatus)
+                }
+              />
+            </div>
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center text-gray-300 text-sm font-medium">
+                <Clock className="w-4 h-4 mr-1.5" />
+                {game.play_time}h
+              </div>
+              <div className="flex items-center text-gray-300 text-sm font-medium">
+                <BarChart3 className="w-4 h-4 mr-1.5" />
+                {game.completion_percentage}%
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </motion.div>
+  );
+};
+
+// Loading State Component
+const LoadingState = () => (
+  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+    {Array.from({ length: 6 }).map((_, i) => (
+      <div
+        key={i}
+        className="aspect-[3/4] bg-gray-900/50 rounded-xl animate-pulse overflow-hidden border border-white/5"
+      >
+        <div className="w-full h-full bg-gradient-to-br from-gray-800/50 to-gray-900/50" />
+      </div>
+    ))}
+  </div>
+);
+
+// Empty State Component
+const EmptyState = ({ router }: { router: ReturnType<typeof useRouter> }) => (
+  <div className="flex flex-col items-center justify-center p-12 text-center bg-gray-900/50 rounded-xl border border-white/10 backdrop-blur-sm">
+    <h2 className="text-2xl font-bold mb-4 text-white">No games found</h2>
+    <p className="text-gray-400 mb-6">
+      You haven&apos;t added any games to your library yet.
+    </p>
+    <Button
+      onClick={() => router.push("/games")}
+      className="bg-purple-500 hover:bg-purple-600 text-white transition-colors duration-200"
+    >
+      Browse Games
+    </Button>
+  </div>
+);
+
+export function GamesTab({ filters }: GamesTabProps) {
   const router = useRouter();
   const supabase = createClientComponentClient<Database>();
   const [userId, setUserId] = useState<string | null>(null);
-  const { profile } = useProfile();
-  const viewStyle = profile?.settings?.library?.view || "grid";
+  const { libraryView } = useSettingsStore();
 
   useEffect(() => {
     const checkSession = async () => {
@@ -121,191 +286,83 @@ export function GamesTab() {
 
   const sortedGames = useMemo(() => {
     if (!games) return [];
-    console.log("Sorting games:", games);
-    return [...games].sort((a, b) => {
-      const dateA = new Date(a.created_at).getTime();
-      const dateB = new Date(b.created_at).getTime();
-      return dateB - dateA;
+
+    let sorted = [...games];
+
+    // Apply status filter
+    if (filters.status !== "all") {
+      sorted = sorted.filter((game) => game.status === filters.status);
+    }
+
+    // Apply sorting
+    sorted.sort((a, b) => {
+      switch (filters.sortBy) {
+        case "name":
+          return filters.sortOrder === "asc"
+            ? a.game.name.localeCompare(b.game.name)
+            : b.game.name.localeCompare(a.game.name);
+        case "rating":
+          const ratingA = a.game.total_rating || 0;
+          const ratingB = b.game.total_rating || 0;
+          return filters.sortOrder === "asc"
+            ? ratingA - ratingB
+            : ratingB - ratingA;
+        case "recent":
+        default:
+          const dateA = new Date(a.created_at).getTime();
+          const dateB = new Date(b.created_at).getTime();
+          return filters.sortOrder === "asc" ? dateA - dateB : dateB - dateA;
+      }
     });
-  }, [games]);
+
+    return sorted;
+  }, [games, filters]);
 
   if (!userId) {
-    console.log("No user ID found");
     return (
-      <div className="flex flex-col items-center justify-center p-8 text-center">
-        <h2 className="text-2xl font-bold mb-4">Sign in to view your games</h2>
-        <Button onClick={() => router.push("/auth/signin")}>Sign In</Button>
+      <div className="flex flex-col items-center justify-center p-12 text-center bg-gray-900/50 rounded-xl border border-white/10 backdrop-blur-sm">
+        <h2 className="text-2xl font-bold mb-4 text-white">
+          Sign in to view your games
+        </h2>
+        <Button
+          onClick={() => router.push("/auth/signin")}
+          className="bg-purple-500 hover:bg-purple-600 text-white transition-colors duration-200"
+        >
+          Sign In
+        </Button>
       </div>
     );
   }
 
   if (isLoading) {
-    console.log("Loading games...");
+    return <LoadingState />;
+  }
+
+  if (!games?.length) {
+    return <EmptyState router={router} />;
+  }
+
+  if (libraryView === "list") {
     return (
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {Array.from({ length: 6 }).map((_, i) => (
-          <div key={i} className="h-48 bg-gray-800 rounded-lg animate-pulse" />
+      <div className="space-y-4">
+        {sortedGames.map((game) => (
+          <GameListItem key={game.game_id} game={game} />
         ))}
       </div>
     );
   }
 
-  if (!games?.length) {
-    console.log("No games found");
-    return (
-      <div className="flex flex-col items-center justify-center p-8 text-center">
-        <h2 className="text-2xl font-bold mb-4">No games found</h2>
-        <p className="text-gray-400 mb-4">
-          You haven&apos;t added any games to your library yet.
-        </p>
-        <Button onClick={() => router.push("/games")}>Browse Games</Button>
-      </div>
-    );
-  }
-
-  console.log("Rendering games:", sortedGames);
-  console.log("View style:", viewStyle);
-
-  if (viewStyle === "list") {
-    return (
-      <div className="space-y-4">
-        {sortedGames.map((game) => {
-          console.log("Rendering game:", game);
-          const imageUrl = game.game.cover_url;
-          console.log("Image URL:", imageUrl);
-          return (
-            <motion.div
-              key={game.game_id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="flex items-center space-x-4 bg-gray-800/50 p-4 rounded-lg hover:bg-gray-800/70 transition-colors"
-            >
-              <div className="relative w-16 h-20 overflow-hidden rounded-md">
-                {game.game.cover_url ? (
-                  <Image
-                    src={imageUrl || ""}
-                    alt={game.game.name}
-                    fill
-                    className="object-cover"
-                    onError={(e) => {
-                      console.error("Image load error:", e);
-                    }}
-                  />
-                ) : (
-                  <div className="flex items-center justify-center h-full bg-gray-700">
-                    <Gamepad2 className="w-8 h-8 text-gray-500" />
-                  </div>
-                )}
-              </div>
-              <div className="flex-grow">
-                <h3 className="text-white font-semibold">{game.game.name}</h3>
-                <div className="flex items-center mt-2 space-x-4">
-                  <div className="flex items-center space-x-2">
-                    <span
-                      className={`w-2 h-2 rounded-full ${getStatusColor(
-                        game.status
-                      )}`}
-                    />
-                    <span className="text-sm text-gray-400">
-                      {formatStatus(game.status)}
-                    </span>
-                  </div>
-                  <div className="flex items-center text-sm text-gray-400">
-                    <Clock className="w-4 h-4 mr-1" />
-                    {game.play_time}h
-                  </div>
-                  <div className="flex items-center text-sm text-gray-400">
-                    <BarChart3 className="w-4 h-4 mr-1" />
-                    {game.completion_percentage}%
-                  </div>
-                </div>
-              </div>
-              <StatusDropdown
-                status={game.status}
-                onStatusChange={(newStatus) =>
-                  handleStatusChange(game.game_id, newStatus)
-                }
-              />
-            </motion.div>
-          );
-        })}
-      </div>
-    );
-  }
-
   return (
-    <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-      {sortedGames.map((game) => {
-        const imageUrl = game.game.cover_url;
-        console.log("Grid image URL:", imageUrl);
-        return (
-          <motion.div
-            key={game.game_id}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="group relative cursor-pointer rounded-xl overflow-hidden"
-          >
-            <div className="aspect-[3/4] bg-gray-800/80 relative">
-              {game.game.cover_url ? (
-                <Image
-                  src={imageUrl || ""}
-                  alt={game.game.name}
-                  fill
-                  className="object-cover transition-transform duration-300 group-hover:scale-105"
-                  onError={(e) => {
-                    console.error("Grid image load error:", e);
-                  }}
-                />
-              ) : (
-                <div className="flex items-center justify-center h-full bg-gray-700">
-                  <Gamepad2 className="w-16 h-16 text-gray-500" />
-                </div>
-              )}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300">
-                <div className="absolute bottom-0 left-0 right-0 p-4">
-                  <h3 className="text-white font-bold text-lg mb-2">
-                    {game.game.name}
-                  </h3>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <span
-                        className={`w-2.5 h-2.5 rounded-full ${getStatusColor(
-                          game.status
-                        )}`}
-                      />
-                      <p className="text-gray-200 text-sm">
-                        {formatStatus(game.status)}
-                      </p>
-                    </div>
-                    <StatusDropdown
-                      status={game.status}
-                      onStatusChange={(newStatus) =>
-                        handleStatusChange(game.game_id, newStatus)
-                      }
-                    />
-                  </div>
-                  <div className="flex items-center space-x-4 mt-2">
-                    <div className="flex items-center text-gray-300 text-sm">
-                      <Clock className="w-4 h-4 mr-1" />
-                      {game.play_time}h
-                    </div>
-                    <div className="flex items-center text-gray-300 text-sm">
-                      <BarChart3 className="w-4 h-4 mr-1" />
-                      {game.completion_percentage}%
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </motion.div>
-        );
-      })}
+    <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      {sortedGames.map((game) => (
+        <GameGridItem key={game.game_id} game={game} />
+      ))}
     </div>
   );
 }
 
 function StatusDropdown({
-  status,
+  status: gameStatus,
   onStatusChange,
 }: {
   status: GameStatus;
@@ -337,14 +394,17 @@ function StatusDropdown({
           <ChevronDown className="h-4 w-4" />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-32">
+      <DropdownMenuContent
+        align="end"
+        className="w-40 bg-gray-800 border border-white/10 rounded-lg shadow-lg"
+      >
         {statusOptions.map((option) => (
           <DropdownMenuItem
             key={option.value}
             onClick={() => onStatusChange(option.value)}
-            className={`${status === option.value ? "bg-gray-800" : ""} ${
+            className={`${gameStatus === option.value ? "bg-gray-700" : ""} ${
               option.color
-            }`}
+            } hover:bg-gray-700/50 transition-colors duration-200`}
           >
             {option.label}
           </DropdownMenuItem>
@@ -354,18 +414,18 @@ function StatusDropdown({
   );
 }
 
-function getStatusColor(status: GameStatus): string {
+function getStatusColor(gameStatus: GameStatus): string {
   const colors = {
     playing: "bg-green-500",
     completed: "bg-blue-500",
     want_to_play: "bg-yellow-500",
     dropped: "bg-red-500",
   };
-  return colors[status as keyof typeof colors] || "bg-gray-500";
+  return colors[gameStatus] || "bg-gray-500";
 }
 
-function formatStatus(status: GameStatus): string {
-  return status
+function formatStatus(gameStatus: GameStatus): string {
+  return gameStatus
     .split("_")
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
     .join(" ");

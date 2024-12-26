@@ -43,8 +43,11 @@ export function CompletionDialog({
     achievementsCompleted,
   } = useProgressStore();
 
-  const { userChallenges, updateProgress: updateChallengeProgress, fetchUserChallenges } =
-    useChallengesStore();
+  const {
+    userChallenges,
+    updateProgress: updateChallengeProgress,
+    fetchUserChallenges,
+  } = useChallengesStore();
 
   const [step, setStep] = useState<"completion" | "challenges">("completion");
   const [localPlayTime, setLocalPlayTime] = useState(0);
@@ -75,7 +78,11 @@ export function CompletionDialog({
     setLocalAchievementsCompleted(achievementsCompleted || 0);
   }, [playTime, completionPercentage, achievementsCompleted]);
 
-  const totalAchievements = game.achievements?.length || 0;
+  if (!game) {
+    return null;
+  }
+
+  const totalAchievements = game.achievements?.length ?? 0;
   const achievementPercentage =
     totalAchievements > 0
       ? (localAchievementsCompleted / totalAchievements) * 100

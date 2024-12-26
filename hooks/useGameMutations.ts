@@ -6,41 +6,27 @@ import toast from 'react-hot-toast';
 export function useGameMutations() {
   const queryClient = useQueryClient();
 
-  const updateGameStatus = useMutation(
-    async ({ gameId, status }: { gameId: string; status: string }) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("User not authenticated");
+  const updateGameStatus = async (gameId: string, status: string) => {
+    try {
+      const response = await fetch(`/api/games/${gameId}/status`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status }),
+      });
 
-      const { error } = await supabase
-        .from("user_games")
-        .update({ status, updated_at: new Date().toISOString() })
-        .eq("user_id", user.id)
-        .eq("game_id", gameId);
+      if (!response.ok) {
+        throw new Error('Failed to update game status');
+      }
 
-      if (error) throw error;
-      return { gameId, status };
-    },
-    {
-      onSuccess: (data) => {
-        queryClient.setQueryData<QueryData>("userGames", (oldData) => {
-          if (!oldData) return oldData;
-          return {
-            ...oldData,
-            pages: oldData.pages.map((page) => ({
-              ...page,
-              userGames: page.userGames.map((game) =>
-                game.game_id === data.gameId
-                  ? { ...game, status: data.status }
-                  : game
-              ),
-            })),
-          };
-        });
-        toast.success("Game status updated");
-      },
-      onError: () => toast.error("Failed to update game status"),
+      // Optionally refresh the games data or update local state
+      // You might want to call any refresh functions from your games store here
+    } catch (error) {
+      console.error('Error updating game status:', error);
+      throw error;
     }
-  );
+  };
 
   const removeFromLibrary = useMutation<string, Error, string>(
     async (gameId) => {

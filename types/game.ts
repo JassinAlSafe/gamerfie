@@ -53,11 +53,14 @@ export interface UserGame {
   game_id: string;
   status: GameStatus;
   play_time?: number;
+  completion_percentage?: number;
+  achievements_completed?: number;
   user_rating?: number;
   completed_at?: string;
   notes?: string;
   last_played_at?: string;
   created_at: string;
+  updated_at?: string;
 }
 
 export type GameStatus = 'playing' | 'completed' | 'want_to_play' | 'dropped';
@@ -83,11 +86,15 @@ export type SortOption = 'popularity' | 'releaseDate' | 'name';
 
 export interface ProcessedGame extends Game {
   status?: GameStatus;
-  playTime?: number;
-  userRating?: number;
-  completedAt?: string;
-  lastPlayedAt?: string;
+  play_time?: number;
+  completion_percentage?: number;
+  achievements_completed?: number;
+  user_rating?: number;
+  completed_at?: string;
+  last_played_at?: string;
   notes?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface FetchGamesResponse {

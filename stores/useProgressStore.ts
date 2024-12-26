@@ -6,15 +6,15 @@ import { useFriendsStore } from "./useFriendsStore";
 type GameStatus = "playing" | "completed" | "want_to_play" | "dropped";
 
 interface GameData {
-  playTime?: number | null;
-  completionPercentage?: number | null;
-  achievementsCompleted?: number | null;
+  play_time?: number | null;
+  completion_percentage?: number | null;
+  achievements_completed?: number | null;
 }
 
 interface ProgressData {
-  playTime?: number;
-  completionPercentage?: number;
-  achievementsCompleted?: number;
+  play_time?: number;
+  completion_percentage?: number;
+  achievements_completed?: number;
 }
 
 interface PlayTimeEntry {
@@ -28,9 +28,9 @@ interface AchievementEntry {
 }
 
 interface ProgressStore {
-  playTime: number | null;
-  completionPercentage: number | null;
-  achievementsCompleted: number | null;
+  play_time: number | null;
+  completion_percentage: number | null;
+  achievements_completed: number | null;
   playTimeHistory: PlayTimeEntry[];
   achievementHistory: AchievementEntry[];
   loading: boolean;
@@ -41,9 +41,9 @@ interface ProgressStore {
 }
 
 export const useProgressStore = create<ProgressStore>((set) => ({
-  playTime: null,
-  completionPercentage: null,
-  achievementsCompleted: null,
+  play_time: null,
+  completion_percentage: null,
+  achievements_completed: null,
   playTimeHistory: [],
   achievementHistory: [],
   loading: false,
@@ -96,9 +96,9 @@ export const useProgressStore = create<ProgressStore>((set) => ({
       }));
 
       set({
-        playTime: currentProgress?.play_time || null,
-        completionPercentage: currentProgress?.completion_percentage || null,
-        achievementsCompleted: currentProgress?.achievements_completed || null,
+        play_time: currentProgress?.play_time || null,
+        completion_percentage: currentProgress?.completion_percentage || null,
+        achievements_completed: currentProgress?.achievements_completed || null,
         playTimeHistory,
         achievementHistory,
         loading: false,
@@ -129,9 +129,10 @@ export const useProgressStore = create<ProgressStore>((set) => ({
           .from("user_games")
           .update({
             status,
-            play_time: gameData?.playTime ?? existingRecord.play_time,
-            completion_percentage: gameData?.completionPercentage ?? existingRecord.completion_percentage,
-            achievements_completed: gameData?.achievementsCompleted ?? existingRecord.achievements_completed,
+            play_time: gameData?.play_time ?? existingRecord.play_time,
+            completion_percentage: gameData?.completion_percentage ?? existingRecord.completion_percentage,
+            achievements_completed: gameData?.achievements_completed ?? existingRecord.achievements_completed,
+            last_played_at: new Date().toISOString(),
           })
           .eq("user_id", userId)
           .eq("game_id", gameId);
@@ -143,9 +144,10 @@ export const useProgressStore = create<ProgressStore>((set) => ({
             user_id: userId,
             game_id: gameId,
             status,
-            play_time: gameData?.playTime,
-            completion_percentage: gameData?.completionPercentage,
-            achievements_completed: gameData?.achievementsCompleted,
+            play_time: gameData?.play_time,
+            completion_percentage: gameData?.completion_percentage,
+            achievements_completed: gameData?.achievements_completed,
+            last_played_at: new Date().toISOString(),
           });
       }
 
@@ -153,19 +155,12 @@ export const useProgressStore = create<ProgressStore>((set) => ({
         throw updateResult.error;
       }
 
-      // Create an activity with the comment if provided
-      if (status === "completed") {
-        await useFriendsStore.getState().createActivity("completed", gameId, { comment });
-      } else if (status === "playing") {
-        await useFriendsStore.getState().createActivity("started_playing", gameId, { comment });
-      }
-
       // Update local state
       set({
         loading: false,
-        playTime: gameData?.playTime ?? null,
-        completionPercentage: gameData?.completionPercentage ?? null,
-        achievementsCompleted: gameData?.achievementsCompleted ?? null,
+        play_time: gameData?.play_time ?? null,
+        completion_percentage: gameData?.completion_percentage ?? null,
+        achievements_completed: gameData?.achievements_completed ?? null,
       });
     } catch (error) {
       set({ error: (error as Error).message, loading: false });
@@ -185,9 +180,10 @@ export const useProgressStore = create<ProgressStore>((set) => ({
           {
             user_id: userId,
             game_id: gameId,
-            play_time: data.playTime,
-            completion_percentage: data.completionPercentage,
-            achievements_completed: data.achievementsCompleted,
+            play_time: data.play_time,
+            completion_percentage: data.completion_percentage,
+            achievements_completed: data.achievements_completed,
+            last_played_at: new Date().toISOString(),
           },
           {
             onConflict: 'user_id,game_id',
@@ -203,20 +199,20 @@ export const useProgressStore = create<ProgressStore>((set) => ({
         .insert({
           user_id: userId,
           game_id: gameId,
-          play_time: data.playTime,
-          completion_percentage: data.completionPercentage,
+          play_time: data.play_time,
+          completion_percentage: data.completion_percentage,
         });
 
       if (historyError) throw historyError;
 
       // Record achievement history if achievements were updated
-      if (data.achievementsCompleted !== undefined) {
+      if (data.achievements_completed !== undefined) {
         const { error: achievementError } = await supabase
           .from("game_achievement_history")
           .insert({
             user_id: userId,
             game_id: gameId,
-            achievements_completed: data.achievementsCompleted,
+            achievements_completed: data.achievements_completed,
           });
 
         if (achievementError) throw achievementError;
@@ -225,33 +221,33 @@ export const useProgressStore = create<ProgressStore>((set) => ({
       // Update local state
       set(state => ({
         loading: false,
-        playTime: data.playTime ?? state.playTime,
-        completionPercentage: data.completionPercentage ?? state.completionPercentage,
-        achievementsCompleted: data.achievementsCompleted ?? state.achievementsCompleted,
+        play_time: data.play_time ?? state.play_time,
+        completion_percentage: data.completion_percentage ?? state.completion_percentage,
+        achievements_completed: data.achievements_completed ?? state.achievements_completed,
         playTimeHistory: [
           ...state.playTimeHistory,
           {
             date: new Date().toLocaleDateString(),
-            hours: data.playTime || 0,
+            hours: data.play_time || 0,
           },
         ],
-        achievementHistory: data.achievementsCompleted
+        achievementHistory: data.achievements_completed
           ? [
               ...state.achievementHistory,
               {
                 date: new Date().toLocaleDateString(),
-                count: data.achievementsCompleted,
+                count: data.achievements_completed,
               },
             ]
           : state.achievementHistory,
       }));
 
       // Create activities for significant progress updates
-      if (data.completionPercentage === 100) {
+      if (data.completion_percentage === 100) {
         await useFriendsStore.getState().createActivity("completed", gameId);
-      } else if (data.completionPercentage) {
+      } else if (data.completion_percentage) {
         await useFriendsStore.getState().createActivity("progress", gameId, {
-          progress: data.completionPercentage
+          progress: data.completion_percentage
         });
       }
     } catch (error) {
@@ -259,5 +255,5 @@ export const useProgressStore = create<ProgressStore>((set) => ({
       set({ error: (error as Error).message, loading: false });
       throw error;
     }
-  },
+  }
 })); 

@@ -4,16 +4,20 @@ import { useState } from "react";
 import { useProfile } from "@/hooks/use-profile";
 import { ProfileHeader } from "@/components/profile/profile-header";
 import { ProfileNav } from "@/components/profile/profile-nav";
-import { GamesTab } from "@/components/profile/games-tab";
 import {
   GameFilters,
-  GameFilters as GameFiltersType,
+  type GameFilters as GameFiltersType,
 } from "@/components/profile/game-filters";
-import LoadingSpinner from "@/components/loadingSpinner";
-import { fetchUserGames } from "@/utils/game-utils";
+import { GamesTab } from "@/components/profile/games-tab";
+import { LoadingState } from "@/components/ui/loading-state";
+import { ErrorState } from "@/components/ui/error-state";
+import { Button } from "@/components/ui/button";
+import { LayoutGrid, List } from "lucide-react";
+import { useSettingsStore } from "@/stores/useSettingsStore";
 
-export default function ProfileGamesPage() {
+export default function GamesPage() {
   const { profile, isLoading, error, gameStats } = useProfile();
+  const { libraryView, setLibraryView } = useSettingsStore();
   const [filters, setFilters] = useState<GameFiltersType>({
     status: "all",
     sortBy: "recent",
@@ -23,54 +27,70 @@ export default function ProfileGamesPage() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <LoadingSpinner size="lg" />
+        <LoadingState />
       </div>
     );
   }
 
-  if (error || !profile) {
+  if (error || !profile || !gameStats) {
     return (
-      <div className="flex items-center justify-center min-h-screen text-red-500">
-        <p className="text-xl font-semibold">
-          {error?.message || "Profile not found"}
-        </p>
+      <div className="flex items-center justify-center min-h-screen">
+        <ErrorState error={error?.message || "Profile not found"} />
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-950">
-      {/* Hero Section with Gradient */}
-      <div className="absolute inset-x-0 top-16 h-[300px] bg-gradient-to-b from-purple-900 via-indigo-900 to-gray-950" />
+    <div className="flex flex-col min-h-screen">
+      <div className="relative">
+        {/* Background Gradient */}
+        <div className="absolute inset-0 h-[300px] bg-gradient-to-b from-purple-900/50 via-gray-900/50 to-gray-950" />
 
-      {/* Main Content Container */}
-      <div className="relative flex flex-col flex-grow">
-        {/* Profile Header Section */}
-        <div className="pt-8">
-          <div className="max-w-7xl mx-auto px-4">
-            <ProfileHeader
-              profile={profile}
-              stats={gameStats}
-              onProfileUpdate={() => {}}
-              minimal
-            />
-          </div>
+        {/* Profile Header */}
+        <div className="relative">
+          <ProfileHeader
+            profile={profile}
+            stats={gameStats}
+            onProfileUpdate={() => {}}
+          />
         </div>
+      </div>
 
-        {/* Sticky Navigation */}
-        <div className="sticky top-16 z-40 bg-gray-950/80 backdrop-blur-md border-b border-white/5 mt-8">
-          <div className="max-w-7xl mx-auto px-4">
-            <ProfileNav />
-          </div>
-        </div>
+      {/* Profile Navigation */}
+      <div className="sticky top-16 z-40 bg-gray-950/90 backdrop-blur-md border-b border-white/10">
+        <ProfileNav />
+      </div>
 
-        {/* Games Grid */}
-        <div className="flex-grow">
-          <div className="max-w-7xl mx-auto px-4 py-8">
-            <div className="flex flex-col space-y-6">
-              <GameFilters onFilterChange={setFilters} />
-              <GamesTab userId={profile.id} filters={filters} />
+      {/* Games Content */}
+      <div className="flex-grow bg-gradient-to-b from-gray-950 to-gray-900">
+        <div className="max-w-7xl mx-auto px-4 py-12">
+          {/* Page Title and Actions */}
+          <div className="flex items-center justify-between mb-8">
+            <h1 className="text-3xl font-bold text-white">Games Library</h1>
+            <div className="flex gap-2">
+              <Button
+                variant={libraryView === "grid" ? "default" : "outline"}
+                size="icon"
+                onClick={() => setLibraryView("grid")}
+                className="w-10 h-10"
+              >
+                <LayoutGrid className="h-4 w-4" />
+              </Button>
+              <Button
+                variant={libraryView === "list" ? "default" : "outline"}
+                size="icon"
+                onClick={() => setLibraryView("list")}
+                className="w-10 h-10"
+              >
+                <List className="h-4 w-4" />
+              </Button>
             </div>
+          </div>
+
+          {/* Filters and Content */}
+          <div className="space-y-8">
+            <GameFilters onFilterChange={setFilters} />
+            <GamesTab filters={filters} />
           </div>
         </div>
       </div>

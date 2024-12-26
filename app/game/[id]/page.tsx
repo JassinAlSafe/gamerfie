@@ -1,44 +1,36 @@
 "use client";
 
-import { useEffect } from 'react';
-import { useParams } from 'next/navigation';
-import { useGameDetailsStore } from '@/stores/useGameDetailsStore';
-import { GameDetails } from '@/components/game-details';
-import LoadingSpinner from '@/components/loadingSpinner';
+import React from "react";
+import { GameDetails } from "@/components/game/GameDetails";
+import { useGame } from "@/hooks/useGame";
+import { LoadingSpinner } from "@/components/loadingSpinner";
 
-export default function GamePage() {
-  const params = useParams();
-  const gameId = parseInt(params.id as string);
-  const { 
-    games,
-    isLoading,
-    error,
-    fetchGame
-  } = useGameDetailsStore();
+interface GamePageProps {
+  params: {
+    id: string;
+  };
+}
 
-  useEffect(() => {
-    if (gameId) {
-      fetchGame(gameId);
-    }
-  }, [gameId, fetchGame]);
+export default function GamePage({ params }: GamePageProps) {
+  const { game, isLoading, error } = useGame(params.id);
 
   if (isLoading) {
-    return <LoadingSpinner />;
-  }
-
-  if (error) {
     return (
-      <div className="text-center py-10">
-        <p className="text-red-500">Error: {error}</p>
+      <div className="min-h-screen bg-gray-950 flex items-center justify-center">
+        <LoadingSpinner size="lg" />
       </div>
     );
   }
 
-  const game = games[gameId];
-  if (!game) {
+  if (error || !game) {
     return (
-      <div className="text-center py-10">
-        <p className="text-gray-400">Game not found</p>
+      <div className="min-h-screen bg-gray-950 flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-white mb-2">Game Not Found</h1>
+          <p className="text-gray-400">
+            {error || "The game you're looking for doesn't exist."}
+          </p>
+        </div>
       </div>
     );
   }

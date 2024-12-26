@@ -1,16 +1,35 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
-import { Database } from "@/types/supabase";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { useRouter } from "next/navigation";
 import { GameStatus } from "@/types/game";
 import { LoadingSpinner } from "./loadingSpinner";
 import { useFriendsStore } from "@/stores/useFriendsStore";
-import { useChallengesStore } from "@/stores/useChallengesStore";
+import { useLibraryStore } from "@/stores/useLibraryStore";
+import { useAuthStore } from "@/stores/useAuthStore";
+import { useErrorStore } from "@/stores/useErrorStore";
+import { useProgressStore } from "@/stores/useProgressStore";
 import { toast } from "sonner";
-import { ActivityType } from "@/types/friend";
+import { checkGameInLibrary } from "@/utils/game-utils";
+import { Plus, PlayCircle, CheckCircle, XCircle, Library } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface AddToLibraryButtonProps {
   gameId: string;
@@ -24,8 +43,31 @@ interface AddToLibraryButtonProps {
   size?: "default" | "sm" | "lg";
   className?: string;
   onSuccess?: (status: GameStatus) => void;
-  status?: GameStatus;
 }
+
+const STATUS_LABELS: Record<GameStatus, string> = {
+  want_to_play: "Want to Play",
+  playing: "Currently Playing",
+  completed: "Completed",
+  dropped: "Dropped",
+};
+
+const STATUS_ICONS: Record<GameStatus, React.ReactNode> = {
+  want_to_play: <Plus className="w-4 h-4 mr-2" />,
+  playing: <PlayCircle className="w-4 h-4 mr-2" />,
+  completed: <CheckCircle className="w-4 h-4 mr-2" />,
+  dropped: <XCircle className="w-4 h-4 mr-2" />,
+};
+
+const STATUS_VARIANTS: Record<
+  GameStatus,
+  "default" | "outline" | "secondary" | "ghost"
+> = {
+  want_to_play: "default",
+  playing: "secondary",
+  completed: "outline",
+  dropped: "ghost",
+};
 
 export function AddToLibraryButton({
   gameId,
@@ -39,223 +81,420 @@ export function AddToLibraryButton({
   size = "default",
   className,
   onSuccess,
-  status = "want_to_play",
 }: AddToLibraryButtonProps) {
   const [isLoading, setIsLoading] = useState(false);
+  const [isInLibrary, setIsInLibrary] = useState(false);
+  const [gameStatus, setGameStatus] = useState<GameStatus | null>(null);
+  const [showProgressDialog, setShowProgressDialog] = useState(false);
+  const [playTime, setPlayTime] = useState<number | undefined>();
+  const [completionPercentage, setCompletionPercentage] = useState<
+    number | undefined
+  >();
+  const [pendingStatus, setPendingStatus] = useState<GameStatus | null>(null);
+
   const router = useRouter();
+  const { user } = useAuthStore();
   const { createActivity } = useFriendsStore();
-  const { userChallenges, updateProgress } = useChallengesStore();
+  const { addGame } = useLibraryStore();
+  const { updateGameStatus, updateProgress } = useProgressStore();
+  const { addError } = useErrorStore();
 
-  const handleClick = async () => {
+  useEffect(() => {
+    const checkLibrary = async () => {
+      if (!user) return;
+      try {
+        const result = await checkGameInLibrary(gameId, user.id);
+        if (result) {
+          setIsInLibrary(true);
+          setGameStatus(result.status as GameStatus);
+        }
+      } catch (error) {
+        console.error("Error checking library:", error);
+      }
+    };
+
+    checkLibrary();
+  }, [gameId, user]);
+
+  const handleProgressSubmit = async () => {
     try {
+      if (!user || !pendingStatus) return;
+
       setIsLoading(true);
-      console.log("Starting process...");
-      toast.message("Starting process...");
 
-      const supabase = createClientComponentClient<Database>();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      // First update the progress
+      await updateProgress(user.id, gameId, {
+        play_time: playTime,
+        completion_percentage: completionPercentage,
+      });
 
-      if (!user) {
-        toast.error("Please sign in first");
-        router.push("/signin");
-        return;
-      }
+      // Then update the status
+      await updateGameStatus(user.id, gameId, pendingStatus);
+      setGameStatus(pendingStatus);
 
-      console.log("User authenticated");
-      toast.message("User authenticated");
-
-      // First, ensure game exists in games table
-      const { error: gameError } = await supabase.from("games").upsert(
-        {
-          id: gameId,
-          name: gameName,
-          cover_url: cover,
-          rating,
-          first_release_date: releaseDate,
-          platforms: platforms ? JSON.stringify(platforms) : null,
-          genres: genres ? JSON.stringify(genres) : null,
-        },
-        { onConflict: "id" }
-      );
-
-      if (gameError) {
-        console.error("Error upserting game:", gameError);
-        toast.error("Failed to save game data");
-        throw gameError;
-      }
-
-      console.log("Game data saved");
-      toast.message("Game data saved");
-
-      // Then add to user_games
-      const { error: userGameError } = await supabase.from("user_games").upsert(
-        {
-          user_id: user.id,
-          game_id: gameId,
-          status,
-        },
-        { onConflict: "user_id,game_id" }
-      );
-
-      if (userGameError) {
-        console.error("Error updating user_game:", userGameError);
-        toast.error("Failed to update game status");
-        throw userGameError;
-      }
-
-      console.log("Game status updated");
-      toast.message("Game status updated");
-
-      // Create activity
-      const activityType: ActivityType =
-        status === "completed"
-          ? "completed"
-          : status === "playing"
-          ? "started_playing"
-          : "want_to_play";
-
-      await createActivity(activityType, gameId);
-      console.log("Activity created");
-      toast.message("Activity created");
-
-      // Handle challenges if game is completed
-      if (status === "completed") {
-        const activeGameChallenges = userChallenges.filter(
-          (challenge) =>
-            challenge.status === "active" &&
-            (challenge.goal_type === "complete_games" ||
-              challenge.goal_type === "play_time" ||
-              challenge.goal_type === "review_games")
+      // Try to create activity
+      try {
+        await createActivity(
+          pendingStatus === "completed" ? "completed" : "started_playing",
+          gameId
         );
-
-        console.log("Processing challenges:", activeGameChallenges.length);
-        toast.message(`Processing ${activeGameChallenges.length} challenges`);
-
-        for (const challenge of activeGameChallenges) {
-          const participant = challenge.participants.find(
-            (p) => p.user.id === user.id
+      } catch (activityError: any) {
+        if (activityError.message?.includes("Please wait")) {
+          const minutes = activityError.message.match(/\d+/)?.[0] || "some";
+          toast.error(
+            `Progress updated, but we couldn't post the activity yet. Please wait ${minutes} minutes before sharing another update for this game.`
           );
-
-          if (participant && challenge.goal_type === "complete_games") {
-            const genreRequirement =
-              challenge.requirements?.genre?.toLowerCase();
-            const gameGenres = genres?.map((g) => g.name.toLowerCase()) || [];
-
-            // Helper function to normalize genre names
-            const normalizeGenre = (genre: string) => {
-              genre = genre.toLowerCase();
-              if (
-                genre.includes("role-playing") ||
-                genre.includes("rpg") ||
-                genre === "role playing game"
-              ) {
-                return "rpg";
-              }
-              return genre;
-            };
-
-            // Normalize all game genres
-            const normalizedGameGenres = gameGenres.map(normalizeGenre);
-            const normalizedRequirement = genreRequirement
-              ? normalizeGenre(genreRequirement)
-              : null;
-
-            console.log("Challenge:", {
-              id: challenge.id,
-              title: challenge.title,
-              requirements: challenge.requirements,
-              genreRequirement,
-              normalizedRequirement,
-            });
-
-            console.log("Game genres:", {
-              original: gameGenres,
-              normalized: normalizedGameGenres,
-            });
-
-            const matchesRequirement =
-              !normalizedRequirement ||
-              normalizedGameGenres.includes(normalizedRequirement);
-
-            console.log("Genre match result:", {
-              matchesRequirement,
-              reason: !normalizedRequirement
-                ? "No genre requirement"
-                : matchesRequirement
-                ? "Genre matches requirement"
-                : "Genre does not match requirement",
-            });
-
-            if (matchesRequirement) {
-              const currentCompleted = Math.floor(
-                (participant.progress / 100) * challenge.goal_target
-              );
-              const newCompleted = currentCompleted + 1;
-              const newProgress = Math.min(
-                100,
-                (newCompleted * 100) / challenge.goal_target
-              );
-
-              const { error: updateError } = await supabase
-                .from("challenge_participants")
-                .update({ progress: newProgress })
-                .eq("challenge_id", challenge.id)
-                .eq("user_id", user.id);
-
-              if (updateError) {
-                console.error("Error updating challenge:", updateError);
-                toast.error("Failed to update challenge progress");
-                throw updateError;
-              }
-
-              await updateProgress(challenge.id, newProgress);
-              console.log("Challenge updated:", challenge.title);
-              toast.success(`Challenge progress updated: ${challenge.title}`);
-            }
-          }
+        } else {
+          console.error("Error creating activity:", activityError);
+          toast.error(
+            "Progress updated, but we couldn't share the activity with your friends."
+          );
         }
       }
 
-      onSuccess?.(status);
-      router.refresh();
-
       toast.success(
-        status === "completed"
-          ? "Game marked as completed!"
-          : "Game added to library!"
+        `Game progress and status updated to ${STATUS_LABELS[pendingStatus]}`
       );
+      onSuccess?.(pendingStatus);
+      router.refresh();
+      setShowProgressDialog(false);
+      setPendingStatus(null);
     } catch (error) {
-      console.error("Error:", error);
-      toast.error("An error occurred. Please try again.");
+      console.error("Error updating progress:", error);
+      addError("api", "Failed to update game progress");
     } finally {
       setIsLoading(false);
     }
   };
 
+  const handleStatusChange = async (newStatus: GameStatus) => {
+    if (!user) {
+      addError("auth", "Please sign in to update game status");
+      router.push("/signin");
+      return;
+    }
+
+    // Don't update if status hasn't changed
+    if (gameStatus === newStatus) {
+      toast.info(`Game is already marked as ${STATUS_LABELS[newStatus]}`);
+      return;
+    }
+
+    // For completed status, show progress dialog
+    if (newStatus === "completed") {
+      setPendingStatus(newStatus);
+      setShowProgressDialog(true);
+      return;
+    }
+
+    // For other statuses, proceed as before
+    try {
+      setIsLoading(true);
+      await updateGameStatus(user.id, gameId, newStatus);
+      setGameStatus(newStatus);
+
+      if (newStatus === "playing") {
+        try {
+          await createActivity("started_playing", gameId);
+        } catch (activityError: any) {
+          if (activityError.message?.includes("Please wait")) {
+            const minutes = activityError.message.match(/\d+/)?.[0] || "some";
+            toast.error(
+              `Status updated, but we couldn't post the activity yet. Please wait ${minutes} minutes before sharing another update for this game.`
+            );
+          } else {
+            console.error("Error creating activity:", activityError);
+            toast.error(
+              "Status updated, but we couldn't share the activity with your friends."
+            );
+          }
+        }
+      }
+
+      toast.success(`Game status updated to ${STATUS_LABELS[newStatus]}`);
+      onSuccess?.(newStatus);
+      router.refresh();
+    } catch (error) {
+      console.error("Error updating status:", error);
+      addError("api", "Failed to update game status");
+      setGameStatus(gameStatus); // Revert the status on error
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleClick = async () => {
+    try {
+      // Check authentication first
+      if (!user) {
+        addError("auth", "Please sign in to add games to your library");
+        router.push("/signin");
+        return;
+      }
+
+      // If game is already in library, show message
+      if (isInLibrary) {
+        toast.info("Game is already in your library", {
+          description: `Current status: ${gameStatus}`,
+        });
+        return;
+      }
+
+      setIsLoading(true);
+      console.log("Starting process...");
+      toast.message("Starting process...");
+
+      // Add game to library using LibraryStore
+      try {
+        await addGame({
+          id: gameId,
+          name: gameName,
+          cover_url: cover,
+          rating,
+          first_release_date: releaseDate,
+          platforms,
+          genres,
+        });
+        console.log("Game added to library");
+        toast.success("Game added to library");
+
+        // Create activity for adding to library
+        await createActivity("want_to_play", gameId);
+
+        setIsInLibrary(true);
+        setGameStatus("want_to_play");
+        onSuccess?.("want_to_play");
+        router.refresh();
+      } catch (error: any) {
+        // If the error is a duplicate key error, update the UI state
+        if (error.code === "23505") {
+          setIsInLibrary(true);
+          const result = await checkGameInLibrary(gameId, user.id);
+          if (result) {
+            setGameStatus(result.status as GameStatus);
+          }
+          toast.info("Game is already in your library", {
+            description: `Current status: ${result?.status || "unknown"}`,
+          });
+        } else {
+          addError("api", "Failed to add game to library");
+          throw error;
+        }
+      }
+    } catch (error) {
+      console.error("Error:", error);
+      addError("unknown", "An unexpected error occurred. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (isInLibrary) {
+    return (
+      <>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant={STATUS_VARIANTS[gameStatus || "want_to_play"]}
+              size={size}
+              className={cn(
+                "min-w-[140px] transition-all duration-200",
+                className
+              )}
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <LoadingSpinner className="mr-2" />
+              ) : (
+                STATUS_ICONS[gameStatus || "want_to_play"]
+              )}
+              {STATUS_LABELS[gameStatus || "want_to_play"]}
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent
+            align="end"
+            className="w-[200px] bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-md shadow-lg animate-in fade-in-0 zoom-in-95"
+          >
+            {Object.entries(STATUS_LABELS).map(([status, label]) => (
+              <DropdownMenuItem
+                key={status}
+                onClick={() => handleStatusChange(status as GameStatus)}
+                className={cn(
+                  "flex items-center px-3 py-2 text-sm cursor-pointer",
+                  "hover:bg-zinc-100 dark:hover:bg-zinc-800",
+                  "focus:bg-zinc-100 dark:focus:bg-zinc-800",
+                  "transition-colors duration-150",
+                  status === gameStatus &&
+                    "bg-zinc-100 dark:bg-zinc-800 font-medium",
+                  {
+                    "text-blue-600 dark:text-blue-400":
+                      status === "want_to_play",
+                    "text-purple-600 dark:text-purple-400":
+                      status === "playing",
+                    "text-green-600 dark:text-green-400":
+                      status === "completed",
+                    "text-red-600 dark:text-red-400": status === "dropped",
+                  }
+                )}
+                disabled={status === gameStatus}
+              >
+                {STATUS_ICONS[status as GameStatus]}
+                {label}
+                {status === gameStatus && (
+                  <div className="ml-auto">
+                    <CheckCircle className="w-4 h-4" />
+                  </div>
+                )}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        <Dialog open={showProgressDialog} onOpenChange={setShowProgressDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Update Game Progress</DialogTitle>
+              <DialogDescription>
+                Enter your progress details for {gameName}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="play-time" className="text-right">
+                  Play Time (hours)
+                </Label>
+                <Input
+                  id="play-time"
+                  type="number"
+                  className="col-span-3"
+                  value={playTime || ""}
+                  onChange={(e) => setPlayTime(Number(e.target.value))}
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="completion" className="text-right">
+                  Completion %
+                </Label>
+                <Input
+                  id="completion"
+                  type="number"
+                  min="0"
+                  max="100"
+                  className="col-span-3"
+                  value={completionPercentage || ""}
+                  onChange={(e) =>
+                    setCompletionPercentage(Number(e.target.value))
+                  }
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowProgressDialog(false);
+                  setPendingStatus(null);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button onClick={handleProgressSubmit} disabled={isLoading}>
+                {isLoading ? (
+                  <>
+                    <LoadingSpinner size="sm" />
+                    <span className="ml-2">Updating...</span>
+                  </>
+                ) : (
+                  "Update Progress"
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </>
+    );
+  }
+
   return (
-    <Button
-      onClick={handleClick}
-      variant={variant}
-      size={size}
-      className={className}
-      disabled={isLoading}
-    >
-      {isLoading ? (
-        <>
-          <LoadingSpinner size="sm" />
-          <span className="ml-2">
-            {status === "completed"
-              ? "Marking as Completed..."
-              : "Adding to Library..."}
-          </span>
-        </>
-      ) : status === "completed" ? (
-        "Mark as Completed"
+    <>
+      {!isInLibrary ? (
+        <Button
+          variant="default"
+          size={size}
+          className={cn(
+            "bg-blue-600 hover:bg-blue-700 text-white",
+            "transition-all duration-200",
+            className
+          )}
+          onClick={handleClick}
+          disabled={isLoading}
+        >
+          {isLoading ? (
+            <LoadingSpinner className="mr-2" />
+          ) : (
+            <Library className="w-4 h-4 mr-2" />
+          )}
+          Add to Library
+        </Button>
       ) : (
-        "Add to Library"
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant={STATUS_VARIANTS[gameStatus || "want_to_play"]}
+              size={size}
+              className={cn(
+                "min-w-[140px] transition-all duration-200",
+                className
+              )}
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <LoadingSpinner className="mr-2" />
+              ) : (
+                STATUS_ICONS[gameStatus || "want_to_play"]
+              )}
+              {STATUS_LABELS[gameStatus || "want_to_play"]}
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent
+            align="end"
+            className="w-[200px] bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-md shadow-lg animate-in fade-in-0 zoom-in-95"
+          >
+            {Object.entries(STATUS_LABELS).map(([status, label]) => (
+              <DropdownMenuItem
+                key={status}
+                onClick={() => handleStatusChange(status as GameStatus)}
+                className={cn(
+                  "flex items-center px-3 py-2 text-sm cursor-pointer",
+                  "hover:bg-zinc-100 dark:hover:bg-zinc-800",
+                  "focus:bg-zinc-100 dark:focus:bg-zinc-800",
+                  "transition-colors duration-150",
+                  status === gameStatus &&
+                    "bg-zinc-100 dark:bg-zinc-800 font-medium",
+                  {
+                    "text-blue-600 dark:text-blue-400":
+                      status === "want_to_play",
+                    "text-purple-600 dark:text-purple-400":
+                      status === "playing",
+                    "text-green-600 dark:text-green-400":
+                      status === "completed",
+                    "text-red-600 dark:text-red-400": status === "dropped",
+                  }
+                )}
+                disabled={status === gameStatus}
+              >
+                {STATUS_ICONS[status as GameStatus]}
+                {label}
+                {status === gameStatus && (
+                  <div className="ml-auto">
+                    <CheckCircle className="w-4 h-4" />
+                  </div>
+                )}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
       )}
-    </Button>
+    </>
   );
 }

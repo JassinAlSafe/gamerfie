@@ -24,7 +24,7 @@ export default function SettingsPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
   const [settings, setSettings] = useState<UserSettings>(defaultSettings);
-  const [activeSection, setActiveSection] = useState('general');
+  const [activeSection, setActiveSection] = useState("general");
 
   // Load settings from profile when available
   useEffect(() => {
@@ -76,11 +76,11 @@ export default function SettingsPage() {
   };
 
   const sections: SettingsSection[] = [
-    { id: 'general', label: 'General' },
-    { id: 'profile', label: 'Profile' },
-    { id: 'library', label: 'Library' },
-    { id: 'privacy', label: 'Privacy' },
-    { id: 'notifications', label: 'Notifications' },
+    { id: "general", label: "General" },
+    { id: "profile", label: "Profile" },
+    { id: "library", label: "Library" },
+    { id: "privacy", label: "Privacy" },
+    { id: "notifications", label: "Notifications" },
   ];
 
   return (
@@ -89,7 +89,7 @@ export default function SettingsPage() {
       <div className="relative">
         {/* Background Gradient */}
         <div className="absolute inset-0 h-[300px] bg-gradient-to-b from-purple-900 via-indigo-900 to-gray-950" />
-        
+
         <div className="relative">
           {/* Header Content */}
           <div className="max-w-4xl mx-auto px-4 pt-8">
@@ -147,37 +147,53 @@ export default function SettingsPage() {
             <div className="max-w-4xl mx-auto px-4 py-8">
               <div className="space-y-6">
                 {/* General Settings */}
-                {activeSection === 'general' && (
+                {activeSection === "general" && (
                   <div className="space-y-6">
                     <div className="p-6 bg-gray-900/50 backdrop-blur-sm border border-white/5 rounded-xl">
-                      <h2 className="text-xl font-semibold text-white mb-4">Theme</h2>
+                      <h2 className="text-xl font-semibold text-white mb-4">
+                        Theme
+                      </h2>
                       <div className="space-y-6">
                         <div className="flex items-center justify-between">
                           <div>
-                            <label className="text-white text-sm font-medium">Dark Mode</label>
-                            <p className="text-sm text-gray-400">Enable dark mode for the application</p>
+                            <label className="text-white text-sm font-medium">
+                              Dark Mode
+                            </label>
+                            <p className="text-sm text-gray-400">
+                              Enable dark mode for the application
+                            </p>
                           </div>
                           <Switch
                             checked={settings.general?.darkMode ?? true}
                             onCheckedChange={(checked) =>
                               handleSettingsChange({
                                 ...settings,
-                                general: { ...settings.general, darkMode: checked },
+                                general: {
+                                  ...settings.general,
+                                  darkMode: checked,
+                                },
                               })
                             }
                           />
                         </div>
                         <div className="flex items-center justify-between">
                           <div>
-                            <label className="text-white text-sm font-medium">Accent Color</label>
-                            <p className="text-sm text-gray-400">Choose your preferred accent color</p>
+                            <label className="text-white text-sm font-medium">
+                              Accent Color
+                            </label>
+                            <p className="text-sm text-gray-400">
+                              Choose your preferred accent color
+                            </p>
                           </div>
                           <select
-                            value={settings.general?.accentColor ?? 'purple'}
+                            value={settings.general?.accentColor ?? "purple"}
                             onChange={(e) =>
                               handleSettingsChange({
                                 ...settings,
-                                general: { ...settings.general, accentColor: e.target.value },
+                                general: {
+                                  ...settings.general,
+                                  accentColor: e.target.value,
+                                },
                               })
                             }
                             className="bg-gray-800 border border-gray-700 text-white rounded-md px-3 py-2 min-w-[120px]"
@@ -192,19 +208,28 @@ export default function SettingsPage() {
                     </div>
 
                     <div className="p-6 bg-gray-900/50 backdrop-blur-sm border border-white/5 rounded-xl">
-                      <h2 className="text-xl font-semibold text-white mb-4">Language & Region</h2>
+                      <h2 className="text-xl font-semibold text-white mb-4">
+                        Language & Region
+                      </h2>
                       <div className="space-y-6">
                         <div className="flex items-center justify-between">
                           <div>
-                            <label className="text-white text-sm font-medium">Language</label>
-                            <p className="text-sm text-gray-400">Select your preferred language</p>
+                            <label className="text-white text-sm font-medium">
+                              Language
+                            </label>
+                            <p className="text-sm text-gray-400">
+                              Select your preferred language
+                            </p>
                           </div>
                           <select
-                            value={settings.general?.language ?? 'en'}
+                            value={settings.general?.language ?? "en"}
                             onChange={(e) =>
                               handleSettingsChange({
                                 ...settings,
-                                general: { ...settings.general, language: e.target.value },
+                                general: {
+                                  ...settings.general,
+                                  language: e.target.value,
+                                },
                               })
                             }
                             className="bg-gray-800 border border-gray-700 text-white rounded-md px-3 py-2 min-w-[120px]"
@@ -217,15 +242,22 @@ export default function SettingsPage() {
                         </div>
                         <div className="flex items-center justify-between">
                           <div>
-                            <label className="text-white text-sm font-medium">Time Zone</label>
-                            <p className="text-sm text-gray-400">Set your local time zone</p>
+                            <label className="text-white text-sm font-medium">
+                              Time Zone
+                            </label>
+                            <p className="text-sm text-gray-400">
+                              Set your local time zone
+                            </p>
                           </div>
                           <select
-                            value={settings.general?.timeZone ?? 'UTC'}
+                            value={settings.general?.timeZone ?? "UTC"}
                             onChange={(e) =>
                               handleSettingsChange({
                                 ...settings,
-                                general: { ...settings.general, timeZone: e.target.value },
+                                general: {
+                                  ...settings.general,
+                                  timeZone: e.target.value,
+                                },
                               })
                             }
                             className="bg-gray-800 border border-gray-700 text-white rounded-md px-3 py-2 min-w-[120px]"
@@ -242,19 +274,26 @@ export default function SettingsPage() {
                 )}
 
                 {/* Profile Settings */}
-                {activeSection === 'profile' && (
+                {activeSection === "profile" && (
                   <div className="space-y-6">
                     <div className="p-6 bg-gray-900/50 backdrop-blur-sm border border-white/5 rounded-xl">
-                      <h2 className="text-xl font-semibold text-white mb-4">Profile Information</h2>
+                      <h2 className="text-xl font-semibold text-white mb-4">
+                        Profile Information
+                      </h2>
                       <div className="space-y-6">
                         <div>
-                          <label className="text-white text-sm font-medium">Display Name</label>
+                          <label className="text-white text-sm font-medium">
+                            Display Name
+                          </label>
                           <Input
-                            value={profile?.display_name || ''}
+                            value={profile?.display_name || ""}
                             onChange={(e) =>
                               handleSettingsChange({
                                 ...settings,
-                                profile: { ...settings.profile, displayName: e.target.value },
+                                profile: {
+                                  ...settings.profile,
+                                  displayName: e.target.value,
+                                },
                               })
                             }
                             className="mt-1 bg-gray-800 border-gray-700 text-white"
@@ -262,13 +301,18 @@ export default function SettingsPage() {
                           />
                         </div>
                         <div>
-                          <label className="text-white text-sm font-medium">Bio</label>
+                          <label className="text-white text-sm font-medium">
+                            Bio
+                          </label>
                           <textarea
-                            value={profile?.bio || ''}
+                            value={profile?.bio || ""}
                             onChange={(e) =>
                               handleSettingsChange({
                                 ...settings,
-                                profile: { ...settings.profile, bio: e.target.value },
+                                profile: {
+                                  ...settings.profile,
+                                  bio: e.target.value,
+                                },
                               })
                             }
                             className="mt-1 w-full bg-gray-800 border border-gray-700 text-white rounded-md px-3 py-2 min-h-[100px]"
@@ -279,12 +323,16 @@ export default function SettingsPage() {
                     </div>
 
                     <div className="p-6 bg-gray-900/50 backdrop-blur-sm border border-white/5 rounded-xl">
-                      <h2 className="text-xl font-semibold text-white mb-4">Social Links</h2>
+                      <h2 className="text-xl font-semibold text-white mb-4">
+                        Social Links
+                      </h2>
                       <div className="space-y-6">
                         <div>
-                          <label className="text-white text-sm font-medium">Twitter</label>
+                          <label className="text-white text-sm font-medium">
+                            Twitter
+                          </label>
                           <Input
-                            value={settings.profile?.socialLinks?.twitter || ''}
+                            value={settings.profile?.socialLinks?.twitter || ""}
                             onChange={(e) =>
                               handleSettingsChange({
                                 ...settings,
@@ -302,9 +350,11 @@ export default function SettingsPage() {
                           />
                         </div>
                         <div>
-                          <label className="text-white text-sm font-medium">Discord</label>
+                          <label className="text-white text-sm font-medium">
+                            Discord
+                          </label>
                           <Input
-                            value={settings.profile?.socialLinks?.discord || ''}
+                            value={settings.profile?.socialLinks?.discord || ""}
                             onChange={(e) =>
                               handleSettingsChange({
                                 ...settings,
@@ -327,17 +377,23 @@ export default function SettingsPage() {
                 )}
 
                 {/* Library Settings */}
-                {activeSection === 'library' && (
+                {activeSection === "library" && (
                   <div className="p-6 bg-gray-900/50 backdrop-blur-sm border border-white/5 rounded-xl">
-                    <h2 className="text-xl font-semibold text-white mb-4">Library</h2>
+                    <h2 className="text-xl font-semibold text-white mb-4">
+                      Library
+                    </h2>
                     <div className="space-y-6">
                       <div className="flex items-center justify-between">
                         <div>
-                          <label className="text-white text-sm font-medium">View Style</label>
-                          <p className="text-sm text-gray-400">Choose how games are displayed</p>
+                          <label className="text-white text-sm font-medium">
+                            View Style
+                          </label>
+                          <p className="text-sm text-gray-400">
+                            Choose how games are displayed
+                          </p>
                         </div>
                         <select
-                          value={settings.library?.view || 'grid'}
+                          value={settings.library?.view || "grid"}
                           onChange={(e) =>
                             handleSettingsChange({
                               ...settings,
@@ -356,17 +412,24 @@ export default function SettingsPage() {
 
                       <div className="flex items-center justify-between">
                         <div>
-                          <label className="text-white text-sm font-medium">Sort By</label>
-                          <p className="text-sm text-gray-400">Default sorting for your games</p>
+                          <label className="text-white text-sm font-medium">
+                            Sort By
+                          </label>
+                          <p className="text-sm text-gray-400">
+                            Default sorting for your games
+                          </p>
                         </div>
                         <select
-                          value={settings.library?.sortBy || 'recent'}
+                          value={settings.library?.sortBy || "recent"}
                           onChange={(e) =>
                             handleSettingsChange({
                               ...settings,
                               library: {
                                 ...settings.library,
-                                sortBy: e.target.value as "recent" | "name" | "rating",
+                                sortBy: e.target.value as
+                                  | "recent"
+                                  | "name"
+                                  | "rating",
                               },
                             })
                           }
@@ -380,11 +443,15 @@ export default function SettingsPage() {
 
                       <div className="flex items-center justify-between">
                         <div>
-                          <label className="text-white text-sm font-medium">Sort Order</label>
-                          <p className="text-sm text-gray-400">Ascending or descending order</p>
+                          <label className="text-white text-sm font-medium">
+                            Sort Order
+                          </label>
+                          <p className="text-sm text-gray-400">
+                            Ascending or descending order
+                          </p>
                         </div>
                         <select
-                          value={settings.library?.sortOrder || 'desc'}
+                          value={settings.library?.sortOrder || "desc"}
                           onChange={(e) =>
                             handleSettingsChange({
                               ...settings,
@@ -403,15 +470,22 @@ export default function SettingsPage() {
 
                       <div className="flex items-center justify-between">
                         <div>
-                          <label className="text-white text-sm font-medium">Show Playtime</label>
-                          <p className="text-sm text-gray-400">Display game playtime in library</p>
+                          <label className="text-white text-sm font-medium">
+                            Show Playtime
+                          </label>
+                          <p className="text-sm text-gray-400">
+                            Display game playtime in library
+                          </p>
                         </div>
                         <Switch
                           checked={settings.library?.showPlaytime ?? true}
                           onCheckedChange={(checked) =>
                             handleSettingsChange({
                               ...settings,
-                              library: { ...settings.library, showPlaytime: checked },
+                              library: {
+                                ...settings.library,
+                                showPlaytime: checked,
+                              },
                             })
                           }
                         />
@@ -419,15 +493,22 @@ export default function SettingsPage() {
 
                       <div className="flex items-center justify-between">
                         <div>
-                          <label className="text-white text-sm font-medium">Show Ratings</label>
-                          <p className="text-sm text-gray-400">Display game ratings in library</p>
+                          <label className="text-white text-sm font-medium">
+                            Show Ratings
+                          </label>
+                          <p className="text-sm text-gray-400">
+                            Display game ratings in library
+                          </p>
                         </div>
                         <Switch
                           checked={settings.library?.showRatings ?? true}
                           onCheckedChange={(checked) =>
                             handleSettingsChange({
                               ...settings,
-                              library: { ...settings.library, showRatings: checked },
+                              library: {
+                                ...settings.library,
+                                showRatings: checked,
+                              },
                             })
                           }
                         />
@@ -437,22 +518,33 @@ export default function SettingsPage() {
                 )}
 
                 {/* Privacy Settings */}
-                {activeSection === 'privacy' && (
+                {activeSection === "privacy" && (
                   <div className="space-y-6">
                     <div className="p-6 bg-gray-900/50 backdrop-blur-sm border border-white/5 rounded-xl">
-                      <h2 className="text-xl font-semibold text-white mb-4">Privacy</h2>
+                      <h2 className="text-xl font-semibold text-white mb-4">
+                        Privacy
+                      </h2>
                       <div className="space-y-6">
                         <div className="flex items-center justify-between">
                           <div>
-                            <label className="text-white text-sm font-medium">Profile Visibility</label>
-                            <p className="text-sm text-gray-400">Who can see your profile</p>
+                            <label className="text-white text-sm font-medium">
+                              Profile Visibility
+                            </label>
+                            <p className="text-sm text-gray-400">
+                              Who can see your profile
+                            </p>
                           </div>
                           <select
-                            value={settings.privacy?.profileVisibility || 'public'}
+                            value={
+                              settings.privacy?.profileVisibility || "public"
+                            }
                             onChange={(e) =>
                               handleSettingsChange({
                                 ...settings,
-                                privacy: { ...settings.privacy, profileVisibility: e.target.value },
+                                privacy: {
+                                  ...settings.privacy,
+                                  profileVisibility: e.target.value,
+                                },
                               })
                             }
                             className="bg-gray-800 border border-gray-700 text-white rounded-md px-3 py-2 min-w-[120px]"
@@ -465,15 +557,22 @@ export default function SettingsPage() {
 
                         <div className="flex items-center justify-between">
                           <div>
-                            <label className="text-white text-sm font-medium">Show Online Status</label>
-                            <p className="text-sm text-gray-400">Let others see when you're online</p>
+                            <label className="text-white text-sm font-medium">
+                              Show Online Status
+                            </label>
+                            <p className="text-sm text-gray-400">
+                              Let others see when you're online
+                            </p>
                           </div>
                           <Switch
                             checked={settings.privacy?.showOnlineStatus ?? true}
                             onCheckedChange={(checked) =>
                               handleSettingsChange({
                                 ...settings,
-                                privacy: { ...settings.privacy, showOnlineStatus: checked },
+                                privacy: {
+                                  ...settings.privacy,
+                                  showOnlineStatus: checked,
+                                },
                               })
                             }
                           />
@@ -481,15 +580,22 @@ export default function SettingsPage() {
 
                         <div className="flex items-center justify-between">
                           <div>
-                            <label className="text-white text-sm font-medium">Show Game Activity</label>
-                            <p className="text-sm text-gray-400">Let others see what games you're playing</p>
+                            <label className="text-white text-sm font-medium">
+                              Show Game Activity
+                            </label>
+                            <p className="text-sm text-gray-400">
+                              Let others see what games you're playing
+                            </p>
                           </div>
                           <Switch
                             checked={settings.privacy?.showGameActivity ?? true}
                             onCheckedChange={(checked) =>
                               handleSettingsChange({
                                 ...settings,
-                                privacy: { ...settings.privacy, showGameActivity: checked },
+                                privacy: {
+                                  ...settings.privacy,
+                                  showGameActivity: checked,
+                                },
                               })
                             }
                           />
@@ -498,19 +604,30 @@ export default function SettingsPage() {
                     </div>
 
                     <div className="p-6 bg-gray-900/50 backdrop-blur-sm border border-white/5 rounded-xl">
-                      <h2 className="text-xl font-semibold text-white mb-4">Data & Security</h2>
+                      <h2 className="text-xl font-semibold text-white mb-4">
+                        Data & Security
+                      </h2>
                       <div className="space-y-6">
                         <div className="flex items-center justify-between">
                           <div>
-                            <label className="text-white text-sm font-medium">Two-Factor Authentication</label>
-                            <p className="text-sm text-gray-400">Enable 2FA for additional security</p>
+                            <label className="text-white text-sm font-medium">
+                              Two-Factor Authentication
+                            </label>
+                            <p className="text-sm text-gray-400">
+                              Enable 2FA for additional security
+                            </p>
                           </div>
                           <Switch
-                            checked={settings.privacy?.twoFactorEnabled ?? false}
+                            checked={
+                              settings.privacy?.twoFactorEnabled ?? false
+                            }
                             onCheckedChange={(checked) =>
                               handleSettingsChange({
                                 ...settings,
-                                privacy: { ...settings.privacy, twoFactorEnabled: checked },
+                                privacy: {
+                                  ...settings.privacy,
+                                  twoFactorEnabled: checked,
+                                },
                               })
                             }
                           />
@@ -521,22 +638,33 @@ export default function SettingsPage() {
                 )}
 
                 {/* Notifications Settings */}
-                {activeSection === 'notifications' && (
+                {activeSection === "notifications" && (
                   <div className="space-y-6">
                     <div className="p-6 bg-gray-900/50 backdrop-blur-sm border border-white/5 rounded-xl">
-                      <h2 className="text-xl font-semibold text-white mb-4">Email Notifications</h2>
+                      <h2 className="text-xl font-semibold text-white mb-4">
+                        Email Notifications
+                      </h2>
                       <div className="space-y-6">
                         <div className="flex items-center justify-between">
                           <div>
-                            <label className="text-white text-sm font-medium">Game Updates</label>
-                            <p className="text-sm text-gray-400">Receive emails about game updates</p>
+                            <label className="text-white text-sm font-medium">
+                              Game Updates
+                            </label>
+                            <p className="text-sm text-gray-400">
+                              Receive emails about game updates
+                            </p>
                           </div>
                           <Switch
-                            checked={settings.notifications?.emailGameUpdates ?? true}
+                            checked={
+                              settings.notifications?.emailGameUpdates ?? true
+                            }
                             onCheckedChange={(checked) =>
                               handleSettingsChange({
                                 ...settings,
-                                notifications: { ...settings.notifications, emailGameUpdates: checked },
+                                notifications: {
+                                  ...settings.notifications,
+                                  emailGameUpdates: checked,
+                                },
                               })
                             }
                           />
@@ -544,15 +672,25 @@ export default function SettingsPage() {
 
                         <div className="flex items-center justify-between">
                           <div>
-                            <label className="text-white text-sm font-medium">Friend Activity</label>
-                            <p className="text-sm text-gray-400">Receive emails about friend activity</p>
+                            <label className="text-white text-sm font-medium">
+                              Friend Activity
+                            </label>
+                            <p className="text-sm text-gray-400">
+                              Receive emails about friend activity
+                            </p>
                           </div>
                           <Switch
-                            checked={settings.notifications?.emailFriendActivity ?? true}
+                            checked={
+                              settings.notifications?.emailFriendActivity ??
+                              true
+                            }
                             onCheckedChange={(checked) =>
                               handleSettingsChange({
                                 ...settings,
-                                notifications: { ...settings.notifications, emailFriendActivity: checked },
+                                notifications: {
+                                  ...settings.notifications,
+                                  emailFriendActivity: checked,
+                                },
                               })
                             }
                           />
@@ -560,15 +698,24 @@ export default function SettingsPage() {
 
                         <div className="flex items-center justify-between">
                           <div>
-                            <label className="text-white text-sm font-medium">Newsletter</label>
-                            <p className="text-sm text-gray-400">Receive our monthly newsletter</p>
+                            <label className="text-white text-sm font-medium">
+                              Newsletter
+                            </label>
+                            <p className="text-sm text-gray-400">
+                              Receive our monthly newsletter
+                            </p>
                           </div>
                           <Switch
-                            checked={settings.notifications?.emailNewsletter ?? true}
+                            checked={
+                              settings.notifications?.emailNewsletter ?? true
+                            }
                             onCheckedChange={(checked) =>
                               handleSettingsChange({
                                 ...settings,
-                                notifications: { ...settings.notifications, emailNewsletter: checked },
+                                notifications: {
+                                  ...settings.notifications,
+                                  emailNewsletter: checked,
+                                },
                               })
                             }
                           />
@@ -577,19 +724,30 @@ export default function SettingsPage() {
                     </div>
 
                     <div className="p-6 bg-gray-900/50 backdrop-blur-sm border border-white/5 rounded-xl">
-                      <h2 className="text-xl font-semibold text-white mb-4">Push Notifications</h2>
+                      <h2 className="text-xl font-semibold text-white mb-4">
+                        Push Notifications
+                      </h2>
                       <div className="space-y-6">
                         <div className="flex items-center justify-between">
                           <div>
-                            <label className="text-white text-sm font-medium">Friend Requests</label>
-                            <p className="text-sm text-gray-400">Get notified about new friend requests</p>
+                            <label className="text-white text-sm font-medium">
+                              Friend Requests
+                            </label>
+                            <p className="text-sm text-gray-400">
+                              Get notified about new friend requests
+                            </p>
                           </div>
                           <Switch
-                            checked={settings.notifications?.pushFriendRequests ?? true}
+                            checked={
+                              settings.notifications?.pushFriendRequests ?? true
+                            }
                             onCheckedChange={(checked) =>
                               handleSettingsChange({
                                 ...settings,
-                                notifications: { ...settings.notifications, pushFriendRequests: checked },
+                                notifications: {
+                                  ...settings.notifications,
+                                  pushFriendRequests: checked,
+                                },
                               })
                             }
                           />
@@ -597,15 +755,24 @@ export default function SettingsPage() {
 
                         <div className="flex items-center justify-between">
                           <div>
-                            <label className="text-white text-sm font-medium">Messages</label>
-                            <p className="text-sm text-gray-400">Get notified about new messages</p>
+                            <label className="text-white text-sm font-medium">
+                              Messages
+                            </label>
+                            <p className="text-sm text-gray-400">
+                              Get notified about new messages
+                            </p>
                           </div>
                           <Switch
-                            checked={settings.notifications?.pushMessages ?? true}
+                            checked={
+                              settings.notifications?.pushMessages ?? true
+                            }
                             onCheckedChange={(checked) =>
                               handleSettingsChange({
                                 ...settings,
-                                notifications: { ...settings.notifications, pushMessages: checked },
+                                notifications: {
+                                  ...settings.notifications,
+                                  pushMessages: checked,
+                                },
                               })
                             }
                           />
@@ -613,15 +780,24 @@ export default function SettingsPage() {
 
                         <div className="flex items-center justify-between">
                           <div>
-                            <label className="text-white text-sm font-medium">Game Invites</label>
-                            <p className="text-sm text-gray-400">Get notified about game invites</p>
+                            <label className="text-white text-sm font-medium">
+                              Game Invites
+                            </label>
+                            <p className="text-sm text-gray-400">
+                              Get notified about game invites
+                            </p>
                           </div>
                           <Switch
-                            checked={settings.notifications?.pushGameInvites ?? true}
+                            checked={
+                              settings.notifications?.pushGameInvites ?? true
+                            }
                             onCheckedChange={(checked) =>
                               handleSettingsChange({
                                 ...settings,
-                                notifications: { ...settings.notifications, pushGameInvites: checked },
+                                notifications: {
+                                  ...settings.notifications,
+                                  pushGameInvites: checked,
+                                },
                               })
                             }
                           />

@@ -23,10 +23,10 @@ export async function GET(
       .from("friend_activities")
       .select(`
         id,
-        type,
+        activity_type,
         details,
         created_at,
-        profiles:user_id (
+        user:user_id (
           id,
           username,
           avatar_url
@@ -43,10 +43,10 @@ export async function GET(
 
     const formattedActivities = activities.map((activity) => ({
       id: activity.id,
-      type: activity.type,
+      type: activity.activity_type,
       details: activity.details,
       timestamp: activity.created_at,
-      user: activity.profiles
+      user: activity.user
     }));
 
     return NextResponse.json(formattedActivities);

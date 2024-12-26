@@ -1,10 +1,16 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { ActivityType } from '@/types/friend';
+import { toast } from 'react-hot-toast';
 
 interface GameActivity {
   id: string;
   type: ActivityType;
-  details: any;
+  details: {
+    name?: string;
+    comment?: string;
+    achievements?: { name: string }[];
+    isBatched?: boolean;
+  };
   timestamp: string;
   user: {
     id: string;
@@ -19,43 +25,67 @@ export function useGameActivities(gameId: string) {
   const [error, setError] = useState<Error | null>(null);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
 
-  const fetchActivities = async (pageNum: number) => {
+  const fetchActivities = useCallback(async (pageNum: number, isInitial: boolean = false) => {
     try {
       setLoading(true);
+      setError(null);
+      
       const response = await fetch(`/api/games/${gameId}/activities?page=${pageNum}`);
       
       if (!response.ok) {
-        throw new Error('Failed to fetch game activities');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to fetch game activities');
       }
 
       const data = await response.json();
+      
       if (pageNum === 1) {
         setActivities(data);
       } else {
         setActivities(prev => [...prev, ...data]);
       }
-      setHasMore(data.length > 0);
+      
+      setHasMore(data.length === 10); // Since we're using ITEMS_PER_PAGE = 10
+      
+      if (isInitial) {
+        setIsInitialLoad(false);
+      }
     } catch (err) {
-      setError(err instanceof Error ? err : new Error('Unknown error'));
+      const error = err instanceof Error ? err : new Error('Unknown error');
+      setError(error);
+      toast.error(error.message);
     } finally {
       setLoading(false);
     }
-  };
+  }, [gameId]);
 
   useEffect(() => {
     if (gameId) {
-      fetchActivities(1);
+      setPage(1);
+      setActivities([]);
+      setHasMore(true);
+      setIsInitialLoad(true);
+      fetchActivities(1, true);
     }
-  }, [gameId]);
+  }, [gameId, fetchActivities]);
 
-  const loadMore = () => {
+  const loadMore = useCallback(() => {
     if (!loading && hasMore) {
       const nextPage = page + 1;
       setPage(nextPage);
       fetchActivities(nextPage);
     }
-  };
+  }, [loading, hasMore, page, fetchActivities]);
 
-  return { activities, loading, error, hasMore, loadMore };
+  return {
+    activities,
+    loading,
+    error,
+    hasMore,
+    loadMore,
+    isInitialLoad,
+    refetch: () => fetchActivities(1, true)
+  };
 } 

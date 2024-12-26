@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React from "react";
 import { formatDistanceToNow } from "date-fns";
 import Link from "next/link";
 import { Trophy, PlayCircle, CheckCircle, MessageCircle } from "lucide-react";
@@ -15,6 +15,8 @@ const activityIcons: Record<ActivityType, React.ReactNode> = {
   completed: <CheckCircle className="w-5 h-5 text-green-400" />,
   achievement: <Trophy className="w-5 h-5 text-yellow-400" />,
   review: <MessageCircle className="w-5 h-5 text-purple-400" />,
+  want_to_play: <PlayCircle className="w-5 h-5 text-purple-400" />,
+  progress: <PlayCircle className="w-5 h-5 text-blue-400" />,
 };
 
 const activityText: Record<ActivityType, string> = {
@@ -22,6 +24,8 @@ const activityText: Record<ActivityType, string> = {
   completed: "completed",
   achievement: "unlocked an achievement in",
   review: "reviewed",
+  want_to_play: "wants to play",
+  progress: "made progress in",
 };
 
 interface GameActivitiesProps {
@@ -30,6 +34,16 @@ interface GameActivitiesProps {
 
 export function GameActivities({ gameId }: GameActivitiesProps) {
   const { activities, loading, hasMore, loadMore } = useGameActivities(gameId);
+  const [mounted, setMounted] = React.useState(false);
+
+  React.useEffect(() => {
+    setMounted(true);
+    return () => setMounted(false);
+  }, []);
+
+  if (!mounted) {
+    return null;
+  }
 
   if (loading && !activities.length) {
     return (
@@ -83,9 +97,20 @@ export function GameActivities({ gameId }: GameActivitiesProps) {
             </p>
 
             {activity.details && activity.type === "achievement" && (
-              <p className="mt-2 text-sm">
-                🏆 Unlocked: {activity.details.name}
-              </p>
+              <div className="mt-2 text-sm">
+                {activity.details.isBatched ? (
+                  <>
+                    <p>🏆 {activity.details.name}</p>
+                    <ul className="mt-1 ml-6 list-disc text-gray-400">
+                      {activity.details.achievements?.map((achievement, i) => (
+                        <li key={i}>{achievement.name}</li>
+                      ))}
+                    </ul>
+                  </>
+                ) : (
+                  <p>🏆 Unlocked: {activity.details.name}</p>
+                )}
+              </div>
             )}
 
             {activity.details && activity.type === "review" && (
@@ -106,9 +131,10 @@ export function GameActivities({ gameId }: GameActivitiesProps) {
       {hasMore && (
         <div className="text-center">
           <Button
-            onClick={() => loadMore()}
+            onClick={loadMore}
             variant="outline"
             disabled={loading}
+            className="bg-white/5 hover:bg-white/10 border-white/20 hover:border-white/30"
           >
             {loading ? (
               <span className="loading loading-spinner loading-sm" />

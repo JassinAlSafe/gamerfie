@@ -23,16 +23,16 @@ interface GameFiltersProps {
 }
 
 export interface GameFilters {
-  status: GameStatus | 'all';
-  sortBy: 'recent' | 'name' | 'rating';
-  sortOrder: 'asc' | 'desc';
+  status: GameStatus | "all";
+  sortBy: "recent" | "name" | "rating";
+  sortOrder: "asc" | "desc";
 }
 
 export function GameFilters({ onFilterChange }: GameFiltersProps) {
   const [filters, setFilters] = useState<GameFilters>({
-    status: 'all',
-    sortBy: 'recent',
-    sortOrder: 'desc',
+    status: "all",
+    sortBy: "recent",
+    sortOrder: "desc",
   });
 
   const handleFilterChange = (key: keyof GameFilters, value: string) => {
@@ -42,17 +42,17 @@ export function GameFilters({ onFilterChange }: GameFiltersProps) {
   };
 
   const statusOptions = [
-    { value: 'all', label: 'All Games' },
-    { value: 'playing', label: 'Currently Playing' },
-    { value: 'completed', label: 'Completed' },
-    { value: 'want_to_play', label: 'Want to Play' },
-    { value: 'dropped', label: 'Dropped' },
+    { value: "all", label: "All Games" },
+    { value: "playing", label: "Currently Playing" },
+    { value: "completed", label: "Completed" },
+    { value: "want_to_play", label: "Want to Play" },
+    { value: "dropped", label: "Dropped" },
   ];
 
   const sortOptions = [
-    { value: 'recent', label: 'Recently Added' },
-    { value: 'name', label: 'Game Name' },
-    { value: 'rating', label: 'Rating' },
+    { value: "recent", label: "Recently Added" },
+    { value: "name", label: "Game Name" },
+    { value: "rating", label: "Rating" },
   ];
 
   return (
@@ -60,7 +60,7 @@ export function GameFilters({ onFilterChange }: GameFiltersProps) {
       {/* Status Filter */}
       <Select
         value={filters.status}
-        onValueChange={(value) => handleFilterChange('status', value)}
+        onValueChange={(value) => handleFilterChange("status", value)}
       >
         <SelectTrigger className="w-[180px] bg-gray-900/50 border-gray-700/50 text-white">
           <SelectValue placeholder="Filter by status" />
@@ -81,7 +81,10 @@ export function GameFilters({ onFilterChange }: GameFiltersProps) {
       {/* Sort Options */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="outline" className="bg-gray-900/50 border-gray-700/50 text-white">
+          <Button
+            variant="outline"
+            className="bg-gray-900/50 border-gray-700/50 text-white"
+          >
             <Filter className="mr-2 h-4 w-4" />
             Sort & Filter
           </Button>
@@ -93,9 +96,11 @@ export function GameFilters({ onFilterChange }: GameFiltersProps) {
             <DropdownMenuItem
               key={option.value}
               className={`flex items-center cursor-pointer hover:bg-white/10 ${
-                filters.sortBy === option.value ? 'text-purple-400' : 'text-white'
+                filters.sortBy === option.value
+                  ? "text-purple-400"
+                  : "text-white"
               }`}
-              onClick={() => handleFilterChange('sortBy', option.value)}
+              onClick={() => handleFilterChange("sortBy", option.value)}
             >
               {option.label}
             </DropdownMenuItem>
@@ -105,20 +110,20 @@ export function GameFilters({ onFilterChange }: GameFiltersProps) {
             className="flex items-center cursor-pointer hover:bg-white/10"
             onClick={() =>
               handleFilterChange(
-                'sortOrder',
-                filters.sortOrder === 'asc' ? 'desc' : 'asc'
+                "sortOrder",
+                filters.sortOrder === "asc" ? "desc" : "asc"
               )
             }
           >
-            {filters.sortOrder === 'asc' ? (
+            {filters.sortOrder === "asc" ? (
               <SortAsc className="mr-2 h-4 w-4" />
             ) : (
               <SortDesc className="mr-2 h-4 w-4" />
             )}
-            {filters.sortOrder === 'asc' ? 'Ascending' : 'Descending'}
+            {filters.sortOrder === "asc" ? "Ascending" : "Descending"}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
     </div>
   );
-} 
+}

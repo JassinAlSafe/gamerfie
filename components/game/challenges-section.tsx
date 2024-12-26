@@ -6,8 +6,17 @@ import { useChallengesStore } from "@/stores/useChallengesStore";
 import { useProfile } from "@/hooks/use-profile";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { Trophy, Target, Clock, Star, Gamepad2, Monitor } from "lucide-react";
+import {
+  Trophy,
+  Target,
+  Clock,
+  Star,
+  Gamepad2,
+  Monitor,
+  ChevronRight,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
+import Link from "next/link";
 
 interface ChallengesSectionProps {
   game: Game;
@@ -204,10 +213,12 @@ export function ChallengesSection({ game }: ChallengesSectionProps) {
           const completed = progress >= 100;
 
           return (
-            <div
+            <Link
               key={challenge.id}
+              href={`/challenges/${challenge.id}`}
               className={cn(
-                "p-4 rounded-lg border transition-colors",
+                "block p-4 rounded-lg border transition-colors cursor-pointer group",
+                "hover:border-purple-500/30 hover:shadow-lg hover:shadow-purple-500/5",
                 completed
                   ? "bg-green-500/10 border-green-500/30"
                   : "bg-gray-800/50 border-gray-700/50"
@@ -216,9 +227,12 @@ export function ChallengesSection({ game }: ChallengesSectionProps) {
               <div className="space-y-4">
                 <div className="flex items-start justify-between gap-4">
                   <div className="space-y-1">
-                    <h4 className="font-medium text-white">
-                      {challenge.title}
-                    </h4>
+                    <div className="flex items-center gap-2">
+                      <h4 className="font-medium text-white group-hover:text-purple-400 transition-colors">
+                        {challenge.title}
+                      </h4>
+                      <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-purple-400 transition-colors" />
+                    </div>
                     <p className="text-sm text-gray-400">
                       {challenge.description}
                     </p>
@@ -232,7 +246,10 @@ export function ChallengesSection({ game }: ChallengesSectionProps) {
                   ) : (
                     <Button
                       size="sm"
-                      onClick={() => handleContribute(challenge.id)}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        handleContribute(challenge.id);
+                      }}
                       className="bg-purple-500/10 text-purple-400 border-purple-500/20 hover:bg-purple-500/20"
                     >
                       Contribute
@@ -298,7 +315,7 @@ export function ChallengesSection({ game }: ChallengesSectionProps) {
                   )}
                 </div>
               </div>
-            </div>
+            </Link>
           );
         })}
       </div>
