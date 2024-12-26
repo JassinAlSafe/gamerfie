@@ -27,149 +27,37 @@ export function ChallengesSection({ game }: ChallengesSectionProps) {
   const { userChallenges, updateProgress } = useChallengesStore();
 
   const eligibleChallenges = useMemo(() => {
-    console.log("ChallengesSection - Current state:", {
-      totalChallenges: userChallenges.length,
-      userChallenges: userChallenges.map((c) => ({
-        id: c.id,
-        title: c.title,
-        status: c.status,
-        goalType: c.goal_type,
-        requirements: c.requirements,
-        progress: c.participants?.find((p) => p.user.id === profile?.id)
-          ?.progress,
-      })),
-      gameGenres: game.genres?.map((g) => g.name),
-    });
-
     return userChallenges.filter((challenge) => {
+      // Only show challenges for this specific game
+      if (challenge.game_id !== game.id) {
+        return false;
+      }
+
       const participantProgress =
         challenge.participants?.find((p) => p.user.id === profile?.id)
           ?.progress || 0;
 
-      console.log("Checking challenge eligibility:", {
-        title: challenge.title,
-        status: challenge.status,
-        goalType: challenge.goal_type,
-        requirements: challenge.requirements,
-        participantProgress,
-        isCompleted: participantProgress >= 100,
-      });
-
       // Skip completed challenges
       if (participantProgress >= 100) {
-        console.log(
-          "Challenge filtered out - already completed:",
-          challenge.title
-        );
         return false;
       }
 
+      // Only show active challenges
       if (challenge.status !== "active") {
-        console.log("Challenge filtered out - not active:", challenge.title);
         return false;
-      }
-
-      if (challenge.goal_type !== "complete_games") {
-        console.log(
-          "Challenge filtered out - not complete_games:",
-          challenge.title
-        );
-        return false;
-      }
-
-      // Check genre requirement
-      if (challenge.requirements?.genre) {
-        const normalizeGenre = (genre: string) => {
-          genre = genre.toLowerCase().trim();
-          if (
-            genre.includes("role-playing") ||
-            genre.includes("rpg") ||
-            genre === "role-playing (rpg)"
-          ) {
-            return "rpg";
-          }
-          // Remove parentheses and their contents
-          genre = genre.replace(/\s*\([^)]*\)/g, "").trim();
-          return genre;
-        };
-
-        const requiredGenre = normalizeGenre(challenge.requirements.genre);
-        const gameGenres =
-          game.genres?.map((g) => normalizeGenre(g.name)) || [];
-        console.log("Genre check:", {
-          challengeTitle: challenge.title,
-          requiredGenre,
-          gameGenres,
-          matches: gameGenres.includes(requiredGenre),
-          originalGenres: game.genres?.map((g) => g.name),
-        });
-        if (!gameGenres.includes(requiredGenre)) return false;
-      }
-
-      // Check platform requirement
-      if (challenge.requirements?.platform) {
-        const normalizePlatform = (platform: string) =>
-          platform.toLowerCase().trim();
-        const requiredPlatform = normalizePlatform(
-          challenge.requirements.platform
-        );
-        const gamePlatforms =
-          game.platforms?.map((p) => normalizePlatform(p.name)) || [];
-
-        console.log("Platform check:", {
-          challengeTitle: challenge.title,
-          requiredPlatform,
-          gamePlatforms,
-          matches: gamePlatforms.includes(requiredPlatform),
-          originalPlatforms: game.platforms?.map((p) => p.name),
-        });
-
-        if (!gamePlatforms.includes(requiredPlatform)) {
-          console.log(
-            "Challenge filtered out - wrong platform:",
-            challenge.title
-          );
-          return false;
-        }
-      }
-
-      // Check release year requirement
-      if (challenge.requirements?.releaseYear && game.first_release_date) {
-        const gameReleaseYear = new Date(
-          game.first_release_date * 1000
-        ).getFullYear();
-        console.log("Release year check:", {
-          challengeTitle: challenge.title,
-          requiredYear: challenge.requirements.releaseYear,
-          gameYear: gameReleaseYear,
-          matches: gameReleaseYear === challenge.requirements.releaseYear,
-        });
-        if (gameReleaseYear !== challenge.requirements.releaseYear) {
-          console.log(
-            "Challenge filtered out - wrong release year:",
-            challenge.title
-          );
-          return false;
-        }
       }
 
       return true;
     });
-  }, [userChallenges, game, profile?.id]);
+  }, [userChallenges, game.id, profile?.id]);
 
-  console.log("Final eligible challenges:", {
-    total: eligibleChallenges.length,
-    challenges: eligibleChallenges.map((c) => ({
-      id: c.id,
-      title: c.title,
-      status: c.status,
-      requirements: c.requirements,
-      progress: c.participants?.find((p) => p.user.id === profile?.id)
-        ?.progress,
-    })),
-  });
+  const handleContribute = async (
+    challengeId: string,
+    event: React.MouseEvent
+  ) => {
+    event.preventDefault();
+    event.stopPropagation();
 
-  const handleContribute = async (challengeId: string) => {
     if (!profile) return;
 
     const challenge = eligibleChallenges.find((c) => c.id === challengeId);
@@ -197,10 +85,10 @@ export function ChallengesSection({ game }: ChallengesSectionProps) {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" role="region" aria-label="Game Challenges">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold">Eligible Challenges</h3>
-        <Trophy className="w-5 h-5 text-yellow-400" />
+        <Trophy className="w-5 h-5 text-yellow-400" aria-hidden="true" />
       </div>
 
       <div className="grid gap-4">
@@ -223,15 +111,23 @@ export function ChallengesSection({ game }: ChallengesSectionProps) {
                   ? "bg-green-500/10 border-green-500/30"
                   : "bg-gray-800/50 border-gray-700/50"
               )}
+              role="article"
+              aria-labelledby={`challenge-title-${challenge.id}`}
             >
               <div className="space-y-4">
                 <div className="flex items-start justify-between gap-4">
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
-                      <h4 className="font-medium text-white group-hover:text-purple-400 transition-colors">
+                      <h4
+                        id={`challenge-title-${challenge.id}`}
+                        className="font-medium text-white group-hover:text-purple-400 transition-colors"
+                      >
                         {challenge.title}
                       </h4>
-                      <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-purple-400 transition-colors" />
+                      <ChevronRight
+                        className="w-4 h-4 text-gray-400 group-hover:text-purple-400 transition-colors"
+                        aria-hidden="true"
+                      />
                     </div>
                     <p className="text-sm text-gray-400">
                       {challenge.description}
@@ -239,18 +135,19 @@ export function ChallengesSection({ game }: ChallengesSectionProps) {
                   </div>
 
                   {completed ? (
-                    <div className="flex items-center gap-2 text-green-400">
-                      <Trophy className="w-5 h-5" />
+                    <div
+                      className="flex items-center gap-2 text-green-400"
+                      role="status"
+                    >
+                      <Trophy className="w-5 h-5" aria-hidden="true" />
                       <span className="text-sm font-medium">Completed!</span>
                     </div>
                   ) : (
                     <Button
                       size="sm"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        handleContribute(challenge.id);
-                      }}
+                      onClick={(e) => handleContribute(challenge.id, e)}
                       className="bg-purple-500/10 text-purple-400 border-purple-500/20 hover:bg-purple-500/20"
+                      aria-label={`Contribute to challenge: ${challenge.title}`}
                     >
                       Contribute
                     </Button>
@@ -262,15 +159,23 @@ export function ChallengesSection({ game }: ChallengesSectionProps) {
                     <span className="text-gray-400">Progress</span>
                     <span className="text-white">{progress}%</span>
                   </div>
-                  <Progress value={progress} className="h-2" />
+                  <Progress
+                    value={progress}
+                    className="h-2"
+                    aria-label={`Challenge progress: ${progress}%`}
+                  />
                 </div>
 
                 <div className="flex flex-wrap gap-3 pt-2">
                   <div className="flex items-center gap-2 text-sm">
-                    <Target className="w-4 h-4 text-purple-400" />
+                    <Target
+                      className="w-4 h-4 text-purple-400"
+                      aria-hidden="true"
+                    />
                     <span className="text-gray-400">Goal:</span>
                     <span className="text-white">
-                      {challenge.goal_target} games
+                      {challenge.goal_target}{" "}
+                      {challenge.goal_type.replace(/_/g, " ")}
                     </span>
                   </div>
 
