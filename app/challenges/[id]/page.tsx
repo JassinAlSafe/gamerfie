@@ -1,329 +1,421 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
-import { useChallengesStore } from "@/store/challenges";
-import { useLeaderboard } from "@/store/leaderboard";
-import { useUser } from "@/store/user";
-import { ChallengeDetails } from "@/components/Challenges/ChallengeDetails";
-import { ChallengeLeaderboard } from "@/components/Challenges/ChallengeLeaderboard";
-import { ProgressTracker } from "@/components/Challenges/ProgressTracker";
-import { RewardClaimer } from "@/components/Challenges/RewardClaimer";
-import { BackgroundBeams } from "@/components/ui/background-beams";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Share2, AlertTriangle, Loader2 } from "lucide-react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "@/components/ui/use-toast";
+import { ArrowLeft } from "lucide-react";
+import Link from "next/link";
 
-export default function ChallengePage() {
-  const params = useParams<{ id: string }>();
-  const { user, fetchUser, isLoading: isUserLoading } = useUser();
-  const { challenge, fetchChallenge, error, isLoading } = useChallengesStore();
-  const { leaderboard, fetchLeaderboard } = useLeaderboard();
-  const [updating, setUpdating] = useState(false);
+interface Challenge {
+  id: string;
+  title: string;
+  description: string;
+  type: "competitive" | "collaborative";
+  status: "upcoming" | "active" | "completed";
+  start_date: string;
+  end_date: string;
+  min_participants: number;
+  max_participants: number | null;
+  creator_id: string;
+  created_at: string;
+  creator?: {
+    id: string;
+    username: string;
+    avatar_url?: string;
+  };
+  goals?: Array<{
+    id: string;
+    type: string;
+    target: number;
+    description?: string;
+  }>;
+  participants?: Array<{
+    user_id: string;
+    joined_at: string;
+    user?: {
+      id: string;
+      username: string;
+      avatar_url?: string;
+    };
+  }>;
+  rewards?: Array<{
+    id: string;
+    type: "badge" | "points" | "title";
+    name: string;
+    description: string;
+  }>;
+  rules?: Array<{
+    id: string;
+    rule: string;
+  }>;
+}
+
+interface UserProfile {
+  id: string;
+  username: string;
+  avatar_url?: string;
+}
+
+export default function ChallengePage({ params }: { params: { id: string } }) {
+  const [challenge, setChallenge] = useState<Challenge | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const router = useRouter();
+  const supabase = createClientComponentClient();
 
   useEffect(() => {
-    if (params.id) {
-      fetchUser();
-      fetchChallenge(params.id);
-      fetchLeaderboard(params.id);
-    }
-  }, [params.id, fetchChallenge, fetchLeaderboard, fetchUser]);
+    const init = async () => {
+      const profile = await checkUser();
+      if (profile) {
+        await fetchChallenge();
+      }
+    };
+    init();
+  }, [params.id]);
 
-  const handleProgressUpdate = async (progress: number) => {
+  const checkUser = async () => {
     try {
-      setUpdating(true);
-      const response = await fetch(`/api/challenges/${params.id}/progress`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ progress }),
-      });
+      const {
+        data: { session },
+        error: sessionError,
+      } = await supabase.auth.getSession();
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to update progress");
+      if (sessionError) throw sessionError;
+
+      if (!session) {
+        router.push("/login");
+        return;
       }
 
-      await fetchChallenge(params.id);
-      await fetchLeaderboard(params.id);
-      toast({
-        title: "Success",
-        description: "Your challenge progress has been updated.",
-      });
+      const { data: profile, error: profileError } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", session.user.id)
+        .single();
+
+      if (profileError) throw profileError;
+
+      if (!profile) {
+        router.push("/profile");
+        return;
+      }
+
+      setUserProfile(profile);
+      return profile;
     } catch (error) {
-      console.error("Error updating progress:", error);
+      console.error("Error checking user:", error);
       toast({
         title: "Error",
-        description:
-          error instanceof Error
-            ? error.message
-            : "Failed to update progress. Please try again.",
+        description: "Failed to verify user session",
         variant: "destructive",
       });
-    } finally {
-      setUpdating(false);
     }
   };
 
-  const handleClaimRewards = async () => {
+  const fetchChallenge = async () => {
     try {
-      setUpdating(true);
-      const response = await fetch(`/api/challenges/${params.id}/claim`, {
-        method: "POST",
-      });
+      setLoading(true);
+      const response = await fetch(`/api/challenges/${params.id}`);
+      const data = await response.json();
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to claim rewards");
+        throw new Error(data.error || "Failed to fetch challenge");
       }
 
-      await fetchChallenge(params.id);
-      toast({
-        title: "Success",
-        description:
-          "Congratulations! You've successfully claimed your rewards.",
-      });
+      setChallenge(data);
     } catch (error) {
-      console.error("Error claiming rewards:", error);
+      console.error("Error fetching challenge:", error);
       toast({
         title: "Error",
-        description:
-          error instanceof Error
-            ? error.message
-            : "Failed to claim rewards. Please try again.",
+        description: "Failed to fetch challenge details",
         variant: "destructive",
       });
     } finally {
-      setUpdating(false);
-    }
-  };
-
-  const handleShare = () => {
-    if (navigator.share) {
-      navigator
-        .share({
-          title: challenge?.title,
-          text: `Check out this challenge: ${challenge?.title}`,
-          url: window.location.href,
-        })
-        .then(() => {
-          toast({
-            title: "Shared Successfully",
-            description: "The challenge has been shared.",
-          });
-        })
-        .catch((error) => {
-          console.error("Error sharing:", error);
-        });
-    } else {
-      navigator.clipboard.writeText(window.location.href).then(() => {
-        toast({
-          title: "Link Copied",
-          description: "The challenge link has been copied to your clipboard.",
-        });
-      });
+      setLoading(false);
     }
   };
 
   const handleJoinChallenge = async () => {
-    try {
-      setUpdating(true);
-      const response = await fetch(`/api/challenges/${params.id}/join`, {
-        method: "POST",
-      });
+    if (!userProfile || !challenge) return;
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to join challenge");
+    try {
+      setLoading(true);
+      const { error: participantError } = await supabase
+        .from("challenge_participants")
+        .insert({
+          challenge_id: challenge.id,
+          user_id: userProfile.id,
+          joined_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        });
+
+      if (participantError) {
+        if (participantError.code === "23505") {
+          toast({
+            title: "Already Joined",
+            description: "You are already a participant in this challenge",
+          });
+          return;
+        }
+        throw participantError;
       }
 
-      await fetchChallenge(params.id);
-      await fetchLeaderboard(params.id);
+      // Initialize progress records for each goal
+      if (challenge.goals && challenge.goals.length > 0) {
+        const progressRecords = challenge.goals.map((goal) => ({
+          challenge_id: challenge.id,
+          goal_id: goal.id,
+          participant_id: userProfile.id,
+          progress: 0,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        }));
+
+        const { error: progressError } = await supabase
+          .from("challenge_participant_progress")
+          .insert(progressRecords);
+
+        if (progressError) throw progressError;
+      }
+
       toast({
         title: "Success",
-        description: "You've joined the challenge!",
+        description: "Successfully joined the challenge!",
       });
+
+      // Refresh challenge data
+      await fetchChallenge();
     } catch (error) {
       console.error("Error joining challenge:", error);
       toast({
         title: "Error",
-        description:
-          error instanceof Error
-            ? error.message
-            : "Failed to join challenge. Please try again.",
+        description: "Failed to join challenge. Please try again.",
         variant: "destructive",
       });
     } finally {
-      setUpdating(false);
+      setLoading(false);
     }
   };
 
-  if (error) {
-    return (
-      <div className="container">
-        <Alert variant="destructive">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertTitle>Error</AlertTitle>
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      </div>
-    );
-  }
+  const formatDate = (date: string) => {
+    return new Date(date).toLocaleDateString();
+  };
 
-  if (isLoading || isUserLoading || !challenge) {
+  const isParticipating = () => {
+    return challenge?.participants?.some((p) => p.user_id === userProfile?.id);
+  };
+
+  if (loading) {
     return (
-      <div className="container">
-        <div className="space-y-8">
-          <Skeleton className="h-64 w-full" />
-          <Skeleton className="h-96 w-full" />
+      <div className="container mx-auto py-8">
+        <div className="text-center">
+          <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4" />
+          <p className="text-muted-foreground">Loading challenge details...</p>
         </div>
       </div>
     );
   }
 
-  const userParticipant = challenge.participants?.find(
-    (p) => p.user?.id === user?.id
-  );
-
-  const hasClaimedRewards = false; // We'll implement this later with the claimed_rewards table
+  if (!challenge) {
+    return (
+      <div className="container mx-auto py-8">
+        <div className="text-center">
+          <p className="text-xl text-muted-foreground mb-4">
+            Challenge not found
+          </p>
+          <Button onClick={() => router.push("/challenges")} variant="outline">
+            Back to Challenges
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="relative min-h-screen bg-background">
-      <BackgroundBeams />
-      <div className="container relative z-10">
-        <div className="space-y-6">
-          <Card className="border-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-            <CardHeader>
-              <div className="flex justify-between items-center">
-                <CardTitle className="text-3xl font-bold">
-                  {challenge.title}
-                </CardTitle>
-                <div className="flex items-center gap-2">
-                  {!userParticipant &&
-                    (challenge.status === "upcoming" ||
-                      challenge.status === "active") && (
-                      <Button
-                        onClick={handleJoinChallenge}
-                        disabled={updating}
-                        className="bg-purple-500 hover:bg-purple-600"
-                      >
-                        {updating ? (
-                          <>
-                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                            Joining...
-                          </>
-                        ) : (
-                          "Join Challenge"
-                        )}
-                      </Button>
-                    )}
-                  {!userParticipant &&
-                    challenge.status !== "upcoming" &&
-                    challenge.status !== "active" && (
-                      <Alert variant="warning" className="mb-4">
-                        <AlertTriangle className="h-4 w-4" />
-                        <AlertTitle>Challenge Not Joinable</AlertTitle>
-                        <AlertDescription>
-                          This challenge is{" "}
-                          {challenge.status === "completed"
-                            ? "already completed"
-                            : "not open for joining"}
-                          .
-                        </AlertDescription>
-                      </Alert>
-                    )}
-                  <Button
-                    onClick={handleShare}
-                    variant="outline"
-                    className="bg-background/50 backdrop-blur supports-[backdrop-filter]:bg-background/30"
-                  >
-                    <Share2 className="mr-2 h-4 w-4" /> Share
-                  </Button>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {!userParticipant &&
-                challenge.status !== "upcoming" &&
-                challenge.status !== "active" && (
-                  <Alert variant="warning" className="mb-4">
-                    <AlertTriangle className="h-4 w-4" />
-                    <AlertTitle>Challenge Not Joinable</AlertTitle>
-                    <AlertDescription>
-                      This challenge is{" "}
-                      {challenge.status === "completed"
-                        ? "already completed"
-                        : "not open for joining"}
-                      .
-                    </AlertDescription>
-                  </Alert>
-                )}
-              <ChallengeDetails
-                challenge={challenge}
-                isLoading={false}
-                error={null}
-                onShare={handleShare}
-              />
-            </CardContent>
-          </Card>
-
-          {userParticipant && (
-            <Tabs defaultValue="progress" className="w-full">
-              <TabsList className="grid w-full grid-cols-2 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-                <TabsTrigger value="progress">Your Progress</TabsTrigger>
-                <TabsTrigger value="rewards">Rewards</TabsTrigger>
-              </TabsList>
-              <TabsContent value="progress">
-                <Card className="border-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-                  <CardHeader>
-                    <CardTitle>Your Progress</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <ProgressTracker
-                      challengeId={params.id}
-                      currentProgress={userParticipant.progress}
-                      onProgressUpdate={handleProgressUpdate}
-                      isLoading={updating}
-                    />
-                  </CardContent>
-                </Card>
-              </TabsContent>
-              <TabsContent value="rewards">
-                <Card className="border-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-                  <CardHeader>
-                    <CardTitle>Claim Your Rewards</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <RewardClaimer
-                      challengeId={params.id}
-                      rewards={challenge.rewards}
-                      onClaimRewards={handleClaimRewards}
-                      isCompleted={userParticipant.completed}
-                      isClaimed={hasClaimedRewards}
-                      isLoading={updating}
-                    />
-                  </CardContent>
-                </Card>
-              </TabsContent>
-            </Tabs>
-          )}
-
-          {leaderboard && (
-            <Card className="border-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-              <CardHeader>
-                <CardTitle>Leaderboard</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ChallengeLeaderboard leaderboard={leaderboard} />
-              </CardContent>
-            </Card>
-          )}
+    <div className="container mx-auto py-8">
+      <div className="mb-6">
+        <Link
+          href="/challenges"
+          className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors mb-4"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back to Challenges
+        </Link>
+        <div className="flex justify-between items-start">
+          <div>
+            <h1 className="text-3xl font-bold mb-2">{challenge.title}</h1>
+            <p className="text-muted-foreground">{challenge.description}</p>
+          </div>
+          <div className="flex gap-2">
+            <Badge
+              variant={
+                challenge.type === "competitive" ? "default" : "secondary"
+              }
+            >
+              {challenge.type}
+            </Badge>
+            <Badge
+              variant={
+                challenge.status === "active"
+                  ? "default"
+                  : challenge.status === "upcoming"
+                  ? "secondary"
+                  : "outline"
+              }
+            >
+              {challenge.status}
+            </Badge>
+          </div>
         </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Challenge Details</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <span className="font-semibold">Created by:</span>{" "}
+              {challenge.creator?.username}
+            </div>
+            <div>
+              <span className="font-semibold">Start Date:</span>{" "}
+              {formatDate(challenge.start_date)}
+            </div>
+            <div>
+              <span className="font-semibold">End Date:</span>{" "}
+              {formatDate(challenge.end_date)}
+            </div>
+            <div>
+              <span className="font-semibold">Participants:</span>{" "}
+              {challenge.participants?.length || 0} /{" "}
+              {challenge.max_participants || "∞"}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Goals</CardTitle>
+            <CardDescription>Challenge objectives to complete</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ul className="space-y-2">
+              {challenge.goals?.map((goal) => (
+                <li key={goal.id} className="flex justify-between items-start">
+                  <div>
+                    <Badge variant="outline" className="mb-1">
+                      {goal.type.replace("_", " ")}
+                    </Badge>
+                    <p className="text-sm text-muted-foreground">
+                      {goal.description || `Target: ${goal.target}`}
+                    </p>
+                  </div>
+                  <span className="font-mono">{goal.target}</span>
+                </li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Rewards</CardTitle>
+            <CardDescription>What you can earn</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ul className="space-y-4">
+              {challenge.rewards?.map((reward) => (
+                <li key={reward.id}>
+                  <div className="flex items-center gap-2 mb-1">
+                    <Badge variant="outline">{reward.type}</Badge>
+                    <span className="font-semibold">{reward.name}</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    {reward.description}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Rules</CardTitle>
+            <CardDescription>Challenge guidelines</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ul className="list-disc list-inside space-y-2">
+              {challenge.rules?.map((rule) => (
+                <li key={rule.id} className="text-muted-foreground">
+                  {rule.rule}
+                </li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
+
+        <Card className="md:col-span-2">
+          <CardHeader>
+            <CardTitle>Participants</CardTitle>
+            <CardDescription>
+              {challenge.participants?.length || 0} participants joined
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {challenge.participants?.map((participant) => (
+                <div
+                  key={participant.user_id}
+                  className="flex items-center gap-2"
+                >
+                  {participant.user?.avatar_url && (
+                    <img
+                      src={participant.user.avatar_url}
+                      alt={participant.user?.username}
+                      className="w-8 h-8 rounded-full"
+                    />
+                  )}
+                  <div>
+                    <p className="font-medium">
+                      {participant.user?.username || "Unknown User"}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      Joined {formatDate(participant.joined_at)}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="mt-8 flex justify-center">
+        {isParticipating() ? (
+          <Button
+            size="lg"
+            onClick={() => router.push(`/profile/challenges/${challenge.id}`)}
+          >
+            View Your Progress
+          </Button>
+        ) : (
+          <Button size="lg" onClick={handleJoinChallenge}>
+            Join Challenge
+          </Button>
+        )}
       </div>
     </div>
   );

@@ -1,354 +1,300 @@
 import { create } from "zustand";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
-import {
-  Challenge,
-  CreateChallengeInput,
-  UpdateChallengeInput,
-  ChallengeLeaderboard,
-} from "@/types/challenge";
+import { Challenge, ChallengeStatus, ChallengeType } from "@/types/challenge";
+import type { SupabaseClient } from "@supabase/auth-helpers-nextjs";
+
+interface ChallengeParticipant {
+  user: {
+    id: string;
+    username: string;
+    avatar_url: string | null;
+  };
+  joined_at: string;
+  progress: number;
+  completed: boolean;
+  team_id: string | null;
+}
+
+interface ChallengeTeam {
+  id: string;
+  name: string;
+  members: ChallengeParticipant[];
+}
+
+interface ChallengeGoal {
+  id: string;
+  challenge_id: string;
+  type: string;
+  target: number;
+  description: string;
+  created_at: string;
+  updated_at: string;
+}
+
+interface ChallengeReward {
+  id: string;
+  challenge_id: string;
+  title: string;
+  description: string;
+  created_at: string;
+  updated_at: string;
+}
+
+interface ChallengeRule {
+  id: string;
+  challenge_id: string;
+  rule: string;
+  created_at: string;
+  updated_at: string;
+}
+
+interface ChallengeResponse {
+  challenge: Challenge & {
+    creator: {
+      id: string;
+      username: string;
+      avatar_url: string | null;
+    };
+    goals: ChallengeGoal[];
+    participants: ChallengeParticipant[];
+    teams: ChallengeTeam[];
+    rewards: ChallengeReward[];
+    rules: ChallengeRule[];
+  };
+}
 
 interface ChallengesState {
   challenges: Challenge[];
-  userChallenges: Challenge[];
-  currentChallenge: Challenge | null;
+  filteredChallenges: Challenge[];
+  activeChallenges: Challenge[];
+  upcomingChallenges: Challenge[];
+  completedChallenges: Challenge[];
   isLoading: boolean;
-  error: string | null;
-
-  // Fetch operations
-  fetchChallenges: () => Promise<void>;
-  fetchUserChallenges: () => Promise<void>;
-  fetchChallengeById: (id: string) => Promise<void>;
-  fetchLeaderboard: (challengeId: string) => Promise<ChallengeLeaderboard>;
-
-  // Challenge operations
-  createChallenge: (data: CreateChallengeInput) => Promise<void>;
-  updateChallenge: (id: string, data: UpdateChallengeInput) => Promise<void>;
-  deleteChallenge: (id: string) => Promise<void>;
-
-  // Participant operations
-  joinChallenge: (challengeId: string) => Promise<void>;
-  leaveChallenge: (challengeId: string) => Promise<void>;
-  updateProgress: (challengeId: string, progress: number) => Promise<void>;
+  filter: "all" | ChallengeType;
+  statusFilter: "all" | ChallengeStatus;
+  sortBy: "date" | "participants";
+  setFilter: (_filter: "all" | ChallengeType) => void;
+  setStatusFilter: (_status: "all" | ChallengeStatus) => void;
+  setSortBy: (_sortBy: "date" | "participants") => void;
+  applyFilters: () => void;
+  fetchChallenges: (supabase: SupabaseClient) => Promise<void>;
+  fetchActiveChallenges: (supabase: SupabaseClient) => Promise<void>;
+  fetchUpcomingChallenges: (supabase: SupabaseClient) => Promise<void>;
 }
 
 export const useChallengesStore = create<ChallengesState>((set, get) => ({
   challenges: [],
-  userChallenges: [],
-  currentChallenge: null,
+  filteredChallenges: [],
+  activeChallenges: [],
+  upcomingChallenges: [],
+  completedChallenges: [],
   isLoading: false,
-  error: null,
+  filter: "all",
+  statusFilter: "all",
+  sortBy: "date",
 
-  fetchChallenges: async () => {
-    try {
-      set({ isLoading: true, error: null });
-      const supabase = createClientComponentClient();
-
-      const { data: challenges, error } = await supabase
-        .from("challenges")
-        .select(`
-          *,
-          creator:creator_id(id, username, avatar_url),
-          participants:challenge_participants(
-            user:user_id(id, username, avatar_url),
-            joined_at,
-            progress,
-            completed
-          ),
-          rewards:challenge_rewards(*)
-        `)
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
-
-      set({ challenges: challenges || [], isLoading: false });
-    } catch (error) {
-      set({
-        error: error instanceof Error ? error.message : "Failed to fetch challenges",
-        isLoading: false,
-      });
-    }
+  setFilter: (newFilter) => {
+    set({ filter: newFilter });
+    get().applyFilters();
   },
 
-  fetchUserChallenges: async () => {
+  setStatusFilter: (newStatus) => {
+    set({ statusFilter: newStatus });
+    get().applyFilters();
+  },
+
+  setSortBy: (newSort) => {
+    set({ sortBy: newSort });
+    get().applyFilters();
+  },
+
+  applyFilters: () => {
+    const { challenges, filter, statusFilter, sortBy } = get();
+    let filtered = [...challenges];
+
+    // Apply type filter
+    if (filter !== "all") {
+      filtered = filtered.filter((c) => c.type === filter);
+    }
+
+    // Apply status filter
+    if (statusFilter !== "all") {
+      filtered = filtered.filter((c) => c.status === statusFilter);
+    }
+
+    // Apply sorting
+    filtered.sort((a, b) => {
+      if (sortBy === "date") {
+        return new Date(b.start_date).getTime() - new Date(a.start_date).getTime();
+      } else {
+        return (b.participants?.length || 0) - (a.participants?.length || 0);
+      }
+    });
+
+    set({ filteredChallenges: filtered });
+  },
+
+  fetchChallenges: async (supabase) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) {
+      console.log("No authenticated user session");
+      return;
+    }
+
+    set({ isLoading: true });
+    console.log("Fetching challenges for user:", session.user.id);
+
     try {
-      set({ isLoading: true, error: null });
-      const supabase = createClientComponentClient();
+      // First, check if the user has any challenges
+      const { count, error: countError } = await supabase
+        .from("challenge_participants")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", session.user.id);
 
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error("No authenticated user");
+      if (countError) {
+        console.error("Error checking challenge count:", countError);
+        throw countError;
+      }
 
+      console.log("Number of challenges found:", count);
+
+      if (count === 0) {
+        console.log("No challenges found for user");
+        set({
+          challenges: [],
+          activeChallenges: [],
+          upcomingChallenges: [],
+          completedChallenges: [],
+          isLoading: false,
+        });
+        return;
+      }
+
+      // Simplified query to get just the basic challenge data first
       const { data: challenges, error } = await supabase
         .from("challenge_participants")
         .select(`
           challenge:challenge_id(
             *,
-            creator:creator_id(id, username, avatar_url),
-            participants:challenge_participants(
-              user:user_id(id, username, avatar_url),
-              joined_at,
-              progress,
-              completed
-            ),
-            rewards:challenge_rewards(*)
+            creator:creator_id(
+              id,
+              username,
+              avatar_url
+            )
           )
         `)
-        .eq("user_id", session.user.id);
+        .eq("user_id", session.user.id)
+        .returns<ChallengeResponse[]>();
 
-      if (error) throw error;
-
-      set({
-        userChallenges: challenges?.map(c => c.challenge) || [],
-        isLoading: false,
-      });
-    } catch (error) {
-      set({
-        error: error instanceof Error ? error.message : "Failed to fetch user challenges",
-        isLoading: false,
-      });
-    }
-  },
-
-  fetchChallengeById: async (id: string) => {
-    try {
-      set({ isLoading: true, error: null });
-      const supabase = createClientComponentClient();
-
-      const { data: challenge, error } = await supabase
-        .from("challenges")
-        .select(`
-          *,
-          creator:creator_id(id, username, avatar_url),
-          participants:challenge_participants(
-            user:user_id(id, username, avatar_url),
-            joined_at,
-            progress,
-            completed
-          ),
-          rewards:challenge_rewards(*)
-        `)
-        .eq("id", id)
-        .single();
-
-      if (error) throw error;
-
-      set({ currentChallenge: challenge, isLoading: false });
-    } catch (error) {
-      set({
-        error: error instanceof Error ? error.message : "Failed to fetch challenge",
-        isLoading: false,
-      });
-    }
-  },
-
-  fetchLeaderboard: async (challengeId: string) => {
-    try {
-      const supabase = createClientComponentClient();
-
-      const { data: participants, error } = await supabase
-        .from("challenge_participants")
-        .select(`
-          user:user_id(id, username, avatar_url),
-          progress,
-          completed
-        `)
-        .eq("challenge_id", challengeId)
-        .order("progress", { ascending: false });
-
-      if (error) throw error;
-
-      const rankings = participants?.map((p, index) => ({
-        rank: index + 1,
-        user_id: p.user.id,
-        username: p.user.username,
-        avatar_url: p.user.avatar_url,
-        progress: p.progress,
-        completed: p.completed,
-      })) || [];
-
-      return { challenge_id: challengeId, rankings };
-    } catch (error) {
-      throw error;
-    }
-  },
-
-  createChallenge: async (data: CreateChallengeInput) => {
-    try {
-      set({ isLoading: true, error: null });
-      const response = await fetch("/api/challenges", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          ...data,
-          start_date: new Date(data.start_date).toISOString(),
-          end_date: new Date(data.end_date).toISOString(),
-        }),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to create challenge");
+      if (error) {
+        console.error("Error fetching challenges:", error);
+        throw error;
       }
 
-      // Refresh challenges list
-      await get().fetchChallenges();
-      set({ isLoading: false });
-    } catch (error) {
+      console.log("Raw challenges data:", challenges);
+
+      const userChallenges = challenges?.map(c => c.challenge) || [];
+      console.log("Processed user challenges:", userChallenges);
+
+      const now = new Date();
+      const active = userChallenges.filter((c) => {
+        const startDate = new Date(c.start_date);
+        const endDate = new Date(c.end_date);
+        const isActive = startDate <= now && endDate >= now;
+        console.log(`Challenge ${c.id} active status:`, isActive, { startDate, endDate, now });
+        return isActive;
+      });
+
+      const upcoming = userChallenges.filter((c) => {
+        const startDate = new Date(c.start_date);
+        const isUpcoming = startDate > now;
+        console.log(`Challenge ${c.id} upcoming status:`, isUpcoming, { startDate, now });
+        return isUpcoming;
+      });
+
+      const completed = userChallenges.filter((c) => {
+        const endDate = new Date(c.end_date);
+        const isCompleted = endDate < now;
+        console.log(`Challenge ${c.id} completed status:`, isCompleted, { endDate, now });
+        return isCompleted;
+      });
+
+      console.log("Active challenges:", active);
+      console.log("Upcoming challenges:", upcoming);
+      console.log("Completed challenges:", completed);
+
       set({
-        error: error instanceof Error ? error.message : "Failed to create challenge",
+        challenges: userChallenges,
+        activeChallenges: active,
+        upcomingChallenges: upcoming,
+        completedChallenges: completed,
         isLoading: false,
       });
-      throw error;
+
+      get().applyFilters();
+    } catch (error) {
+      console.error("Error in fetchChallenges:", error);
+      set({ isLoading: false });
     }
   },
 
-  updateChallenge: async (id: string, data: UpdateChallengeInput) => {
+  fetchActiveChallenges: async (supabase) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) return;
+
     try {
-      set({ isLoading: true, error: null });
-      const supabase = createClientComponentClient();
-
-      const { error } = await supabase
-        .from("challenges")
-        .update(data)
-        .eq("id", id);
-
-      if (error) throw error;
-
-      // Refresh current challenge and challenges list
-      await Promise.all([
-        get().fetchChallengeById(id),
-        get().fetchChallenges(),
-      ]);
-
-      set({ isLoading: false });
-    } catch (error) {
-      set({
-        error: error instanceof Error ? error.message : "Failed to update challenge",
-        isLoading: false,
-      });
-    }
-  },
-
-  deleteChallenge: async (id: string) => {
-    try {
-      set({ isLoading: true, error: null });
-      const supabase = createClientComponentClient();
-
-      const { error } = await supabase
-        .from("challenges")
-        .delete()
-        .eq("id", id);
-
-      if (error) throw error;
-
-      // Refresh challenges list
-      await get().fetchChallenges();
-      set({ isLoading: false });
-    } catch (error) {
-      set({
-        error: error instanceof Error ? error.message : "Failed to delete challenge",
-        isLoading: false,
-      });
-    }
-  },
-
-  joinChallenge: async (challengeId: string) => {
-    try {
-      set({ isLoading: true, error: null });
-      const supabase = createClientComponentClient();
-
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error("No authenticated user");
-
-      const { error } = await supabase
+      const now = new Date().toISOString();
+      const { data: challenges, error } = await supabase
         .from("challenge_participants")
-        .insert({
-          challenge_id: challengeId,
-          user_id: session.user.id,
-          progress: 0,
-          completed: false,
-        });
+        .select(`
+          challenge:challenge_id(
+            *,
+            creator:creator_id(
+              id,
+              username,
+              avatar_url
+            )
+          )
+        `)
+        .eq("user_id", session.user.id)
+        .filter("challenge.start_date", "lte", now)
+        .filter("challenge.end_date", "gte", now)
+        .returns<ChallengeResponse[]>();
 
       if (error) throw error;
 
-      // Refresh current challenge and user challenges
-      await Promise.all([
-        get().fetchChallengeById(challengeId),
-        get().fetchUserChallenges(),
-      ]);
-
-      set({ isLoading: false });
+      set({ activeChallenges: challenges?.map(c => c.challenge) || [] });
     } catch (error) {
-      set({
-        error: error instanceof Error ? error.message : "Failed to join challenge",
-        isLoading: false,
-      });
+      console.error("Error fetching active challenges:", error);
     }
   },
 
-  leaveChallenge: async (challengeId: string) => {
+  fetchUpcomingChallenges: async (supabase) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) return;
+
     try {
-      set({ isLoading: true, error: null });
-      const supabase = createClientComponentClient();
-
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error("No authenticated user");
-
-      const { error } = await supabase
+      const now = new Date().toISOString();
+      const { data: challenges, error } = await supabase
         .from("challenge_participants")
-        .delete()
-        .eq("challenge_id", challengeId)
-        .eq("user_id", session.user.id);
+        .select(`
+          challenge:challenge_id(
+            *,
+            creator:creator_id(
+              id,
+              username,
+              avatar_url
+            )
+          )
+        `)
+        .eq("user_id", session.user.id)
+        .filter("challenge.start_date", "gt", now)
+        .returns<ChallengeResponse[]>();
 
       if (error) throw error;
 
-      // Refresh current challenge and user challenges
-      await Promise.all([
-        get().fetchChallengeById(challengeId),
-        get().fetchUserChallenges(),
-      ]);
-
-      set({ isLoading: false });
+      set({ upcomingChallenges: challenges?.map(c => c.challenge) || [] });
     } catch (error) {
-      set({
-        error: error instanceof Error ? error.message : "Failed to leave challenge",
-        isLoading: false,
-      });
-    }
-  },
-
-  updateProgress: async (challengeId: string, progress: number) => {
-    try {
-      set({ isLoading: true, error: null });
-      const supabase = createClientComponentClient();
-
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error("No authenticated user");
-
-      const { error } = await supabase
-        .from("challenge_participants")
-        .update({
-          progress,
-          completed: progress >= 100,
-        })
-        .eq("challenge_id", challengeId)
-        .eq("user_id", session.user.id);
-
-      if (error) throw error;
-
-      // Refresh current challenge and user challenges
-      await Promise.all([
-        get().fetchChallengeById(challengeId),
-        get().fetchUserChallenges(),
-      ]);
-
-      set({ isLoading: false });
-    } catch (error) {
-      set({
-        error: error instanceof Error ? error.message : "Failed to update progress",
-        isLoading: false,
-      });
+      console.error("Error fetching upcoming challenges:", error);
     }
   },
 })); 

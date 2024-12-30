@@ -1,40 +1,39 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 
-export const TextGenerateEffect = ({
-  words,
-  className,
-}: {
+interface TextGenerateEffectProps {
   words: string;
   className?: string;
-}) => {
-  const [wordArray, setWordArray] = useState<string[]>([]);
+}
+
+export function TextGenerateEffect({
+  words,
+  className,
+}: TextGenerateEffectProps) {
+  const [displayText, setDisplayText] = useState("");
+  const [currentIndex, setCurrentIndex] = useState(0);
 
   useEffect(() => {
-    setWordArray(words.split(" "));
-  }, [words]);
+    if (currentIndex < words.length) {
+      const timeout = setTimeout(() => {
+        setDisplayText((prev) => prev + words[currentIndex]);
+        setCurrentIndex((prev) => prev + 1);
+      }, 30);
+
+      return () => clearTimeout(timeout);
+    }
+  }, [currentIndex, words]);
 
   return (
-    <span className={cn("inline-block", className)}>
-      {wordArray.map((word, idx) => {
-        return (
-          <motion.span
-            key={word + idx}
-            className="text-gray-300 dark:text-gray-300 inline-block mr-2.5"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{
-              duration: 0.25,
-              delay: idx * 0.1,
-            }}
-          >
-            {word}
-          </motion.span>
-        );
-      })}
-    </span>
+    <div className={cn("font-bold", className)}>
+      <div className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl">
+        {displayText}
+        {currentIndex < words.length && (
+          <span className="animate-pulse">|</span>
+        )}
+      </div>
+    </div>
   );
-};
+}

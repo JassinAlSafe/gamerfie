@@ -1,542 +1,459 @@
 "use client";
 
-import { BackgroundBeams } from "@/components/ui/background-beams";
-import { Card } from "@/components/ui/card";
-import { useChallengesStore } from "@/stores/useChallengesStore";
-import { useEffect, useState } from "react";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import {
-  Trophy,
-  Target,
-  Users,
-  Calendar,
-  Filter,
-  ChevronDown,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { format } from "date-fns";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import LoadingSpinner from "@/components/loadingSpinner";
-import { ProfileHeader } from "@/components/profile/profile-header";
-import { ProfileNav } from "@/components/profile/profile-nav";
-import { useProfile } from "@/hooks/use-profile";
-import { toast } from "sonner";
-import { Challenge, ChallengeStatus, ChallengeType } from "@/types/challenge";
+import { useSupabase } from "@/components/providers/supabase-provider";
+import { Button } from "@/components/ui/button";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import Link from "next/link";
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
+import { ChallengeType, ChallengeStatus, Challenge } from "@/types/challenge";
+import { CalendarDays, Trophy, Users, Plus, Clock } from "lucide-react";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import { cn } from "@/lib/utils";
+import { useChallengesStore } from "@/stores/useChallengesStore";
 
-type SortOption = "end_date" | "progress" | "participants";
+type ValidChallengeStatus = Extract<
+  ChallengeStatus,
+  "active" | "upcoming" | "completed"
+>;
 
-export default function ProfileChallengesPage() {
+type GroupedChallenges = Record<ValidChallengeStatus, Challenge[]>;
+
+export default function UserChallengesPage() {
+  const router = useRouter();
+  const { supabase } = useSupabase();
   const {
-    profile,
-    isLoading: profileLoading,
-    error: profileError,
-    gameStats,
-  } = useProfile();
-
-  const {
-    userChallenges,
-    isLoading: challengesLoading,
-    error: challengesError,
-    fetchUserChallenges,
-    updateProgress,
+    filteredChallenges,
+    activeChallenges,
+    upcomingChallenges,
+    completedChallenges,
+    isLoading,
+    filter,
+    statusFilter,
+    sortBy,
+    setFilter,
+    setStatusFilter,
+    setSortBy,
+    fetchChallenges,
+    fetchActiveChallenges,
+    fetchUpcomingChallenges,
   } = useChallengesStore();
 
-  const router = useRouter();
-  const supabase = createClientComponentClient();
-
-  const [statusFilter, setStatusFilter] = useState<ChallengeStatus | "all">(
-    "all"
-  );
-  const [typeFilter, setTypeFilter] = useState<ChallengeType | "all">("all");
-  const [sortBy, setSortBy] = useState<SortOption>("end_date");
-
   useEffect(() => {
-    const checkSession = async () => {
-      try {
-        const {
-          data: { session },
-          error: sessionError,
-        } = await supabase.auth.getSession();
-        if (sessionError) throw sessionError;
+    // Fetch all challenges initially
+    fetchChallenges(supabase);
 
-        if (!session?.access_token) {
-          console.log("No valid session found, redirecting to login");
-          router.push("/login");
-          return;
-        }
+    // Set up interval to fetch active and upcoming challenges
+    const interval = setInterval(() => {
+      fetchActiveChallenges(supabase);
+      fetchUpcomingChallenges(supabase);
+    }, 60000); // Update every minute
 
-        const {
-          data: { user },
-          error: userError,
-        } = await supabase.auth.getUser(session.access_token);
-        if (userError || !user?.id) {
-          console.error("Error getting user:", userError);
-          router.push("/login");
-          return;
-        }
+    return () => clearInterval(interval);
+  }, [
+    fetchChallenges,
+    fetchActiveChallenges,
+    fetchUpcomingChallenges,
+    supabase,
+  ]);
 
-        fetchUserChallenges();
-      } catch (error) {
-        console.error("Error checking session:", error);
-        router.push("/login");
-      }
-    };
-
-    checkSession();
-  }, [supabase, router, fetchUserChallenges]);
-
-  // Separate active and completed challenges
-  const activeChallenges = userChallenges.filter((challenge) => {
-    const userProgress =
-      challenge.participants.find((p) => p.user.id === profile?.id)?.progress ||
-      0;
-    return challenge.status !== "completed" && userProgress < 100;
-  });
-
-  const completedChallenges = userChallenges.filter((challenge) => {
-    const userProgress =
-      challenge.participants.find((p) => p.user.id === profile?.id)?.progress ||
-      0;
-    return challenge.status === "completed" || userProgress === 100;
-  });
-
-  // Filter and sort function for both sections
-  const filterAndSortChallenges = (challenges: Challenge[]) => {
-    return challenges
-      .filter((challenge) => {
-        if (statusFilter !== "all" && challenge.status !== statusFilter)
-          return false;
-        if (typeFilter !== "all" && challenge.type !== typeFilter) return false;
-        return true;
-      })
-      .sort((a, b) => {
-        switch (sortBy) {
-          case "end_date":
-            return (
-              new Date(a.end_date).getTime() - new Date(b.end_date).getTime()
-            );
-          case "progress":
-            const aProgress =
-              a.participants.find((p) => p.user.id === profile?.id)?.progress ||
-              0;
-            const bProgress =
-              b.participants.find((p) => p.user.id === profile?.id)?.progress ||
-              0;
-            return bProgress - aProgress;
-          case "participants":
-            return b.participants.length - a.participants.length;
-          default:
-            return 0;
-        }
-      });
+  const handleCreateChallenge = () => {
+    router.push("/challenges/create");
   };
 
-  const filteredActiveChallenges = filterAndSortChallenges(activeChallenges);
-  const filteredCompletedChallenges =
-    filterAndSortChallenges(completedChallenges);
+  const getStatusColor = (status: ChallengeStatus) => {
+    switch (status) {
+      case "active":
+        return "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400";
+      case "completed":
+        return "bg-blue-50 text-blue-700 dark:bg-blue-950/50 dark:text-blue-400";
+      case "upcoming":
+        return "bg-amber-50 text-amber-700 dark:bg-amber-950/50 dark:text-amber-400";
+      case "cancelled":
+        return "bg-rose-50 text-rose-700 dark:bg-rose-950/50 dark:text-rose-400";
+      default:
+        return "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-400";
+    }
+  };
 
-  if (profileLoading || challengesLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <LoadingSpinner />
-      </div>
-    );
-  }
+  // Group challenges by status
+  const groupedChallenges: GroupedChallenges = {
+    active: activeChallenges,
+    upcoming: upcomingChallenges,
+    completed: completedChallenges,
+  };
 
-  if (profileError || !profile) {
-    return (
-      <div className="flex items-center justify-center min-h-screen text-red-500">
-        <p className="text-xl font-semibold">
-          {profileError?.message || "Profile not found"}
-        </p>
-      </div>
-    );
-  }
+  const handleLeaveChallenge = async (challenge: Challenge) => {
+    try {
+      // Implement the leave challenge logic here
+      console.log("Leaving challenge:", challenge.id);
+      await fetchChallenges(supabase);
+    } catch (error) {
+      console.error("Error leaving challenge:", error);
+    }
+  };
 
-  if (challengesError) {
-    return (
-      <div className="flex items-center justify-center min-h-screen text-red-500">
-        <p className="text-xl font-semibold">
-          Error loading challenges: {challengesError}
-        </p>
-      </div>
+  const getTimeStatus = (challenge: Challenge) => {
+    const now = new Date();
+    const startDate = new Date(challenge.start_date);
+    const endDate = new Date(challenge.end_date);
+    const daysUntilStart = Math.ceil(
+      (startDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
     );
-  }
+    const daysUntilEnd = Math.ceil(
+      (endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
+    );
+
+    if (challenge.status === "completed") {
+      return "Completed";
+    } else if (now < startDate) {
+      return `Starts in ${daysUntilStart} day${
+        daysUntilStart !== 1 ? "s" : ""
+      }`;
+    } else if (now > endDate) {
+      return "Ended";
+    } else {
+      return `${daysUntilEnd} day${daysUntilEnd !== 1 ? "s" : ""} remaining`;
+    }
+  };
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-950">
-      {/* Hero Section with Gradient */}
-      <div className="absolute inset-x-0 top-16 h-[300px] bg-gradient-to-b from-purple-900 via-indigo-900 to-gray-950" />
+    <div className="min-h-screen bg-background relative overflow-hidden">
+      {/* Background Pattern */}
+      <div className="absolute inset-0 bg-grid-white/[0.02] -z-10" />
+      <div className="absolute inset-0 bg-gradient-to-tr from-background to-background/50 -z-10" />
 
-      {/* Main Content Container */}
-      <div className="relative flex flex-col flex-grow">
-        {/* Profile Header Section */}
-        <div className="pt-8">
-          <div className="max-w-7xl mx-auto px-4">
-            <ProfileHeader
-              profile={profile}
-              stats={
-                gameStats ?? {
-                  total_played: 0,
-                  played_this_year: 0,
-                  backlog: 0,
-                }
+      <div className="mx-auto max-w-7xl space-y-8 p-6 relative">
+        {/* Header Section */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 pb-6">
+          <div className="space-y-2">
+            <h1 className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-neutral-200 to-neutral-500">
+              Your Challenges
+            </h1>
+            <p className="text-sm text-muted-foreground/80">
+              Track your active and upcoming gaming adventures
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              onClick={() => router.push("/challenges")}
+              variant="outline"
+              className="bg-black/20 backdrop-blur-sm border-white/10 hover:bg-black/30 transition-colors"
+            >
+              Browse All Challenges
+            </Button>
+            <Button
+              onClick={handleCreateChallenge}
+              className="relative inline-flex h-11 items-center justify-center rounded-[8px] bg-background px-6 font-medium text-neutral-200 transition-colors hover:text-neutral-50"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              New Challenge
+            </Button>
+          </div>
+        </div>
+
+        {/* Filters Section */}
+        <div className="flex flex-wrap items-center gap-4">
+          <Select
+            value={statusFilter}
+            onValueChange={(value: "all" | ChallengeStatus) =>
+              setStatusFilter(value)
+            }
+          >
+            <SelectTrigger className="w-[160px] bg-black/20 backdrop-blur-sm border-white/10 hover:bg-black/30 transition-colors">
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent className="bg-black/80 backdrop-blur-sm border-white/10">
+              <SelectItem value="all">All Status</SelectItem>
+              <SelectItem value="active">Active</SelectItem>
+              <SelectItem value="upcoming">Upcoming</SelectItem>
+              <SelectItem value="completed">Completed</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Select
+            value={filter}
+            onValueChange={(value: "all" | ChallengeType) => setFilter(value)}
+          >
+            <SelectTrigger className="w-[160px] bg-black/20 backdrop-blur-sm border-white/10 hover:bg-black/30 transition-colors">
+              <SelectValue placeholder="Type" />
+            </SelectTrigger>
+            <SelectContent className="bg-black/80 backdrop-blur-sm border-white/10">
+              <SelectItem value="all">All Types</SelectItem>
+              <SelectItem value="competitive">Competitive</SelectItem>
+              <SelectItem value="collaborative">Collaborative</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Select
+            value={sortBy}
+            onValueChange={(value: "date" | "participants") => setSortBy(value)}
+          >
+            <SelectTrigger className="w-[160px] bg-black/20 backdrop-blur-sm border-white/10 hover:bg-black/30 transition-colors">
+              <SelectValue placeholder="Sort by" />
+            </SelectTrigger>
+            <SelectContent className="bg-black/80 backdrop-blur-sm border-white/10">
+              <SelectItem value="date">Latest First</SelectItem>
+              <SelectItem value="participants">By Participants</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Content Section */}
+        {isLoading ? (
+          <div className="flex min-h-[400px] items-center justify-center">
+            <div className="animate-spin h-8 w-8 rounded-full border-4 border-primary/30 border-t-primary" />
+          </div>
+        ) : filteredChallenges.length === 0 ? (
+          <div className="flex min-h-[400px] flex-col items-center justify-center bg-black/20 backdrop-blur-sm rounded-lg p-8 text-center border border-white/10">
+            <Trophy className="h-12 w-12 text-muted-foreground/50 mb-4" />
+            <h3 className="text-xl font-semibold mb-2">No Challenges Found</h3>
+            <p className="text-sm text-muted-foreground mb-6 max-w-sm">
+              {filter !== "all" || statusFilter !== "all"
+                ? "Try adjusting your filters to see more challenges"
+                : "Start your gaming journey by joining or creating a challenge"}
+            </p>
+            <Button
+              onClick={() => router.push("/challenges")}
+              variant="outline"
+              className="bg-black/20 backdrop-blur-sm border-white/10 hover:bg-black/30 transition-colors"
+            >
+              Browse Challenges
+            </Button>
+          </div>
+        ) : (
+          <ScrollArea className="h-[calc(100vh-12rem)]">
+            <Accordion
+              type="multiple"
+              className="w-full space-y-4"
+              defaultValue={
+                statusFilter === "all" ? ["active"] : [statusFilter]
               }
-              onProfileUpdate={() => {}}
-            />
-          </div>
-        </div>
-
-        {/* Sticky Navigation */}
-        <div className="sticky top-16 z-40 bg-gray-950/80 backdrop-blur-md border-b border-white/5 mt-8">
-          <div className="max-w-7xl mx-auto px-4">
-            <ProfileNav />
-          </div>
-        </div>
-
-        {/* Challenges Content */}
-        <div className="flex-grow">
-          <div className="max-w-7xl mx-auto px-4 py-8">
-            <div className="space-y-12">
-              {/* Active Challenges Section */}
-              <div className="space-y-8">
-                {/* Header Section with Filters */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  <div className="flex items-center gap-2">
-                    <Trophy className="w-6 h-6 text-purple-400" />
-                    <h2 className="text-2xl font-bold text-white">
-                      My Challenges ({filteredActiveChallenges.length})
-                    </h2>
-                  </div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <Link href="/challenges">
-                      <Button
-                        variant="outline"
-                        className="bg-purple-500/10 text-purple-400 border-purple-500/20 hover:bg-purple-500/20"
-                      >
-                        Browse Challenges
-                      </Button>
-                    </Link>
-                    {/* Status Filter */}
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          variant="outline"
-                          className="bg-gray-800/30 border-gray-700/30 hover:bg-gray-800/50"
-                        >
-                          <Filter className="w-4 h-4 mr-2" />
-                          Status
-                          <ChevronDown className="w-4 h-4 ml-2" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent className="bg-gray-900 border-gray-800">
-                        <DropdownMenuItem
-                          onClick={() => setStatusFilter("all")}
-                        >
-                          All
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => setStatusFilter("active")}
-                        >
-                          Active
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => setStatusFilter("upcoming")}
-                        >
-                          Upcoming
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => setStatusFilter("completed")}
-                        >
-                          Completed
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-
-                    {/* Type Filter */}
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          variant="outline"
-                          className="bg-gray-800/30 border-gray-700/30 hover:bg-gray-800/50"
-                        >
-                          <Filter className="w-4 h-4 mr-2" />
-                          Type
-                          <ChevronDown className="w-4 h-4 ml-2" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent className="bg-gray-900 border-gray-800">
-                        <DropdownMenuItem onClick={() => setTypeFilter("all")}>
-                          All
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => setTypeFilter("competitive")}
-                        >
-                          Competitive
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => setTypeFilter("collaborative")}
-                        >
-                          Collaborative
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-
-                    {/* Sort Options */}
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          variant="outline"
-                          className="bg-gray-800/30 border-gray-700/30 hover:bg-gray-800/50"
-                        >
-                          Sort by
-                          <ChevronDown className="w-4 h-4 ml-2" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent className="bg-gray-900 border-gray-800">
-                        <DropdownMenuItem onClick={() => setSortBy("end_date")}>
-                          End Date
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => setSortBy("progress")}>
-                          Progress
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => setSortBy("participants")}
-                        >
-                          Participants
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                </div>
-
-                {/* Active Challenges Grid */}
-                {filteredActiveChallenges.length === 0 ? (
-                  <Card className="p-6 bg-gray-800/50 border-gray-700/50 backdrop-blur-sm">
-                    <div className="text-center space-y-2">
-                      <Trophy className="w-12 h-12 text-gray-500 mx-auto" />
-                      <p className="text-gray-400">
-                        No active challenges found
-                      </p>
-                      <p className="text-sm text-gray-500">
-                        {activeChallenges.length === 0 ? (
-                          <>
-                            You haven't joined any challenges yet.{" "}
-                            <Link
-                              href="/challenges"
-                              className="text-purple-400 hover:text-purple-300"
-                            >
-                              Browse available challenges
-                            </Link>
-                          </>
-                        ) : (
-                          "Try adjusting your filters"
+            >
+              {(["active", "upcoming", "completed"] as ValidChallengeStatus[])
+                .filter(
+                  (statusGroup) =>
+                    statusFilter === "all" || statusGroup === statusFilter
+                )
+                .map(
+                  (statusGroup) =>
+                    groupedChallenges[statusGroup]?.length > 0 && (
+                      <AccordionItem
+                        key={statusGroup}
+                        value={statusGroup}
+                        className={cn(
+                          "border-white/10 backdrop-blur-sm rounded-lg overflow-hidden",
+                          statusGroup === "active"
+                            ? "bg-emerald-950/20"
+                            : "bg-black/20"
                         )}
-                      </p>
-                    </div>
-                  </Card>
-                ) : (
-                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                    {filteredActiveChallenges.map((challenge) => (
-                      <Link
-                        key={challenge.id}
-                        href={`/challenges/${challenge.id}`}
                       >
-                        <Card className="p-4 bg-gray-800/50 border-gray-700/50 backdrop-blur-sm hover:bg-gray-800/70 transition-colors cursor-pointer group">
-                          <div className="space-y-4">
-                            <div className="space-y-2">
-                              <div className="flex items-start justify-between">
-                                <h3 className="font-semibold text-white group-hover:text-purple-400 transition-colors">
-                                  {challenge.title}
-                                </h3>
-                                <Badge
-                                  variant="outline"
-                                  className="bg-purple-500/10 text-purple-400 border-purple-500/20"
-                                >
-                                  {challenge.type}
-                                </Badge>
-                              </div>
-                              <p className="text-sm text-gray-400 line-clamp-2">
-                                {challenge.description}
-                              </p>
-                            </div>
-
-                            <div className="space-y-3">
-                              <div className="flex items-center justify-between text-sm">
-                                <div className="flex items-center gap-1 text-gray-400">
-                                  <Target className="w-4 h-4" />
-                                  <span>
-                                    {challenge.goal_target}{" "}
-                                    {challenge.goal_type.replace(/_/g, " ")}
-                                  </span>
-                                </div>
-                                <div className="flex items-center gap-1 text-gray-400">
-                                  <Users className="w-4 h-4" />
-                                  <span>
-                                    {challenge.participants.length} joined
-                                  </span>
-                                </div>
-                              </div>
-
-                              <div className="space-y-1">
-                                <div className="flex items-center justify-between text-sm">
-                                  <span className="text-gray-400">
-                                    Progress
-                                  </span>
-                                  <span className="text-purple-400">
-                                    {challenge.participants.find(
-                                      (p) => p.user.id === profile.id
-                                    )?.progress || 0}
-                                    %
-                                  </span>
-                                </div>
-                                <Progress
-                                  value={
-                                    challenge.participants.find(
-                                      (p) => p.user.id === profile.id
-                                    )?.progress || 0
-                                  }
-                                  className="h-2"
-                                />
-                              </div>
-
-                              <div className="flex items-center justify-between text-sm text-gray-400">
-                                <div className="flex items-center gap-1">
-                                  <Calendar className="w-4 h-4" />
-                                  <span>
-                                    {format(
-                                      new Date(challenge.end_date),
-                                      "MMM d, yyyy"
-                                    )}
-                                  </span>
-                                </div>
-                              </div>
-                            </div>
+                        <AccordionTrigger
+                          className={cn(
+                            "px-6 transition-colors",
+                            statusGroup === "active"
+                              ? "hover:bg-emerald-950/30"
+                              : "hover:bg-black/30"
+                          )}
+                        >
+                          <div className="flex items-center gap-2">
+                            <Badge
+                              className={cn(
+                                "capitalize",
+                                getStatusColor(statusGroup as ChallengeStatus)
+                              )}
+                            >
+                              {statusGroup}
+                            </Badge>
+                            <span className="text-sm text-muted-foreground">
+                              ({groupedChallenges[statusGroup].length})
+                            </span>
+                            {statusGroup === "active" && (
+                              <Badge
+                                variant="secondary"
+                                className="ml-2 bg-emerald-500/20 text-emerald-200"
+                              >
+                                In Progress
+                              </Badge>
+                            )}
                           </div>
-                        </Card>
-                      </Link>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Completed Challenges Section */}
-              <div className="space-y-8">
-                <div className="flex items-center gap-2">
-                  <Trophy className="w-6 h-6 text-green-400" />
-                  <h2 className="text-2xl font-bold text-white">
-                    Completed Challenges ({filteredCompletedChallenges.length})
-                  </h2>
-                </div>
-
-                {filteredCompletedChallenges.length === 0 ? (
-                  <Card className="p-6 bg-gray-800/50 border-gray-700/50 backdrop-blur-sm">
-                    <div className="text-center space-y-2">
-                      <Trophy className="w-12 h-12 text-gray-500 mx-auto" />
-                      <p className="text-gray-400">
-                        No completed challenges yet
-                      </p>
-                      <p className="text-sm text-gray-500">
-                        Complete your active challenges to see them here
-                      </p>
-                    </div>
-                  </Card>
-                ) : (
-                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                    {filteredCompletedChallenges.map((challenge) => (
-                      <Link
-                        key={challenge.id}
-                        href={`/challenges/${challenge.id}`}
-                      >
-                        <Card className="p-4 bg-gray-800/50 border-gray-700/50 backdrop-blur-sm hover:bg-gray-800/70 transition-colors cursor-pointer group">
-                          <div className="space-y-4">
-                            <div className="space-y-2">
-                              <div className="flex items-start justify-between">
-                                <h3 className="font-semibold text-white group-hover:text-purple-400 transition-colors">
-                                  {challenge.title}
-                                </h3>
-                                <Badge
-                                  variant="outline"
-                                  className="bg-purple-500/10 text-purple-400 border-purple-500/20"
-                                >
-                                  {challenge.type}
-                                </Badge>
-                              </div>
-                              <p className="text-sm text-gray-400 line-clamp-2">
-                                {challenge.description}
-                              </p>
-                            </div>
-
-                            <div className="space-y-3">
-                              <div className="flex items-center justify-between text-sm">
-                                <div className="flex items-center gap-1 text-gray-400">
-                                  <Target className="w-4 h-4" />
-                                  <span>
-                                    {challenge.goal_target}{" "}
-                                    {challenge.goal_type.replace(/_/g, " ")}
-                                  </span>
-                                </div>
-                                <div className="flex items-center gap-1 text-gray-400">
-                                  <Users className="w-4 h-4" />
-                                  <span>
-                                    {challenge.participants.length} joined
-                                  </span>
-                                </div>
-                              </div>
-
-                              <div className="space-y-1">
-                                <div className="flex items-center justify-between text-sm">
-                                  <span className="text-gray-400">
-                                    Progress
-                                  </span>
-                                  <span className="text-purple-400">
-                                    {challenge.participants.find(
-                                      (p) => p.user.id === profile.id
-                                    )?.progress || 0}
-                                    %
-                                  </span>
-                                </div>
-                                <Progress
-                                  value={
-                                    challenge.participants.find(
-                                      (p) => p.user.id === profile.id
-                                    )?.progress || 0
-                                  }
-                                  className="h-2"
-                                />
-                              </div>
-
-                              <div className="flex items-center justify-between text-sm text-gray-400">
-                                <div className="flex items-center gap-1">
-                                  <Calendar className="w-4 h-4" />
-                                  <span>
-                                    {format(
-                                      new Date(challenge.end_date),
-                                      "MMM d, yyyy"
-                                    )}
-                                  </span>
-                                </div>
-                              </div>
-                            </div>
+                        </AccordionTrigger>
+                        <AccordionContent>
+                          <div className="p-4 grid gap-4">
+                            {groupedChallenges[statusGroup].map((challenge) => (
+                              <Card
+                                key={challenge.id}
+                                className={cn(
+                                  "group backdrop-blur-sm border-white/10 transition-all duration-300",
+                                  statusGroup === "active"
+                                    ? "bg-emerald-950/20 hover:bg-emerald-950/30"
+                                    : "bg-black/20 hover:bg-black/30"
+                                )}
+                              >
+                                <CardHeader className="pb-2">
+                                  <div className="space-y-2">
+                                    <div className="flex items-start justify-between">
+                                      <div>
+                                        <CardTitle className="text-lg font-medium line-clamp-1 text-neutral-200">
+                                          {challenge.title}
+                                        </CardTitle>
+                                        {statusGroup === "active" && (
+                                          <div className="flex items-center gap-2 mt-1">
+                                            <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                                            <span className="text-xs text-emerald-200">
+                                              Live Now
+                                            </span>
+                                          </div>
+                                        )}
+                                      </div>
+                                      {(challenge.status === "upcoming" ||
+                                        challenge.status === "completed") && (
+                                        <AlertDialog>
+                                          <AlertDialogTrigger asChild>
+                                            <Button
+                                              variant="ghost"
+                                              size="sm"
+                                              className="text-muted-foreground hover:text-destructive"
+                                            >
+                                              Leave
+                                            </Button>
+                                          </AlertDialogTrigger>
+                                          <AlertDialogContent className="bg-black/80 backdrop-blur-sm border-white/10">
+                                            <AlertDialogHeader>
+                                              <AlertDialogTitle>
+                                                Leave Challenge?
+                                              </AlertDialogTitle>
+                                              <AlertDialogDescription>
+                                                Are you sure you want to leave
+                                                this challenge? This action
+                                                cannot be undone.
+                                              </AlertDialogDescription>
+                                            </AlertDialogHeader>
+                                            <AlertDialogFooter>
+                                              <AlertDialogCancel className="bg-background hover:bg-background/90">
+                                                Cancel
+                                              </AlertDialogCancel>
+                                              <AlertDialogAction
+                                                onClick={() =>
+                                                  handleLeaveChallenge(
+                                                    challenge
+                                                  )
+                                                }
+                                                className="bg-destructive hover:bg-destructive/90"
+                                              >
+                                                Leave Challenge
+                                              </AlertDialogAction>
+                                            </AlertDialogFooter>
+                                          </AlertDialogContent>
+                                        </AlertDialog>
+                                      )}
+                                    </div>
+                                    <div className="flex flex-wrap items-center gap-2">
+                                      <Badge
+                                        variant="secondary"
+                                        className={cn(
+                                          "text-xs font-normal",
+                                          statusGroup === "active"
+                                            ? "bg-emerald-500/20 text-emerald-200"
+                                            : "bg-black/40 hover:bg-black/50"
+                                        )}
+                                      >
+                                        <Clock className="mr-1 h-3 w-3" />
+                                        {getTimeStatus(challenge)}
+                                      </Badge>
+                                      <Badge
+                                        variant="secondary"
+                                        className={cn(
+                                          "text-xs font-normal",
+                                          statusGroup === "active"
+                                            ? "bg-emerald-500/20 text-emerald-200"
+                                            : "bg-black/40 hover:bg-black/50"
+                                        )}
+                                      >
+                                        {challenge.type}
+                                      </Badge>
+                                    </div>
+                                    <CardDescription className="line-clamp-2 text-sm text-neutral-400">
+                                      {challenge.description}
+                                    </CardDescription>
+                                  </div>
+                                </CardHeader>
+                                <CardContent className="pb-2 pt-0">
+                                  <div className="grid grid-cols-3 gap-2 text-sm">
+                                    <div className="flex items-center text-neutral-400">
+                                      <CalendarDays className="mr-2 h-4 w-4" />
+                                      <span className="truncate">
+                                        {new Date(
+                                          challenge.start_date
+                                        ).toLocaleDateString()}
+                                      </span>
+                                    </div>
+                                    <div className="flex items-center text-neutral-400">
+                                      <Users className="mr-2 h-4 w-4" />
+                                      <span className="truncate">
+                                        {challenge.min_participants} players
+                                      </span>
+                                    </div>
+                                    <div className="flex items-center text-neutral-400">
+                                      <Trophy className="mr-2 h-4 w-4" />
+                                      <span className="truncate">
+                                        {challenge.goals?.length || 0} goals
+                                      </span>
+                                    </div>
+                                  </div>
+                                  {statusGroup === "active" && (
+                                    <Button
+                                      onClick={() =>
+                                        router.push(
+                                          `/challenges/${challenge.id}/progress`
+                                        )
+                                      }
+                                      className="w-full mt-4 bg-emerald-500/20 text-emerald-200 hover:bg-emerald-500/30 transition-colors"
+                                    >
+                                      View Progress
+                                    </Button>
+                                  )}
+                                </CardContent>
+                              </Card>
+                            ))}
                           </div>
-                        </Card>
-                      </Link>
-                    ))}
-                  </div>
+                        </AccordionContent>
+                      </AccordionItem>
+                    )
                 )}
-              </div>
-            </div>
-          </div>
-        </div>
+            </Accordion>
+          </ScrollArea>
+        )}
       </div>
     </div>
   );

@@ -1,6 +1,5 @@
-import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
-import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
+import { withParticipantAuth } from "../../middleware";
 
 interface RouteParams {
   params: {
@@ -8,35 +7,22 @@ interface RouteParams {
   };
 }
 
-export async function POST(request: Request, { params }: RouteParams) {
+type HandlerContext = {
+  supabase: any;
+  session: {
+    user: {
+      id: string;
+    };
+  };
+  participant: any;
+};
+
+export const POST = withParticipantAuth(async (
+  request: Request,
+  { params }: RouteParams,
+  { supabase, session }: HandlerContext
+) => {
   try {
-    const supabase = createRouteHandlerClient({ cookies });
-    const { data: { session } } = await supabase.auth.getSession();
-
-    if (!session) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      );
-    }
-
-    // Check if user is a participant
-    const { data: participant, error: participantError } = await supabase
-      .from("challenge_participants")
-      .select("*")
-      .eq("challenge_id", params.id)
-      .eq("user_id", session.user.id)
-      .maybeSingle();
-
-    if (participantError) throw participantError;
-
-    if (!participant) {
-      return NextResponse.json(
-        { error: "Not a participant in this challenge" },
-        { status: 400 }
-      );
-    }
-
     // Leave the challenge
     const { error: leaveError } = await supabase
       .from("challenge_participants")
@@ -44,14 +30,20 @@ export async function POST(request: Request, { params }: RouteParams) {
       .eq("challenge_id", params.id)
       .eq("user_id", session.user.id);
 
-    if (leaveError) throw leaveError;
+    if (leaveError) {
+      console.error("Error leaving challenge:", leaveError);
+      return NextResponse.json(
+        { error: "Failed to leave challenge" },
+        { status: 500 }
+      );
+    }
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ message: "Successfully left challenge" });
   } catch (error) {
     console.error("Failed to leave challenge:", error);
     return NextResponse.json(
-      { error: "Failed to leave challenge" },
+      { error: "Internal server error" },
       { status: 500 }
     );
   }
-} 
+}); 

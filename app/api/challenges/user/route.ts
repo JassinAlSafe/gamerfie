@@ -1,89 +1,55 @@
-import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
-import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
+import { withAuth } from "../middleware";
+import { 
+  type Challenge, 
+  type UserChallenge, 
+  type ChallengeTeam 
+} from "../types";
 
-export async function GET() {
+type HandlerContext = {
+  supabase: any;
+  session: {
+    user: {
+      id: string;
+    };
+  };
+};
+
+export const GET = withAuth(async (
+  request: Request,
+  params: any,
+  { supabase, session }: HandlerContext
+) => {
   try {
-    const supabase = createRouteHandlerClient({ cookies });
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-
-    if (!session) {
-      return NextResponse.json(
-        { error: "Not authenticated" },
-        { status: 401 }
-      );
-    }
-
-    console.log("Fetching challenges for user:", session.user.id);
-
-    // First get the challenge participants
-    const { data: participations, error: participationsError } = await supabase
-      .from("challenge_participants")
-      .select("challenge_id")
-      .eq("user_id", session.user.id);
-
-    if (participationsError) {
-      console.error("Error fetching participations:", participationsError);
-      return NextResponse.json(
-        { error: "Failed to fetch participations", details: participationsError },
-        { status: 500 }
-      );
-    }
-
-    if (!participations || participations.length === 0) {
-      console.log("No participations found");
-      return NextResponse.json([]);
-    }
-
-    console.log("Found participations:", participations);
-
-    // Then get the challenges with all related data
+    // Get all challenges where the user is a participant
     const { data: challenges, error: challengesError } = await supabase
       .from("challenges")
       .select(`
-        id,
-        title,
-        description,
-        type,
-        status,
-        start_date,
-        end_date,
-        goal_type,
-        goal_target,
-        min_participants,
-        max_participants,
-        requirements,
-        created_at,
-        updated_at,
-        creator:creator_id (
+        *,
+        creator:creator_id(
           id,
           username,
           avatar_url
         ),
-        participants:challenge_participants (
-          user:profiles (
-            id,
-            username,
-            avatar_url
+        goals:challenge_goals(
+          *,
+          progress:challenge_participant_progress!inner(
+            progress,
+            participant_id
+          )
+        ),
+        teams:challenge_teams(
+          *,
+          participants:challenge_participants(
+            user:profiles(*),
+            joined_at
           ),
-          joined_at,
-          progress,
-          completed
+          progress:challenge_team_progress(*)
         ),
-        rewards:challenge_rewards (
-          id,
-          type,
-          name,
-          description
-        ),
-        rules:challenge_rules (
-          id,
-          rule
-        )
+        rewards:challenge_rewards(*),
+        rules:challenge_rules(*)
       `)
-      .in("id", participations.map(p => p.challenge_id));
+      .eq("goals.progress.participant_id", session.user.id);
 
     if (challengesError) {
       console.error("Error fetching challenges:", challengesError);
@@ -93,9 +59,57 @@ export async function GET() {
       );
     }
 
-    console.log("Successfully fetched challenges:", challenges?.length || 0);
+    if (!challenges) {
+      return NextResponse.json([]);
+    }
 
-    return NextResponse.json(challenges || []);
+    // Process challenges to include calculated progress
+    const processedChallenges: UserChallenge[] = challenges.map((challenge: any) => {
+      // Calculate overall progress for the user
+      const userProgress = challenge.goals.reduce((sum: number, goal: any) => {
+        const progressRecord = goal.progress.find(
+          (p: any) => p.participant_id === session.user.id
+        );
+        return sum + (progressRecord?.progress || 0);
+      }, 0) / (challenge.goals.length || 1);
+
+      // Calculate progress for each team
+      const teamsWithProgress = challenge.teams.map((team: ChallengeTeam) => ({
+        ...team,
+        progress: team.progress.reduce(
+          (avg: number, p: { progress: number }) => avg + (p.progress || 0),
+          0
+        ) / (team.progress.length || 1),
+      }));
+
+      // Find user's team
+      const userTeam = challenge.teams.find((team: ChallengeTeam) =>
+        team.participants.some(p => p.user.id === session.user.id)
+      );
+
+      return {
+        ...challenge,
+        user_progress: userProgress,
+        user_team: userTeam?.id,
+        teams: teamsWithProgress,
+      };
+    });
+
+    // Sort challenges by start date and status
+    const sortedChallenges = processedChallenges.sort((a, b) => {
+      // Active challenges first
+      if (a.status === "active" && b.status !== "active") return -1;
+      if (b.status === "active" && a.status !== "active") return 1;
+
+      // Then upcoming challenges
+      if (a.status === "upcoming" && b.status !== "upcoming") return -1;
+      if (b.status === "upcoming" && a.status !== "upcoming") return 1;
+
+      // Sort by start date within each status
+      return new Date(b.start_date).getTime() - new Date(a.start_date).getTime();
+    });
+
+    return NextResponse.json(sortedChallenges);
   } catch (error) {
     console.error("Error in GET /api/challenges/user:", error);
     return NextResponse.json(
@@ -103,4 +117,4 @@ export async function GET() {
       { status: 500 }
     );
   }
-} 
+}); 

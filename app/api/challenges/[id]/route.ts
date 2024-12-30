@@ -7,179 +7,171 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
+    console.log("Fetching challenge with ID:", params.id);
     const supabase = createRouteHandlerClient({ cookies });
+
+    // Check if user is authenticated
     const {
       data: { session },
+      error: sessionError,
     } = await supabase.auth.getSession();
 
-    if (!session) {
+    if (sessionError) {
+      console.error("Session error:", sessionError);
       return NextResponse.json(
-        { error: "Not authenticated" },
+        { error: "Failed to verify authentication", details: sessionError },
         { status: 401 }
       );
     }
 
-    // Get challenge with all related data
-    const { data: challenge, error: challengeError } = await supabase
-      .from("challenges")
-      .select(`
-        *,
-        creator:creator_id(
-          id,
-          username,
-          avatar_url
-        ),
-        participants:challenge_participants(
-          user:profiles(
-            id,
-            username,
-            avatar_url
-          ),
-          joined_at,
-          progress,
-          completed
-        ),
-        rewards:challenge_rewards(*),
-        rules:challenge_rules(*)
-      `)
-      .eq("id", params.id)
+    if (!session) {
+      console.log("No session found");
+      return NextResponse.json(
+        { error: "Authentication required" },
+        { status: 401 }
+      );
+    }
+
+    console.log("User authenticated:", session.user.id);
+
+    // Check if user has a profile
+    const { data: profile, error: profileError } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", session.user.id)
       .single();
 
-    if (challengeError) {
+    if (profileError) {
+      console.error("Profile error:", profileError);
       return NextResponse.json(
-        { error: "Failed to fetch challenge", details: challengeError },
+        { error: "Failed to fetch user profile", details: profileError },
         { status: 500 }
       );
     }
 
-    if (!challenge) {
+    if (!profile) {
+      console.log("No profile found for user:", session.user.id);
+      return NextResponse.json(
+        { error: "User profile not found" },
+        { status: 404 }
+      );
+    }
+
+    console.log("User profile found:", profile.id);
+
+    // Try fetching the challenge in steps to identify where the issue might be
+    
+    // 1. First, get basic challenge info
+    const { data: basicChallenge, error: basicError } = await supabase
+      .from("challenges")
+      .select("*")
+      .eq("id", params.id)
+      .single();
+
+    if (basicError) {
+      console.error("Basic challenge fetch error:", basicError);
+      return NextResponse.json(
+        { error: "Failed to fetch basic challenge info", details: basicError },
+        { status: 500 }
+      );
+    }
+
+    if (!basicChallenge) {
+      console.log("Challenge not found:", params.id);
       return NextResponse.json(
         { error: "Challenge not found" },
         { status: 404 }
       );
     }
 
+    console.log("Basic challenge info found:", {
+      id: basicChallenge.id,
+      title: basicChallenge.title,
+    });
+
+    // 2. Get creator info
+    const { data: creator, error: creatorError } = await supabase
+      .from("profiles")
+      .select("id, username, avatar_url")
+      .eq("id", basicChallenge.creator_id)
+      .single();
+
+    if (creatorError) {
+      console.error("Creator fetch error:", creatorError);
+    }
+
+    // 3. Get goals
+    const { data: goals, error: goalsError } = await supabase
+      .from("challenge_goals")
+      .select("id, type, target, description")
+      .eq("challenge_id", params.id);
+
+    if (goalsError) {
+      console.error("Goals fetch error:", goalsError);
+    }
+
+    // 4. Get participants with their profiles
+    const { data: participants, error: participantsError } = await supabase
+      .from("challenge_participants")
+      .select(
+        `
+        user_id,
+        joined_at,
+        user:profiles (
+          id,
+          username,
+          avatar_url
+        )
+      `
+      )
+      .eq("challenge_id", params.id);
+
+    if (participantsError) {
+      console.error("Participants fetch error:", participantsError);
+    }
+
+    // 5. Get rewards
+    const { data: rewards, error: rewardsError } = await supabase
+      .from("challenge_rewards")
+      .select("id, type, name, description")
+      .eq("challenge_id", params.id);
+
+    if (rewardsError) {
+      console.error("Rewards fetch error:", rewardsError);
+    }
+
+    // 6. Get rules
+    const { data: rules, error: rulesError } = await supabase
+      .from("challenge_rules")
+      .select("id, rule")
+      .eq("challenge_id", params.id);
+
+    if (rulesError) {
+      console.error("Rules fetch error:", rulesError);
+    }
+
+    // Combine all the data
+    const challenge = {
+      ...basicChallenge,
+      creator: creator || null,
+      goals: goals || [],
+      participants: participants || [],
+      rewards: rewards || [],
+      rules: rules || [],
+    };
+
+    console.log("Successfully assembled challenge data:", {
+      id: challenge.id,
+      title: challenge.title,
+      goalsCount: challenge.goals.length,
+      participantsCount: challenge.participants.length,
+    });
+
     return NextResponse.json(challenge);
   } catch (error) {
-    console.error("Error fetching challenge:", error);
+    console.error("Unexpected error:", error);
     return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
-  }
-}
-
-export async function PUT(request: Request, { params }: RouteParams) {
-  try {
-    const supabase = createRouteHandlerClient({ cookies });
-    const { data: { session } } = await supabase.auth.getSession();
-
-    if (!session) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      );
-    }
-
-    // Check if user is the creator
-    const { data: challenge, error: fetchError } = await supabase
-      .from("challenges")
-      .select("creator_id")
-      .eq("id", params.id)
-      .single();
-
-    if (fetchError) throw fetchError;
-
-    if (challenge.creator_id !== session.user.id) {
-      return NextResponse.json(
-        { error: "Only the creator can update the challenge" },
-        { status: 403 }
-      );
-    }
-
-    const json = await request.json();
-    const { error: updateError } = await supabase
-      .from("challenges")
-      .update(json)
-      .eq("id", params.id);
-
-    if (updateError) throw updateError;
-
-    // Fetch updated challenge
-    const { data: updatedChallenge, error: fetchUpdatedError } = await supabase
-      .from("challenges")
-      .select(`
-        *,
-        creator:creator_id(id, username, avatar_url),
-        participants:challenge_participants(
-          user:profiles(
-            id,
-            username,
-            avatar_url
-          ),
-          joined_at,
-          progress,
-          completed
-        ),
-        rewards:challenge_rewards(*),
-        rules:challenge_rules(*),
-        tags:challenge_tags(*)
-      `)
-      .eq("id", params.id)
-      .single();
-
-    if (fetchUpdatedError) throw fetchUpdatedError;
-
-    return NextResponse.json(updatedChallenge);
-  } catch (error) {
-    console.error("Failed to update challenge:", error);
-    return NextResponse.json(
-      { error: "Failed to update challenge" },
-      { status: 500 }
-    );
-  }
-}
-
-export async function DELETE(request: Request, { params }: RouteParams) {
-  try {
-    const supabase = createRouteHandlerClient({ cookies });
-    const { data: { session } } = await supabase.auth.getSession();
-
-    if (!session) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      );
-    }
-
-    // Check if user is the creator
-    const { data: challenge, error: fetchError } = await supabase
-      .from("challenges")
-      .select("creator_id")
-      .eq("id", params.id)
-      .single();
-
-    if (fetchError) throw fetchError;
-
-    if (challenge.creator_id !== session.user.id) {
-      return NextResponse.json(
-        { error: "Only the creator can delete the challenge" },
-        { status: 403 }
-      );
-    }
-
-    const { error: deleteError } = await supabase
-      .from("challenges")
-      .delete()
-      .eq("id", params.id);
-
-    if (deleteError) throw deleteError;
-
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error("Failed to delete challenge:", error);
-    return NextResponse.json(
-      { error: "Failed to delete challenge" },
+      { error: "An unexpected error occurred", details: error },
       { status: 500 }
     );
   }

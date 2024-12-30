@@ -1,4 +1,4 @@
-# Gamerfie - Game Collection & Progress Tracking Platform
+@# Gamerfie - Game Collection & Progress Tracking Platform
 
 ## Overview
 

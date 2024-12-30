@@ -1,24 +1,44 @@
-import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
-import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
+import { withAuth } from "../../middleware";
+import { withRateLimit } from "../../middleware/rateLimit";
+import { withCache, cacheConfigs } from "../../middleware/cache";
+import { type Profile } from "../../types";
 
-export async function GET(
+interface RouteParams {
+  params: {
+    id: string;
+  };
+}
+
+type HandlerContext = {
+  supabase: any;
+  session: {
+    user: {
+      id: string;
+    };
+  };
+};
+
+interface LeaderboardEntry {
+  rank: number;
+  user_id: string;
+  username: string;
+  avatar_url: string;
+  progress: number;
+  completed: boolean;
+}
+
+interface LeaderboardResponse {
+  challenge_id: string;
+  rankings: LeaderboardEntry[];
+}
+
+const handler = withAuth(async (
   request: Request,
-  { params }: { params: { id: string } }
-) {
+  { params }: RouteParams,
+  { supabase }: HandlerContext
+) => {
   try {
-    const supabase = createRouteHandlerClient({ cookies });
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-
-    if (!session) {
-      return NextResponse.json(
-        { error: "Not authenticated" },
-        { status: 401 }
-      );
-    }
-
     // Get all participants with their progress
     const { data: participants, error: participantsError } = await supabase
       .from("challenge_participants")
@@ -35,6 +55,7 @@ export async function GET(
       .order("progress", { ascending: false });
 
     if (participantsError) {
+      console.error("Error fetching participants:", participantsError);
       return NextResponse.json(
         { error: "Failed to fetch participants", details: participantsError },
         { status: 500 }
@@ -42,7 +63,7 @@ export async function GET(
     }
 
     // Transform and rank participants
-    const rankings = participants.map((participant, index) => ({
+    const rankings: LeaderboardEntry[] = participants.map((participant: any, index: number) => ({
       rank: index + 1,
       user_id: participant.user_id,
       username: participant.user.username,
@@ -51,10 +72,12 @@ export async function GET(
       completed: participant.completed,
     }));
 
-    return NextResponse.json({
+    const response: LeaderboardResponse = {
       challenge_id: params.id,
       rankings,
-    });
+    };
+
+    return NextResponse.json(response);
   } catch (error) {
     console.error("Error fetching leaderboard:", error);
     return NextResponse.json(
@@ -62,4 +85,10 @@ export async function GET(
       { status: 500 }
     );
   }
-} 
+});
+
+// Apply rate limiting and caching middleware
+export const GET = withRateLimit(
+  withCache(handler, cacheConfigs.leaderboard),
+  { maxRequests: 50, windowMs: 60 * 1000 } // 50 requests per minute
+); 

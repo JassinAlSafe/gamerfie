@@ -31,6 +31,16 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useToast } from "@/components/ui/use-toast";
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+
+const goalTypes = [
+  "complete_games",
+  "achieve_trophies",
+  "play_time",
+  "review_games",
+  "score_points",
+  "reach_level",
+] as const;
 
 const createChallengeSchema = z
   .object({
@@ -50,26 +60,27 @@ const createChallengeSchema = z
         "Start date cannot be in the past"
       ),
     end_date: z.date(),
-    goal_type: z.enum([
-      "complete_games",
-      "achieve_trophies",
-      "play_time",
-      "review_games",
-      "score_points",
-    ]),
-    goal_target: z.number().min(1, "Target must be at least 1"),
+    goals: z
+      .array(
+        z.object({
+          type: z.enum(goalTypes),
+          target: z.number().min(1, "Target must be at least 1"),
+          description: z.string().optional(),
+        })
+      )
+      .min(1, "At least one goal is required")
+      .max(5, "Maximum 5 goals allowed"),
+    min_participants: z.number().min(2, "Must allow at least 2 participants"),
     max_participants: z
       .number()
       .min(2, "Must allow at least 2 participants")
       .optional(),
-    requirements: z
-      .object({
-        genre: z.string().optional(),
-        platform: z.string().optional(),
-        minRating: z.number().optional(),
-        releaseYear: z.number().optional(),
-      })
-      .optional(),
+    requirements: z.object({
+      genre: z.string().optional(),
+      platform: z.string().optional(),
+      minRating: z.number().optional(),
+      releaseYear: z.number().optional(),
+    }),
     rewards: z
       .array(
         z.object({
@@ -89,9 +100,28 @@ const createChallengeSchema = z
       message: "End date must be after start date",
       path: ["end_date"],
     }
+  )
+  .refine(
+    (data) => {
+      if (data.type === "competitive" && !data.max_participants) {
+        return false;
+      }
+      return true;
+    },
+    {
+      message:
+        "Competitive challenges must have a maximum number of participants",
+      path: ["max_participants"],
+    }
   );
 
 type CreateChallengeForm = z.infer<typeof createChallengeSchema>;
+
+interface Goal {
+  type: (typeof goalTypes)[number];
+  target: number;
+  description?: string;
+}
 
 interface Reward {
   type: "badge" | "points" | "title";
@@ -100,14 +130,19 @@ interface Reward {
 }
 
 interface CreateChallengeProps {
-  onSubmit: (data: CreateChallengeForm) => Promise<void>;
+  onSubmit?: (data: CreateChallengeForm) => Promise<void>;
 }
 
 export function CreateChallenge({ onSubmit }: CreateChallengeProps) {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [goals, setGoals] = useState<Goal[]>([]);
   const [rewards, setRewards] = useState<Reward[]>([]);
   const [rules, setRules] = useState<string[]>([]);
+  const [newGoal, setNewGoal] = useState<Goal>({
+    type: "complete_games",
+    target: 1,
+  });
   const [newReward, setNewReward] = useState<Reward>({
     type: "badge",
     name: "",
@@ -125,17 +160,36 @@ export function CreateChallenge({ onSubmit }: CreateChallengeProps) {
     resolver: zodResolver(createChallengeSchema),
     defaultValues: {
       type: "competitive",
-      goal_type: "complete_games",
+      min_participants: 2,
       requirements: {
         genre: "",
         platform: "",
         minRating: undefined,
         releaseYear: undefined,
       },
+      goals: [],
       rewards: [],
       rules: [],
     },
   });
+
+  const handleAddGoal = () => {
+    if (newGoal.target > 0) {
+      const updatedGoals = [...goals, { ...newGoal }];
+      setGoals(updatedGoals);
+      setValue("goals", updatedGoals);
+      setNewGoal({
+        type: "complete_games",
+        target: 1,
+      });
+    }
+  };
+
+  const handleRemoveGoal = (index: number) => {
+    const updatedGoals = goals.filter((_, i) => i !== index);
+    setGoals(updatedGoals);
+    setValue("goals", updatedGoals);
+  };
 
   const handleAddReward = () => {
     if (newReward.name.trim() && newReward.description.trim()) {
@@ -174,22 +228,41 @@ export function CreateChallenge({ onSubmit }: CreateChallengeProps) {
   const onFormSubmit = async (data: CreateChallengeForm) => {
     try {
       setIsSubmitting(true);
-      console.log("Submitting challenge data:", {
+      const supabase = createClientComponentClient();
+
+      // Get the current user's profile
+      const {
+        data: { session },
+        error: sessionError,
+      } = await supabase.auth.getSession();
+      if (sessionError) throw sessionError;
+      if (!session) throw new Error("No session found");
+
+      const { data: profile, error: profileError } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("id", session.user.id)
+        .single();
+
+      if (profileError) throw profileError;
+      if (!profile) throw new Error("No profile found");
+
+      // Prepare the challenge data
+      const challengeData = {
         ...data,
-        rewards: rewards,
-        rules: rules,
-      });
+        creator_id: profile.id,
+        status: "upcoming" as const,
+        requirements: data.requirements || {},
+      };
+
+      console.log("Submitting challenge data:", challengeData);
 
       const response = await fetch("/api/challenges", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          ...data,
-          rewards: rewards,
-          rules: rules,
-        }),
+        body: JSON.stringify(challengeData),
       });
 
       const result = await response.json();
@@ -203,8 +276,8 @@ export function CreateChallenge({ onSubmit }: CreateChallengeProps) {
         description: "Challenge created successfully!",
       });
 
-      // Redirect to the challenges page
-      window.location.href = "/challenges";
+      // Redirect to the profile challenges page
+      window.location.href = "/profile/challenges";
     } catch (error) {
       console.error("Error creating challenge:", error);
       toast({
@@ -224,7 +297,7 @@ export function CreateChallenge({ onSubmit }: CreateChallengeProps) {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <Link
-          href="/challenges"
+          href="/profile/challenges"
           className="flex items-center gap-2 text-gray-400 hover:text-purple-400 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
@@ -357,54 +430,108 @@ export function CreateChallenge({ onSubmit }: CreateChallengeProps) {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-200">
-                    Goal Type
-                  </label>
-                  <Select
-                    value={watch("goal_type")}
-                    onValueChange={(value) =>
-                      setValue("goal_type", value as any)
-                    }
-                  >
-                    <SelectTrigger className="bg-gray-800/30 border-gray-700/30 h-9 focus:border-purple-500/50">
-                      <SelectValue placeholder="Select goal" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="complete_games">
-                        Complete Games
-                      </SelectItem>
-                      <SelectItem value="achieve_trophies">
-                        Achieve Trophies
-                      </SelectItem>
-                      <SelectItem value="play_time">Play Time</SelectItem>
-                      <SelectItem value="review_games">Review Games</SelectItem>
-                      <SelectItem value="score_points">Score Points</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  {errors.goal_type && (
+              {/* Goals Section */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Target className="w-5 h-5 text-purple-400" />
+                    <h2 className="text-lg font-semibold">Goals</h2>
+                  </div>
+                  {errors.goals && (
                     <p className="text-sm text-red-400">
-                      {errors.goal_type.message}
+                      {errors.goals.message}
                     </p>
                   )}
                 </div>
 
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <Select
+                      value={newGoal.type}
+                      onValueChange={(value) =>
+                        setNewGoal({
+                          ...newGoal,
+                          type: value as (typeof goalTypes)[number],
+                        })
+                      }
+                    >
+                      <SelectTrigger className="bg-gray-800/30 border-gray-700/30 h-9 focus:border-purple-500/50">
+                        <SelectValue placeholder="Select goal type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {goalTypes.map((type) => (
+                          <SelectItem key={type} value={type}>
+                            {type
+                              .replace("_", " ")
+                              .replace(/\b\w/g, (l) => l.toUpperCase())}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Input
+                      type="number"
+                      placeholder="Target value"
+                      value={newGoal.target}
+                      onChange={(e) =>
+                        setNewGoal({
+                          ...newGoal,
+                          target: parseInt(e.target.value) || 1,
+                        })
+                      }
+                      className="bg-gray-800/30 border-gray-700/30 h-9 focus:border-purple-500/50"
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Goal description (optional)"
+                      value={newGoal.description || ""}
+                      onChange={(e) =>
+                        setNewGoal({
+                          ...newGoal,
+                          description: e.target.value,
+                        })
+                      }
+                      className="bg-gray-800/30 border-gray-700/30 h-9 focus:border-purple-500/50"
+                    />
+                    <Button
+                      type="button"
+                      onClick={handleAddGoal}
+                      variant="outline"
+                      size="sm"
+                      className="shrink-0"
+                    >
+                      Add
+                    </Button>
+                  </div>
+                </div>
+
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-200">
-                    Target
-                  </label>
-                  <Input
-                    type="number"
-                    placeholder="e.g., 100"
-                    className="bg-gray-800/30 border-gray-700/30 h-9 focus:border-purple-500/50"
-                    {...register("goal_target", { valueAsNumber: true })}
-                  />
-                  {errors.goal_target && (
-                    <p className="text-sm text-red-400">
-                      {errors.goal_target.message}
-                    </p>
-                  )}
+                  {goals.map((goal, index) => (
+                    <div
+                      key={index}
+                      className="flex items-center justify-between bg-gray-800/30 rounded-md p-2"
+                    >
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline" className="capitalize">
+                          {goal.type.replace("_", " ")}
+                        </Badge>
+                        <span className="font-medium">{goal.target}</span>
+                        {goal.description && (
+                          <span className="text-sm text-gray-400">
+                            - {goal.description}
+                          </span>
+                        )}
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleRemoveGoal(index)}
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
@@ -504,11 +631,6 @@ export function CreateChallenge({ onSubmit }: CreateChallengeProps) {
                       </Button>
                     </div>
                   ))}
-                  {errors.rewards && (
-                    <p className="text-sm text-red-400">
-                      {errors.rewards.message}
-                    </p>
-                  )}
                 </div>
               </div>
 
