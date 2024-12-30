@@ -12,12 +12,9 @@ import {
   Users,
   Trophy,
   Star,
-  Activity,
-  Sparkles,
   Zap,
   BarChart3,
 } from "lucide-react";
-import { AnimatedCard } from "@/components/ui/animated-card";
 import { TracingBeam } from "@/components/ui/tracing-beam";
 import { HoverEffect } from "@/components/ui/card-hover-effect";
 import { TextGenerateEffect } from "@/components/ui/text-generate-effect";
@@ -80,7 +77,6 @@ export default function HomePage() {
       {/* Background Effects */}
       <div className="absolute inset-0">
         <SparklesCore
-          id="tsparticlesfullpage"
           background="transparent"
           minSize={0.6}
           maxSize={1.4}
@@ -115,7 +111,7 @@ export default function HomePage() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.4 }}
-                className="flex flex-col sm:flex-row gap-4 justify-center mb-24"
+                className="flex flex-col sm:flex-row gap-4 justify-center mb-16"
               >
                 <Link href="/explore">
                   <Button
@@ -138,7 +134,7 @@ export default function HomePage() {
               </motion.div>
 
               {/* Stats Section */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-32">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-16">
                 {stats.map((stat, index) => (
                   <motion.div
                     key={stat.label}
@@ -166,7 +162,23 @@ export default function HomePage() {
               <h2 className="text-3xl md:text-4xl font-bold text-center text-white mb-12">
                 Everything You Need
               </h2>
-              <HoverEffect items={features} />
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {features.map((feature) => (
+                  <HoverEffect key={feature.title}>
+                    <Link href={feature.link} className="block p-8">
+                      <div className="flex flex-col items-center text-center">
+                        {feature.icon}
+                        <h3 className="mt-4 text-xl font-semibold text-white">
+                          {feature.title}
+                        </h3>
+                        <p className="mt-2 text-gray-400">
+                          {feature.description}
+                        </p>
+                      </div>
+                    </Link>
+                  </HoverEffect>
+                ))}
+              </div>
             </motion.div>
           </div>
         </TracingBeam>

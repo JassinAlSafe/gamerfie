@@ -68,6 +68,7 @@ interface ChallengesState {
   activeChallenges: Challenge[];
   upcomingChallenges: Challenge[];
   completedChallenges: Challenge[];
+  allChallenges: Challenge[];
   isLoading: boolean;
   filter: "all" | ChallengeType;
   statusFilter: "all" | ChallengeStatus;
@@ -79,6 +80,7 @@ interface ChallengesState {
   fetchChallenges: (supabase: SupabaseClient) => Promise<void>;
   fetchActiveChallenges: (supabase: SupabaseClient) => Promise<void>;
   fetchUpcomingChallenges: (supabase: SupabaseClient) => Promise<void>;
+  fetchAllChallenges: (supabase: SupabaseClient) => Promise<void>;
 }
 
 export const useChallengesStore = create<ChallengesState>((set, get) => ({
@@ -87,6 +89,7 @@ export const useChallengesStore = create<ChallengesState>((set, get) => ({
   activeChallenges: [],
   upcomingChallenges: [],
   completedChallenges: [],
+  allChallenges: [],
   isLoading: false,
   filter: "all",
   statusFilter: "all",
@@ -131,6 +134,41 @@ export const useChallengesStore = create<ChallengesState>((set, get) => ({
     });
 
     set({ filteredChallenges: filtered });
+  },
+
+  fetchAllChallenges: async (supabase) => {
+    try {
+      set({ isLoading: true });
+
+      const { data: challenges, error } = await supabase
+        .from("challenges")
+        .select(`
+          *,
+          creator:creator_id(
+            id,
+            username,
+            avatar_url
+          ),
+          participants:challenge_participants(
+            user:user_id(
+              id,
+              username,
+              avatar_url
+            )
+          )
+        `)
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        console.error("Error fetching all challenges:", error);
+        throw error;
+      }
+
+      set({ allChallenges: challenges || [], isLoading: false });
+    } catch (error) {
+      console.error("Error in fetchAllChallenges:", error);
+      set({ isLoading: false });
+    }
   },
 
   fetchChallenges: async (supabase) => {
