@@ -32,6 +32,7 @@ import Link from "next/link";
 import { useToast } from "@/components/ui/use-toast";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import Image from "next/image";
+import { useRouter } from "next/router";
 
 const goalTypes = [
   "complete_games",
@@ -151,6 +152,7 @@ export function CreateChallenge({ onSubmit }: CreateChallengeProps) {
   const [newRule, setNewRule] = useState("");
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const router = useRouter();
 
   const {
     register,
@@ -327,7 +329,7 @@ export function CreateChallenge({ onSubmit }: CreateChallengeProps) {
       });
 
       // Redirect to the profile challenges page
-      window.location.href = "/profile/challenges";
+      router.push("/profile/challenges");
     } catch (error) {
       console.error("Error creating challenge:", error);
       toast({
