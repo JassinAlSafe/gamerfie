@@ -17,7 +17,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { formatDistanceToNow } from "date-fns";
 import Link from "next/link";
 import {
-  Trophy,
   Users,
   Calendar,
   ChevronRight,
@@ -25,10 +24,14 @@ import {
   Loader2,
   Gamepad2,
   Target,
-  Filter,
 } from "lucide-react";
+import Image from "next/image";
 
 type BadgeVariant = "default" | "secondary" | "destructive" | "outline";
+
+console.log(
+  "Rendering ChallengeList component from components/Challenges/ChallengeList.tsx"
+);
 
 export function ChallengeList() {
   const { challenges, isLoading, error, fetchChallenges } =
@@ -43,6 +46,10 @@ export function ChallengeList() {
   useEffect(() => {
     fetchChallenges();
   }, [fetchChallenges]);
+
+  useEffect(() => {
+    console.log("All challenges:", challenges);
+  }, [challenges]);
 
   const getStatusVariant = (status: ChallengeStatus): BadgeVariant => {
     switch (status) {
@@ -107,9 +114,9 @@ export function ChallengeList() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-h-[calc(100vh-200px)] overflow-y-auto">
       {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-3">
+      <div className="flex flex-col sm:flex-row gap-3 sticky top-0 bg-background z-10 pb-4">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
           <Input
@@ -168,100 +175,122 @@ export function ChallengeList() {
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-4">
-          {filteredChallenges.map((challenge) => (
-            <Link key={challenge.id} href={`/challenges/${challenge.id}`}>
-              <Card className="group p-6 bg-gray-800/50 hover:bg-gray-800/80 border-gray-700/50 hover:border-purple-500/50 transition-all duration-300">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="space-y-3 flex-1">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <Gamepad2 className="w-5 h-5 text-purple-400" />
-                        <h2 className="text-xl font-semibold group-hover:text-purple-400 transition-colors">
-                          {challenge.title}
-                        </h2>
-                        <Badge
-                          variant={
-                            challenge.type === "competitive"
-                              ? "default"
-                              : "secondary"
-                          }
-                          className="bg-purple-500/10 text-purple-400 border-purple-500/20"
-                        >
-                          {challenge.type}
-                        </Badge>
-                        <Badge variant={getStatusVariant(challenge.status)}>
-                          {challenge.status}
-                        </Badge>
-                      </div>
-                      <p className="text-gray-400 line-clamp-2">
-                        {challenge.description}
-                      </p>
-                    </div>
+          {filteredChallenges.map((challenge) => {
+            console.log("Challenge image data:", {
+              id: challenge.id,
+              title: challenge.title,
+              cover_url: challenge.cover_url,
+              using_fallback: !challenge.cover_url,
+            });
 
-                    <div className="flex items-center gap-6 text-sm text-gray-400">
-                      <div className="flex items-center gap-1">
-                        <Target className="w-4 h-4 text-purple-400" />
-                        <span>
-                          {challenge.goal?.target || 0}{" "}
-                          {challenge.goal?.type || "complete_games"}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Users className="w-4 h-4 text-purple-400" />
-                        <span>
-                          {challenge.participants?.length || 0} participants
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Calendar className="w-4 h-4 text-purple-400" />
-                        <span>
-                          {challenge.status === "upcoming"
-                            ? `Starts ${formatDistanceToNow(
-                                new Date(challenge.start_date),
-                                { addSuffix: true }
-                              )}`
-                            : `Ends ${formatDistanceToNow(
-                                new Date(challenge.end_date),
-                                { addSuffix: true }
-                              )}`}
-                        </span>
-                      </div>
-                    </div>
-
-                    {challenge.type === "competitive" && (
-                      <div className="flex items-center gap-4">
-                        <div className="flex -space-x-2">
-                          {challenge.participants
-                            ?.slice(0, 3)
-                            .map((participant) => (
-                              <Avatar
-                                key={`${challenge.id}-participant-${participant.user_id}`}
-                                className="border-2 border-gray-900"
-                              >
-                                <AvatarImage src={participant.avatar_url} />
-                                <AvatarFallback>
-                                  {participant.username
-                                    ? participant.username
-                                        .slice(0, 2)
-                                        .toUpperCase()
-                                    : "??"}
-                                </AvatarFallback>
-                              </Avatar>
-                            ))}
-                        </div>
-                        {(challenge.participants?.length || 0) > 3 && (
-                          <span className="text-sm text-gray-400">
-                            +{(challenge.participants?.length || 0) - 3} more
-                          </span>
-                        )}
-                      </div>
-                    )}
+            return (
+              <Link key={challenge.id} href={`/challenges/${challenge.id}`}>
+                <Card className="group hover:bg-gray-800/50 transition-colors">
+                  <div className="relative h-48 rounded-t-lg overflow-hidden">
+                    <Image
+                      src={
+                        challenge.cover_url ||
+                        "/images/placeholders/game-cover.jpg"
+                      }
+                      alt={challenge.title}
+                      fill
+                      className="object-cover"
+                      unoptimized
+                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                    />
                   </div>
-                  <ChevronRight className="h-5 w-5 text-gray-500 group-hover:text-purple-400 transition-colors" />
-                </div>
-              </Card>
-            </Link>
-          ))}
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="space-y-3 flex-1">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <Gamepad2 className="w-5 h-5 text-purple-400" />
+                          <h2 className="text-xl font-semibold group-hover:text-purple-400 transition-colors">
+                            {challenge.title}
+                          </h2>
+                          <Badge
+                            variant={
+                              challenge.type === "competitive"
+                                ? "default"
+                                : "secondary"
+                            }
+                            className="bg-purple-500/10 text-purple-400 border-purple-500/20"
+                          >
+                            {challenge.type}
+                          </Badge>
+                          <Badge variant={getStatusVariant(challenge.status)}>
+                            {challenge.status}
+                          </Badge>
+                        </div>
+                        <p className="text-gray-400 line-clamp-2">
+                          {challenge.description}
+                        </p>
+                      </div>
+
+                      <div className="flex items-center gap-6 text-sm text-gray-400">
+                        <div className="flex items-center gap-1">
+                          <Target className="w-4 h-4 text-purple-400" />
+                          <span>
+                            {challenge.goals?.[0]?.target || 0}{" "}
+                            {challenge.goals?.[0]?.type || "complete_games"}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Users className="w-4 h-4 text-purple-400" />
+                          <span>
+                            {challenge.participants?.length || 0} participants
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Calendar className="w-4 h-4 text-purple-400" />
+                          <span>
+                            {challenge.status === "upcoming"
+                              ? `Starts ${formatDistanceToNow(
+                                  new Date(challenge.start_date),
+                                  { addSuffix: true }
+                                )}`
+                              : `Ends ${formatDistanceToNow(
+                                  new Date(challenge.end_date),
+                                  { addSuffix: true }
+                                )}`}
+                          </span>
+                        </div>
+                      </div>
+
+                      {challenge.type === "competitive" && (
+                        <div className="flex items-center gap-4">
+                          <div className="flex -space-x-2">
+                            {challenge.participants
+                              ?.slice(0, 3)
+                              .map((participant) => (
+                                <Avatar
+                                  key={`${challenge.id}-participant-${participant.user_id}`}
+                                  className="border-2 border-gray-900"
+                                >
+                                  <AvatarImage src={participant.avatar_url} />
+                                  <AvatarFallback>
+                                    {participant.username
+                                      ? participant.username
+                                          .slice(0, 2)
+                                          .toUpperCase()
+                                      : "??"}
+                                  </AvatarFallback>
+                                </Avatar>
+                              ))}
+                          </div>
+                          {(challenge.participants?.length || 0) > 3 && (
+                            <span className="text-sm text-gray-400">
+                              +{(challenge.participants?.length || 0) - 3} more
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                    <ChevronRight className="h-5 w-5 text-gray-500 group-hover:text-purple-400 transition-colors" />
+                  </div>
+                </Card>
+              </Link>
+            );
+          })}
         </div>
       )}
     </div>

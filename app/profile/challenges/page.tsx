@@ -159,8 +159,14 @@ export default function UserChallengesPage() {
                   name: challenge.creator?.username || "Unknown",
                   avatar: challenge.creator?.avatar_url || undefined,
                 }}
-                coverImage="/images/challenge-default-cover.jpg"
-                participantCount={challenge.participants?.length || 0}
+                coverImage={
+                  challenge.cover_url || "/images/placeholders/game-cover.jpg"
+                }
+                participantCount={
+                  challenge.participant_count ||
+                  challenge.participants?.length ||
+                  0
+                }
                 participantAvatars={
                   challenge.participants
                     ?.slice(0, 3)
@@ -201,8 +207,14 @@ export default function UserChallengesPage() {
                 name: challenge.creator?.username || "Unknown",
                 avatar: challenge.creator?.avatar_url || undefined,
               }}
-              coverImage="/images/challenge-default-cover.jpg"
-              participantCount={challenge.participants?.length || 0}
+              coverImage={
+                challenge.cover_url || "/images/placeholders/game-cover.jpg"
+              }
+              participantCount={
+                challenge.participant_count ||
+                challenge.participants?.length ||
+                0
+              }
               participantAvatars={
                 challenge.participants
                   ?.slice(0, 3)
@@ -264,7 +276,7 @@ export default function UserChallengesPage() {
               </TabsTrigger>
             </TabsList>
             <TabsContent value="yours" className="flex-1 relative">
-              <ScrollArea className="absolute inset-0 pr-4">
+              <ScrollArea className="h-[calc(100vh-220px)]">
                 <div className="space-y-12 pb-8">
                   {renderChallengeSection("active")}
                   {renderChallengeSection("upcoming")}
@@ -273,7 +285,7 @@ export default function UserChallengesPage() {
               </ScrollArea>
             </TabsContent>
             <TabsContent value="all" className="flex-1 relative">
-              <ScrollArea className="absolute inset-0 pr-4">
+              <ScrollArea className="h-[calc(100vh-220px)]">
                 <div className="pb-8">{renderAllChallenges()}</div>
               </ScrollArea>
             </TabsContent>

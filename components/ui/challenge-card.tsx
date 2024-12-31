@@ -29,7 +29,7 @@ export function ChallengeCard({
   title,
   description,
   organizer,
-  coverImage = "/images/challenge-default-cover.jpg",
+  coverImage = "/images/placeholders/game-cover.jpg",
   participantCount = 0,
   participantAvatars = [],
   onAction,

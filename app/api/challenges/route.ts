@@ -194,7 +194,8 @@ export async function POST(request: Request) {
       max_participants: body.max_participants || null,
       creator_id: session.user.id,
       created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
+      updated_at: new Date().toISOString(),
+      cover_url: body.cover_url,
     };
 
     const { data: challenge, error: challengeError } = await supabase

@@ -20,18 +20,18 @@ import { Badge } from "@/components/ui/badge";
 import {
   Trophy,
   Target,
-  Calendar,
-  Users,
   Gamepad2,
   Flag,
   Plus,
   X,
   Loader2,
   ArrowLeft,
+  Upload,
 } from "lucide-react";
 import Link from "next/link";
 import { useToast } from "@/components/ui/use-toast";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import Image from "next/image";
 
 const goalTypes = [
   "complete_games",
@@ -149,6 +149,8 @@ export function CreateChallenge({ onSubmit }: CreateChallengeProps) {
     description: "",
   });
   const [newRule, setNewRule] = useState("");
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   const {
     register,
@@ -225,9 +227,53 @@ export function CreateChallenge({ onSubmit }: CreateChallengeProps) {
     setValue("rules", updatedRules);
   };
 
+  const uploadImage = async (file: File): Promise<string> => {
+    const supabase = createClientComponentClient();
+    const fileExt = file.name.split(".").pop();
+    const fileName = `${Math.random()}.${fileExt}`;
+    const filePath = `challenge-covers/${fileName}`;
+
+    console.log("Uploading image:", { fileName, filePath });
+
+    const { error: uploadError, data } = await supabase.storage
+      .from("challenges")
+      .upload(filePath, file);
+
+    if (uploadError) {
+      console.error("Upload error:", uploadError);
+      throw uploadError;
+    }
+
+    const {
+      data: { publicUrl },
+    } = supabase.storage.from("challenges").getPublicUrl(filePath);
+
+    console.log("Generated public URL:", publicUrl);
+    return publicUrl;
+  };
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setImageFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const onFormSubmit = async (data: CreateChallengeForm) => {
     try {
       setIsSubmitting(true);
+
+      // Upload image first if exists
+      let coverUrl = null;
+      if (imageFile) {
+        coverUrl = await uploadImage(imageFile);
+      }
+
       const supabase = createClientComponentClient();
 
       // Get the current user's profile
@@ -253,6 +299,10 @@ export function CreateChallenge({ onSubmit }: CreateChallengeProps) {
         creator_id: profile.id,
         status: "upcoming" as const,
         requirements: data.requirements || {},
+        cover_url: coverUrl,
+        goals,
+        rewards,
+        rules,
       };
 
       console.log("Submitting challenge data:", challengeData);
@@ -769,6 +819,50 @@ export function CreateChallenge({ onSubmit }: CreateChallengeProps) {
                   </p>
                 )}
               </div>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-gray-200">
+              Challenge Cover Image
+            </label>
+            <div className="flex items-center gap-4">
+              {imagePreview ? (
+                <div className="relative w-full h-48 rounded-lg overflow-hidden">
+                  <Image
+                    src={imagePreview}
+                    alt="Challenge cover preview"
+                    fill
+                    className="object-cover"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setImageFile(null);
+                      setImagePreview(null);
+                    }}
+                    className="absolute top-2 right-2 p-1.5 bg-black/50 rounded-full hover:bg-black/70 transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              ) : (
+                <label className="flex flex-col items-center justify-center w-full h-48 border-2 border-dashed border-gray-700/50 rounded-lg hover:border-purple-500/50 transition-colors cursor-pointer bg-gray-800/30">
+                  <Upload className="w-6 h-6 text-gray-400" />
+                  <span className="text-sm text-gray-400 mt-2">
+                    Upload cover image
+                  </span>
+                  <span className="text-xs text-gray-500 mt-1">
+                    Recommended size: 1200x630px
+                  </span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageChange}
+                    className="hidden"
+                  />
+                </label>
+              )}
             </div>
           </div>
 

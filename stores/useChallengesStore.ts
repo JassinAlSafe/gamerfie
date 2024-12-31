@@ -140,31 +140,35 @@ export const useChallengesStore = create<ChallengesState>((set, get) => ({
     try {
       set({ isLoading: true });
 
-      const { data: challenges, error } = await supabase
+      // First query: Get challenges with basic creator info
+      const { data: challenges, error: challengesError } = await supabase
         .from("challenges")
         .select(`
           *,
-          creator:creator_id(
+          creator:creator_id (
             id,
             username,
             avatar_url
-          ),
-          participants:challenge_participants(
-            user:user_id(
-              id,
-              username,
-              avatar_url
-            )
           )
         `)
         .order("created_at", { ascending: false });
 
-      if (error) {
-        console.error("Error fetching all challenges:", error);
-        throw error;
-      }
+      if (challengesError) throw challengesError;
 
-      set({ allChallenges: challenges || [], isLoading: false });
+      // Second query: Get participant counts using a raw count query
+      const { count: participantCounts, error: countsError } = await supabase
+        .from('challenge_participants')
+        .select('challenge_id', { count: 'exact' });
+
+      if (countsError) throw countsError;
+
+      // Combine the data
+      const transformedChallenges = challenges?.map(challenge => ({
+        ...challenge,
+        participant_count: participantCounts || 0
+      }));
+
+      set({ allChallenges: transformedChallenges, isLoading: false });
     } catch (error) {
       console.error("Error in fetchAllChallenges:", error);
       set({ isLoading: false });
@@ -182,21 +186,15 @@ export const useChallengesStore = create<ChallengesState>((set, get) => ({
     console.log("Fetching challenges for user:", session.user.id);
 
     try {
-      // First, check if the user has any challenges
-      const { count, error: countError } = await supabase
+      // First query: Get basic challenge participation info
+      const { data: participations, error: participationsError } = await supabase
         .from("challenge_participants")
-        .select("*", { count: "exact", head: true })
+        .select("challenge_id")
         .eq("user_id", session.user.id);
 
-      if (countError) {
-        console.error("Error checking challenge count:", countError);
-        throw countError;
-      }
+      if (participationsError) throw participationsError;
 
-      console.log("Number of challenges found:", count);
-
-      if (count === 0) {
-        console.log("No challenges found for user");
+      if (!participations?.length) {
         set({
           challenges: [],
           activeChallenges: [],
@@ -207,58 +205,66 @@ export const useChallengesStore = create<ChallengesState>((set, get) => ({
         return;
       }
 
-      // Simplified query to get just the basic challenge data first
-      const { data: challenges, error } = await supabase
-        .from("challenge_participants")
+      // Second query: Get full challenge details
+      const { data: challenges, error: challengesError } = await supabase
+        .from("challenges")
         .select(`
-          challenge:challenge_id(
-            *,
-            creator:creator_id(
-              id,
-              username,
-              avatar_url
-            )
+          *,
+          creator:creator_id (
+            id,
+            username,
+            avatar_url
           )
         `)
-        .eq("user_id", session.user.id)
-        .returns<ChallengeResponse[]>();
+        .in(
+          "id",
+          participations.map((p) => p.challenge_id)
+        );
 
-      if (error) {
-        console.error("Error fetching challenges:", error);
-        throw error;
-      }
+      if (challengesError) throw challengesError;
 
-      console.log("Raw challenges data:", challenges);
+      // Third query: Get participant info separately
+      const { data: participants, error: participantsError } = await supabase
+        .from("challenge_participants")
+        .select(`
+          challenge_id,
+          user:user_id (
+            id,
+            username,
+            avatar_url
+          )
+        `)
+        .in(
+          "challenge_id",
+          participations.map((p) => p.challenge_id)
+        );
 
-      const userChallenges = challenges?.map(c => c.challenge) || [];
-      console.log("Processed user challenges:", userChallenges);
+      if (participantsError) throw participantsError;
 
+      // Combine the data
+      const userChallenges = challenges?.map(challenge => ({
+        ...challenge,
+        participants: participants?.filter(p => p.challenge_id === challenge.id) || [],
+        participant_count: participants?.filter(p => p.challenge_id === challenge.id).length || 0
+      })) || [];
+
+      // Filter challenges by status
       const now = new Date();
-      const active = userChallenges.filter((c) => {
+      const active = userChallenges.filter(c => {
         const startDate = new Date(c.start_date);
         const endDate = new Date(c.end_date);
-        const isActive = startDate <= now && endDate >= now;
-        console.log(`Challenge ${c.id} active status:`, isActive, { startDate, endDate, now });
-        return isActive;
+        return startDate <= now && endDate >= now;
       });
 
-      const upcoming = userChallenges.filter((c) => {
+      const upcoming = userChallenges.filter(c => {
         const startDate = new Date(c.start_date);
-        const isUpcoming = startDate > now;
-        console.log(`Challenge ${c.id} upcoming status:`, isUpcoming, { startDate, now });
-        return isUpcoming;
+        return startDate > now;
       });
 
-      const completed = userChallenges.filter((c) => {
+      const completed = userChallenges.filter(c => {
         const endDate = new Date(c.end_date);
-        const isCompleted = endDate < now;
-        console.log(`Challenge ${c.id} completed status:`, isCompleted, { endDate, now });
-        return isCompleted;
+        return endDate < now;
       });
-
-      console.log("Active challenges:", active);
-      console.log("Upcoming challenges:", upcoming);
-      console.log("Completed challenges:", completed);
 
       set({
         challenges: userChallenges,

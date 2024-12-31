@@ -52,6 +52,8 @@ export interface Challenge {
   participants?: ChallengeParticipant[];
   rewards?: ChallengeReward[];
   rules?: ChallengeRule[];
+  participant_count?: number;
+  cover_url?: string;
 }
 
 export interface ChallengeTeam {
@@ -82,9 +84,11 @@ export interface TeamInvitation {
 export interface ChallengeParticipant {
   challenge_id: string;
   user_id: string;
+  username: string;
   team_id?: string;
   joined_at: string;
   user?: UserProfile;
+  avatar_url?: string;
 }
 
 export interface ProgressMilestone {
