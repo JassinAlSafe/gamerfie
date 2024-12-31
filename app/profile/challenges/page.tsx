@@ -75,24 +75,9 @@ export default function UserChallengesPage() {
 
   const getActionProps = (challenge: Challenge) => {
     const status = challenge.status as ValidChallengeStatus;
-    switch (status) {
-      case "active":
-        return {
-          onAction: () => router.push(`/profile/challenges/${challenge.id}`),
-        };
-      case "upcoming":
-        return {
-          onAction: () => router.push(`/challenges/${challenge.id}`),
-        };
-      case "completed":
-        return {
-          onAction: () => router.push(`/profile/challenges/${challenge.id}`),
-        };
-      default:
-        return {
-          onAction: () => router.push(`/challenges/${challenge.id}`),
-        };
-    }
+    return {
+      onAction: () => router.push(`/challenges/${challenge.id}`),
+    };
   };
 
   const renderChallengeSection = (status: ValidChallengeStatus) => {

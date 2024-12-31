@@ -13,8 +13,19 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/components/ui/use-toast";
-import { ArrowLeft } from "lucide-react";
+import {
+  ArrowLeft,
+  Target,
+  ScrollText,
+  Trophy,
+  Calendar,
+  Users,
+  User,
+  ChevronRight,
+} from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
+import { cn } from "@/lib/utils";
 
 interface Challenge {
   id: string;
@@ -58,6 +69,7 @@ interface Challenge {
     id: string;
     rule: string;
   }>;
+  cover_url?: string;
 }
 
 interface UserProfile {
@@ -242,180 +254,285 @@ export default function ChallengePage({ params }: { params: { id: string } }) {
   }
 
   return (
-    <div className="container mx-auto py-8">
-      <div className="mb-6">
-        <Link
-          href="/challenges"
-          className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors mb-4"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Back to Challenges
-        </Link>
-        <div className="flex justify-between items-start">
-          <div>
-            <h1 className="text-3xl font-bold mb-2">{challenge.title}</h1>
-            <p className="text-muted-foreground">{challenge.description}</p>
-          </div>
-          <div className="flex gap-2">
-            <Badge
-              variant={
-                challenge.type === "competitive" ? "default" : "secondary"
-              }
-            >
-              {challenge.type}
-            </Badge>
-            <Badge
-              variant={
-                challenge.status === "active"
-                  ? "default"
-                  : challenge.status === "upcoming"
-                  ? "secondary"
-                  : "outline"
-              }
-            >
-              {challenge.status}
-            </Badge>
+    <div className="min-h-screen bg-background">
+      {/* Cover Image Section */}
+      <div className="relative w-full h-[40vh] overflow-hidden">
+        <Image
+          src={challenge.cover_url || "/images/placeholders/game-cover.jpg"}
+          alt={challenge.title}
+          fill
+          className="object-cover"
+          priority
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/25 to-background" />
+
+        {/* Back Button */}
+        <div className="absolute top-6 left-6">
+          <Link
+            href="/challenges"
+            className="flex items-center gap-2 text-white hover:text-primary transition-colors"
+          >
+            <ArrowLeft className="h-5 w-5" />
+            <span>Back to Challenges</span>
+          </Link>
+        </div>
+
+        {/* Title Overlay */}
+        <div className="absolute bottom-0 left-0 right-0 p-8 bg-gradient-to-t from-background to-transparent">
+          <div className="container mx-auto">
+            <div className="flex items-center gap-4 mb-4">
+              <Badge
+                className={cn(
+                  "px-2 py-1",
+                  challenge.status === "active"
+                    ? "bg-emerald-500/10 text-emerald-500"
+                    : challenge.status === "upcoming"
+                    ? "bg-amber-500/10 text-amber-500"
+                    : "bg-blue-500/10 text-blue-500"
+                )}
+              >
+                {challenge.status.charAt(0).toUpperCase() +
+                  challenge.status.slice(1)}
+              </Badge>
+              <Badge
+                className={
+                  challenge.type === "competitive"
+                    ? "bg-purple-500/10 text-purple-500"
+                    : "bg-pink-500/10 text-pink-500"
+                }
+              >
+                {challenge.type.charAt(0).toUpperCase() +
+                  challenge.type.slice(1)}
+              </Badge>
+            </div>
+            <h1 className="text-4xl font-bold text-white mb-2">
+              {challenge.title}
+            </h1>
+            <p className="text-lg text-gray-300">{challenge.description}</p>
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Challenge Details</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <span className="font-semibold">Created by:</span>{" "}
-              {challenge.creator?.username}
-            </div>
-            <div>
-              <span className="font-semibold">Start Date:</span>{" "}
-              {formatDate(challenge.start_date)}
-            </div>
-            <div>
-              <span className="font-semibold">End Date:</span>{" "}
-              {formatDate(challenge.end_date)}
-            </div>
-            <div>
-              <span className="font-semibold">Participants:</span>{" "}
-              {challenge.participants?.length || 0} /{" "}
-              {challenge.max_participants || "∞"}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Goals</CardTitle>
-            <CardDescription>Challenge objectives to complete</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ul className="space-y-2">
-              {challenge.goals?.map((goal) => (
-                <li key={goal.id} className="flex justify-between items-start">
-                  <div>
-                    <Badge variant="outline" className="mb-1">
-                      {goal.type.replace("_", " ")}
-                    </Badge>
-                    <p className="text-sm text-muted-foreground">
-                      {goal.description || `Target: ${goal.target}`}
-                    </p>
-                  </div>
-                  <span className="font-mono">{goal.target}</span>
-                </li>
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Rewards</CardTitle>
-            <CardDescription>What you can earn</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ul className="space-y-4">
-              {challenge.rewards?.map((reward) => (
-                <li key={reward.id}>
-                  <div className="flex items-center gap-2 mb-1">
-                    <Badge variant="outline">{reward.type}</Badge>
-                    <span className="font-semibold">{reward.name}</span>
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    {reward.description}
+      {/* Content Section */}
+      <div className="container mx-auto py-12">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+          {/* Main Content */}
+          <div className="lg:col-span-8 space-y-12">
+            {/* Goals Section */}
+            <div className="bg-secondary/5 rounded-xl p-6 space-y-6">
+              <div className="flex items-center gap-3 pb-4 border-b border-border/40">
+                <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Target className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold">Challenge Goals</h2>
+                  <p className="text-muted-foreground">
+                    What you need to achieve
                   </p>
-                </li>
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
+                </div>
+              </div>
+              <div className="space-y-4">
+                {challenge.goals?.map((goal) => (
+                  <div
+                    key={goal.id}
+                    className="flex items-start gap-4 p-4 bg-background/80 rounded-lg group transition-all hover:shadow-lg hover:shadow-primary/10 hover:bg-background"
+                  >
+                    <div className="space-y-3 w-full">
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-lg font-semibold tracking-tight group-hover:text-primary transition-colors">
+                          {goal.type}
+                        </h4>
+                        <ChevronRight className="h-5 w-5 text-muted-foreground/50 group-hover:text-primary transition-colors" />
+                      </div>
+                      {goal.description && (
+                        <p className="text-base text-muted-foreground leading-relaxed">
+                          {goal.description}
+                        </p>
+                      )}
+                      <p className="text-sm font-medium bg-primary/10 text-primary py-1.5 px-4 rounded-full inline-block">
+                        Target: {goal.target}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Rules</CardTitle>
-            <CardDescription>Challenge guidelines</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ul className="list-disc list-inside space-y-2">
-              {challenge.rules?.map((rule) => (
-                <li key={rule.id} className="text-muted-foreground">
-                  {rule.rule}
-                </li>
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
-
-        <Card className="md:col-span-2">
-          <CardHeader>
-            <CardTitle>Participants</CardTitle>
-            <CardDescription>
-              {challenge.participants?.length || 0} participants joined
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {challenge.participants?.map((participant) => (
-                <div
-                  key={participant.user_id}
-                  className="flex items-center gap-2"
-                >
-                  {participant.user?.avatar_url && (
-                    <img
-                      src={participant.user.avatar_url}
-                      alt={participant.user?.username}
-                      className="w-8 h-8 rounded-full"
-                    />
-                  )}
+            {/* Rules Section */}
+            {challenge.rules && challenge.rules.length > 0 && (
+              <div className="bg-secondary/5 rounded-xl p-6 space-y-6">
+                <div className="flex items-center gap-3 pb-4 border-b border-border/40">
+                  <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                    <ScrollText className="h-5 w-5 text-primary" />
+                  </div>
                   <div>
-                    <p className="font-medium">
-                      {participant.user?.username || "Unknown User"}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      Joined {formatDate(participant.joined_at)}
+                    <h2 className="text-2xl font-bold">Challenge Rules</h2>
+                    <p className="text-muted-foreground">
+                      Guidelines to follow
                     </p>
                   </div>
                 </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+                <ul className="space-y-3 list-none">
+                  {challenge.rules.map((rule) => (
+                    <li
+                      key={rule.id}
+                      className="flex items-start gap-3 p-4 bg-background/80 rounded-lg group transition-all hover:shadow-lg hover:shadow-primary/10 hover:bg-background"
+                    >
+                      <span className="text-primary mt-1 text-lg">•</span>
+                      <span className="group-hover:text-primary transition-colors">
+                        {rule.rule}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
 
-      <div className="mt-8 flex justify-center">
-        {isParticipating() ? (
-          <Button
-            size="lg"
-            onClick={() => router.push(`/profile/challenges/${challenge.id}`)}
-          >
-            View Your Progress
-          </Button>
-        ) : (
-          <Button size="lg" onClick={handleJoinChallenge}>
-            Join Challenge
-          </Button>
-        )}
+          {/* Sidebar */}
+          <div className="lg:col-span-4 space-y-8">
+            {/* Challenge Info Card */}
+            <div className="bg-secondary/5 rounded-xl p-6 space-y-6">
+              <div className="flex items-center gap-3 pb-4 border-b border-border/40">
+                <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Trophy className="h-5 w-5 text-primary" />
+                </div>
+                <h2 className="text-2xl font-bold">Challenge Info</h2>
+              </div>
+              <div className="space-y-4">
+                <div className="p-4 bg-background/80 rounded-lg group transition-all hover:shadow-lg hover:shadow-primary/10 hover:bg-background">
+                  <div className="flex items-start gap-3">
+                    <Calendar className="h-5 w-5 text-primary mt-1" />
+                    <div>
+                      <p className="text-base font-medium text-muted-foreground mb-1">
+                        Duration
+                      </p>
+                      <p className="text-lg group-hover:text-primary transition-colors">
+                        {formatDate(challenge.start_date)} -{" "}
+                        {formatDate(challenge.end_date)}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <div className="p-4 bg-background/80 rounded-lg group transition-all hover:shadow-lg hover:shadow-primary/10 hover:bg-background">
+                  <div className="flex items-start gap-3">
+                    <User className="h-5 w-5 text-primary mt-1" />
+                    <div className="w-full">
+                      <p className="text-base font-medium text-muted-foreground mb-1">
+                        Created by
+                      </p>
+                      <div className="flex items-center gap-2">
+                        {challenge.creator?.avatar_url ? (
+                          <Image
+                            src={challenge.creator.avatar_url}
+                            alt={challenge.creator.username || "Creator"}
+                            width={24}
+                            height={24}
+                            className="rounded-full"
+                          />
+                        ) : (
+                          <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center">
+                            <User className="h-4 w-4 text-primary" />
+                          </div>
+                        )}
+                        <p className="text-lg group-hover:text-primary transition-colors">
+                          {challenge.creator?.username || "Unknown"}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Add Participants List */}
+                <div className="p-4 bg-background/80 rounded-lg group transition-all hover:shadow-lg hover:shadow-primary/10 hover:bg-background">
+                  <div className="flex items-start gap-3">
+                    <Users className="h-5 w-5 text-primary mt-1" />
+                    <div className="w-full">
+                      <div className="flex items-center justify-between mb-3">
+                        <p className="text-base font-medium text-muted-foreground">
+                          Participants
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          {challenge.participants?.length || 0} /{" "}
+                          {challenge.max_participants || "∞"}
+                        </p>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {challenge.participants?.map((participant) => (
+                          <div
+                            key={participant.user_id}
+                            className="flex items-center gap-2 bg-secondary/20 rounded-full pl-1 pr-3 py-1"
+                          >
+                            {participant.user?.avatar_url ? (
+                              <Image
+                                src={participant.user.avatar_url}
+                                alt={
+                                  participant.user?.username || "Participant"
+                                }
+                                width={20}
+                                height={20}
+                                className="rounded-full"
+                              />
+                            ) : (
+                              <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center">
+                                <User className="h-3 w-3 text-primary" />
+                              </div>
+                            )}
+                            <span className="text-sm group-hover:text-primary transition-colors">
+                              {participant.user?.username || "Unknown User"}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {!isParticipating() && challenge.status === "upcoming" && (
+                  <Button
+                    className="w-full text-base py-6 bg-primary hover:bg-primary/90 text-primary-foreground transition-colors mt-4"
+                    onClick={handleJoinChallenge}
+                    disabled={loading}
+                  >
+                    {loading ? "Joining..." : "Join Challenge"}
+                  </Button>
+                )}
+              </div>
+            </div>
+
+            {/* Rewards Card */}
+            {challenge.rewards && challenge.rewards.length > 0 && (
+              <div className="bg-secondary/5 rounded-xl p-6 space-y-6">
+                <div className="flex items-center gap-3 pb-4 border-b border-border/40">
+                  <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                    <Trophy className="h-5 w-5 text-primary" />
+                  </div>
+                  <h2 className="text-2xl font-bold">Rewards</h2>
+                </div>
+                <div className="space-y-4">
+                  {challenge.rewards.map((reward) => (
+                    <div
+                      key={reward.id}
+                      className="p-4 bg-background/80 rounded-lg group transition-all hover:shadow-lg hover:shadow-primary/10 hover:bg-background"
+                    >
+                      <div className="flex items-center justify-between mb-3">
+                        <h4 className="text-lg font-semibold tracking-tight group-hover:text-primary transition-colors">
+                          {reward.name}
+                        </h4>
+                        <Badge className="bg-primary/10 hover:bg-primary/10 text-primary">
+                          {reward.type}
+                        </Badge>
+                      </div>
+                      <p className="text-base text-muted-foreground leading-relaxed">
+                        {reward.description}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );
