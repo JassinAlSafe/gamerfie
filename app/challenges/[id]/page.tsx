@@ -269,7 +269,7 @@ export default function ChallengePage({ params }: { params: { id: string } }) {
         {/* Back Button */}
         <div className="absolute top-6 left-6">
           <Link
-            href="/challenges"
+            href="/profile/challenges"
             className="flex items-center gap-2 text-white hover:text-primary transition-colors"
           >
             <ArrowLeft className="h-5 w-5" />
@@ -340,7 +340,13 @@ export default function ChallengePage({ params }: { params: { id: string } }) {
                     <div className="space-y-3 w-full">
                       <div className="flex items-center justify-between">
                         <h4 className="text-lg font-semibold tracking-tight group-hover:text-primary transition-colors">
-                          {goal.type}
+                          {goal.type
+                            .split("_")
+                            .map(
+                              (word) =>
+                                word.charAt(0).toUpperCase() + word.slice(1)
+                            )
+                            .join(" ")}
                         </h4>
                         <ChevronRight className="h-5 w-5 text-muted-foreground/50 group-hover:text-primary transition-colors" />
                       </div>
@@ -376,12 +382,22 @@ export default function ChallengePage({ params }: { params: { id: string } }) {
                   {challenge.rules.map((rule) => (
                     <li
                       key={rule.id}
-                      className="flex items-start gap-3 p-4 bg-background/80 rounded-lg group transition-all hover:shadow-lg hover:shadow-primary/10 hover:bg-background"
+                      className="flex items-start gap-4 p-4 bg-background/80 rounded-lg group transition-all hover:shadow-lg hover:shadow-primary/10 hover:bg-background"
                     >
-                      <span className="text-primary mt-1 text-lg">•</span>
-                      <span className="group-hover:text-primary transition-colors">
-                        {rule.rule}
-                      </span>
+                      <div className="h-6 w-6 rounded-full bg-primary/10 flex-shrink-0 flex items-center justify-center">
+                        <span className="text-primary text-sm font-medium">
+                          {String(
+                            challenge.rules!.findIndex(
+                              (r) => r.id === rule.id
+                            ) + 1
+                          ).padStart(2, "0")}
+                        </span>
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-base group-hover:text-primary transition-colors leading-relaxed">
+                          {rule.rule}
+                        </p>
+                      </div>
                     </li>
                   ))}
                 </ul>
