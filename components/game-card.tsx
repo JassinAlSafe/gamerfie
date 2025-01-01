@@ -2,13 +2,18 @@
 
 import Image from "next/image";
 import { type ProcessedGame } from "@/types/game";
+import { getCoverImageUrl } from "@/utils/image-utils";
 
 export function GameCard({ game }: { game: ProcessedGame }) {
+  const coverUrl = game.cover_url
+    ? getCoverImageUrl(game.cover_url)
+    : "/placeholder-game.jpg";
+
   return (
     <div className="relative group rounded-lg overflow-hidden border border-white/5 bg-gray-900/50 hover:bg-gray-900/80 transition-all duration-200">
       <div className="relative aspect-[16/9] overflow-hidden">
         <Image
-          src={game.cover_url || "/placeholder-game.jpg"}
+          src={coverUrl}
           alt={game.name}
           fill
           className="object-cover transition-transform duration-200 group-hover:scale-105"

@@ -23,7 +23,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { cn } from "@/lib/utils";
+import { cn, ensureAbsoluteUrl } from "@/lib/utils";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -37,6 +37,7 @@ import { useGamesStore } from "@/stores/useGamesStore";
 import { useDebounce } from "@/hooks/useDebounce";
 import { formatRating } from "@/utils/game-utils";
 import { useSearchParams } from "next/navigation";
+import { useVirtualizer } from "@tanstack/react-virtual";
 
 interface Platform {
   id: number;
@@ -127,6 +128,24 @@ export default function AllGamesPage() {
     queryFn: async () => {
       setLoading(true);
       try {
+        // Try to get from localStorage first
+        const cacheKey = `games-${queryKey.join("-")}`;
+        const cachedData = localStorage.getItem(cacheKey);
+
+        if (cachedData) {
+          const { data: parsedData, timestamp } = JSON.parse(cachedData);
+          const cacheAge = Date.now() - timestamp;
+
+          // Use cache if it's less than 5 minutes old
+          if (cacheAge < 1000 * 60 * 5) {
+            setGames(parsedData.games);
+            setTotalPages(parsedData.totalPages);
+            setTotalGames(parsedData.totalGames);
+            return parsedData;
+          }
+        }
+
+        // Fetch fresh data if no cache or cache is stale
         const params = new URLSearchParams({
           page: currentPage.toString(),
           limit: ITEMS_PER_PAGE.toString(),
@@ -143,11 +162,21 @@ export default function AllGamesPage() {
           const errorData = await response.json();
           throw new Error(errorData.error || "Failed to fetch games");
         }
-        const data = await response.json();
-        setGames(data.games);
-        setTotalPages(data.totalPages);
-        setTotalGames(data.totalGames);
-        return data;
+        const freshData = await response.json();
+
+        // Save to localStorage with timestamp
+        localStorage.setItem(
+          cacheKey,
+          JSON.stringify({
+            data: freshData,
+            timestamp: Date.now(),
+          })
+        );
+
+        setGames(freshData.games);
+        setTotalPages(freshData.totalPages);
+        setTotalGames(freshData.totalGames);
+        return freshData;
       } catch (error) {
         const message =
           error instanceof Error ? error.message : "Failed to fetch games";
@@ -157,8 +186,39 @@ export default function AllGamesPage() {
         setLoading(false);
       }
     },
-    staleTime: 1000 * 60 * 5,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    gcTime: 1000 * 60 * 60 * 24, // 24 hours
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   });
+
+  // Clear old cache entries periodically
+  React.useEffect(() => {
+    const cleanupCache = () => {
+      if (typeof window === "undefined") return;
+
+      const maxAge = 1000 * 60 * 60 * 24; // 24 hours
+      const now = Date.now();
+
+      Object.keys(localStorage).forEach((key) => {
+        if (key.startsWith("games-")) {
+          try {
+            const { timestamp } = JSON.parse(localStorage.getItem(key)!);
+            if (now - timestamp > maxAge) {
+              localStorage.removeItem(key);
+            }
+          } catch (e) {
+            // Remove invalid cache entries
+            localStorage.removeItem(key);
+          }
+        }
+      });
+    };
+
+    cleanupCache();
+    const interval = setInterval(cleanupCache, 1000 * 60 * 60); // Clean up every hour
+    return () => clearInterval(interval);
+  }, []);
 
   // Extract unique platforms and genres from the current games
   const { platforms, genres } = useMemo(() => {
@@ -212,6 +272,15 @@ export default function AllGamesPage() {
     const currentYear = new Date().getFullYear();
     return Array.from({ length: 30 }, (_, i) => currentYear - i);
   }, []);
+
+  const parentRef = React.useRef<HTMLDivElement>(null);
+
+  const rowVirtualizer = useVirtualizer({
+    count: Math.ceil(currentGames.length / 6),
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 300, // Estimate height of each row
+    overscan: 5, // Number of items to render outside of the visible area
+  });
 
   if (error) {
     return (
@@ -458,62 +527,97 @@ export default function AllGamesPage() {
           </div>
         ) : (
           <div className="space-y-8">
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-              {currentGames.map((game: Game, index: number) => (
-                <Link key={game.id} href={`/game/${game.id}`}>
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3, delay: index * 0.05 }}
-                    className="group relative aspect-[3/4] rounded-lg overflow-hidden bg-gray-900/50"
-                  >
-                    {game.cover?.url ? (
-                      <Image
-                        src={game.cover.url}
-                        alt={game.name}
-                        fill
-                        priority={index < 6}
-                        className="object-cover transition-transform duration-300 group-hover:scale-110"
-                        sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 16vw"
-                        quality={90}
-                      />
-                    ) : (
-                      <div className="absolute inset-0 flex items-center justify-center bg-gray-800">
-                        <Gamepad2 className="h-10 w-10 text-gray-600" />
-                      </div>
-                    )}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                      <div className="absolute bottom-0 left-0 right-0 p-4">
-                        <h2 className="text-white text-sm font-semibold line-clamp-2 mb-2">
-                          {game.name}
-                        </h2>
-                        <div className="flex items-center gap-3">
-                          {game.rating && (
-                            <div className="flex items-center text-yellow-400">
-                              <Star className="h-3 w-3 mr-1 fill-current" />
-                              <span className="text-xs">
-                                {Math.round(game.rating)}
-                              </span>
+            <div ref={parentRef} className="h-[800px] overflow-auto">
+              <div
+                style={{
+                  height: `${rowVirtualizer.getTotalSize()}px`,
+                  width: "100%",
+                  position: "relative",
+                }}
+              >
+                {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+                  const rowStart = virtualRow.index * 6;
+                  const rowGames = currentGames.slice(rowStart, rowStart + 6);
+
+                  return (
+                    <div
+                      key={virtualRow.index}
+                      style={{
+                        position: "absolute",
+                        top: 0,
+                        left: 0,
+                        width: "100%",
+                        height: `${virtualRow.size}px`,
+                        transform: `translateY(${virtualRow.start}px)`,
+                      }}
+                      className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4"
+                    >
+                      {rowGames.map((game: Game, index: number) => (
+                        <Link key={game.id} href={`/game/${game.id}`}>
+                          <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.3, delay: index * 0.05 }}
+                            className="group relative aspect-[3/4] rounded-lg overflow-hidden bg-gray-900/50"
+                          >
+                            {game.cover?.url ? (
+                              <Image
+                                src={ensureAbsoluteUrl(game.cover.url)}
+                                alt={game.name}
+                                fill
+                                priority={virtualRow.index === 0 && index < 6}
+                                className="object-cover transition-transform duration-300 group-hover:scale-110"
+                                sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 16vw"
+                                quality={virtualRow.index === 0 ? 90 : 40}
+                                loading={
+                                  virtualRow.index === 0 ? "eager" : "lazy"
+                                }
+                                blurDataURL={`data:image/svg+xml;base64,${Buffer.from(
+                                  '<svg width="40" height="60" xmlns="http://www.w3.org/2000/svg"><rect width="40" height="60" fill="#1f2937"/></svg>'
+                                ).toString("base64")}`}
+                                placeholder="blur"
+                              />
+                            ) : (
+                              <div className="absolute inset-0 flex items-center justify-center bg-gray-800">
+                                <Gamepad2 className="h-10 w-10 text-gray-600" />
+                              </div>
+                            )}
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                              <div className="absolute bottom-0 left-0 right-0 p-4">
+                                <h2 className="text-white text-sm font-semibold line-clamp-2 mb-2">
+                                  {game.name}
+                                </h2>
+                                <div className="flex items-center gap-3">
+                                  {game.rating && (
+                                    <div className="flex items-center text-yellow-400">
+                                      <Star className="h-3 w-3 mr-1 fill-current" />
+                                      <span className="text-xs">
+                                        {Math.round(game.rating)}
+                                      </span>
+                                    </div>
+                                  )}
+                                  {game.total_rating_count && (
+                                    <div className="flex items-center text-gray-400">
+                                      <Users className="h-3 w-3 mr-1" />
+                                      <span className="text-xs">
+                                        {game.total_rating_count > 1000
+                                          ? `${(
+                                              game.total_rating_count / 1000
+                                            ).toFixed(1)}k`
+                                          : game.total_rating_count}
+                                      </span>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
                             </div>
-                          )}
-                          {game.total_rating_count && (
-                            <div className="flex items-center text-gray-400">
-                              <Users className="h-3 w-3 mr-1" />
-                              <span className="text-xs">
-                                {game.total_rating_count > 1000
-                                  ? `${(game.total_rating_count / 1000).toFixed(
-                                      1
-                                    )}k`
-                                  : game.total_rating_count}
-                              </span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
+                          </motion.div>
+                        </Link>
+                      ))}
                     </div>
-                  </motion.div>
-                </Link>
-              ))}
+                  );
+                })}
+              </div>
             </div>
 
             {/* Pagination */}

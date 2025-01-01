@@ -108,28 +108,26 @@ export const useFriendsStore = create<FriendsStore>((set, get) => ({
 
   addFriend: async (request: { friendId: string }) => {
     try {
-      set({ isLoading: true, error: null });
-      
       const supabase = createClientComponentClient();
-      
-      // Get current user's session
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.user) throw new Error('No authenticated user');
 
-      // Check if friendship already exists
-      const { data: existingFriend, error: checkError } = await supabase
+      // Check if friendship already exists in either direction
+      const { data: existingFriendship, error: checkError } = await supabase
         .from('friends')
         .select('*')
         .or(
           `and(user_id.eq.${session.user.id},friend_id.eq.${request.friendId}),` +
           `and(user_id.eq.${request.friendId},friend_id.eq.${session.user.id})`
         )
-        .maybeSingle();
+        .single();
 
-      if (checkError) throw checkError;
-      
-      if (existingFriend) {
-        throw new Error('You are already friends or have a pending request with this user');
+      if (checkError && checkError.code !== 'PGRST116') { // PGRST116 means no rows found
+        throw checkError;
+      }
+
+      if (existingFriendship) {
+        throw new Error('Friendship already exists');
       }
 
       // Create new friendship
@@ -142,11 +140,11 @@ export const useFriendsStore = create<FriendsStore>((set, get) => ({
         });
 
       if (insertError) throw insertError;
-      
+
+      // Refresh friends list
       await get().fetchFriends();
     } catch (error) {
       console.error('Error adding friend:', error);
-      set({ error: (error as Error).message, isLoading: false });
       throw error;
     }
   },

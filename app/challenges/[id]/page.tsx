@@ -71,6 +71,11 @@ interface Challenge {
     id: string;
     rule: string;
   }>;
+  media?: Array<{
+    id: string;
+    media_type: string;
+    url: string;
+  }>;
   cover_url?: string;
 }
 
@@ -281,7 +286,12 @@ export default function ChallengePage({ params }: { params: { id: string } }) {
       {/* Cover Image Section */}
       <div className="relative w-full h-[40vh] overflow-hidden">
         <Image
-          src={challenge.cover_url || "/images/placeholders/game-cover.jpg"}
+          src={
+            challenge.media?.[0]?.url?.startsWith("//")
+              ? `https:${challenge.media[0].url}`
+              : challenge.media?.[0]?.url ||
+                "/images/placeholders/game-cover.jpg"
+          }
           alt={challenge.title}
           fill
           className="object-cover"

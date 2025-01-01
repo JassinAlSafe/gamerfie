@@ -47,6 +47,20 @@ interface ChallengeRule {
   updated_at: string;
 }
 
+interface ChallengeMedia {
+  id: string;
+  media_type: string;
+  url: string;
+  created_at: string;
+}
+
+interface ChallengeWithDetails extends Challenge {
+  challenge_goals?: ChallengeGoal[];
+  challenge_participants?: ChallengeParticipant[];
+  challenge_rewards?: ChallengeReward[];
+  challenge_media?: ChallengeMedia[];
+}
+
 interface ChallengeResponse {
   challenge: Challenge & {
     creator: {
@@ -127,9 +141,9 @@ export const useChallengesStore = create<ChallengesState>((set, get) => ({
     // Apply sorting
     filtered.sort((a, b) => {
       if (sortBy === "date") {
-        return new Date(b.start_date).getTime() - new Date(a.start_date).getTime();
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
       } else {
-        return (b.participants?.length || 0) - (a.participants?.length || 0);
+        return (b.participant_count || 0) - (a.participant_count || 0);
       }
     });
 
@@ -140,38 +154,99 @@ export const useChallengesStore = create<ChallengesState>((set, get) => ({
     try {
       set({ isLoading: true });
 
-      // First query: Get challenges with basic creator info
-      const { data: challenges, error: challengesError } = await supabase
-        .from("challenges")
-        .select(`
-          *,
-          creator:creator_id (
-            id,
-            username,
-            avatar_url
-          )
-        `)
-        .order("created_at", { ascending: false });
+      // Build the query parameters
+      const queryParams = new URLSearchParams();
+      const { filter, statusFilter, sortBy } = get();
+      
+      if (filter !== "all") {
+        queryParams.append("filter", filter);
+      }
+      if (statusFilter !== "all") {
+        queryParams.append("status", statusFilter);
+      }
+      if (sortBy) {
+        queryParams.append("sort", sortBy);
+      }
 
-      if (challengesError) throw challengesError;
+      // Use the API endpoint with query parameters
+      const response = await fetch(`/api/challenges?${queryParams.toString()}`);
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("API Error Details:", {
+          status: response.status,
+          statusText: response.statusText,
+          error: errorData
+        });
+        throw new Error(errorData.error || 'Failed to fetch challenges');
+      }
+      const challenges = await response.json();
 
-      // Second query: Get participant counts using a raw count query
-      const { count: participantCounts, error: countsError } = await supabase
-        .from('challenge_participants')
-        .select('challenge_id', { count: 'exact' });
+      console.log("Raw challenges from DB:", challenges);
 
-      if (countsError) throw countsError;
-
-      // Combine the data
-      const transformedChallenges = challenges?.map(challenge => ({
+      // Transform the data to include participant count and media
+      const transformedChallenges = challenges?.map((challenge: ChallengeWithDetails) => ({
         ...challenge,
-        participant_count: participantCounts || 0
-      }));
+        participant_count: challenge.participant_count || 0,
+        goals: challenge.challenge_goals || [],
+        participants: challenge.challenge_participants || [],
+        rewards: challenge.challenge_rewards || [],
+        media: challenge.challenge_media || [],
+      })) || [];
 
-      set({ allChallenges: transformedChallenges, isLoading: false });
+      console.log("Transformed challenges:", transformedChallenges);
+
+      // Update challenge statuses based on dates
+      const now = new Date();
+      const updatedChallenges = transformedChallenges.map((challenge: Challenge) => {
+        const startDate = new Date(challenge.start_date);
+        const endDate = new Date(challenge.end_date);
+        
+        // Default to the stored status if dates are invalid
+        let status = challenge.status;
+        
+        if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+          console.warn(`Invalid dates for challenge ${challenge.id}:`, { start: challenge.start_date, end: challenge.end_date });
+        } else {
+          if (startDate > now) {
+            status = 'upcoming';
+          } else if (endDate < now) {
+            status = 'completed';
+          } else {
+            status = 'active';
+          }
+        }
+
+        return { ...challenge, status };
+      });
+
+      console.log("Updated challenges with status:", updatedChallenges);
+
+      // Filter challenges by status
+      const active = updatedChallenges.filter((c: Challenge) => c.status === 'active');
+      const upcoming = updatedChallenges.filter((c: Challenge) => c.status === 'upcoming');
+      const completed = updatedChallenges.filter((c: Challenge) => c.status === 'completed');
+
+      set({
+        challenges: updatedChallenges,
+        activeChallenges: active,
+        upcomingChallenges: upcoming,
+        completedChallenges: completed,
+        allChallenges: updatedChallenges,
+        isLoading: false,
+      });
+
+      // Apply any existing filters
+      get().applyFilters();
     } catch (error) {
-      console.error("Error in fetchAllChallenges:", error);
-      set({ isLoading: false });
+      console.error("Error fetching challenges:", error);
+      set({ 
+        challenges: [],
+        activeChallenges: [],
+        upcomingChallenges: [],
+        completedChallenges: [],
+        allChallenges: [],
+        isLoading: false 
+      });
     }
   },
 
@@ -210,10 +285,15 @@ export const useChallengesStore = create<ChallengesState>((set, get) => ({
         .from("challenges")
         .select(`
           *,
-          creator:creator_id (
+          creator:creator_id(
             id,
             username,
             avatar_url
+          ),
+          challenge_media(
+            id,
+            media_type,
+            url
           )
         `)
         .in(
@@ -228,7 +308,7 @@ export const useChallengesStore = create<ChallengesState>((set, get) => ({
         .from("challenge_participants")
         .select(`
           challenge_id,
-          user:user_id (
+          user:user_id(
             id,
             username,
             avatar_url
@@ -248,32 +328,39 @@ export const useChallengesStore = create<ChallengesState>((set, get) => ({
         participant_count: participants?.filter(p => p.challenge_id === challenge.id).length || 0
       })) || [];
 
-      // Filter challenges by status
+      // Update challenge statuses based on dates
       const now = new Date();
-      const active = userChallenges.filter(c => {
-        const startDate = new Date(c.start_date);
-        const endDate = new Date(c.end_date);
-        return startDate <= now && endDate >= now;
+      const updatedChallenges = userChallenges.map(challenge => {
+        const startDate = new Date(challenge.start_date);
+        const endDate = new Date(challenge.end_date);
+        let status = challenge.status;
+
+        if (startDate > now) {
+          status = 'upcoming';
+        } else if (endDate < now) {
+          status = 'completed';
+        } else {
+          status = 'active';
+        }
+
+        return { ...challenge, status };
       });
 
-      const upcoming = userChallenges.filter(c => {
-        const startDate = new Date(c.start_date);
-        return startDate > now;
-      });
-
-      const completed = userChallenges.filter(c => {
-        const endDate = new Date(c.end_date);
-        return endDate < now;
-      });
+      // Filter challenges by status
+      const active = updatedChallenges.filter(c => c.status === 'active');
+      const upcoming = updatedChallenges.filter(c => c.status === 'upcoming');
+      const completed = updatedChallenges.filter(c => c.status === 'completed');
 
       set({
-        challenges: userChallenges,
+        challenges: updatedChallenges,
+        allChallenges: updatedChallenges,
         activeChallenges: active,
         upcomingChallenges: upcoming,
         completedChallenges: completed,
         isLoading: false,
       });
 
+      // Apply filters to update filteredChallenges
       get().applyFilters();
     } catch (error) {
       console.error("Error in fetchChallenges:", error);

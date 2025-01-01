@@ -6,9 +6,11 @@ import { motion } from "framer-motion";
 export const TextGenerateEffect = ({
   words,
   className = "",
+  as: Component = "span",
 }: {
   words: string;
   className?: string;
+  as?: "span" | "div" | "p";
 }) => {
   const [displayText, setDisplayText] = useState("");
   const [isGenerating, setIsGenerating] = useState(true);
@@ -26,13 +28,13 @@ export const TextGenerateEffect = ({
   }, [displayText, words, isGenerating]);
 
   return (
-    <motion.div
+    <motion.span
       className={className}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
     >
-      <span>{displayText}</span>
+      <Component>{displayText}</Component>
       {isGenerating && (
         <motion.span
           initial={{ opacity: 0 }}
@@ -41,6 +43,6 @@ export const TextGenerateEffect = ({
           className="inline-block ml-1 border-r-2 border-primary h-4 w-[2px]"
         />
       )}
-    </motion.div>
+    </motion.span>
   );
 };

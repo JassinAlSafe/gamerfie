@@ -144,6 +144,7 @@ export default function UserChallengesPage() {
                   name: challenge.creator?.username || "Unknown",
                   avatar: challenge.creator?.avatar_url || undefined,
                 }}
+                media={challenge.media}
                 coverImage={
                   challenge.cover_url || "/images/placeholders/game-cover.jpg"
                 }
@@ -192,6 +193,7 @@ export default function UserChallengesPage() {
                 name: challenge.creator?.username || "Unknown",
                 avatar: challenge.creator?.avatar_url || undefined,
               }}
+              media={challenge.media}
               coverImage={
                 challenge.cover_url || "/images/placeholders/game-cover.jpg"
               }

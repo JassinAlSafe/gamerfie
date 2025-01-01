@@ -18,7 +18,8 @@ export async function GET() {
           completed
         ),
         rewards:challenge_rewards(*),
-        rules:challenge_rules(*)
+        rules:challenge_rules(*),
+        media:challenge_media(*)
       `)
       .order("created_at", { ascending: false });
 

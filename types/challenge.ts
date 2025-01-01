@@ -48,10 +48,33 @@ export interface Challenge {
   creator_id: string;
   created_at: string;
   creator?: UserProfile;
-  goals?: ChallengeGoal[];
+  badge?: {
+    id: string;
+    name: string;
+    description: string;
+    icon_url: string;
+  };
+  goal?: {
+    id: string;
+    type: string;
+    target: number;
+    description?: string;
+  };
+  goals?: Array<{
+    id: string;
+    type: string;
+    target: number;
+    description?: string;
+  }>;
   participants?: ChallengeParticipant[];
   rewards?: ChallengeReward[];
   rules?: ChallengeRule[];
+  media?: Array<{
+    id: string;
+    media_type: string;
+    url: string;
+    created_at: string;
+  }>;
   participant_count?: number;
   cover_url?: string;
 }

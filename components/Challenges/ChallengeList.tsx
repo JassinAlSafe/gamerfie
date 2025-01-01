@@ -174,123 +174,30 @@
 //           <p className="text-muted-foreground">No challenges found</p>
 //         </div>
 //       ) : (
-//         <div className="grid grid-cols-1 gap-4">
-//           {filteredChallenges.map((challenge) => {
-//             console.log("Challenge image data:", {
-//               id: challenge.id,
-//               title: challenge.title,
-//               cover_url: challenge.cover_url,
-//               using_fallback: !challenge.cover_url,
-//             });
-
-//             return (
-//               <Link key={challenge.id} href={`/challenges/${challenge.id}`}>
-//                 <Card className="group hover:bg-gray-800/50 transition-colors">
-//                   <div className="relative h-48 rounded-t-lg overflow-hidden">
-//                     <Image
-//                       src={
-//                         challenge.cover_url ||
-//                         "/images/placeholders/game-cover.jpg"
-//                       }
-//                       alt={challenge.title}
-//                       fill
-//                       className="object-cover"
-//                       unoptimized
-//                       sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-//                     />
-//                   </div>
-//                   <div className="flex items-start justify-between gap-4">
-//                     <div className="space-y-3 flex-1">
-//                       <div className="space-y-1">
-//                         <div className="flex items-center gap-2">
-//                           <Gamepad2 className="w-5 h-5 text-purple-400" />
-//                           <h2 className="text-xl font-semibold group-hover:text-purple-400 transition-colors">
-//                             {challenge.title}
-//                           </h2>
-//                           <Badge
-//                             variant={
-//                               challenge.type === "competitive"
-//                                 ? "default"
-//                                 : "secondary"
-//                             }
-//                             className="bg-purple-500/10 text-purple-400 border-purple-500/20"
-//                           >
-//                             {challenge.type}
-//                           </Badge>
-//                           <Badge variant={getStatusVariant(challenge.status)}>
-//                             {challenge.status}
-//                           </Badge>
-//                         </div>
-//                         <p className="text-gray-400 line-clamp-2">
-//                           {challenge.description}
-//                         </p>
-//                       </div>
-
-//                       <div className="flex items-center gap-6 text-sm text-gray-400">
-//                         <div className="flex items-center gap-1">
-//                           <Target className="w-4 h-4 text-purple-400" />
-//                           <span>
-//                             {challenge.goals?.[0]?.target || 0}{" "}
-//                             {challenge.goals?.[0]?.type || "complete_games"}
-//                           </span>
-//                         </div>
-//                         <div className="flex items-center gap-1">
-//                           <Users className="w-4 h-4 text-purple-400" />
-//                           <span>
-//                             {challenge.participants?.length || 0} participants
-//                           </span>
-//                         </div>
-//                         <div className="flex items-center gap-1">
-//                           <Calendar className="w-4 h-4 text-purple-400" />
-//                           <span>
-//                             {challenge.status === "upcoming"
-//                               ? `Starts ${formatDistanceToNow(
-//                                   new Date(challenge.start_date),
-//                                   { addSuffix: true }
-//                                 )}`
-//                               : `Ends ${formatDistanceToNow(
-//                                   new Date(challenge.end_date),
-//                                   { addSuffix: true }
-//                                 )}`}
-//                           </span>
-//                         </div>
-//                       </div>
-
-//                       {challenge.type === "competitive" && (
-//                         <div className="flex items-center gap-4">
-//                           <div className="flex -space-x-2">
-//                             {challenge.participants
-//                               ?.slice(0, 3)
-//                               .map((participant) => (
-//                                 <Avatar
-//                                   key={`${challenge.id}-participant-${participant.user_id}`}
-//                                   className="border-2 border-gray-900"
-//                                 >
-//                                   <AvatarImage src={participant.avatar_url} />
-//                                   <AvatarFallback>
-//                                     {participant.username
-//                                       ? participant.username
-//                                           .slice(0, 2)
-//                                           .toUpperCase()
-//                                       : "??"}
-//                                   </AvatarFallback>
-//                                 </Avatar>
-//                               ))}
-//                           </div>
-//                           {(challenge.participants?.length || 0) > 3 && (
-//                             <span className="text-sm text-gray-400">
-//                               +{(challenge.participants?.length || 0) - 3} more
-//                             </span>
-//                           )}
-//                         </div>
-//                       )}
-//                     </div>
-//                     <ChevronRight className="h-5 w-5 text-gray-500 group-hover:text-purple-400 transition-colors" />
-//                   </div>
-//                 </Card>
-//               </Link>
-//             );
-//           })}
+//         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+//           {filteredChallenges.map((challenge) => (
+//             <Link key={challenge.id} href={`/challenges/${challenge.id}`}>
+//               <ChallengeCard
+//                 title={challenge.title}
+//                 description={challenge.description}
+//                 organizer={{
+//                   name: challenge.creator?.username || "Unknown",
+//                   avatar: challenge.creator?.avatar_url || undefined,
+//                 }}
+//                 media={challenge.media}
+//                 coverImage={challenge.cover_url}
+//                 participantCount={challenge.participant_count || 0}
+//                 participantAvatars={
+//                   challenge.participants?.map((p) => ({
+//                     image: p.user?.avatar_url,
+//                     fallback: p.user?.username?.[0] || "U",
+//                   })) || []
+//                 }
+//                 status={challenge.status}
+//                 type={challenge.type}
+//               />
+//             </Link>
+//           ))}
 //         </div>
 //       )}
 //     </div>

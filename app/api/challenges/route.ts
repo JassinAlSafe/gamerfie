@@ -8,8 +8,9 @@ export async function GET(request: Request) {
     const type = searchParams.get("type");
     const status = searchParams.get("status");
     const sort = searchParams.get("sort") || "date";
+    const filter = searchParams.get("filter") || "all";
 
-    console.log("GET /api/challenges - Query params:", { type, status, sort });
+    console.log("GET /api/challenges - Query params:", { type, status, sort, filter });
 
     const supabase = createRouteHandlerClient({ cookies });
 
@@ -19,126 +20,135 @@ export async function GET(request: Request) {
       error: sessionError,
     } = await supabase.auth.getSession();
 
-    if (sessionError || !session) {
+    if (sessionError) {
       console.error("Session error:", sessionError);
       return NextResponse.json(
-        { error: "Authentication required" },
+        { error: "Authentication failed", details: sessionError },
         { status: 401 }
       );
     }
 
-    // First, let's check what relationships exist
-    const { data: relationships, error: relError } = await supabase.rpc(
-      'get_relationships'
-    );
-
-    if (relError) {
-      console.error("Error checking relationships:", relError);
-    } else {
-      console.log("Available relationships:", relationships);
-    }
-
-    // Build query in steps to isolate any issues
-    // 1. First get basic challenge data
-    let query = supabase.from("challenges").select(`
-      *,
-      creator:profiles (
-        id,
-        username,
-        avatar_url
-      ),
-      goals:challenge_goals!fk_challenge_goals_challenge (
-        id,
-        type,
-        target,
-        description
-      ),
-      participants:challenge_participants!fk_challenge_participants_challenge (
-        user_id,
-        joined_at,
-        user:profiles (
-          id,
-          username,
-          avatar_url
-        )
-      ),
-      rewards:challenge_rewards!fk_challenge_rewards_challenge (
-        id,
-        type,
-        name,
-        description
-      ),
-      rules:challenge_rules!fk_challenge_rules_challenge (
-        id,
-        rule
-      )
-    `);
-
-    // Apply filters
-    if (type && type !== "all") {
-      console.log("Applying type filter:", type);
-      query = query.eq("type", type);
-    }
-
-    if (status && status !== "all") {
-      console.log("Applying status filter:", status);
-      query = query.eq("status", status);
-    }
-
-    // Apply sorting
-    if (sort === "date") {
-      console.log("Applying date sort");
-      query = query.order("created_at", { ascending: false });
-    } else if (sort === "participants") {
-      console.log("Applying participants sort");
-      query = query.order("min_participants", { ascending: true });
-    }
-
-    const { data: challenges, error: challengesError } = await query;
-
-    if (challengesError) {
-      console.error("Challenges fetch error:", challengesError);
+    if (!session) {
+      console.log("No authenticated session");
       return NextResponse.json(
-        { error: "Failed to fetch challenges", details: challengesError },
-        { status: 500 }
+        { error: "Not authenticated" },
+        { status: 401 }
       );
     }
 
-    // If we got challenges but creator info is missing, fetch it separately
-    if (challenges && challenges.length > 0 && !challenges[0].creator) {
-      console.log("Creator info missing, fetching separately");
-      const creatorIds = [...new Set(challenges.map(c => c.creator_id))];
-      
-      const { data: creators, error: creatorsError } = await supabase
-        .from("profiles")
-        .select("id, username, avatar_url")
-        .in("id", creatorIds);
+    console.log("Authenticated user:", session.user.id);
 
-      if (!creatorsError && creators) {
-        const creatorMap = creators.reduce((acc, creator) => {
-          acc[creator.id] = creator;
-          return acc;
-        }, {} as Record<string, any>);
+    try {
+      // First, get the challenge IDs where the user is a participant
+      const { data: participations, error: participationsError } = await supabase
+        .from("challenge_participants")
+        .select("challenge_id")
+        .eq("user_id", session.user.id);
 
-        challenges.forEach(challenge => {
-          challenge.creator = creatorMap[challenge.creator_id] || null;
-        });
+      if (participationsError) {
+        console.error("Error fetching participations:", participationsError);
+        return NextResponse.json(
+          { error: "Failed to fetch participations", details: participationsError },
+          { status: 500 }
+        );
       }
+
+      // Create a set of challenge IDs the user is participating in
+      const participatingChallengeIds = new Set(participations?.map(p => p.challenge_id) || []);
+
+      // Base query for challenges
+      let query = supabase
+        .from("challenges")
+        .select(`
+          *,
+          creator:profiles!creator_id (
+            id,
+            username,
+            avatar_url
+          ),
+          challenge_goals!challenge_id (
+            id,
+            type,
+            target,
+            description
+          ),
+          challenge_participants!challenge_id (
+            user_id,
+            joined_at,
+            user:profiles!user_id (
+              id,
+              username,
+              avatar_url
+            )
+          ),
+          challenge_rewards!challenge_id (
+            id,
+            type,
+            name,
+            description
+          ),
+          challenge_media!challenge_id (
+            id,
+            media_type,
+            url
+          )
+        `);
+
+      // Apply filters based on query parameters
+      if (type) {
+        query = query.eq('type', type);
+      }
+
+      if (status) {
+        query = query.eq('status', status);
+      }
+
+      // Apply participation filter
+      if (filter === "participating" && participations?.length > 0) {
+        query = query.in('id', participations.map(p => p.challenge_id));
+      }
+
+      // Execute the query
+      const { data: challenges, error: challengesError } = await query;
+
+      if (challengesError) {
+        console.error("Error fetching challenges:", {
+          code: challengesError.code,
+          message: challengesError.message,
+          details: challengesError.details,
+          hint: challengesError.hint
+        });
+        return NextResponse.json(
+          { error: "Failed to fetch challenges", details: challengesError },
+          { status: 500 }
+        );
+      }
+
+      if (!challenges) {
+        console.log("No challenges found");
+        return NextResponse.json([]);
+      }
+
+      // Add isParticipating flag to each challenge
+      const enrichedChallenges = challenges.map(challenge => ({
+        ...challenge,
+        isParticipating: participatingChallengeIds.has(challenge.id)
+      }));
+
+      console.log("Successfully fetched challenges:", {
+        total: enrichedChallenges.length,
+        participating: participations?.length || 0,
+        firstChallenge: enrichedChallenges[0]
+      });
+
+      return NextResponse.json(enrichedChallenges);
+    } catch (error) {
+      console.error("Error in challenges query:", error);
+      return NextResponse.json(
+        { error: "Failed to execute challenges query", details: error },
+        { status: 500 }
+      );
     }
-
-    console.log("Successfully fetched challenges:", {
-      total: challenges?.length,
-      byStatus: challenges?.reduce((acc, c) => {
-        acc[c.status] = (acc[c.status] || 0) + 1;
-        return acc;
-      }, {} as Record<string, number>),
-      byType: challenges?.reduce((acc, c) => {
-        acc[c.type] = (acc[c.type] || 0) + 1;
-        return acc;
-      }, {} as Record<string, number>),
-    });
-
-    return NextResponse.json(challenges || []);
   } catch (error) {
     console.error("Unexpected error in GET /api/challenges:", error);
     return NextResponse.json(
@@ -182,27 +192,52 @@ export async function POST(request: Request) {
     const body = await request.json();
     console.log("Request body:", body);
 
-    // Create challenge
-    const challengeData = {
-      title: body.title,
-      description: body.description,
-      type: body.type,
-      status: "upcoming",
-      start_date: body.start_date,
-      end_date: body.end_date,
-      min_participants: 2,
-      max_participants: body.max_participants || null,
-      creator_id: session.user.id,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      cover_url: body.cover_url,
-    };
+    // Validate required fields
+    if (!body.title || !body.description || !body.type || !body.start_date || !body.end_date) {
+      return NextResponse.json(
+        { error: "Missing required fields" },
+        { status: 400 }
+      );
+    }
 
-    const { data: challenge, error: challengeError } = await supabase
-      .from("challenges")
-      .insert(challengeData)
-      .select()
-      .single();
+    // Create challenge
+    if (!body.goals?.[0]) {
+      return NextResponse.json(
+        { error: "At least one goal is required" },
+        { status: 400 }
+      );
+    }
+
+    // Start a transaction
+    const { data: challenge, error: challengeError } = await supabase.rpc('create_challenge', {
+      challenge_data: {
+        title: body.title,
+        description: body.description,
+        type: body.type,
+        status: "upcoming",
+        start_date: body.start_date,
+        end_date: body.end_date,
+        min_participants: body.min_participants || 2,
+        max_participants: body.max_participants || null,
+        creator_id: session.user.id,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      },
+      goals_data: body.goals.map((goal: any) => ({
+        type: goal.type,
+        target: goal.target,
+        description: goal.description || null
+      })),
+      rewards_data: body.rewards?.map((reward: any) => ({
+        type: reward.type,
+        name: reward.name,
+        description: reward.description || null
+      })) || [],
+      rules_data: body.rules?.map((rule: any) => ({
+        rule: typeof rule === 'string' ? rule : rule.rule
+      })) || [],
+      cover_url: body.cover_url || null
+    });
 
     if (challengeError) {
       console.error("Challenge creation error:", challengeError);
@@ -212,103 +247,11 @@ export async function POST(request: Request) {
       );
     }
 
-    console.log("Challenge created:", challenge);
-
-    // Insert goals
-    if (body.goals?.length > 0) {
-      const goalsData = body.goals.map((goal: any) => ({
-        challenge_id: challenge.id,
-        type: goal.type,
-        target: goal.target,
-        description: goal.description,
-        created_at: new Date().toISOString(),
-      }));
-
-      const { error: goalsError } = await supabase
-        .from("challenge_goals")
-        .insert(goalsData);
-
-      if (goalsError) {
-        console.error("Goals creation error:", goalsError);
-        return NextResponse.json(
-          { error: "Failed to create goals", details: goalsError },
-          { status: 500 }
-        );
-      }
-    }
-
-    // Insert rewards
-    if (body.rewards?.length > 0) {
-      const rewardsData = body.rewards.map((reward: any) => ({
-        challenge_id: challenge.id,
-        type: reward.type,
-        name: reward.name,
-        description: reward.description,
-        created_at: new Date().toISOString()
-      }));
-
-      const { error: rewardsError } = await supabase
-        .from("challenge_rewards")
-        .insert(rewardsData);
-
-      if (rewardsError) {
-        console.error("Rewards creation error:", rewardsError);
-        return NextResponse.json(
-          { error: "Failed to create rewards", details: rewardsError },
-          { status: 500 }
-        );
-      }
-    }
-
-    // Insert rules
-    if (body.rules?.length > 0) {
-      const rulesData = body.rules.map((rule: any) => ({
-        challenge_id: challenge.id,
-        rule: typeof rule === 'string' ? rule : rule.rule,
-        created_at: new Date().toISOString()
-      }));
-
-      const { error: rulesError } = await supabase
-        .from("challenge_rules")
-        .insert(rulesData);
-
-      if (rulesError) {
-        console.error("Rules creation error:", rulesError);
-        return NextResponse.json(
-          { error: "Failed to create rules", details: rulesError },
-          { status: 500 }
-        );
-      }
-    }
-
-    // Add creator as participant
-    const participantData = {
-      challenge_id: challenge.id,
-      user_id: session.user.id,
-      joined_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    };
-
-    const { error: participantError } = await supabase
-      .from("challenge_participants")
-      .insert(participantData);
-
-    if (participantError) {
-      console.error("Participant creation error:", participantError);
-      return NextResponse.json(
-        { error: "Failed to add creator as participant", details: participantError },
-        { status: 500 }
-      );
-    }
+    console.log("Challenge created successfully:", challenge);
 
     return NextResponse.json({
       message: "Challenge created successfully",
-      challenge: {
-        ...challenge,
-        goals: body.goals || [],
-        rewards: body.rewards || [],
-        rules: body.rules || [],
-      }
+      challenge
     });
   } catch (error) {
     console.error("Unexpected error in POST /api/challenges:", error);

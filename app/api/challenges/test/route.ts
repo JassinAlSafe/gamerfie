@@ -22,7 +22,7 @@ export async function POST() {
       .insert({
         name: "Test Achievement",
         description: "Badge for completing the test challenge",
-        icon_url: "/badges/test-badge.png"
+        icon_url: "/badges/test-badge.svg"
       })
       .select()
       .single();
