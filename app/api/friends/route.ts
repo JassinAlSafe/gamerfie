@@ -81,14 +81,17 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Check if friendship already exists
-    const { data: existingFriend } = await supabase
+    // Check if friendship already exists in either direction
+    const { data: existingFriendship, error: checkError } = await supabase
       .from('friends')
       .select('*')
-      .or(`and(user_id.eq.${session.user.id},friend_id.eq.${friendId}),and(user_id.eq.${friendId},friend_id.eq.${session.user.id})`)
+      .or(
+        `and(user_id.eq.${session.user.id},friend_id.eq.${friendId}),` +
+        `and(user_id.eq.${friendId},friend_id.eq.${session.user.id})`
+      )
       .single();
 
-    if (existingFriend) {
+    if (existingFriendship) {
       return NextResponse.json(
         { error: 'Friendship already exists' },
         { status: 400 }
@@ -106,29 +109,32 @@ export async function POST(request: Request) {
       .select('*')
       .single();
 
-    if (insertError) throw insertError;
-    if (!friendship) throw new Error('Failed to create friend request');
+    if (insertError) {
+      console.error('Error creating friendship:', insertError);
+      return NextResponse.json(
+        { error: 'Failed to create friendship' },
+        { status: 500 }
+      );
+    }
 
-    // Fetch friend details from profiles
-    const { data: friendData } = await supabase
+    // Fetch friend details
+    const { data: friendProfile } = await supabase
       .from('profiles')
-      .select('id, username')
+      .select('username, avatar_url')
       .eq('id', friendId)
       .single();
 
-    if (!friendData) throw new Error('Failed to fetch friend details');
-
-    const transformedFriend = {
-      id: friendId,
-      username: friendData.username,
-      status: friendship.status
-    };
-
-    return NextResponse.json(transformedFriend);
+    return NextResponse.json({
+      id: friendship.id,
+      username: friendProfile?.username,
+      avatar_url: friendProfile?.avatar_url,
+      status: friendship.status,
+      sender_id: session.user.id
+    });
   } catch (error) {
-    console.error('Friend request error:', error);
+    console.error('Error in POST /api/friends:', error);
     return NextResponse.json(
-      { error: 'Internal Server Error' }, 
+      { error: 'Internal server error' },
       { status: 500 }
     );
   }

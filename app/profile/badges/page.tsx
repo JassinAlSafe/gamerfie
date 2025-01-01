@@ -1,48 +1,18 @@
-"use client";
+import { Metadata } from "next";
+import UserBadges from "@/components/profile/user-badges";
 
-import { useEffect, useState } from "react";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
-import { UserBadges } from "@/components/profile/UserBadges";
-import { useRouter } from "next/navigation";
-import { BackgroundBeams } from "@/components/ui/background-beams";
+export const metadata: Metadata = {
+  title: "My Badges",
+  description: "View your earned badges and achievements",
+};
 
 export default function BadgesPage() {
-  const [userId, setUserId] = useState<string | null>(null);
-  const router = useRouter();
-  const supabase = createClientComponentClient();
-
-  useEffect(() => {
-    const checkUser = async () => {
-      const {
-        data: { session },
-        error,
-      } = await supabase.auth.getSession();
-
-      if (error || !session) {
-        router.push("/login");
-        return;
-      }
-
-      setUserId(session.user.id);
-    };
-
-    checkUser();
-  }, []);
-
-  if (!userId) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
-      </div>
-    );
-  }
-
   return (
-    <main className="relative min-h-screen pt-20 pb-10">
-      <BackgroundBeams className="opacity-20" />
-      <div className="container mx-auto px-4">
-        <UserBadges userId={userId} />
+    <div className="container mx-auto p-4 space-y-6">
+      <div className="flex items-center gap-3">
+        <h1 className="text-2xl font-bold">My Badges</h1>
       </div>
-    </main>
+      <UserBadges />
+    </div>
   );
 }

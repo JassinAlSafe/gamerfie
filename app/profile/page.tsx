@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { Toaster } from "react-hot-toast";
 import LoadingSpinner from "@/components/loadingSpinner";
 import { ProfileHeader } from "@/components/profile/profile-header";
-import { ProfileNav } from "@/components/Navigation/ProfileNav";
+import { ProfileNav } from "@/components/profile/profile-nav";
 import { useFriendsStore } from "@/stores/useFriendsStore";
 import { useEffect } from "react";
 import { Users } from "lucide-react";

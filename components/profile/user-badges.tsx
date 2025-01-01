@@ -9,7 +9,7 @@ import Image from "next/image";
 
 interface UserBadge {
   badge: Badge;
-  claimed_at: string;
+  awarded_at: string;
   challenge?: {
     id: string;
     title: string;
@@ -31,24 +31,19 @@ export default function UserBadges() {
         if (!user) throw new Error("Not authenticated");
 
         const { data, error } = await supabase
-          .from("user_badge_claims")
+          .from("user_badges")
           .select(
             `
-            claimed_at,
-            badge:badge_id (
-              id,
-              name,
-              description,
-              icon_url
-            ),
-            challenge:challenge_id (
+            awarded_at,
+            badge:badge_id (*),
+            challenge:awarded_from_challenge_id (
               id,
               title
             )
           `
           )
           .eq("user_id", user.id)
-          .order("claimed_at", { ascending: false });
+          .order("awarded_at", { ascending: false });
 
         if (error) throw error;
         setBadges(data || []);
@@ -65,15 +60,15 @@ export default function UserBadges() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[200px]">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      <div className="flex items-center justify-center p-8">
+        <p>Loading badges...</p>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="text-center text-destructive p-4">
+      <div className="flex items-center justify-center p-8 text-red-500">
         <p>{error}</p>
       </div>
     );
@@ -81,49 +76,49 @@ export default function UserBadges() {
 
   if (!badges.length) {
     return (
-      <div className="text-center p-8">
-        <Medal className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-        <p className="text-muted-foreground">
-          No badges earned yet. Complete challenges to earn badges!
-        </p>
-      </div>
+      <Card className="bg-muted/50 border-0">
+        <CardContent className="flex flex-col items-center justify-center p-8 space-y-4">
+          <Medal className="w-12 h-12 text-muted-foreground" />
+          <p className="text-muted-foreground text-center">
+            No badges earned yet. Complete challenges to earn badges!
+          </p>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
       {badges.map((userBadge) => (
         <Card
-          key={`${userBadge.badge.id}-${userBadge.claimed_at}`}
-          className="overflow-hidden"
+          key={`${userBadge.badge.id}-${userBadge.awarded_at}`}
+          className="bg-muted/50 border-0"
         >
-          <CardHeader>
-            <CardTitle className="text-lg">{userBadge.badge.name}</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="relative w-full aspect-square">
+          <CardContent className="p-6 space-y-4">
+            <div className="relative w-24 h-24 mx-auto">
               {userBadge.badge.icon_url ? (
                 <Image
                   src={userBadge.badge.icon_url}
                   alt={userBadge.badge.name}
                   fill
-                  className="object-contain"
+                  className="object-cover"
                 />
               ) : (
-                <Medal className="w-full h-full text-primary/20" />
+                <Medal className="w-full h-full text-primary" />
               )}
             </div>
-            <div>
+            <div className="text-center space-y-2">
+              <h3 className="font-semibold">{userBadge.badge.name}</h3>
               <p className="text-sm text-muted-foreground">
                 {userBadge.badge.description}
               </p>
               {userBadge.challenge && (
-                <p className="text-xs text-muted-foreground mt-2">
-                  Earned from challenge: {userBadge.challenge.title}
+                <p className="text-xs text-muted-foreground">
+                  Earned from: {userBadge.challenge.title}
                 </p>
               )}
-              <p className="text-xs text-muted-foreground mt-1">
-                Earned on: {new Date(userBadge.claimed_at).toLocaleDateString()}
+              <p className="text-xs text-muted-foreground">
+                Awarded: {new Date(userBadge.awarded_at).toLocaleDateString()}
               </p>
             </div>
           </CardContent>
