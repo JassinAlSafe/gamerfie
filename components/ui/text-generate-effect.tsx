@@ -1,39 +1,46 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { cn } from "@/lib/utils";
+import { motion } from "framer-motion";
 
-interface TextGenerateEffectProps {
+export const TextGenerateEffect = ({
+  words,
+  className = "",
+}: {
   words: string;
   className?: string;
-}
-
-export function TextGenerateEffect({
-  words,
-  className,
-}: TextGenerateEffectProps) {
+}) => {
   const [displayText, setDisplayText] = useState("");
-  const [currentIndex, setCurrentIndex] = useState(0);
+  const [isGenerating, setIsGenerating] = useState(true);
 
   useEffect(() => {
-    if (currentIndex < words.length) {
-      const timeout = setTimeout(() => {
-        setDisplayText((prev) => prev + words[currentIndex]);
-        setCurrentIndex((prev) => prev + 1);
-      }, 30);
+    const timeout = setTimeout(() => {
+      if (displayText.length < words.length && isGenerating) {
+        setDisplayText(words.slice(0, displayText.length + 1));
+      } else {
+        setIsGenerating(false);
+      }
+    }, 30); // Slower typing speed (was previously 10)
 
-      return () => clearTimeout(timeout);
-    }
-  }, [currentIndex, words]);
+    return () => clearTimeout(timeout);
+  }, [displayText, words, isGenerating]);
 
   return (
-    <div className={cn("font-bold", className)}>
-      <div className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl">
-        {displayText}
-        {currentIndex < words.length && (
-          <span className="animate-pulse">|</span>
-        )}
-      </div>
-    </div>
+    <motion.div
+      className={className}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+    >
+      <span>{displayText}</span>
+      {isGenerating && (
+        <motion.span
+          initial={{ opacity: 0 }}
+          animate={{ opacity: [0, 1, 0] }}
+          transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }}
+          className="inline-block ml-1 border-r-2 border-primary h-4 w-[2px]"
+        />
+      )}
+    </motion.div>
   );
-}
+};

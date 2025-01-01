@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -32,7 +32,7 @@ import Link from "next/link";
 import { useToast } from "@/components/ui/use-toast";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import Image from "next/image";
-import { useRouter } from "next/router";
+import { useRouter } from "next/navigation";
 
 const goalTypes = [
   "complete_games",
@@ -153,6 +153,24 @@ export function CreateChallenge({ onSubmit }: CreateChallengeProps) {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const router = useRouter();
+  const [availableBadges, setAvailableBadges] = useState<
+    Array<{ id: string; name: string; description: string }>
+  >([]);
+
+  useEffect(() => {
+    fetchAvailableBadges();
+  }, []);
+
+  const fetchAvailableBadges = async () => {
+    try {
+      const response = await fetch("/api/badges");
+      if (!response.ok) throw new Error("Failed to fetch badges");
+      const data = await response.json();
+      setAvailableBadges(data);
+    } catch (error) {
+      console.error("Error fetching badges:", error);
+    }
+  };
 
   const {
     register,
@@ -455,7 +473,7 @@ export function CreateChallenge({ onSubmit }: CreateChallengeProps) {
                   </label>
                   <DatePicker
                     value={watch("start_date")}
-                    onChange={(date) => setValue("start_date", date)}
+                    onChange={(date) => date && setValue("start_date", date)}
                     placeholder="Select date"
                   />
                   {errors.start_date && (
@@ -471,7 +489,7 @@ export function CreateChallenge({ onSubmit }: CreateChallengeProps) {
                   </label>
                   <DatePicker
                     value={watch("end_date")}
-                    onChange={(date) => setValue("end_date", date)}
+                    onChange={(date) => date && setValue("end_date", date)}
                     placeholder="Select date"
                   />
                   {errors.end_date && (
@@ -625,14 +643,43 @@ export function CreateChallenge({ onSubmit }: CreateChallengeProps) {
                         </SelectContent>
                       </Select>
                     </div>
-                    <Input
-                      placeholder="Reward name"
-                      value={newReward.name}
-                      onChange={(e) =>
-                        setNewReward({ ...newReward, name: e.target.value })
-                      }
-                      className="bg-gray-800/30 border-gray-700/30 h-9 focus:border-purple-500/50"
-                    />
+                    {newReward.type === "badge" ? (
+                      <Select
+                        value={newReward.name}
+                        onValueChange={(value) => {
+                          const selectedBadge = availableBadges.find(
+                            (b) => b.id === value
+                          );
+                          if (selectedBadge) {
+                            setNewReward({
+                              ...newReward,
+                              name: selectedBadge.name,
+                              description: selectedBadge.description,
+                            });
+                          }
+                        }}
+                      >
+                        <SelectTrigger className="bg-gray-800/30 border-gray-700/30 h-9 focus:border-purple-500/50">
+                          <SelectValue placeholder="Select a badge" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {availableBadges.map((badge) => (
+                            <SelectItem key={badge.id} value={badge.id}>
+                              {badge.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <Input
+                        placeholder="Reward name"
+                        value={newReward.name}
+                        onChange={(e) =>
+                          setNewReward({ ...newReward, name: e.target.value })
+                        }
+                        className="bg-gray-800/30 border-gray-700/30 h-9 focus:border-purple-500/50"
+                      />
+                    )}
                   </div>
                   <div className="flex gap-2">
                     <Input

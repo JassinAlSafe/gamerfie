@@ -26,6 +26,8 @@ import {
 import Link from "next/link";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
+import { TextGenerateEffect } from "@/components/ui/text-generate-effect";
+import { ChallengeBadges } from "@/components/Challenges/ChallengeBadges";
 
 interface Challenge {
   id: string;
@@ -82,6 +84,8 @@ export default function ChallengePage({ params }: { params: { id: string } }) {
   const [challenge, setChallenge] = useState<Challenge | null>(null);
   const [loading, setLoading] = useState(true);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [isCreator, setIsCreator] = useState(false);
+  const [isCompleted, setIsCompleted] = useState(false);
   const router = useRouter();
   const supabase = createClientComponentClient();
 
@@ -145,6 +149,25 @@ export default function ChallengePage({ params }: { params: { id: string } }) {
       }
 
       setChallenge(data);
+
+      // Check if current user is creator
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (session) {
+        setIsCreator(data.creator_id === session.user.id);
+
+        // Check if user has completed the challenge
+        const { data: participant } = await supabase
+          .from("challenge_participants")
+          .select("completed")
+          .eq("challenge_id", params.id)
+          .eq("user_id", session.user.id)
+          .single();
+
+        setIsCompleted(participant?.completed || false);
+      }
     } catch (error) {
       console.error("Error fetching challenge:", error);
       toast({
@@ -305,10 +328,12 @@ export default function ChallengePage({ params }: { params: { id: string } }) {
                   challenge.type.slice(1)}
               </Badge>
             </div>
-            <h1 className="text-4xl font-bold text-white mb-2">
-              {challenge.title}
+            <h1 className="text-4xl font-bold text-white mb-4">
+              <TextGenerateEffect words={challenge.title} />
             </h1>
-            <p className="text-lg text-gray-300">{challenge.description}</p>
+            <div className="text-lg text-gray-300">
+              <TextGenerateEffect words={challenge.description} />
+            </div>
           </div>
         </div>
       </div>
@@ -325,9 +350,11 @@ export default function ChallengePage({ params }: { params: { id: string } }) {
                   <Target className="h-5 w-5 text-primary" />
                 </div>
                 <div>
-                  <h2 className="text-2xl font-bold">Challenge Goals</h2>
+                  <h2 className="text-2xl font-bold">
+                    <TextGenerateEffect words="Challenge Goals" />
+                  </h2>
                   <p className="text-muted-foreground">
-                    What you need to achieve
+                    <TextGenerateEffect words="What you need to achieve" />
                   </p>
                 </div>
               </div>
@@ -372,9 +399,11 @@ export default function ChallengePage({ params }: { params: { id: string } }) {
                     <ScrollText className="h-5 w-5 text-primary" />
                   </div>
                   <div>
-                    <h2 className="text-2xl font-bold">Challenge Rules</h2>
+                    <h2 className="text-2xl font-bold">
+                      <TextGenerateEffect words="Challenge Rules" />
+                    </h2>
                     <p className="text-muted-foreground">
-                      Guidelines to follow
+                      <TextGenerateEffect words="Guidelines to follow" />
                     </p>
                   </div>
                 </div>
@@ -413,7 +442,9 @@ export default function ChallengePage({ params }: { params: { id: string } }) {
                 <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
                   <Trophy className="h-5 w-5 text-primary" />
                 </div>
-                <h2 className="text-2xl font-bold">Challenge Info</h2>
+                <h2 className="text-2xl font-bold">
+                  <TextGenerateEffect words="Challenge Info" />
+                </h2>
               </div>
               <div className="space-y-4">
                 <div className="p-4 bg-background/80 rounded-lg group transition-all hover:shadow-lg hover:shadow-primary/10 hover:bg-background">
@@ -523,7 +554,9 @@ export default function ChallengePage({ params }: { params: { id: string } }) {
                   <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
                     <Trophy className="h-5 w-5 text-primary" />
                   </div>
-                  <h2 className="text-2xl font-bold">Rewards</h2>
+                  <h2 className="text-2xl font-bold">
+                    <TextGenerateEffect words="Rewards" />
+                  </h2>
                 </div>
                 <div className="space-y-4">
                   {challenge.rewards.map((reward) => (
@@ -549,6 +582,15 @@ export default function ChallengePage({ params }: { params: { id: string } }) {
             )}
           </div>
         </div>
+      </div>
+
+      {/* Add the badges section */}
+      <div className="mt-8">
+        <ChallengeBadges
+          challengeId={params.id}
+          isCreator={isCreator}
+          isCompleted={isCompleted}
+        />
       </div>
     </div>
   );
