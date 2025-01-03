@@ -150,6 +150,16 @@ export async function GET(
       console.error("Rules fetch error:", rulesError);
     }
 
+    // 7. Get media
+    const { data: media, error: mediaError } = await supabase
+      .from("challenge_media")
+      .select("id, media_type, url")
+      .eq("challenge_id", params.id);
+
+    if (mediaError) {
+      console.error("Media fetch error:", mediaError);
+    }
+
     // Combine all the data
     const challenge = {
       ...basicChallenge,
@@ -158,6 +168,7 @@ export async function GET(
       participants: participants || [],
       rewards: rewards || [],
       rules: rules || [],
+      media: media || [],
     };
 
     console.log("Successfully assembled challenge data:", {

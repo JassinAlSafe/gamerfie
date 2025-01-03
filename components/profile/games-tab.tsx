@@ -18,6 +18,7 @@ import {
 import { Game, GameStatus, UserGame } from "@/types/game";
 import type { GameFilters } from "@/components/profile/game-filters";
 import { useSettingsStore } from "@/stores/useSettingsStore";
+import { getCoverImageUrl } from "@/utils/image-utils";
 
 interface GameWithUserData extends UserGame {
   game: Game;
@@ -42,6 +43,10 @@ interface GamesTabProps {
 const GameListItem = ({ game }: { game: GameWithUserData }) => {
   const router = useRouter();
 
+  const coverUrl = game.game.cover_url?.startsWith("//")
+    ? `https:${game.game.cover_url}`
+    : game.game.cover_url;
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -50,9 +55,9 @@ const GameListItem = ({ game }: { game: GameWithUserData }) => {
       onClick={() => router.push(`/game/${game.game_id}`)}
     >
       <div className="relative w-20 h-24 flex-shrink-0 overflow-hidden rounded-lg ring-2 ring-white/5 group-hover:ring-purple-500/20 transition-all duration-300">
-        {game.game.cover_url ? (
+        {coverUrl ? (
           <Image
-            src={game.game.cover_url}
+            src={coverUrl}
             alt={game.game.name}
             fill
             className="object-cover transition-transform duration-300 group-hover:scale-105"
@@ -102,6 +107,9 @@ const GameListItem = ({ game }: { game: GameWithUserData }) => {
 // Grid View Component
 const GameGridItem = ({ game }: { game: GameWithUserData }) => {
   const router = useRouter();
+  const coverUrl = game.game.cover_url
+    ? getCoverImageUrl(game.game.cover_url)
+    : undefined;
 
   return (
     <motion.div
@@ -111,9 +119,9 @@ const GameGridItem = ({ game }: { game: GameWithUserData }) => {
       onClick={() => router.push(`/game/${game.game_id}`)}
     >
       <div className="aspect-[3/4] bg-gray-900/80 relative">
-        {game.game.cover_url ? (
+        {coverUrl ? (
           <Image
-            src={game.game.cover_url.replace(/t_[a-zA-Z_]+/, "t_cover_big_2x")}
+            src={coverUrl}
             alt={game.game.name}
             fill
             sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"

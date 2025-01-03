@@ -13,6 +13,12 @@ interface ChallengeCardProps {
     name: string;
     avatar?: string;
   };
+  media?: Array<{
+    id: string;
+    media_type: string;
+    url: string;
+    created_at: string;
+  }>;
   coverImage?: string;
   participantCount?: number;
   participantAvatars?: Array<{
@@ -29,6 +35,7 @@ export function ChallengeCard({
   title,
   description,
   organizer,
+  media,
   coverImage = "/images/placeholders/game-cover.jpg",
   participantCount = 0,
   participantAvatars = [],
@@ -69,6 +76,9 @@ export function ChallengeCard({
     }
   };
 
+  // Get the first media item that exists, or fallback to coverImage
+  const displayImage = media && media.length > 0 ? media[0].url : coverImage;
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -87,10 +97,11 @@ export function ChallengeCard({
         {/* Challenge Banner */}
         <div className="relative h-3/4 w-full overflow-hidden">
           <Image
-            src={coverImage}
+            src={displayImage}
             alt={title}
             fill
-            className="object-cover transition-transform duration-500 group-hover:scale-105"
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            className="object-cover transition-transform duration-300 group-hover:scale-105"
             priority
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent opacity-80" />
@@ -114,20 +125,18 @@ export function ChallengeCard({
               {type.charAt(0).toUpperCase() + type.slice(1)}
             </span>
           </div>
-
-          {/* Title overlay at bottom of image */}
-          <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black to-transparent">
-            <h3 className="text-xl font-bold text-white line-clamp-1">
-              {title}
-            </h3>
-          </div>
         </div>
 
         <CardContent className="relative h-1/4 p-4">
+          {/* Title */}
+          <h3 className="text-lg font-bold text-white line-clamp-1 mb-2">
+            {title}
+          </h3>
+
           {/* Organizer & Participants */}
-          <div className="flex items-center justify-between h-full">
+          <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
-              <Avatar className="h-8 w-8 ring-2 ring-white/10">
+              <Avatar className="h-6 w-6 ring-2 ring-white/10">
                 {organizer.avatar ? (
                   <AvatarImage src={organizer.avatar} />
                 ) : (
@@ -143,11 +152,11 @@ export function ChallengeCard({
               {participantAvatars.length > 0 && (
                 <div className="flex -space-x-2">
                   {participantAvatars.slice(0, 3).map((avatar, i) => (
-                    <Avatar key={i} className="ring-2 ring-black w-6 h-6">
+                    <Avatar key={i} className="ring-2 ring-black w-5 h-5">
                       {avatar.image ? (
                         <AvatarImage src={avatar.image} />
                       ) : (
-                        <AvatarFallback className="bg-black/50 text-white">
+                        <AvatarFallback className="bg-black/50 text-white text-xs">
                           {avatar.fallback}
                         </AvatarFallback>
                       )}

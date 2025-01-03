@@ -11,27 +11,15 @@ import { ProfileHeader } from "@/components/profile/profile-header";
 import { ProfileNav } from "@/components/profile/profile-nav";
 import { useProfile } from "@/hooks/use-profile";
 import { Input } from "@/components/ui/input";
-import { Search, UserPlus, Users, X, Gamepad, Clock } from "lucide-react";
+import { Search, UserPlus, Users, X, Gamepad } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-interface Friend {
-  id: string;
-  username: string;
-  avatar_url: string;
-  status?: string;
-}
-
-interface FriendConnection {
-  id: string;
-  user_id: string;
-  friend_id: string;
-  status: string;
-  friend: Friend;
-}
+import { useFriendsStore } from "@/stores/useFriendsStore";
+import { toast } from "react-hot-toast";
+import { Friend, OnlineStatus } from "@/types/friend";
 
 export default function ProfileFriendsPage() {
   const {
@@ -42,11 +30,11 @@ export default function ProfileFriendsPage() {
   } = useProfile();
   const [isSessionLoading, setIsSessionLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const [friends, setFriends] = useState<FriendConnection[]>([]);
   const [searchResults, setSearchResults] = useState<Friend[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const supabase = createClientComponentClient();
   const router = useRouter();
+  const { addFriend, friends, fetchFriends } = useFriendsStore();
 
   // Check session and fetch friends
   useEffect(() => {
@@ -76,7 +64,7 @@ export default function ProfileFriendsPage() {
         }
 
         setIsSessionLoading(false);
-        fetchFriends(user.id);
+        fetchFriends();
       } catch (error) {
         console.error("Error checking session:", error);
         setIsSessionLoading(false);
@@ -85,41 +73,7 @@ export default function ProfileFriendsPage() {
     };
 
     checkSession();
-  }, [supabase, router]);
-
-  const fetchFriends = async (userId: string) => {
-    try {
-      // First, get the friend relationships
-      const { data: friendsData, error: friendsError } = await supabase
-        .from("friends")
-        .select("*")
-        .eq("user_id", userId)
-        .eq("status", "accepted");
-
-      if (friendsError) throw friendsError;
-      if (!friendsData) return;
-
-      // Then, get the profile information for each friend
-      const friendProfiles = await Promise.all(
-        friendsData.map(async (friend) => {
-          const { data: profileData } = await supabase
-            .from("profiles")
-            .select("*")
-            .eq("id", friend.friend_id)
-            .single();
-
-          return {
-            ...friend,
-            friend: profileData,
-          };
-        })
-      );
-
-      setFriends(friendProfiles);
-    } catch (error) {
-      console.error("Error fetching friends:", error);
-    }
-  };
+  }, [supabase, router, fetchFriends]);
 
   const searchUsers = async (query: string) => {
     if (!query.trim()) {
@@ -146,24 +100,13 @@ export default function ProfileFriendsPage() {
 
   const sendFriendRequest = async (friendId: string) => {
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) throw new Error("No authenticated user");
-
-      const { error } = await supabase.from("friends").insert([
-        {
-          user_id: user.id,
-          friend_id: friendId,
-          status: "pending",
-        },
-      ]);
-
-      if (error) throw error;
+      await addFriend({ friendId });
+      toast.success("Friend request sent!");
       // Refresh search results
       searchUsers(searchQuery);
     } catch (error) {
       console.error("Error sending friend request:", error);
+      toast.error((error as Error).message || "Failed to send friend request");
     }
   };
 
@@ -184,6 +127,10 @@ export default function ProfileFriendsPage() {
       </div>
     );
   }
+
+  const acceptedFriends = friends.filter(
+    (friend) => friend.status === "accepted"
+  );
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-950">
@@ -310,10 +257,10 @@ export default function ProfileFriendsPage() {
                 <div className="flex items-center gap-2">
                   <Users className="w-6 h-6 text-purple-400" />
                   <h2 className="text-2xl font-bold text-white">
-                    My Friends ({friends.length})
+                    My Friends ({acceptedFriends.length})
                   </h2>
                 </div>
-                {friends.length === 0 ? (
+                {acceptedFriends.length === 0 ? (
                   <motion.div
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
@@ -340,63 +287,67 @@ export default function ProfileFriendsPage() {
                   </motion.div>
                 ) : (
                   <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                    {friends.map(({ friend }, index) => (
-                      <motion.div
-                        key={friend.id}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: index * 0.1 }}
-                      >
-                        <Link
-                          href={`/profile/${friend.id}`}
-                          className="block group"
+                    {acceptedFriends.map((friend, index: number) => {
+                      const onlineStatus: OnlineStatus =
+                        friend.online_status || "offline";
+                      return (
+                        <motion.div
+                          key={friend.id}
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: index * 0.1 }}
                         >
-                          <Card className="p-5 bg-gray-900/50 border-gray-800 backdrop-blur-xl hover:bg-gray-800/70 hover:border-purple-500/30 transition-all duration-300 rounded-xl">
-                            <div className="flex items-center gap-4">
-                              <div className="relative">
-                                <div className="absolute inset-0 bg-purple-500/20 rounded-full blur-md group-hover:bg-purple-500/30 transition-all" />
-                                <Avatar className="ring-2 ring-purple-500/20 group-hover:ring-purple-500/40 transition-all w-14 h-14 relative">
-                                  <AvatarImage src={friend.avatar_url} />
-                                  <AvatarFallback className="bg-gray-900 text-purple-400 font-medium">
-                                    {friend.username?.[0]?.toUpperCase()}
-                                  </AvatarFallback>
-                                </Avatar>
-                              </div>
-                              <div className="space-y-1">
-                                <h3 className="font-semibold text-lg text-white group-hover:text-purple-400 transition-colors">
-                                  {friend.username}
-                                </h3>
-                                <div className="flex items-center gap-3">
-                                  <p
-                                    className={cn(
-                                      "text-sm flex items-center gap-1.5",
-                                      friend.status === "online"
-                                        ? "text-green-400"
-                                        : "text-gray-400"
-                                    )}
-                                  >
-                                    <span
+                          <Link
+                            href={`/profile/${friend.id}`}
+                            className="block group"
+                          >
+                            <Card className="p-5 bg-gray-900/50 border-gray-800 backdrop-blur-xl hover:bg-gray-800/70 hover:border-purple-500/30 transition-all duration-300 rounded-xl">
+                              <div className="flex items-center gap-4">
+                                <div className="relative">
+                                  <div className="absolute inset-0 bg-purple-500/20 rounded-full blur-md group-hover:bg-purple-500/30 transition-all" />
+                                  <Avatar className="ring-2 ring-purple-500/20 group-hover:ring-purple-500/40 transition-all w-14 h-14 relative">
+                                    <AvatarImage src={friend.avatar_url} />
+                                    <AvatarFallback className="bg-gray-900 text-purple-400 font-medium">
+                                      {friend.username?.[0]?.toUpperCase()}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                </div>
+                                <div className="space-y-1">
+                                  <h3 className="font-semibold text-lg text-white group-hover:text-purple-400 transition-colors">
+                                    {friend.username}
+                                  </h3>
+                                  <div className="flex items-center gap-3">
+                                    <p
                                       className={cn(
-                                        "w-2 h-2 rounded-full",
-                                        friend.status === "online"
-                                          ? "bg-green-400"
-                                          : "bg-gray-400"
+                                        "text-sm flex items-center gap-1.5",
+                                        onlineStatus === "online"
+                                          ? "text-green-400"
+                                          : "text-gray-400"
                                       )}
-                                    />
-                                    {friend.status || "Offline"}
-                                  </p>
-                                  <span className="w-1 h-1 rounded-full bg-gray-700" />
-                                  <p className="text-sm text-gray-400 flex items-center gap-1.5">
-                                    <Gamepad className="w-3.5 h-3.5" />
-                                    <span>3 games</span>
-                                  </p>
+                                    >
+                                      <span
+                                        className={cn(
+                                          "w-2 h-2 rounded-full",
+                                          onlineStatus === "online"
+                                            ? "bg-green-400"
+                                            : "bg-gray-400"
+                                        )}
+                                      />
+                                      {onlineStatus}
+                                    </p>
+                                    <span className="w-1 h-1 rounded-full bg-gray-700" />
+                                    <p className="text-sm text-gray-400 flex items-center gap-1.5">
+                                      <Gamepad className="w-3.5 h-3.5" />
+                                      <span>3 games</span>
+                                    </p>
+                                  </div>
                                 </div>
                               </div>
-                            </div>
-                          </Card>
-                        </Link>
-                      </motion.div>
-                    ))}
+                            </Card>
+                          </Link>
+                        </motion.div>
+                      );
+                    })}
                   </div>
                 )}
               </motion.div>

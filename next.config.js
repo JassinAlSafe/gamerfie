@@ -1,17 +1,20 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
-    domains: [
-      'lh3.googleusercontent.com',  // Google auth profile pictures
-      'images.igdb.com',           // IGDB game images
-      'avatars.githubusercontent.com'  // GitHub profile pictures
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "**",
+      },
     ],
-    unoptimized: true  // Optional: if you want to disable image optimization
+    dangerouslyAllowSVG: true,
+    contentDispositionType: "attachment",
+    contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
   },
   reactStrictMode: true,
   experimental: {
-    serverActions: true
-  }
-}
+    serverActions: true,
+  },
+};
 
-module.exports = nextConfig 
+module.exports = nextConfig;

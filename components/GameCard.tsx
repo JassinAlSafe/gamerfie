@@ -1,7 +1,11 @@
-import React, { useState } from "react";
-import Link from "next/link";
+"use client";
+
+import { useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { Star, Users } from "lucide-react";
+import { Game } from "@/types/game";
+import { getCoverImageUrl } from "@/utils/image-utils";
 
 export default function GameCard({
   game,
@@ -13,6 +17,9 @@ export default function GameCard({
   inView: boolean;
 }) {
   const [isLoading, setLoading] = useState(true);
+  const coverUrl = game.cover?.url
+    ? getCoverImageUrl(game.cover.url)
+    : "/placeholder.png";
 
   return (
     <Link
@@ -21,7 +28,7 @@ export default function GameCard({
     >
       <div className="relative aspect-[3/4] w-full">
         <Image
-          src={game.cover?.url || "/placeholder.png"}
+          src={coverUrl}
           alt={game.name}
           fill
           priority={index < 4}

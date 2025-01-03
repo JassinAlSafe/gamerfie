@@ -413,7 +413,6 @@ const PopularGamesSection = memo(
         </div>
       );
     }
-
     const games =
       category === "popular"
         ? categories.topRated

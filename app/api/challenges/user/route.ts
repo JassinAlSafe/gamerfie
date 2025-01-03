@@ -47,7 +47,8 @@ export const GET = withAuth(async (
           progress:challenge_team_progress(*)
         ),
         rewards:challenge_rewards(*),
-        rules:challenge_rules(*)
+        rules:challenge_rules(*),
+        media:challenge_media(*)
       `)
       .eq("goals.progress.participant_id", session.user.id);
 

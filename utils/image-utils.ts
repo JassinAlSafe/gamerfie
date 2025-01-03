@@ -1,19 +1,49 @@
 /**
+ * Ensures a URL has the HTTPS protocol
+ */
+function ensureHttps(url: string): string {
+  if (!url) return url;
+  if (url.startsWith("//")) {
+    return `https:${url}`;
+  }
+  if (!url.startsWith("http")) {
+    return `https://${url}`;
+  }
+  return url;
+}
+
+/**
  * Converts a thumbnail URL to a high-quality image URL
  */
 export function getHighQualityImageUrl(url: string): string {
-  return url.startsWith("//")
-    ? `https:${url.replace("/t_thumb/", "/t_1080p/")}`
-    : url.replace("/t_thumb/", "/t_1080p/");
+  if (!url) return "/placeholder.png";
+  
+  // First ensure HTTPS protocol
+  url = ensureHttps(url);
+  
+  // Then replace size parameter
+  if (url.includes("t_thumb")) {
+    url = url.replace("t_thumb", "t_1080p");
+  }
+  
+  return url;
 }
 
 /**
  * Converts a thumbnail URL to a cover image URL
  */
 export function getCoverImageUrl(url: string): string {
-  return url.startsWith("//")
-    ? `https:${url.replace("/t_thumb/", "/t_cover_big/")}`
-    : url.replace("/t_thumb/", "/t_cover_big/");
+  if (!url) return "/placeholder.png";
+  
+  // First ensure HTTPS protocol
+  url = ensureHttps(url);
+  
+  // Then replace size parameter
+  if (url.includes("t_thumb")) {
+    url = url.replace("t_thumb", "t_cover_big_2x");
+  }
+  
+  return url;
 }
 
 /**

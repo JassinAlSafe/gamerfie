@@ -12,7 +12,7 @@ import {
   ListOrdered,
   Users,
   Heart,
-  Trophy,
+  Medal,
   Target,
 } from "lucide-react";
 
@@ -26,7 +26,7 @@ const navItems = [
   { label: "Lists", href: "/profile/lists", icon: ListOrdered },
   { label: "Friends", href: "/profile/friends", icon: Users },
   { label: "Likes", href: "/profile/likes", icon: Heart },
-  { label: "GOTY", href: "/profile/goty", icon: Trophy },
+  { label: "Badges", href: "/profile/badges", icon: Medal },
 ];
 
 export function ProfileNav() {
@@ -42,15 +42,12 @@ export function ProfileNav() {
             <Link
               key={href}
               href={href}
-              className={`
-                flex items-center px-4 py-2 rounded-lg text-sm font-medium
-                transition-all duration-200 whitespace-nowrap
-                ${
-                  isActive
-                    ? "bg-purple-500/20 text-purple-400 shadow-lg shadow-purple-500/10"
-                    : "text-gray-400 hover:text-white hover:bg-white/5"
-                }
-              `}
+              className={cn(
+                "flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 whitespace-nowrap",
+                isActive
+                  ? "bg-purple-500/20 text-purple-400 shadow-lg shadow-purple-500/10"
+                  : "text-gray-400 hover:text-white hover:bg-white/5"
+              )}
             >
               <Icon className="w-4 h-4 mr-2.5" />
               {label}
