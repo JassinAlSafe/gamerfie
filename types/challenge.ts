@@ -211,6 +211,7 @@ export interface ChallengeReward {
   type: "badge" | "points" | "title";
   name: string;
   description: string;
+  badge_id?: string;
   created_at: string;
 }
 

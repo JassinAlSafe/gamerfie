@@ -3,12 +3,7 @@ import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
-
 const assignBadgeSchema = z.object({
-  badge_id: z.string().uuid(),
-});
-
-const claimBadgeSchema = z.object({
   badge_id: z.string().uuid(),
 });
 
@@ -19,22 +14,31 @@ export async function GET(
   try {
     const supabase = createRouteHandlerClient({ cookies });
 
-    // Get challenge badges with badge details
-    const { data: badges, error } = await supabase
-      .from("challenge_badges")
+    // Get challenge badges with badge details through challenge_rewards
+    const { data: rewards, error } = await supabase
+      .from("challenge_rewards")
       .select(`
+        badge_id,
         badge:badge_id (
           id,
           name,
           description,
-          icon_url
+          icon_url,
+          type,
+          rarity
         )
       `)
-      .eq("challenge_id", params.id);
+      .eq("challenge_id", params.id)
+      .eq("type", "badge");
 
     if (error) throw error;
 
-    return NextResponse.json(badges.map(b => b.badge));
+    // Map the results to return only the badge details
+    const badges = rewards
+      .filter(reward => reward.badge !== null)
+      .map(reward => reward.badge);
+
+    return NextResponse.json(badges);
   } catch (error) {
     console.error("Error fetching challenge badges:", error);
     return NextResponse.json(
@@ -56,12 +60,24 @@ export async function POST(
     const body = await request.json();
     const { badge_id } = assignBadgeSchema.parse(body);
 
-    // Insert the badge assignment
+    // Get the badge details first
+    const { data: badge, error: badgeError } = await supabase
+      .from("badges")
+      .select("name, description")
+      .eq("id", badge_id)
+      .single();
+
+    if (badgeError) throw badgeError;
+
+    // Insert the badge as a reward
     const { error } = await supabase
-      .from("challenge_badges")
+      .from("challenge_rewards")
       .insert({
         challenge_id: params.id,
+        type: "badge",
         badge_id,
+        name: badge.name,
+        description: badge.description
       });
 
     if (error) throw error;
@@ -71,68 +87,6 @@ export async function POST(
     console.error("Error assigning badge to challenge:", error);
     return NextResponse.json(
       { error: "Failed to assign badge to challenge" },
-      { status: 500 }
-    );
-  }
-}
-
-// Claim a badge (for challenge participants)
-export async function PUT(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
-  try {
-    const supabase = createRouteHandlerClient({ cookies });
-    
-    // Get current user
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-
-    if (!session) {
-      return NextResponse.json(
-        { error: "Not authenticated" },
-        { status: 401 }
-      );
-    }
-
-    // Validate request body
-    const body = await request.json();
-    const { badge_id } = claimBadgeSchema.parse(body);
-
-    // Check if user can claim the badge
-    const { data: canClaim, error: checkError } = await supabase
-      .rpc("can_claim_badge", {
-        p_user_id: session.user.id,
-        p_badge_id: badge_id,
-        p_challenge_id: params.id,
-      });
-
-    if (checkError) throw checkError;
-
-    if (!canClaim) {
-      return NextResponse.json(
-        { error: "Cannot claim this badge" },
-        { status: 400 }
-      );
-    }
-
-    // Claim the badge
-    const { error: claimError } = await supabase
-      .from("user_badge_claims")
-      .insert({
-        user_id: session.user.id,
-        badge_id,
-        challenge_id: params.id,
-      });
-
-    if (claimError) throw claimError;
-
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error("Error claiming badge:", error);
-    return NextResponse.json(
-      { error: "Failed to claim badge" },
       { status: 500 }
     );
   }

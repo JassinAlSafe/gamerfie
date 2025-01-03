@@ -36,7 +36,7 @@ interface ProgressStore {
   loading: boolean;
   error: string | null;
   fetchProgress: (userId: string, gameId: string) => Promise<void>;
-  updateGameStatus: (userId: string, gameId: string, status: GameStatus, gameData?: GameData, comment?: string) => Promise<void>;
+  updateGameStatus: (userId: string, gameId: string, status: GameStatus, gameData?: GameData) => Promise<void>;
   updateProgress: (userId: string, gameId: string, data: ProgressData) => Promise<void>;
 }
 
@@ -108,7 +108,7 @@ export const useProgressStore = create<ProgressStore>((set) => ({
     }
   },
 
-  updateGameStatus: async (userId: string, gameId: string, status: GameStatus, gameData?: GameData, comment?: string) => {
+  updateGameStatus: async (userId: string, gameId: string, status: GameStatus, gameData?: GameData) => {
     set({ loading: true });
     const supabase = createClientComponentClient<Database>();
 
@@ -216,6 +216,41 @@ export const useProgressStore = create<ProgressStore>((set) => ({
           });
 
         if (achievementError) throw achievementError;
+      }
+
+      // First get the user's active challenge participations
+      const { data: participations, error: participationsError } = await supabase
+        .from("challenge_participants")
+        .select("challenge_id")
+        .eq("user_id", userId)
+        .eq("completed", false);
+
+      if (participationsError) throw participationsError;
+
+      const challengeIds = participations?.map(p => p.challenge_id) || [];
+
+      // Then get active challenges with goals for this game
+      const { data: activeGameChallenges, error: challengesError } = await supabase
+        .from("challenges")
+        .select(`
+          id,
+          goals:challenge_goals(*)
+        `)
+        .eq("status", "active")
+        .in("id", challengeIds)
+        .filter("goals.type", "eq", "play_time");
+
+      if (challengesError) throw challengesError;
+
+      // Update progress for each active challenge
+      for (const challenge of activeGameChallenges || []) {
+        await fetch(`/api/challenges/${challenge.id}/progress`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({}), // Empty body since the endpoint will calculate progress
+        });
       }
 
       // Update local state

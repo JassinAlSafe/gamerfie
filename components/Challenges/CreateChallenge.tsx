@@ -128,6 +128,7 @@ interface Reward {
   type: "badge" | "points" | "title";
   name: string;
   description: string;
+  badge_id?: string;
 }
 
 interface CreateChallengeProps {
@@ -148,6 +149,7 @@ export function CreateChallenge({ onSubmit }: CreateChallengeProps) {
     type: "badge",
     name: "",
     description: "",
+    badge_id: undefined,
   });
   const [newRule, setNewRule] = useState("");
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -655,6 +657,7 @@ export function CreateChallenge({ onSubmit }: CreateChallengeProps) {
                               ...newReward,
                               name: selectedBadge.name,
                               description: selectedBadge.description,
+                              badge_id: value,
                             });
                           }
                         }}

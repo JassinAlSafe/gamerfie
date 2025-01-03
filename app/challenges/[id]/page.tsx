@@ -4,13 +4,6 @@ import { useEffect, useState } from "react";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/components/ui/use-toast";
 import {
@@ -286,12 +279,7 @@ export default function ChallengePage({ params }: { params: { id: string } }) {
       {/* Cover Image Section */}
       <div className="relative w-full h-[40vh] overflow-hidden">
         <Image
-          src={
-            challenge.media?.[0]?.url?.startsWith("//")
-              ? `https:${challenge.media[0].url}`
-              : challenge.media?.[0]?.url ||
-                "/images/placeholders/game-cover.jpg"
-          }
+          src={challenge.cover_url || "/images/placeholders/game-cover.jpg"}
           alt={challenge.title}
           fill
           className="object-cover"

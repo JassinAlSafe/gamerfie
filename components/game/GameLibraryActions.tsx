@@ -156,6 +156,30 @@ export function GameLibraryActions({
             description: matchingChallenges.map((c) => c.title).join(", "),
           }
         );
+
+        // Update progress for each matching challenge
+        for (const challenge of matchingChallenges) {
+          try {
+            const response = await fetch(
+              `/api/challenges/${challenge.id}/progress`,
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({}),
+              }
+            );
+
+            if (!response.ok) {
+              console.error(
+                `Failed to update progress for challenge ${challenge.title}`
+              );
+            }
+          } catch (error) {
+            console.error(`Error updating challenge progress:`, error);
+          }
+        }
       }
     } catch (error) {
       console.error("Error:", error);

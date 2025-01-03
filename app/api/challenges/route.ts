@@ -231,7 +231,8 @@ export async function POST(request: Request) {
       rewards_data: body.rewards?.map((reward: any) => ({
         type: reward.type,
         name: reward.name,
-        description: reward.description || null
+        description: reward.description || null,
+        badge_id: reward.badge_id || null
       })) || [],
       rules_data: body.rules?.map((rule: any) => ({
         rule: typeof rule === 'string' ? rule : rule.rule

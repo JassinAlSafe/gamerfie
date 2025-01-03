@@ -1,12 +1,6 @@
 import { cookies } from "next/headers";
 import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
 import { NextResponse } from "next/server";
-import { z } from "zod";
-
-const progressUpdateSchema = z.object({
-  progress: z.number().min(0).max(100),
-  goalProgress: z.record(z.string(), z.number()).optional(),
-});
 
 export async function POST(
   request: Request,
@@ -24,24 +18,12 @@ export async function POST(
       );
     }
 
-    // Validate request body
-    const body = await request.json();
-    const { progress, goalProgress } = progressUpdateSchema.parse(body);
-
-    console.log("Processing challenge progress update:", {
-      challengeId: params.id,
-      userId: session.user.id,
-      progress,
-      goalProgress
-    });
-
     // Get challenge details
     const { data: challenge, error: challengeError } = await supabase
       .from("challenges")
       .select(`
         *,
-        goals:challenge_goals(*),
-        rewards:challenge_rewards(*)
+        goals:challenge_goals(*)
       `)
       .eq("id", params.id)
       .single();
@@ -54,17 +36,37 @@ export async function POST(
       );
     }
 
-    console.log("Found challenge:", {
-      challengeId: challenge.id,
-      rewards: challenge.rewards
-    });
+    // Get user's game progress
+    const { data: gameProgress, error: gameError } = await supabase
+      .from("user_games")
+      .select("*")
+      .eq("user_id", session.user.id)
+      .eq("game_id", challenge.game_id)
+      .single();
+
+    if (gameError) {
+      return NextResponse.json(
+        { error: "Game progress not found" },
+        { status: 404 }
+      );
+    }
+
+    // Calculate progress based on goal type
+    let progress = 0;
+    for (const goal of challenge.goals) {
+      switch (goal.type) {
+        case "play_time":
+          progress = Math.min(100, (gameProgress.play_time / goal.target) * 100);
+          break;
+        // Add other goal types here as needed
+      }
+    }
 
     // Update participant progress
     const { error: progressError } = await supabase
       .from("challenge_participants")
       .update({
         progress,
-        goal_progress: goalProgress || {},
         completed: progress === 100,
         completed_at: progress === 100 ? new Date().toISOString() : null
       })
@@ -75,48 +77,33 @@ export async function POST(
 
     // If challenge is completed, award any badge rewards
     if (progress === 100) {
-      console.log("Challenge completed! Processing badge rewards...");
-      const badgeRewards = challenge.rewards.filter(reward => reward.type === 'badge');
-      console.log("Found badge rewards:", badgeRewards);
-      
-      for (const reward of badgeRewards) {
-        // Check if badge is assigned to challenge
-        const { data: challengeBadge, error: badgeError } = await supabase
-          .from("challenge_badges")
-          .select("badge_id")
-          .eq("challenge_id", params.id)
-          .eq("badge_id", reward.badge_id)
-          .single();
+      const { data: rewards, error: rewardsError } = await supabase
+        .from("challenge_rewards")
+        .select("*")
+        .eq("challenge_id", params.id)
+        .eq("type", "badge");
 
-        if (badgeError) {
-          console.error("Error checking challenge badge:", badgeError);
-          continue;
-        }
+      if (rewardsError) throw rewardsError;
 
-        console.log("Found challenge badge:", challengeBadge);
-
-        if (challengeBadge) {
-          // Award the badge
-          const { data: awarded, error: awardError } = await supabase.rpc("award_badge_to_user", {
-            p_user_id: session.user.id,
-            p_badge_id: challengeBadge.badge_id,
-            p_challenge_id: params.id
-          });
-
-          if (awardError) {
-            console.error("Error awarding badge:", awardError);
-          } else {
-            console.log("Badge award result:", awarded);
-          }
-        }
+      for (const reward of rewards) {
+        await supabase.from("user_badges").insert({
+          user_id: session.user.id,
+          badge_id: reward.badge_id,
+          challenge_id: params.id,
+          claimed_at: new Date().toISOString()
+        });
       }
     }
 
-    return NextResponse.json({ success: true, progress });
+    return NextResponse.json({ 
+      success: true,
+      progress,
+      completed: progress === 100
+    });
   } catch (error) {
-    console.error("Error updating challenge progress:", error);
+    console.error("Error in progress update:", error);
     return NextResponse.json(
-      { error: "Failed to update challenge progress" },
+      { error: "Internal server error" },
       { status: 500 }
     );
   }

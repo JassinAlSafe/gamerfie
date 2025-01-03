@@ -86,30 +86,47 @@ export async function POST(
       );
     }
 
-    // Claim rewards
-    const claimedRewards = rewards.map((reward) => ({
-      user_id: session.user.id,
-      challenge_id: params.id,
-      reward_id: reward.id,
-      claimed_at: new Date().toISOString(),
-    }));
+    // Process each reward
+    for (const reward of rewards) {
+      if (reward.type === "badge" && reward.badge_id) {
+        // Insert badge into user_badges
+        const { error: badgeError } = await supabase
+          .from("user_badges")
+          .insert({
+            user_id: session.user.id,
+            badge_id: reward.badge_id,
+            challenge_id: params.id,
+            claimed_at: new Date().toISOString()
+          });
 
+        if (badgeError) {
+          console.error("Error claiming badge:", badgeError);
+          return NextResponse.json(
+            { error: "Failed to claim badge" },
+            { status: 500 }
+          );
+        }
+      }
+    }
+
+    // Record the claim
     const { error: insertError } = await supabase
       .from("claimed_rewards")
-      .insert(claimedRewards);
+      .insert({
+        user_id: session.user.id,
+        challenge_id: params.id,
+        claimed_at: new Date().toISOString()
+      });
 
     if (insertError) {
-      console.error("Error claiming rewards:", insertError);
+      console.error("Error recording claim:", insertError);
       return NextResponse.json(
-        { error: "Failed to claim rewards" },
+        { error: "Failed to record claim" },
         { status: 500 }
       );
     }
 
-    return NextResponse.json({
-      message: "Rewards claimed successfully",
-      rewards: rewards,
-    });
+    return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Error in claim rewards:", error);
     return NextResponse.json(

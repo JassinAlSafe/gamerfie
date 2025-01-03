@@ -6,6 +6,7 @@ import { Badge } from "@/types/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Medal } from "lucide-react";
 import Image from "next/image";
+import { cn } from "@/lib/utils";
 
 interface UserBadge {
   badge: Badge;
@@ -31,7 +32,7 @@ export default function UserBadges() {
         if (!user) throw new Error("Not authenticated");
 
         const { data, error } = await supabase
-          .from("user_badge_claims")
+          .from("user_badges")
           .select(
             `
             claimed_at,
@@ -39,7 +40,9 @@ export default function UserBadges() {
               id,
               name,
               description,
-              icon_url
+              icon_url,
+              type,
+              rarity
             ),
             challenge:challenge_id (
               id,
@@ -95,35 +98,106 @@ export default function UserBadges() {
       {badges.map((userBadge) => (
         <Card
           key={`${userBadge.badge.id}-${userBadge.claimed_at}`}
-          className="overflow-hidden"
+          className={cn(
+            "overflow-hidden border-0",
+            userBadge.badge.rarity === "legendary" && "bg-yellow-500/10",
+            userBadge.badge.rarity === "epic" && "bg-purple-500/10",
+            userBadge.badge.rarity === "rare" && "bg-blue-500/10",
+            userBadge.badge.rarity === "common" && "bg-gray-500/10"
+          )}
         >
           <CardHeader>
-            <CardTitle className="text-lg">{userBadge.badge.name}</CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-lg flex items-center gap-2">
+                {userBadge.badge.name}
+                <span
+                  className={cn(
+                    "text-xs px-2 py-0.5 rounded-full",
+                    userBadge.badge.rarity === "legendary" &&
+                      "bg-yellow-500/20 text-yellow-500",
+                    userBadge.badge.rarity === "epic" &&
+                      "bg-purple-500/20 text-purple-500",
+                    userBadge.badge.rarity === "rare" &&
+                      "bg-blue-500/20 text-blue-500",
+                    userBadge.badge.rarity === "common" &&
+                      "bg-gray-500/20 text-gray-500"
+                  )}
+                >
+                  {userBadge.badge.rarity}
+                </span>
+              </CardTitle>
+              <span
+                className={cn(
+                  "text-xs px-2 py-0.5 rounded-full",
+                  userBadge.badge.type === "challenge" &&
+                    "bg-green-500/20 text-green-500",
+                  userBadge.badge.type === "achievement" &&
+                    "bg-blue-500/20 text-blue-500",
+                  userBadge.badge.type === "special" &&
+                    "bg-purple-500/20 text-purple-500",
+                  userBadge.badge.type === "community" &&
+                    "bg-orange-500/20 text-orange-500"
+                )}
+              >
+                {userBadge.badge.type}
+              </span>
+            </div>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="relative w-full aspect-square">
+            <div
+              className={cn(
+                "relative w-24 h-24 mx-auto rounded-lg overflow-hidden",
+                userBadge.badge.rarity === "legendary" && "bg-yellow-500/20",
+                userBadge.badge.rarity === "epic" && "bg-purple-500/20",
+                userBadge.badge.rarity === "rare" && "bg-blue-500/20",
+                userBadge.badge.rarity === "common" && "bg-gray-500/20"
+              )}
+            >
               {userBadge.badge.icon_url ? (
                 <Image
                   src={userBadge.badge.icon_url}
                   alt={userBadge.badge.name}
                   fill
-                  className="object-contain"
+                  className="object-cover"
+                  onError={(e) => {
+                    const imgElement = e.target as HTMLImageElement;
+                    imgElement.style.display = "none";
+                    const parent = imgElement.parentElement;
+                    if (parent) {
+                      const fallback = document.createElement("div");
+                      fallback.className =
+                        "w-full h-full flex items-center justify-center";
+                      fallback.innerHTML = `<svg class="w-8 h-8 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>`;
+                      parent.appendChild(fallback);
+                    }
+                  }}
                 />
               ) : (
-                <Medal className="w-full h-full text-primary/20" />
+                <Medal
+                  className={cn(
+                    "w-full h-full p-4",
+                    userBadge.badge.rarity === "legendary" && "text-yellow-500",
+                    userBadge.badge.rarity === "epic" && "text-purple-500",
+                    userBadge.badge.rarity === "rare" && "text-blue-500",
+                    userBadge.badge.rarity === "common" && "text-gray-500"
+                  )}
+                />
               )}
             </div>
-            <div>
-              <p className="text-sm text-muted-foreground">
+            <div className="space-y-2">
+              <p className="text-sm text-muted-foreground text-center">
                 {userBadge.badge.description}
               </p>
               {userBadge.challenge && (
-                <p className="text-xs text-muted-foreground mt-2">
+                <p className="text-xs text-muted-foreground text-center">
                   Earned from challenge: {userBadge.challenge.title}
                 </p>
               )}
-              <p className="text-xs text-muted-foreground mt-1">
-                Earned on: {new Date(userBadge.claimed_at).toLocaleDateString()}
+              <p className="text-xs text-muted-foreground text-center">
+                Claimed on:{" "}
+                {new Date(userBadge.claimed_at).toLocaleDateString()}
               </p>
             </div>
           </CardContent>

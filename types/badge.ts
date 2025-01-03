@@ -3,14 +3,15 @@ export interface Badge {
   name: string;
   description: string;
   icon_url?: string;
+  type: 'challenge' | 'achievement' | 'special' | 'community';
+  rarity: 'common' | 'rare' | 'epic' | 'legendary';
   created_at: string;
-  updated_at: string;
 }
 
 export interface UserBadge {
   badge: Badge;
-  awarded_at: string;
-  awarded_from_challenge?: {
+  claimed_at: string;
+  challenge?: {
     id: string;
     title: string;
   };
@@ -18,6 +19,7 @@ export interface UserBadge {
 
 export interface ChallengeBadge {
   badge: Badge;
+  reward_id: string;
   created_at: string;
 }
 

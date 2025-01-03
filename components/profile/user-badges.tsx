@@ -34,16 +34,23 @@ export default function UserBadges() {
           .from("user_badges")
           .select(
             `
-            awarded_at,
-            badge:badge_id (*),
-            challenge:awarded_from_challenge_id (
+            claimed_at,
+            badge:badge_id (
+              id,
+              name,
+              description,
+              icon_url,
+              type,
+              rarity
+            ),
+            challenge:challenge_id (
               id,
               title
             )
           `
           )
           .eq("user_id", user.id)
-          .order("awarded_at", { ascending: false });
+          .order("claimed_at", { ascending: false });
 
         if (error) throw error;
         setBadges(data || []);
