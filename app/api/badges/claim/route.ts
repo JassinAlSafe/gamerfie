@@ -12,11 +12,8 @@ export async function POST(request: Request) {
   try {
     const supabase = createRouteHandlerClient({ cookies });
     
-    // Get current user
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-
+    // Authentication check
+    const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
       return NextResponse.json(
         { error: "Not authenticated" },
@@ -24,85 +21,83 @@ export async function POST(request: Request) {
       );
     }
 
-    // Validate request body
+    // Validate request
     const body = await request.json();
     const { badgeId, challengeId } = claimBadgeSchema.parse(body);
 
-    // Check if the badge exists and is assigned to the challenge
-    const { data: reward, error: rewardError } = await supabase
-      .from("challenge_rewards")
-      .select("id")
-      .eq("challenge_id", challengeId)
-      .eq("badge_id", badgeId)
-      .eq("type", "badge")
+    // Check eligibility
+    const { data: challenge } = await supabase
+      .from("challenges")
+      .select(`
+        *,
+        participants:challenge_participants(
+          progress,
+          completed
+        )
+      `)
+      .eq("id", challengeId)
       .single();
 
-    if (rewardError || !reward) {
+    if (!challenge) {
       return NextResponse.json(
-        { error: "Badge not found or not assigned to this challenge" },
+        { error: "Challenge not found" },
         { status: 404 }
       );
     }
 
-    // Check if the user has completed the challenge
-    const { data: participant, error: participantError } = await supabase
-      .from("challenge_participants")
-      .select("completed")
-      .eq("challenge_id", challengeId)
-      .eq("user_id", session.user.id)
-      .single();
+    const userParticipation = challenge.participants?.find(
+      p => p.user_id === session.user.id
+    );
 
-    if (participantError || !participant) {
+    if (!userParticipation?.completed) {
       return NextResponse.json(
-        { error: "You are not a participant in this challenge" },
+        { error: "Challenge must be completed to claim badge" },
         { status: 403 }
       );
     }
 
-    if (!participant.completed) {
-      return NextResponse.json(
-        { error: "You must complete the challenge before claiming the badge" },
-        { status: 403 }
-      );
-    }
-
-    // Check if the badge is already claimed
+    // Check for existing claim (idempotency)
     const { data: existingClaim } = await supabase
       .from("user_badges")
-      .select("id")
-      .eq("user_id", session.user.id)
-      .eq("badge_id", badgeId)
-      .eq("challenge_id", challengeId)
-      .maybeSingle();
+      .select()
+      .match({
+        user_id: session.user.id,
+        badge_id: badgeId,
+        challenge_id: challengeId,
+      })
+      .single();
 
     if (existingClaim) {
-      // If already claimed, return success
-      return NextResponse.json({ success: true });
+      return NextResponse.json({ 
+        success: true,
+        message: "Badge already claimed" 
+      });
     }
 
-    // Claim the badge
-    const { error: insertError } = await supabase
+    // Claim badge
+    const { error: claimError } = await supabase
       .from("user_badges")
-      .upsert({
+      .insert({
         user_id: session.user.id,
         badge_id: badgeId,
         challenge_id: challengeId,
       });
 
-    if (insertError) {
-      console.error("Error claiming badge:", insertError);
-      return NextResponse.json(
-        { error: "Failed to claim badge" },
-        { status: 500 }
-      );
-    }
+    if (claimError) throw claimError;
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ 
+      success: true,
+      message: "Badge claimed successfully" 
+    });
+
   } catch (error) {
     console.error("Error claiming badge:", error);
     return NextResponse.json(
-      { error: "Failed to claim badge" },
-      { status: 500 }
+      { 
+        error: error instanceof Error ? error.message : "Failed to claim badge",
+        details: error 
+      },
+      { status: error instanceof z.ZodError ? 400 : 500 }
     );
   }
 } 

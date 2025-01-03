@@ -3,11 +3,49 @@
 import Image from "next/image";
 import { type ProcessedGame } from "@/types/game";
 import { getCoverImageUrl } from "@/utils/image-utils";
+import { toast } from "sonner";
+import { useState } from "react";
 
 export function GameCard({ game }: { game: ProcessedGame }) {
   const coverUrl = game.cover_url
     ? getCoverImageUrl(game.cover_url)
     : "/placeholder-game.jpg";
+
+  const [isClaimingBadge, setIsClaimingBadge] = useState(false);
+
+  const claimBadge = async (challengeId: string, badgeId: string) => {
+    if (isClaimingBadge) return;
+
+    setIsClaimingBadge(true);
+    try {
+      const response = await fetch(
+        `/api/challenges/${challengeId}/badges/claim`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ badge_id: badgeId }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        toast.error(data.error || "Failed to claim badge");
+        return;
+      }
+
+      toast.success("Badge claimed successfully! 🎉", {
+        description: "Check your profile to see your new badge!",
+      });
+    } catch (error) {
+      console.error("Error claiming badge:", error);
+      toast.error("Failed to claim badge. Please try again.");
+    } finally {
+      setIsClaimingBadge(false);
+    }
+  };
 
   return (
     <div className="relative group rounded-lg overflow-hidden border border-white/5 bg-gray-900/50 hover:bg-gray-900/80 transition-all duration-200">

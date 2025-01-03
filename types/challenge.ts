@@ -220,4 +220,87 @@ export interface ChallengeRule {
   challenge_id: string;
   rule: string;
   created_at: string;
+}
+
+interface ChallengeDetails {
+  id: string;
+  title: string;
+  description: string;
+  type: "competitive" | "collaborative";
+  status: "upcoming" | "active" | "completed";
+  start_date: string;
+  end_date: string;
+  cover_url?: string;
+  goal_type: string;
+  goal_target: number;
+  min_participants: number;
+  max_participants: number | null;
+  creator: {
+    id: string;
+    username: string;
+    avatar_url?: string;
+  };
+  participants: Array<{
+    user: {
+      id: string;
+      username: string;
+      avatar_url?: string;
+    };
+    progress: number;
+    completed: boolean;
+    joined_at: string;
+  }>;
+  rewards: Array<{
+    id: string;
+    badge_id: string;
+    badge: {
+      id: string;
+      name: string;
+      description: string;
+      image_url?: string;
+      icon_url?: string;
+    };
+    claimed?: Array<{
+      user_id: string;
+      badge_id: string;
+      claimed_at: string;
+    }>;
+  }>;
+  rules?: Array<{
+    id: string;
+    rule: string;
+  }>;
+  userProgress?: {
+    progress: number;
+    completed: boolean;
+    joined_at: string;
+  };
+  created_at: string;
+  updated_at: string;
+}
+
+export type { ChallengeDetails }; 
+
+export interface CreateChallengeRequest {
+  title: string;
+  description: string;
+  type: "competitive" | "collaborative";
+  status: "upcoming" | "active" | "completed";
+  start_date: string;
+  end_date: string;
+  min_participants: number;
+  max_participants: number | null;
+  cover_url?: string;
+  goals?: Array<{
+    type: string;
+    target: number;
+    description?: string;
+  }>;
+  rewards?: Array<{
+    type: "badge" | "points" | "title";
+    name: string;
+    description: string;
+    badge_id?: string;
+  }>;
+  rules?: string[];
 } 

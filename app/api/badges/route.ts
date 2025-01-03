@@ -77,7 +77,11 @@ export async function POST(request: Request) {
     // Create the badge
     const { data: badge, error: insertError } = await supabase
       .from("badges")
-      .insert([validatedData])
+      .insert({
+        name: validatedData.name,
+        description: validatedData.description,
+        image_url: validatedData.icon_url,
+      })
       .select()
       .single();
 
