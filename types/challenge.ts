@@ -304,3 +304,32 @@ export interface CreateChallengeRequest {
   }>;
   rules?: string[];
 } 
+
+export interface ChallengeFormData {
+  title: string;
+  description: string;
+  type: "competitive" | "collaborative";
+  start_date: Date;
+  end_date: Date;
+  min_participants: number;
+  max_participants?: number;
+  goals: {
+    type: string;
+    target: number;
+    description?: string;
+  }[];
+  rules: string[];
+  rewards: {
+    type: "badge" | "points" | "title";
+    name: string;
+    description: string;
+    badge_id?: string;
+  }[];
+  requirements?: {
+    genre?: string;
+    platform?: string;
+    minRating?: number;
+    releaseYear?: number;
+  };
+  imageFile?: File | null;
+} 
