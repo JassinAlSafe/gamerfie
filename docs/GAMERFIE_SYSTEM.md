@@ -50,6 +50,8 @@ Gamerfie's integrated Challenge and Badge system enables users to participate in
 - Rewards (including badges)
 - Participants and teams
 - Media attachments
+  - Cover image (stored in Supabase storage under the 'challenges' bucket)
+  - Additional media for challenge details
 - Progress tracking
 
 ### Manual Progress Update System
@@ -410,7 +412,69 @@ CREATE POLICY "Users can claim their own badges"
      max_participants?: number;
      rewards: ChallengeReward[];
      rules: Array<string | { rule: string }>;
+     cover_image?: File; // Optional cover image for the challenge
    }
+
+   const createChallenge = async (request: CreateChallengeRequest) => {
+     try {
+       // 1. Create challenge record
+       const { data: challenge, error } = await supabase
+         .from("challenges")
+         .insert({
+           title: request.title,
+           description: request.description,
+           type: request.type,
+           start_date: request.start_date,
+           end_date: request.end_date,
+           max_participants: request.max_participants,
+         })
+         .select()
+         .single();
+
+       if (error) throw error;
+
+       // 2. Upload cover image if provided
+       if (request.cover_image) {
+         const cover_url = await uploadCoverImage(
+           request.cover_image,
+           challenge.id
+         );
+         await supabase
+           .from("challenges")
+           .update({ cover_url })
+           .eq("id", challenge.id);
+       }
+
+       // 3. Create goals
+       await Promise.all(
+         request.goals.map((goal) =>
+           supabase.from("challenge_goals").insert({
+             challenge_id: challenge.id,
+             type: goal.type,
+             target: goal.target,
+             description: goal.description,
+           })
+         )
+       );
+
+       // 4. Create rewards
+       await Promise.all(
+         request.rewards.map((reward) =>
+           supabase.from("challenge_rewards").insert({
+             challenge_id: challenge.id,
+             type: reward.type,
+             name: reward.name,
+             description: reward.description,
+             badge_id: reward.badge_id,
+           })
+         )
+       );
+
+       return { success: true, challenge };
+     } catch (error) {
+       throw error;
+     }
+   };
    ```
 
 ````
@@ -498,6 +562,7 @@ CREATE TABLE challenges (
     min_participants INTEGER NOT NULL DEFAULT 2,
     max_participants INTEGER,
     creator_id UUID REFERENCES profiles(id),
+    cover_url TEXT,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -512,6 +577,16 @@ CREATE TABLE challenge_participants (
     updated_at TIMESTAMPTZ DEFAULT NOW(),
     PRIMARY KEY (challenge_id, user_id),
     CONSTRAINT valid_progress CHECK (progress >= 0 AND progress <= 100)
+);
+
+-- Challenge Participant Progress Table
+CREATE TABLE challenge_participant_progress (
+    participant_id UUID REFERENCES challenge_participants(user_id),
+    goal_id UUID REFERENCES challenge_goals(id) ON DELETE CASCADE,
+    progress INTEGER DEFAULT 0,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    PRIMARY KEY (participant_id, goal_id)
 );
 
 -- Badges Table
@@ -840,4 +915,41 @@ const handleSystemError = (error: SystemError) => {
    - Badge distribution
    - User engagement
    - Challenge popularity
+
+### Storage System
+
+#### Challenge Media Storage
+
+Challenge media, including cover images, are stored in Supabase Storage:
+
+- **Bucket**: `challenges`
+- **Access Control**:
+  - Public read access for cover images
+  - Authenticated upload access for challenge creators
+  - Delete access for challenge owners
+- **File Types**: Images (jpg, jpeg, png, gif)
+- **Usage**: Cover images are displayed on challenge cards and detail pages
+
+```typescript
+// Example: Uploading a challenge cover image
+const uploadCoverImage = async (
+  file: File,
+  challengeId: string
+): Promise<string> => {
+  const path = `${challengeId}/cover`;
+  const { data, error } = await supabase.storage
+    .from('challenges')
+    .upload(path, file);
+
+  if (error) throw error;
+
+  // Get public URL
+  const { data: { publicUrl } } = supabase.storage
+    .from('challenges')
+    .getPublicUrl(path);
+
+  return publicUrl;
+};
+```
+```
 ````
