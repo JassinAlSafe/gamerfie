@@ -1,6 +1,5 @@
 "use client";
 
-import { BackgroundBeams } from "@/components/ui/background-beams";
 import { Card } from "@/components/ui/card";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -11,14 +10,22 @@ import { ProfileHeader } from "@/components/profile/profile-header";
 import { ProfileNav } from "@/components/profile/profile-nav";
 import { useProfile } from "@/hooks/use-profile";
 import { Input } from "@/components/ui/input";
-import { Search, UserPlus, Users, X, Gamepad } from "lucide-react";
+import {
+  Search,
+  UserPlus,
+  Users,
+  X,
+  Gamepad,
+  Clock,
+  Check,
+} from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useFriendsStore } from "@/stores/useFriendsStore";
-import { toast } from "react-hot-toast";
+import toast from "react-hot-toast";
 import { Friend, OnlineStatus } from "@/types/friend";
 
 export default function ProfileFriendsPage() {
@@ -31,7 +38,6 @@ export default function ProfileFriendsPage() {
   const [isSessionLoading, setIsSessionLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<Friend[]>([]);
-  const [isSearching, setIsSearching] = useState(false);
   const supabase = createClientComponentClient();
   const router = useRouter();
   const { addFriend, friends, fetchFriends } = useFriendsStore();
@@ -81,7 +87,6 @@ export default function ProfileFriendsPage() {
       return;
     }
 
-    setIsSearching(true);
     try {
       const { data, error } = await supabase
         .from("profiles")
@@ -93,8 +98,6 @@ export default function ProfileFriendsPage() {
       setSearchResults(data || []);
     } catch (error) {
       console.error("Error searching users:", error);
-    } finally {
-      setIsSearching(false);
     }
   };
 
@@ -108,6 +111,47 @@ export default function ProfileFriendsPage() {
       console.error("Error sending friend request:", error);
       toast.error((error as Error).message || "Failed to send friend request");
     }
+  };
+
+  // First, let's add a helper function to determine the friendship status
+  const getFriendshipStatus = (userId: string) => {
+    console.log("Checking friendship status for:", {
+      searchedUserId: userId,
+      currentUserId: profile.id,
+      allFriends: friends,
+    });
+
+    const existingFriendship = friends.find((f) => {
+      // Check if this friendship involves the searched user
+      const isInvolved =
+        // If the user is the friend
+        f.id === userId ||
+        // If the user is the sender
+        f.sender_id === userId;
+
+      console.log("Friendship check:", {
+        friendship: f,
+        isInvolved,
+        friendId: f.id,
+        senderId: f.sender_id,
+        searchedId: userId,
+      });
+
+      return isInvolved;
+    });
+
+    if (!existingFriendship) {
+      console.log("No friendship found");
+      return null;
+    }
+
+    console.log("Found friendship:", existingFriendship);
+
+    return {
+      ...existingFriendship,
+      // Set user_id to sender_id to maintain compatibility with the UI logic
+      user_id: existingFriendship.sender_id,
+    };
   };
 
   if (profileLoading || isSessionLoading) {
@@ -211,35 +255,117 @@ export default function ProfileFriendsPage() {
                     >
                       <Card className="absolute w-full mt-2 p-3 bg-gray-900/90 border-gray-800 backdrop-blur-xl z-50 rounded-xl">
                         <div className="space-y-2">
-                          {searchResults.map((user) => (
-                            <motion.div
-                              key={user.id}
-                              initial={{ opacity: 0 }}
-                              animate={{ opacity: 1 }}
-                              className="flex items-center justify-between p-3 hover:bg-gray-800/50 rounded-lg transition-all group"
-                            >
-                              <div className="flex items-center gap-3">
-                                <Avatar className="ring-2 ring-purple-500/20 w-10 h-10 group-hover:ring-purple-500/40 transition-all">
-                                  <AvatarImage src={user.avatar_url} />
-                                  <AvatarFallback className="bg-gray-900 text-purple-400 font-medium">
-                                    {user.username?.[0]?.toUpperCase()}
-                                  </AvatarFallback>
-                                </Avatar>
-                                <span className="text-white font-medium group-hover:text-purple-400 transition-colors">
-                                  {user.username}
-                                </span>
-                              </div>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="bg-gray-800/30 border-gray-700/30 hover:bg-purple-500/20 hover:border-purple-500/30 hover:text-purple-400 transition-all"
-                                onClick={() => sendFriendRequest(user.id)}
+                          {searchResults.map((user) => {
+                            const friendship = getFriendshipStatus(user.id);
+
+                            // Don't show current user in search results
+                            if (user.id === profile.id) return null;
+
+                            return (
+                              <motion.div
+                                key={user.id}
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                className="flex items-center justify-between p-3 hover:bg-gray-800/50 rounded-lg transition-all group"
                               >
-                                <UserPlus className="w-4 h-4 mr-2" />
-                                Add Friend
-                              </Button>
-                            </motion.div>
-                          ))}
+                                <div className="flex items-center gap-3">
+                                  <Avatar className="ring-2 ring-purple-500/20 w-10 h-10 group-hover:ring-purple-500/40 transition-all">
+                                    <AvatarImage src={user.avatar_url} />
+                                    <AvatarFallback className="bg-gray-900 text-purple-400 font-medium">
+                                      {user.username?.[0]?.toUpperCase()}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                  <span className="text-white font-medium group-hover:text-purple-400 transition-colors">
+                                    {user.username}
+                                  </span>
+                                </div>
+
+                                {friendship ? (
+                                  friendship.status === "pending" ? (
+                                    friendship.user_id === profile.id ? (
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        className="bg-gray-800/30 border-gray-700/30 text-gray-400 cursor-not-allowed"
+                                        disabled
+                                      >
+                                        <Clock className="w-4 h-4 mr-2" />
+                                        Request Sent
+                                      </Button>
+                                    ) : (
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        className="bg-purple-500/20 border-purple-500/30 hover:bg-purple-500/30 text-purple-400"
+                                        onClick={async () => {
+                                          const toastId = toast.loading(
+                                            "Accepting friend request..."
+                                          );
+                                          try {
+                                            await sendFriendRequest(user.id);
+                                            toast.success(
+                                              "Friend request accepted!",
+                                              { id: toastId }
+                                            );
+                                            // Refresh search results
+                                            searchUsers(searchQuery);
+                                          } catch (error) {
+                                            toast.error(
+                                              "Failed to accept friend request",
+                                              { id: toastId }
+                                            );
+                                          }
+                                        }}
+                                      >
+                                        <Check className="w-4 h-4 mr-2" />
+                                        Accept Request
+                                      </Button>
+                                    )
+                                  ) : friendship.status === "accepted" ? (
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      className="bg-green-500/20 border-green-500/30 text-green-400 cursor-not-allowed"
+                                      disabled
+                                    >
+                                      <Users className="w-4 h-4 mr-2" />
+                                      Friends
+                                    </Button>
+                                  ) : null
+                                ) : (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="bg-gray-800/30 border-gray-700/30 hover:bg-purple-500/20 hover:border-purple-500/30 hover:text-purple-400 transition-all"
+                                    onClick={async () => {
+                                      const toastId = toast.loading(
+                                        "Sending friend request..."
+                                      );
+                                      try {
+                                        await sendFriendRequest(user.id);
+                                        toast.success(
+                                          `Friend request sent to ${user.username}!`,
+                                          { id: toastId }
+                                        );
+                                        // Refresh search results
+                                        searchUsers(searchQuery);
+                                      } catch (error) {
+                                        toast.error(
+                                          error instanceof Error
+                                            ? error.message
+                                            : "Failed to send friend request",
+                                          { id: toastId }
+                                        );
+                                      }
+                                    }}
+                                  >
+                                    <UserPlus className="w-4 h-4 mr-2" />
+                                    Add Friend
+                                  </Button>
+                                )}
+                              </motion.div>
+                            );
+                          })}
                         </div>
                       </Card>
                     </motion.div>
