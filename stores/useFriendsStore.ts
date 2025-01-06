@@ -18,6 +18,10 @@ interface FriendsStore {
   removeFriend: (friendId: string) => Promise<void>;
   updateFriendStatus: (friendId: string, status: FriendStatus) => Promise<void>;
   setFilter: (filter: FriendStatus | 'all') => void;
+  addReaction: (activityId: string, emoji: string) => Promise<void>;
+  removeReaction: (activityId: string, emoji: string) => Promise<void>;
+  addComment: (activityId: string, comment: string) => Promise<void>;
+  
 }
 
 interface SupabaseFriendData {
@@ -240,5 +244,132 @@ export const useFriendsStore = create<FriendsStore>((set, get) => ({
       set({ error: (error as Error).message, isLoading: false });
       throw error;
     }
-  }
+  },
+
+  addReaction: async (activityId: string, emoji: string) => {
+    const supabase = createClientComponentClient();
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session?.user) {
+      throw new Error("User not authenticated");
+    }
+
+    const { error } = await supabase
+      .from('activity_reactions')
+      .insert({
+        activity_id: activityId,
+        user_id: session.user.id,
+        emoji: emoji
+      });
+
+    if (error) throw error;
+
+    // Update local state
+    set(state => ({
+      ...state,
+      activities: state.activities.map(activity => {
+        if (activity.id === activityId) {
+          const newReaction: ActivityReaction = {
+            id: `temp_${Date.now()}`,
+            activity_id: activityId,
+            user_id: session.user.id,
+            emoji: emoji,
+            created_at: new Date().toISOString(),
+            user: {
+              id: session.user.id,
+              username: session.user.user_metadata.username || 'Unknown',
+              avatar_url: session.user.user_metadata.avatar_url
+            }
+          };
+          
+          return {
+            ...activity,
+            reactions: [...(activity.reactions || []), newReaction]
+          };
+        }
+        return activity;
+      })
+    }));
+  },
+
+  removeReaction: async (activityId: string, emoji: string) => {
+    const supabase = createClientComponentClient();
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session?.user) {
+      throw new Error("User not authenticated");
+    }
+
+    const { error } = await supabase
+      .from('activity_reactions')
+      .delete()
+      .match({
+        activity_id: activityId,
+        user_id: session.user.id,
+        emoji: emoji
+      });
+
+    if (error) throw error;
+
+    // Update local state
+    set(state => ({
+      activities: state.activities.map(activity => {
+        if (activity.id === activityId) {
+          return {
+            ...activity,
+            reactions: (activity.reactions || []).filter(
+              r => !(r.user_id === session.user.id && r.emoji === emoji)
+            )
+          };
+        }
+        return activity;
+      })
+    }));
+  },
+
+  addComment: async (activityId: string, comment: string) => {
+    const supabase = createClientComponentClient();
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session?.user) {
+      throw new Error("User not authenticated");
+    }
+
+    const { error } = await supabase
+      .from('activity_comments')
+      .insert({
+        activity_id: activityId,
+        user_id: session.user.id,
+        content: comment
+      });
+
+    if (error) throw error;
+
+    // Update local state
+    set(state => ({
+      ...state,
+      activities: state.activities.map(activity => {
+        if (activity.id === activityId) {
+          const newComment: ActivityComment = {
+            id: `temp_${Date.now()}`,
+            activity_id: activityId,
+            user_id: session.user.id,
+            content: comment,
+            created_at: new Date().toISOString(),
+            user: {
+              id: session.user.id,
+              username: session.user.user_metadata.username || 'Unknown',
+              avatar_url: session.user.user_metadata.avatar_url
+            }
+          };
+          
+          return {
+            ...activity,
+            comments: [...(activity.comments || []), newComment]
+          };
+        }
+        return activity;
+      })
+    }));
+  },
 }));
