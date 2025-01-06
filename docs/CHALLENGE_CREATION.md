@@ -1,5 +1,3 @@
- # Challenge Creation Documentation
-
 ## Overview
 
 The challenge creation process involves:
@@ -189,3 +187,60 @@ const handleSubmit = async (data: ChallengeFormData) => {
   }
 };
 ```
+
+
+## Required Supabase Setup
+
+### Storage Bucket
+
+1. Create a storage bucket named `challenge-covers`
+2. Set up public access policy:
+
+```sql
+CREATE POLICY "Challenge covers are publicly accessible"
+ON storage.objects FOR SELECT
+USING (bucket_id = 'challenge-covers');
+```
+
+### RLS Policies
+
+```sql
+-- Challenges
+CREATE POLICY "Anyone can view challenges"
+ON challenges FOR SELECT USING (true);
+
+CREATE POLICY "Authenticated users can create challenges"
+ON challenges FOR INSERT WITH CHECK (auth.uid() = creator_id);
+
+-- Challenge Media
+CREATE POLICY "Anyone can view challenge media"
+ON challenge_media FOR SELECT USING (true);
+
+CREATE POLICY "Challenge creators can add media"
+ON challenge_media FOR INSERT WITH CHECK (
+  auth.uid() IN (
+    SELECT creator_id FROM challenges WHERE id = challenge_id
+  )
+);
+
+-- Similar policies needed for goals, rules, and rewards tables
+```
+
+## Error Handling
+
+- Validate form data using Zod schema
+- Handle storage upload errors
+- Handle database insertion errors
+- Provide user feedback via toast notifications
+- Rollback on partial failures (using transactions when possible)
+
+## Best Practices
+
+1. Always validate form data before submission
+2. Use proper error handling and user feedback
+3. Optimize image uploads (compression, size limits)
+4. Implement proper security policies
+5. Use transactions for related data insertions
+6. Validate dates and participant limits
+7. Sanitize user input
+
