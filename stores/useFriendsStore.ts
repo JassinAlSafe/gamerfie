@@ -18,6 +18,10 @@ interface FriendsStore {
   removeFriend: (friendId: string) => Promise<void>;
   updateFriendStatus: (friendId: string, status: FriendStatus) => Promise<void>;
   setFilter: (filter: FriendStatus | 'all') => void;
+  addReaction: (activityId: string, emoji: string) => Promise<void>;
+  removeReaction: (activityId: string, emoji: string) => Promise<void>;
+  addComment: (activityId: string, comment: string) => Promise<void>;
+  
 }
 
 interface SupabaseFriendData {
@@ -112,36 +116,52 @@ export const useFriendsStore = create<FriendsStore>((set, get) => ({
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.user) throw new Error('No authenticated user');
 
-      // Check if friendship already exists in either direction
-      const { data: existingFriendship, error: checkError } = await supabase
+      // Check existing friendship in both directions
+      const { data: existingFriendships, error: checkError } = await supabase
         .from('friends')
         .select('*')
         .or(
           `and(user_id.eq.${session.user.id},friend_id.eq.${request.friendId}),` +
           `and(user_id.eq.${request.friendId},friend_id.eq.${session.user.id})`
-        )
-        .single();
+        );
 
-      if (checkError && checkError.code !== 'PGRST116') { // PGRST116 means no rows found
-        throw checkError;
+      if (checkError) throw checkError;
+      
+      if (existingFriendships && existingFriendships.length > 0) {
+        const friendship = existingFriendships[0];
+        if (friendship.status === 'pending') {
+          if (friendship.user_id === session.user.id) {
+            throw new Error('Friend request already sent');
+          } else {
+            throw new Error('Friend request already received from this user');
+          }
+        } else if (friendship.status === 'accepted') {
+          throw new Error('You are already friends with this user');
+        } else if (friendship.status === 'blocked') {
+          throw new Error('Unable to send friend request');
+        }
       }
 
-      if (existingFriendship) {
-        throw new Error('Friendship already exists');
-      }
+      // Order the UUIDs so smaller one is always user_id
+      const [user_id, friend_id] = [session.user.id, request.friendId]
+        .sort((a, b) => a.localeCompare(b));
 
-      // Create new friendship
+      // Create new friendship with ordered IDs
       const { error: insertError } = await supabase
         .from('friends')
         .insert({
-          user_id: session.user.id,
-          friend_id: request.friendId,
+          user_id,
+          friend_id,
           status: 'pending'
         });
 
-      if (insertError) throw insertError;
+      if (insertError) {
+        if (insertError.code === '23505') { // Unique constraint violation
+          throw new Error('A friendship already exists with this user');
+        }
+        throw insertError;
+      }
 
-      // Refresh friends list
       await get().fetchFriends();
     } catch (error) {
       console.error('Error adding friend:', error);
@@ -240,5 +260,132 @@ export const useFriendsStore = create<FriendsStore>((set, get) => ({
       set({ error: (error as Error).message, isLoading: false });
       throw error;
     }
-  }
+  },
+
+  addReaction: async (activityId: string, emoji: string) => {
+    const supabase = createClientComponentClient();
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session?.user) {
+      throw new Error("User not authenticated");
+    }
+
+    const { error } = await supabase
+      .from('activity_reactions')
+      .insert({
+        activity_id: activityId,
+        user_id: session.user.id,
+        emoji: emoji
+      });
+
+    if (error) throw error;
+
+    // Update local state
+    set(state => ({
+      ...state,
+      activities: state.activities.map(activity => {
+        if (activity.id === activityId) {
+          const newReaction: ActivityReaction = {
+            id: `temp_${Date.now()}`,
+            activity_id: activityId,
+            user_id: session.user.id,
+            emoji: emoji,
+            created_at: new Date().toISOString(),
+            user: {
+              id: session.user.id,
+              username: session.user.user_metadata.username || 'Unknown',
+              avatar_url: session.user.user_metadata.avatar_url
+            }
+          };
+          
+          return {
+            ...activity,
+            reactions: [...(activity.reactions || []), newReaction]
+          };
+        }
+        return activity;
+      })
+    }));
+  },
+
+  removeReaction: async (activityId: string, emoji: string) => {
+    const supabase = createClientComponentClient();
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session?.user) {
+      throw new Error("User not authenticated");
+    }
+
+    const { error } = await supabase
+      .from('activity_reactions')
+      .delete()
+      .match({
+        activity_id: activityId,
+        user_id: session.user.id,
+        emoji: emoji
+      });
+
+    if (error) throw error;
+
+    // Update local state
+    set(state => ({
+      activities: state.activities.map(activity => {
+        if (activity.id === activityId) {
+          return {
+            ...activity,
+            reactions: (activity.reactions || []).filter(
+              r => !(r.user_id === session.user.id && r.emoji === emoji)
+            )
+          };
+        }
+        return activity;
+      })
+    }));
+  },
+
+  addComment: async (activityId: string, comment: string) => {
+    const supabase = createClientComponentClient();
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session?.user) {
+      throw new Error("User not authenticated");
+    }
+
+    const { error } = await supabase
+      .from('activity_comments')
+      .insert({
+        activity_id: activityId,
+        user_id: session.user.id,
+        content: comment
+      });
+
+    if (error) throw error;
+
+    // Update local state
+    set(state => ({
+      ...state,
+      activities: state.activities.map(activity => {
+        if (activity.id === activityId) {
+          const newComment: ActivityComment = {
+            id: `temp_${Date.now()}`,
+            activity_id: activityId,
+            user_id: session.user.id,
+            content: comment,
+            created_at: new Date().toISOString(),
+            user: {
+              id: session.user.id,
+              username: session.user.user_metadata.username || 'Unknown',
+              avatar_url: session.user.user_metadata.avatar_url
+            }
+          };
+          
+          return {
+            ...activity,
+            comments: [...(activity.comments || []), newComment]
+          };
+        }
+        return activity;
+      })
+    }));
+  },
 }));
