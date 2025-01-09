@@ -13,6 +13,7 @@ import { useGamesStore } from "@/stores/useGamesStore";
 import { useDebounce } from "@/hooks/useDebounce";
 import { useRouter } from "next/navigation";
 import { ErrorBoundary } from "react-error-boundary";
+import { useSearchStore } from "@/stores/useSearchStore";
 
 // Dynamically import heavy components
 const BackToTopButton = dynamic(() => import("@/components/BackToTopButton"), {
@@ -149,9 +150,7 @@ function HeroSection({
             {searchButton}
           </div>
 
-          <div className="pt-2">
-            {categoryButtons}
-          </div>
+          <div className="pt-2">{categoryButtons}</div>
         </div>
       </motion.div>
     </div>
@@ -160,7 +159,10 @@ function HeroSection({
 
 export default function ExplorePage() {
   const router = useRouter();
-  const { searchQuery, setSearchQuery, setSelectedCategory } = useGamesStore();
+  const setSelectedCategory = useGamesStore(
+    (state) => state.setSelectedCategory
+  );
+  const { query: searchQuery, setQuery: setSearchQuery } = useSearchStore();
   const debouncedSearch = useDebounce(searchQuery);
 
   const handleSearch = useCallback(() => {
@@ -182,7 +184,14 @@ export default function ExplorePage() {
   const handleCategoryClick = useCallback(
     (category: string) => {
       setSelectedCategory(category);
-      router.push(`/all-games?category=${category}`);
+      // Map category to appropriate timeRange
+      const timeRangeMap = {
+        upcoming: "upcoming",
+        recent: "new_releases",
+        popular: "all",
+      };
+      const timeRange = timeRangeMap[category as keyof typeof timeRangeMap];
+      router.push(`/all-games?category=${category}&timeRange=${timeRange}`);
     },
     [router, setSelectedCategory]
   );

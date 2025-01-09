@@ -1,84 +1,139 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
-import { Game } from '@/types/game';
+import { Game, Platform, Genre } from '@/types/game';
 
 interface GamesState {
   games: Game[];
-  currentPage: number;
-  totalPages: number;
   totalGames: number;
-  sortBy: 'rating' | 'popularity' | 'name' | 'release';
+  totalPages: number;
+  currentPage: number;
+  isLoading: boolean;
+  error: string | null;
+  platforms: Platform[];
+  genres: Genre[];
+  sortBy: string;
   selectedPlatform: string;
   selectedGenre: string;
   selectedCategory: string;
   selectedYear: string;
+  timeRange: string;
+  hasActiveFilters: boolean;
   searchQuery: string;
-  isLoading: boolean;
-  error: string | null;
-  
-  // Actions
   setGames: (games: Game[]) => void;
-  setCurrentPage: (page: number) => void;
-  setTotalPages: (pages: number) => void;
   setTotalGames: (total: number) => void;
-  setSortBy: (sort: 'rating' | 'popularity' | 'name' | 'release') => void;
+  setTotalPages: (total: number) => void;
+  setCurrentPage: (page: number) => void;
+  setLoading: (loading: boolean) => void;
+  setError: (error: string | null) => void;
+  setPlatforms: (platforms: Platform[]) => void;
+  setGenres: (genres: Genre[]) => void;
+  setSortBy: (sort: string) => void;
   setSelectedPlatform: (platform: string) => void;
   setSelectedGenre: (genre: string) => void;
   setSelectedCategory: (category: string) => void;
   setSelectedYear: (year: string) => void;
+  setTimeRange: (range: string) => void;
   setSearchQuery: (query: string) => void;
-  setLoading: (loading: boolean) => void;
-  setError: (error: string | null) => void;
   resetFilters: () => void;
+  handleResetFilters: () => void;
+  fetchMetadata: () => Promise<void>;
 }
 
-export const useGamesStore = create<GamesState>()(
-  persist(
-    (set) => ({
-      games: [],
-      currentPage: 1,
-      totalPages: 1,
-      totalGames: 0,
-      sortBy: 'rating',
-      selectedPlatform: 'all',
-      selectedGenre: 'all',
-      selectedCategory: 'all',
-      selectedYear: 'all',
-      searchQuery: '',
-      isLoading: false,
-      error: null,
+export const useGamesStore = create<GamesState>((set, get) => ({
+  games: [],
+  totalGames: 0,
+  totalPages: 1,
+  currentPage: 1,
+  isLoading: false,
+  error: null,
+  platforms: [],
+  genres: [],
+  sortBy: "popularity",
+  selectedPlatform: "all",
+  selectedGenre: "all",
+  selectedCategory: "all",
+  selectedYear: "all",
+  timeRange: "all",
+  hasActiveFilters: false,
+  searchQuery: "",
 
-      // Actions
-      setGames: (games) => set({ games }),
-      setCurrentPage: (page) => set({ currentPage: page }),
-      setTotalPages: (pages) => set({ totalPages: pages }),
-      setTotalGames: (total) => set({ totalGames: total }),
-      setSortBy: (sort) => set({ sortBy: sort }),
-      setSelectedPlatform: (platform) => set({ selectedPlatform: platform }),
-      setSelectedGenre: (genre) => set({ selectedGenre: genre }),
-      setSelectedCategory: (category) => set({ selectedCategory: category }),
-      setSelectedYear: (year) => set({ selectedYear: year }),
-      setSearchQuery: (query) => set({ searchQuery: query }),
-      setLoading: (loading) => set({ isLoading: loading }),
-      setError: (error) => set({ error }),
-      resetFilters: () => set({
-        selectedPlatform: 'all',
-        selectedGenre: 'all',
-        selectedCategory: 'all',
-        selectedYear: 'all',
-        searchQuery: '',
-        currentPage: 1
-      })
-    }),
-    {
-      name: 'games-storage',
-      partialize: (state) => ({
-        sortBy: state.sortBy,
-        selectedPlatform: state.selectedPlatform,
-        selectedGenre: state.selectedGenre,
-        selectedCategory: state.selectedCategory,
-        selectedYear: state.selectedYear
-      })
+  setGames: (games) => set({ games }),
+  setTotalGames: (totalGames) => set({ totalGames }),
+  setTotalPages: (totalPages) => set({ totalPages }),
+  setCurrentPage: (currentPage) => set({ currentPage }),
+  setLoading: (isLoading) => set({ isLoading }),
+  setError: (error) => set({ error }),
+  setPlatforms: (platforms) => set({ platforms }),
+  setGenres: (genres) => set({ genres }),
+  setSearchQuery: (query) => set({ searchQuery: query }),
+  setTimeRange: (range) => set({ timeRange: range }),
+  setSortBy: (sortBy) => {
+    set({ 
+      sortBy,
+      hasActiveFilters: sortBy !== "popularity" || get().hasActiveFilters
+    });
+    get().setCurrentPage(1);
+  },
+  setSelectedPlatform: (platform) => {
+    set({ 
+      selectedPlatform: platform,
+      hasActiveFilters: platform !== "all" || get().hasActiveFilters
+    });
+    get().setCurrentPage(1);
+  },
+  setSelectedGenre: (genre) => {
+    set({ 
+      selectedGenre: genre,
+      hasActiveFilters: genre !== "all" || get().hasActiveFilters
+    });
+    get().setCurrentPage(1);
+  },
+  setSelectedCategory: (category) => {
+    set({ 
+      selectedCategory: category,
+      hasActiveFilters: category !== "all" || get().hasActiveFilters
+    });
+    get().setCurrentPage(1);
+  },
+  setSelectedYear: (year) => {
+    set({ 
+      selectedYear: year,
+      hasActiveFilters: year !== "all" || get().hasActiveFilters
+    });
+    get().setCurrentPage(1);
+  },
+  resetFilters: () => {
+    set({
+      sortBy: "popularity",
+      selectedPlatform: "all",
+      selectedGenre: "all",
+      selectedCategory: "all",
+      selectedYear: "all",
+      currentPage: 1,
+      hasActiveFilters: false
+    });
+  },
+  handleResetFilters: () => {
+    get().resetFilters();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  },
+  fetchMetadata: async () => {
+    try {
+      set({ isLoading: true });
+      const response = await fetch('/api/games/metadata');
+      if (!response.ok) {
+        throw new Error('Failed to fetch metadata');
+      }
+      const data = await response.json();
+      set({
+        platforms: data.platforms || [],
+        genres: data.genres || [],
+        isLoading: false
+      });
+    } catch (error) {
+      set({
+        error: error instanceof Error ? error.message : 'Failed to fetch metadata',
+        isLoading: false
+      });
     }
-  )
-); 
+  }
+})); 

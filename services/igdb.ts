@@ -1,5 +1,42 @@
-import { Game, GameFilters, IGDBResponse } from "@/types/index";
+import { Game, IGDBResponse } from "@/types/index";
 import { getIGDBToken } from "@/lib/igdb";
+
+interface GameFilters {
+  page: number;
+  limit: number;
+  search: string;
+  sortBy: 'popularity' | 'rating' | 'name' | 'release';
+  platformId?: number;
+  genreId?: number;
+  releaseYear?: {
+    start: number;
+    end: number;
+  };
+  timeRange?: 'recent' | 'upcoming' | 'classic';
+  isIndie?: boolean;
+  isAnticipated?: boolean;
+}
+
+interface IGDBGameResponse {
+  id: number;
+  name: string;
+  cover?: {
+    id: number;
+    url: string;
+  };
+  rating?: number;
+  total_rating_count?: number;
+  genres?: Array<{
+    id: number;
+    name: string;
+  }>;
+  platforms?: Array<{
+    id: number;
+    name: string;
+  }>;
+  first_release_date?: number;
+  summary?: string;
+}
 
 export class IGDBService {
   private static async getHeaders() {
@@ -21,7 +58,7 @@ export class IGDBService {
     }
   }
 
-  private static processGame(game: any): Game {
+  private static processGame(game: IGDBGameResponse): Game {
     return {
       id: game.id,
       name: game.name,
@@ -30,8 +67,8 @@ export class IGDBService {
       } : undefined,
       rating: game.rating ? Math.round(game.rating) : undefined,
       total_rating_count: game.total_rating_count || 0,
-      genres: game.genres?.map((g: any) => ({ id: g.id, name: g.name })) || [],
-      platforms: game.platforms?.map((p: any) => ({ id: p.id, name: p.name })) || [],
+      genres: game.genres?.map((g) => ({ id: g.id, name: g.name })) || [],
+      platforms: game.platforms?.map((p) => ({ id: p.id, name: p.name })) || [],
       first_release_date: game.first_release_date,
       summary: game.summary
     };
@@ -47,16 +84,16 @@ export class IGDBService {
       const headers = await this.getHeaders();
 
       // Build the base query conditions
-      let conditions = ['cover != null', 'version_parent = null'];
+      const conditions: string[] = ['cover != null', 'version_parent = null'];
       
       // Add platform filter
-      if (filters?.platform) {
-        conditions.push(`platforms.name = "${filters.platform}"`);
+      if (filters?.platformId) {
+        conditions.push(`platforms = ${filters.platformId}`);
       }
 
       // Add genre filter
-      if (filters?.genre) {
-        conditions.push(`genres.name = "${filters.genre}"`);
+      if (filters?.genreId) {
+        conditions.push(`genres = ${filters.genreId}`);
       }
 
       // Add release year filter
