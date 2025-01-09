@@ -8,17 +8,12 @@ import { Database } from "@/types/supabase";
 import { useEffect, useState, useMemo } from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { Gamepad2, Clock, BarChart3, ChevronDown } from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { Gamepad2, Clock, BarChart3 } from "lucide-react";
 import { Game, GameStatus, UserGame } from "@/types/game";
 import type { GameFilters } from "@/components/profile/game-filters";
 import { useSettingsStore } from "@/stores/useSettingsStore";
 import { getCoverImageUrl } from "@/utils/image-utils";
+import { GameStatusDropdown } from "@/components/game/game-status-dropdown";
 
 interface GameWithUserData extends UserGame {
   game: Game;
@@ -94,8 +89,9 @@ const GameListItem = ({ game }: { game: GameWithUserData }) => {
           </div>
         </div>
       </div>
-      <StatusDropdown
+      <GameStatusDropdown
         status={game.status}
+        gameId={game.game_id}
         onStatusChange={(newStatus) =>
           handleStatusChange(game.game_id, newStatus)
         }
@@ -153,8 +149,9 @@ const GameGridItem = ({ game }: { game: GameWithUserData }) => {
                   {formatStatus(game.status)}
                 </p>
               </div>
-              <StatusDropdown
+              <GameStatusDropdown
                 status={game.status}
+                gameId={game.game_id}
                 onStatusChange={(newStatus) =>
                   handleStatusChange(game.game_id, newStatus)
                 }
@@ -366,59 +363,6 @@ export function GamesTab({ filters }: GamesTabProps) {
         <GameGridItem key={game.game_id} game={game} />
       ))}
     </div>
-  );
-}
-
-function StatusDropdown({
-  status: gameStatus,
-  onStatusChange,
-}: {
-  status: GameStatus;
-  onStatusChange: (status: GameStatus) => void;
-}) {
-  const statusOptions = [
-    {
-      value: "want_to_play" as GameStatus,
-      label: "Want to Play",
-      color: "text-yellow-400",
-    },
-    {
-      value: "playing" as GameStatus,
-      label: "Playing",
-      color: "text-green-400",
-    },
-    {
-      value: "completed" as GameStatus,
-      label: "Completed",
-      color: "text-blue-400",
-    },
-    { value: "dropped" as GameStatus, label: "Dropped", color: "text-red-400" },
-  ];
-
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-          <ChevronDown className="h-4 w-4" />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent
-        align="end"
-        className="w-40 bg-gray-800 border border-white/10 rounded-lg shadow-lg"
-      >
-        {statusOptions.map((option) => (
-          <DropdownMenuItem
-            key={option.value}
-            onClick={() => onStatusChange(option.value)}
-            className={`${gameStatus === option.value ? "bg-gray-700" : ""} ${
-              option.color
-            } hover:bg-gray-700/50 transition-colors duration-200`}
-          >
-            {option.label}
-          </DropdownMenuItem>
-        ))}
-      </DropdownMenuContent>
-    </DropdownMenu>
   );
 }
 

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useSupabase } from "@/components/providers/supabase-provider";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
-import { Trophy, Star, Medal, Crown } from "lucide-react";
+import { Star, Medal, Crown, Shield } from "lucide-react";
 
 interface Badge {
   id: string;
@@ -40,11 +40,11 @@ interface DatabaseBadgeResponse {
   } | null;
 }
 
-const BADGE_ICONS = {
-  challenge: Trophy,
-  achievement: Star,
-  special: Crown,
-  community: Medal,
+const RARITY_ICONS = {
+  legendary: Crown,
+  epic: Star,
+  rare: Shield,
+  common: Medal,
 } as const;
 
 const RARITY_COLORS = {
@@ -117,20 +117,18 @@ export default function UserBadges() {
     fetchBadges();
   }, [supabase]);
 
-  const BadgeIcon = (type: keyof typeof BADGE_ICONS) => {
-    const Icon = BADGE_ICONS[type] || Trophy;
+  const RarityIcon = (rarity: keyof typeof RARITY_ICONS) => {
+    const Icon = RARITY_ICONS[rarity] || Medal;
     return (
-      <div className="flex-shrink-0">
-        <Icon
-          className={cn(
-            "w-5 h-5",
-            type === "challenge" && "text-red-400",
-            type === "achievement" && "text-purple-400",
-            type === "special" && "text-yellow-400",
-            type === "community" && "text-blue-400"
-          )}
-        />
-      </div>
+      <Icon
+        className={cn(
+          "w-5 h-5",
+          rarity === "legendary" && "text-yellow-400",
+          rarity === "epic" && "text-purple-400",
+          rarity === "rare" && "text-blue-400",
+          rarity === "common" && "text-gray-400"
+        )}
+      />
     );
   };
 
@@ -181,7 +179,7 @@ export default function UserBadges() {
                     userBadge.badge.rarity === "common" && "bg-gray-500/20"
                   )}
                 >
-                  <span className="text-2xl">🏆</span>
+                  {RarityIcon(userBadge.badge.rarity)}
                 </div>
               )}
             </div>
@@ -195,13 +193,15 @@ export default function UserBadges() {
                   </h3>
                   <span className="text-purple-500 font-bold">NY!</span>
                 </div>
-                {BadgeIcon(userBadge.badge.type)}
+                <div className="flex-shrink-0">
+                  {RarityIcon(userBadge.badge.rarity)}
+                </div>
               </div>
               <p className="text-gray-400 mb-1">
                 {userBadge.badge.description}
               </p>
               <div className="text-gray-500 text-sm">
-                {userBadge.badge.rarity === "common" && "Common"}
+                <span className="capitalize">{userBadge.badge.rarity}</span>
               </div>
             </div>
           </div>
