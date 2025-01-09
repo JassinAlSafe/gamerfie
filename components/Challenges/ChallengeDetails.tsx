@@ -22,8 +22,15 @@
 //   Flag,
 //   CheckCircle,
 //   XCircle,
+//   Trash2,
 // } from "lucide-react";
 // import { useToast } from "@/components/ui/use-toast";
+// import { Separator } from "@/components/ui/separator";
+// import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+// import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+// import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
+// import { SelectItem } from "@/components/ui/select";
+// import { BadgeImage } from "@/components/ui/badge-image";
 
 // type BadgeVariant = "default" | "secondary" | "destructive" | "outline";
 
@@ -264,151 +271,49 @@
 
 //       {/* Main Content */}
 //       <div className="space-y-8">
-//         {/* Challenge Overview */}
-//         <div className="space-y-6">
-//           <div className="flex items-center gap-4">
-//             <div className="p-3 bg-purple-500/10 rounded-xl">
-//               <Gamepad2 className="w-8 h-8 text-purple-400" />
-//             </div>
-//             <div>
-//               <h1 className="text-2xl font-bold mb-2">{challenge.title}</h1>
-//               <div className="flex items-center gap-2">
-//                 <Badge
-//                   variant="secondary"
-//                   className="bg-purple-500/10 text-purple-400 border-purple-500/20"
-//                 >
-//                   {challenge.type}
-//                 </Badge>
-//                 <Badge
-//                   variant={getStatusVariant(challenge.status)}
-//                   className="bg-gray-800/50"
-//                 >
-//                   {challenge.status}
-//                 </Badge>
-//               </div>
-//             </div>
-//           </div>
+//         <Tabs defaultValue="details" className="space-y-6">
+//           <TabsList>
+//             <TabsTrigger value="details">Details</TabsTrigger>
+//             <TabsTrigger value="goals">Goals</TabsTrigger>
+//             <TabsTrigger value="rewards">Rewards</TabsTrigger>
+//           </TabsList>
 
-//           <p className="text-gray-400 text-lg leading-relaxed">
-//             {challenge.description}
-//           </p>
+//           <TabsContent value="details">
+//             {/* Basic Info, Timeline, Participants */}
+//           </TabsContent>
 
-//           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-//             <div className="bg-gray-800/30 rounded-xl p-4 hover:bg-gray-800/50 transition-colors">
-//               <div className="flex items-center gap-3">
-//                 <div className="p-2 bg-purple-500/10 rounded-lg">
-//                   <Target className="w-5 h-5 text-purple-400" />
-//                 </div>
-//                 <div>
-//                   <p className="text-sm text-gray-400">Goal</p>
-//                   <div className="flex items-center gap-2">
-//                     <Target className="w-4 h-4 text-gray-400" />
-//                     <span className="text-gray-400">
-//                       {challenge.goal_target}{" "}
-//                       {challenge.goal_type.replace(/_/g, " ")}
-//                     </span>
-//                   </div>
-//                 </div>
-//               </div>
-//             </div>
-//             <div className="bg-gray-800/30 rounded-xl p-4 hover:bg-gray-800/50 transition-colors">
-//               <div className="flex items-center gap-3">
-//                 <div className="p-2 bg-purple-500/10 rounded-lg">
-//                   <Users className="w-5 h-5 text-purple-400" />
-//                 </div>
-//                 <div>
-//                   <p className="text-sm text-gray-400">Participants</p>
-//                   <p className="font-medium">
-//                     {challenge.participants?.length || 0} /{" "}
-//                     {challenge.max_participants || "∞"}
-//                   </p>
-//                 </div>
-//               </div>
-//             </div>
-//             <div className="bg-gray-800/30 rounded-xl p-4 hover:bg-gray-800/50 transition-colors">
-//               <div className="flex items-center gap-3">
-//                 <div className="p-2 bg-purple-500/10 rounded-lg">
-//                   <Calendar className="w-5 h-5 text-purple-400" />
-//                 </div>
-//                 <div>
-//                   <p className="text-sm text-gray-400">Timeline</p>
-//                   <p className="font-medium">
-//                     {challenge.status === "upcoming"
-//                       ? `Starts ${formatDistanceToNow(
-//                           new Date(challenge.start_date),
-//                           {
-//                             addSuffix: true,
-//                           }
-//                         )}`
-//                       : `Ends ${formatDistanceToNow(
-//                           new Date(challenge.end_date),
-//                           {
-//                             addSuffix: true,
-//                           }
-//                         )}`}
-//                   </p>
-//                 </div>
-//               </div>
-//             </div>
-//           </div>
-//         </div>
+//           <TabsContent value="goals">
+//             {/* Goals Section */}
+//           </TabsContent>
 
-//         {/* Rewards Section */}
-//         {challenge.rewards && challenge.rewards.length > 0 && (
-//           <div className="space-y-4">
-//             <h2 className="text-xl font-bold flex items-center gap-3">
-//               <div className="p-2 bg-purple-500/10 rounded-lg">
-//                 <Trophy className="w-5 h-5 text-purple-400" />
-//               </div>
-//               Rewards
-//             </h2>
-//             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-//               {challenge.rewards.map((reward, index) => (
-//                 <div
-//                   key={`${challenge.id}-reward-${index}`}
-//                   className="bg-gray-800/30 rounded-xl p-4"
-//                 >
-//                   <div className="flex items-center gap-3">
-//                     <div className="p-2 bg-yellow-500/10 rounded-lg">
-//                       <Crown className="w-5 h-5 text-yellow-400" />
+//           <TabsContent value="rewards">
+//             <div className="grid gap-6">
+//               {form.watch("rewards")?.map((reward, index) => (
+//                 <Card key={index}>
+//                   <CardHeader className="pb-4">
+//                     <div className="flex items-center justify-between">
+//                       <div className="flex items-center gap-2">
+//                         <Trophy className="w-4 h-4 text-primary" />
+//                         <CardTitle>Reward {index + 1}</CardTitle>
+//                       </div>
+//                       <Button
+//                         type="button"
+//                         variant="ghost"
+//                         size="sm"
+//                         onClick={() => {/* ... */}}
+//                       >
+//                         <Trash2 className="w-4 h-4" />
+//                       </Button>
 //                     </div>
-//                     <div>
-//                       <p className="font-medium">{reward.name}</p>
-//                       <p className="text-sm text-gray-400">
-//                         {reward.description}
-//                       </p>
-//                     </div>
-//                   </div>
-//                 </div>
+//                   </CardHeader>
+//                   <CardContent className="space-y-4">
+//                     {/* Reward fields */}
+//                   </CardContent>
+//                 </Card>
 //               ))}
 //             </div>
-//           </div>
-//         )}
-
-//         {/* Rules Section */}
-//         {challenge.rules && challenge.rules.length > 0 && (
-//           <div className="space-y-4">
-//             <h2 className="text-xl font-bold flex items-center gap-3">
-//               <div className="p-2 bg-purple-500/10 rounded-lg">
-//                 <Flag className="w-5 h-5 text-purple-400" />
-//               </div>
-//               Rules
-//             </h2>
-//             <div className="space-y-3">
-//               {challenge.rules.map((ruleObj, index) => (
-//                 <div
-//                   key={`${challenge.id}-rule-${index}`}
-//                   className="flex items-start gap-3 p-3 rounded-xl bg-gray-800/30"
-//                 >
-//                   <div className="p-1 mt-0.5">
-//                     <CheckCircle className="w-4 h-4 text-green-400" />
-//                   </div>
-//                   <p className="text-gray-300 flex-1">{ruleObj.rule}</p>
-//                 </div>
-//               ))}
-//             </div>
-//           </div>
-//         )}
+//           </TabsContent>
+//         </Tabs>
 //       </div>
 //     </div>
 //   );

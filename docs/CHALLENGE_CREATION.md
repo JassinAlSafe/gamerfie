@@ -1,5 +1,3 @@
-# Challenge Creation Documentation
-
 ## Overview
 
 The challenge creation process involves:
@@ -190,6 +188,7 @@ const handleSubmit = async (data: ChallengeFormData) => {
 };
 ```
 
+
 ## Required Supabase Setup
 
 ### Storage Bucket
@@ -244,3 +243,4 @@ ON challenge_media FOR INSERT WITH CHECK (
 5. Use transactions for related data insertions
 6. Validate dates and participant limits
 7. Sanitize user input
+

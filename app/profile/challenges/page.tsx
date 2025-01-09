@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ChallengeSection } from "@/components/Challenges/ChallengeSection";
 import { ChallengeGrid } from "@/components/Challenges/ChallengeGrid";
 import type { ChallengeStatus } from "@/types/challenge";
+import Link from "next/link";
 
 type ValidChallengeStatus = Extract<
   ChallengeStatus,
@@ -47,7 +48,7 @@ export default function UserChallengesPage() {
   };
 
   const handleChallengeClick = (challengeId: string) => {
-    router.push(`/challenges/${challengeId}`);
+    router.push(`/profile/challenges/${challengeId}`);
   };
 
   const renderChallengeSection = (status: ValidChallengeStatus) => {
@@ -92,13 +93,12 @@ export default function UserChallengesPage() {
               Discover and track gaming challenges
             </p>
           </div>
-          <Button
-            onClick={handleCreateChallenge}
-            className="relative inline-flex h-11 items-center justify-center rounded-[8px] bg-background px-6 font-medium text-neutral-200 transition-colors hover:text-neutral-50"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            New Challenge
-          </Button>
+          <Link href="/profile/challenges/create">
+            <Button>
+              <Plus className="w-4 h-4 mr-2" />
+              Create Challenge
+            </Button>
+          </Link>
         </div>
 
         {/* Content Section */}

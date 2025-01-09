@@ -1,6 +1,7 @@
 import { create } from "zustand";
-import { Challenge, ChallengeStatus, ChallengeType } from "@/types/challenge";
+import { Challenge, ChallengeStatus, ChallengeType, ChallengeFormData } from "@/types/challenge";
 import type { SupabaseClient } from "@supabase/auth-helpers-nextjs";
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 
 interface ChallengesState {
   challenges: Challenge[];
@@ -18,10 +19,11 @@ interface ChallengesState {
   getAllChallenges: () => Challenge[];
 
   // Actions
-  setFilter: (filter: "all" | ChallengeType) => void;
-  setStatusFilter: (status: "all" | ChallengeStatus) => void;
-  setSortBy: (sortBy: "date" | "participants") => void;
-  fetchChallenges: (supabase: SupabaseClient) => Promise<void>;
+  setFilter: (_filter: "all" | ChallengeType) => void;
+  setStatusFilter: (_status: "all" | ChallengeStatus) => void;
+  setSortBy: (_sortBy: "date" | "participants") => void;
+  fetchChallenges: (_supabase: SupabaseClient) => Promise<void>;
+  createChallenge: (_data: ChallengeFormData) => Promise<string>;
 }
 
 export const useChallengesStore = create<ChallengesState>((set, get) => ({
@@ -172,4 +174,122 @@ export const useChallengesStore = create<ChallengesState>((set, get) => ({
       });
     }
   },
+
+  createChallenge: async (data: ChallengeFormData) => {
+    const supabase = createClientComponentClient();
+    set({ isLoading: true, error: null });
+
+    try {
+      // Get current user session
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error("Not authenticated");
+      }
+
+      // 1. Create the challenge
+      const { data: challenge, error } = await supabase
+        .from("challenges")
+        .insert({
+          title: data.title,
+          description: data.description,
+          type: data.type,
+          status: "upcoming",
+          start_date: data.start_date,
+          end_date: data.end_date,
+          min_participants: data.min_participants,
+          max_participants: data.max_participants,
+          creator_id: session.user.id,
+          requirements: data.requirements,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // 2. Upload cover image if exists
+      if (data.imageFile) {
+        try {
+          // Upload the image using the user's ID in the path
+          const filePath = `challenge-covers/${challenge.id}/cover`;
+          const { error: uploadError } = await supabase.storage
+            .from('challenges')
+            .upload(filePath, data.imageFile, {
+              cacheControl: '3600',
+              upsert: true,
+              contentType: data.imageFile.type // Explicitly set content type
+            });
+
+          if (uploadError) {
+            console.error('Error uploading file:', uploadError);
+            if (uploadError.message.includes('Bucket not found')) {
+              throw new Error('Storage bucket not configured. Please contact administrator.');
+            }
+            throw uploadError;
+          }
+
+          // Get public URL
+          const { data: { publicUrl } } = supabase.storage
+            .from('challenges')
+            .getPublicUrl(filePath);
+
+          // Create media record
+          const { error: mediaError } = await supabase.from('challenge_media').insert({
+            challenge_id: challenge.id,
+            media_type: 'cover',
+            url: publicUrl,
+          });
+
+          if (mediaError) {
+            console.error('Error creating media record:', mediaError);
+            throw mediaError;
+          }
+        } catch (error) {
+          console.error('Error handling image upload:', error);
+          // Continue with challenge creation even if image upload fails
+        }
+      }
+
+      // 3. Create goals
+      await supabase.from("challenge_goals").insert(
+        data.goals.map((goal) => ({
+          challenge_id: challenge.id,
+          type: goal.type,
+          target: goal.target,
+          description: goal.description,
+        }))
+      );
+
+      // 4. Create rules
+      await supabase.from("challenge_rules").insert(
+        data.rules.map((rule) => ({
+          challenge_id: challenge.id,
+          rule,
+        }))
+      );
+
+      // 5. Create rewards
+      await supabase.from("challenge_rewards").insert(
+        data.rewards.map((reward) => ({
+          challenge_id: challenge.id,
+          type: reward.type,
+          name: reward.name,
+          description: reward.description,
+          badge_id: reward.badge_id,
+        }))
+      );
+
+      // Refresh challenges list
+      await get().fetchChallenges(supabase);
+      
+      set({ isLoading: false });
+      return challenge.id;
+    } catch (error) {
+      console.error('Error creating challenge:', error);
+      set({ 
+        error: error instanceof Error ? error.message : "Failed to create challenge",
+        isLoading: false 
+      });
+      throw error;
+    }
+  }
 })); 
