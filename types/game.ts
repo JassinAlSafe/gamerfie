@@ -111,3 +111,11 @@ export interface GameCategories {
   trending: Game[];
 }
 
+export interface GameCarouselProps {
+  games: Game[];
+  category?: string;
+  title: string;
+  icon: React.ComponentType<{ className?: string }>;
+  color: string;
+}
+
