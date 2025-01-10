@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useRef, useMemo, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useGamesStore } from "@/stores/useGamesStore";
 import { useSearchStore } from "@/stores/useSearchStore";
@@ -8,217 +8,303 @@ import { useDebounce } from "@/hooks/useDebounce";
 import { GamesHeader } from "./sections/games-header";
 import { GamesGrid } from "./sections/games-grid";
 import { GamesPagination } from "./GamesPagination";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 
 const ITEMS_PER_PAGE = 48;
 
 export default function AllGamesClient() {
   const searchParams = useSearchParams();
-  const [appliedFilters, setAppliedFilters] = useState({
-    platform: searchParams.get("platform") || "all",
-    genre: searchParams.get("genre") || "all",
-    category: searchParams.get("category") || "all",
-    year: searchParams.get("year") || "all",
-    timeRange: searchParams.get("timeRange") || "all",
-    sort: searchParams.get("sort") || "popularity",
-  });
-
-  const {
-    currentPage,
-    sortBy,
-    selectedPlatform,
-    selectedGenre,
-    selectedCategory,
-    selectedYear,
-    timeRange,
-    setGames,
-    setTotalPages,
-    setTotalGames,
-    setLoading,
-    setError,
-    resetFilters,
-    setCurrentPage,
-    setPlatforms,
-    setGenres,
-    setSelectedCategory,
-    setTimeRange,
-    setSelectedPlatform,
-    setSelectedGenre,
-    setSelectedYear,
-    setSortBy,
-  } = useGamesStore();
-
-  // Read URL parameters on mount and when URL changes
-  useEffect(() => {
-    const category = searchParams.get("category");
-    const timeRange = searchParams.get("timeRange");
-    const platform = searchParams.get("platform");
-    const genre = searchParams.get("genre");
-    const year = searchParams.get("year");
-    const sort = searchParams.get("sort");
-
-    if (category) setSelectedCategory(category);
-    if (timeRange) setTimeRange(timeRange);
-    if (platform) setSelectedPlatform(platform);
-    if (genre) setSelectedGenre(genre);
-    if (year) setSelectedYear(year);
-    if (sort) setSortBy(sort);
-  }, [
-    searchParams,
-    setSelectedCategory,
-    setTimeRange,
-    setSelectedPlatform,
-    setSelectedGenre,
-    setSelectedYear,
-    setSortBy,
-  ]);
-
+  const router = useRouter();
+  const store = useGamesStore();
   const { query: searchQuery } = useSearchStore();
-  const debouncedSearch = useDebounce(searchQuery, 500); // 500ms debounce
+  const debouncedSearch = useDebounce(searchQuery, 500);
+  const isInitialMount = useRef(true);
+  const isUpdatingFromUrl = useRef(false);
+  const previousUrl = useRef("");
+  const updateTimeoutRef = useRef<NodeJS.Timeout>();
+  const isUpdatingFromStore = useRef(false);
 
-  // Combine all active filters for the query key
-  const queryKey = useMemo(
-    () => [
-      "allGames",
-      currentPage,
-      appliedFilters.sort,
-      appliedFilters.platform,
-      appliedFilters.genre,
-      appliedFilters.category,
-      appliedFilters.year,
-      appliedFilters.timeRange,
-      debouncedSearch,
-    ],
-    [currentPage, appliedFilters, debouncedSearch]
+  // Memoize store values to prevent unnecessary re-renders
+  const storeValues = useMemo(
+    () => ({
+      selectedCategory: store.selectedCategory,
+      selectedPlatform: store.selectedPlatform,
+      selectedGenre: store.selectedGenre,
+      selectedYear: store.selectedYear,
+      sortBy: store.sortBy,
+      timeRange: store.timeRange,
+      currentPage: store.currentPage,
+      searchQuery: store.searchQuery,
+    }),
+    [
+      store.selectedCategory,
+      store.selectedPlatform,
+      store.selectedGenre,
+      store.selectedYear,
+      store.sortBy,
+      store.timeRange,
+      store.currentPage,
+      store.searchQuery,
+    ]
   );
 
-  // Update appliedFilters when URL changes
-  useEffect(() => {
-    setAppliedFilters({
-      platform: searchParams.get("platform") || "all",
-      genre: searchParams.get("genre") || "all",
-      category: searchParams.get("category") || "all",
-      year: searchParams.get("year") || "all",
-      timeRange: searchParams.get("timeRange") || "all",
-      sort: searchParams.get("sort") || "popularity",
-    });
+  type StoreKey = keyof typeof storeValues;
+  type ParamMapping = {
+    [key: string]: StoreKey;
+  };
+
+  const paramToStoreKeyMap: ParamMapping = {
+    category: "selectedCategory",
+    platform: "selectedPlatform",
+    genre: "selectedGenre",
+    year: "selectedYear",
+    sort: "sortBy",
+    timeRange: "timeRange",
+  };
+
+  // Memoize store methods to prevent unnecessary re-renders
+  const storeMethods = useMemo(
+    () => ({
+      setGames: store.setGames,
+      setTotalPages: store.setTotalPages,
+      setTotalGames: store.setTotalGames,
+      setLoading: store.setLoading,
+      setError: store.setError,
+      batchUpdate: (updates: any) => {
+        store.batchUpdate(updates);
+        // Force a refetch after batch update
+        setTimeout(() => {
+          store.fetchGames();
+        }, 0);
+      },
+      setCurrentPage: store.setCurrentPage,
+      handleResetFilters: store.handleResetFilters,
+      setPlatforms: store.setPlatforms,
+      setGenres: store.setGenres,
+    }),
+    [store]
+  );
+
+  // Memoize the query parameters
+  const queryParams = useMemo(() => {
+    if (!searchParams) return null;
+    const params = {
+      category: searchParams.get("category"),
+      platform: searchParams.get("platform"),
+      genre: searchParams.get("genre"),
+      year: searchParams.get("year"),
+      sort: searchParams.get("sort"),
+      timeRange: searchParams.get("timeRange"),
+    };
+
+    // Filter out null values
+    return Object.fromEntries(
+      Object.entries(params).filter(([_, value]) => value !== null)
+    );
   }, [searchParams]);
 
-  const { data, isLoading, error } = useQuery({
-    queryKey,
-    queryFn: async () => {
-      setLoading(true);
-      try {
-        // Try to get from localStorage first
-        const cacheKey = `games-${queryKey.join("-")}`;
-        const cachedData = localStorage.getItem(cacheKey);
+  // Memoize the update function
+  const updateStoreFromParams = useCallback(
+    (params: Record<string, any>) => {
+      const updates: Record<string, any> = {};
+      let hasUpdates = false;
 
-        if (cachedData) {
-          const { data: parsedData, timestamp } = JSON.parse(cachedData);
-          const cacheAge = Date.now() - timestamp;
-
-          // Use cache if it's less than 5 minutes old
-          if (cacheAge < 1000 * 60 * 5) {
-            setGames(parsedData.games);
-            setTotalPages(parsedData.totalPages);
-            setTotalGames(parsedData.totalGames);
-            setPlatforms(parsedData.platforms || []);
-            setGenres(parsedData.genres || []);
-            return parsedData;
-          }
+      // Helper function to check and update a parameter
+      const checkAndUpdate = (
+        paramKey: string,
+        storeKey: StoreKey,
+        defaultValue: string = "all"
+      ) => {
+        if (
+          params[paramKey] &&
+          params[paramKey] !== defaultValue &&
+          params[paramKey] !== storeValues[storeKey]
+        ) {
+          updates[storeKey] = params[paramKey];
+          hasUpdates = true;
         }
+      };
 
-        // Fetch fresh data if no cache or cache is stale
-        const params = new URLSearchParams({
-          page: currentPage.toString(),
-          limit: ITEMS_PER_PAGE.toString(),
-          platform: appliedFilters.platform,
-          genre: appliedFilters.genre,
-          category: appliedFilters.category,
-          year: appliedFilters.year,
-          sort: appliedFilters.sort,
-          search: debouncedSearch,
-          timeRange: appliedFilters.timeRange,
-        });
+      Object.entries(paramToStoreKeyMap).forEach(([paramKey, storeKey]) => {
+        const defaultValue = storeKey === "sortBy" ? "popularity" : "all";
+        checkAndUpdate(paramKey, storeKey, defaultValue);
+      });
 
-        const response = await fetch(`/api/games?${params.toString()}`);
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || "Failed to fetch games");
-        }
-        const freshData = await response.json();
-
-        // Save to localStorage with timestamp
-        localStorage.setItem(
-          cacheKey,
-          JSON.stringify({
-            data: freshData,
-            timestamp: Date.now(),
-          })
-        );
-
-        setGames(freshData.games);
-        setTotalPages(freshData.totalPages);
-        setTotalGames(freshData.totalGames);
-        setPlatforms(freshData.platforms || []);
-        setGenres(freshData.genres || []);
-        return freshData;
-      } catch (err) {
-        const message =
-          err instanceof Error ? err.message : "Failed to fetch games";
-        setError(message);
-        throw err;
-      } finally {
-        setLoading(false);
+      if (hasUpdates) {
+        isUpdatingFromUrl.current = true;
+        storeMethods.batchUpdate(updates);
+        setTimeout(() => {
+          isUpdatingFromUrl.current = false;
+        }, 100);
       }
     },
-    staleTime: 1000 * 60 * 5, // 5 minutes
-    gcTime: 1000 * 60 * 60 * 24, // 24 hours
+    [storeValues, storeMethods]
+  );
+
+  // Sync URL params with store on mount and URL changes
+  useEffect(() => {
+    if (!queryParams || isUpdatingFromStore.current) return;
+
+    const currentUrl = searchParams?.toString() || "";
+    if (currentUrl === previousUrl.current) return;
+
+    const needsUpdate = Object.entries(queryParams).some(([key, value]) => {
+      if (!value) return false;
+      const storeKey = paramToStoreKeyMap[key];
+      return storeKey && value !== storeValues[storeKey];
+    });
+
+    if (needsUpdate) {
+      updateStoreFromParams(queryParams);
+    }
+
+    previousUrl.current = currentUrl;
+  }, [queryParams, updateStoreFromParams, searchParams, storeValues]);
+
+  // Update URL when store state changes - with debounce
+  useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+
+    if (isUpdatingFromUrl.current) return;
+
+    if (updateTimeoutRef.current) {
+      clearTimeout(updateTimeoutRef.current);
+    }
+
+    updateTimeoutRef.current = setTimeout(() => {
+      const params = new URLSearchParams(searchParams?.toString() || "");
+      let hasChanges = false;
+
+      const updateParam = (
+        key: string,
+        value: string,
+        defaultValue: string
+      ) => {
+        if (value && value !== defaultValue) {
+          if (params.get(key) !== value) {
+            params.set(key, value);
+            hasChanges = true;
+          }
+        } else if (params.has(key)) {
+          params.delete(key);
+          hasChanges = true;
+        }
+      };
+
+      // Update all parameters
+      updateParam("category", storeValues.selectedCategory, "all");
+      updateParam("platform", storeValues.selectedPlatform, "all");
+      updateParam("genre", storeValues.selectedGenre, "all");
+      updateParam("year", storeValues.selectedYear, "all");
+      updateParam("sort", storeValues.sortBy, "popularity");
+      updateParam("timeRange", storeValues.timeRange, "all");
+
+      if (storeValues.searchQuery) {
+        if (params.get("search") !== storeValues.searchQuery) {
+          params.set("search", storeValues.searchQuery);
+          hasChanges = true;
+        }
+      } else if (params.has("search")) {
+        params.delete("search");
+        hasChanges = true;
+      }
+
+      if (hasChanges) {
+        isUpdatingFromStore.current = true;
+        const queryString = params.toString();
+        const newUrl = queryString
+          ? `?${queryString}`
+          : window.location.pathname;
+        router.push(newUrl, { scroll: false });
+        setTimeout(() => {
+          isUpdatingFromStore.current = false;
+        }, 100);
+      }
+    }, 100);
+
+    return () => {
+      if (updateTimeoutRef.current) {
+        clearTimeout(updateTimeoutRef.current);
+      }
+    };
+  }, [storeValues, router, searchParams]);
+
+  // Query for games data with memoized queryFn
+  const queryFn = useCallback(async () => {
+    storeMethods.setLoading(true);
+    try {
+      const params = new URLSearchParams({
+        page: storeValues.currentPage.toString(),
+        limit: ITEMS_PER_PAGE.toString(),
+        platform: storeValues.selectedPlatform,
+        genre: storeValues.selectedGenre,
+        category: storeValues.selectedCategory,
+        year: storeValues.selectedYear,
+        sort: storeValues.sortBy,
+        search: debouncedSearch,
+        timeRange: storeValues.timeRange,
+      });
+
+      const response = await fetch(`/api/games?${params.toString()}`);
+      if (!response.ok) {
+        throw new Error("Failed to fetch games");
+      }
+
+      const data = await response.json();
+      storeMethods.setGames(data.games);
+      storeMethods.setTotalPages(data.totalPages);
+      storeMethods.setTotalGames(data.totalGames);
+      return data;
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Failed to fetch games";
+      storeMethods.setError(message);
+      throw error;
+    } finally {
+      storeMethods.setLoading(false);
+    }
+  }, [storeValues, debouncedSearch, storeMethods]);
+
+  const { data, isLoading, error } = useQuery({
+    queryKey: [
+      "allGames",
+      storeValues.currentPage,
+      storeValues.sortBy,
+      storeValues.selectedPlatform,
+      storeValues.selectedGenre,
+      storeValues.selectedCategory,
+      storeValues.selectedYear,
+      storeValues.timeRange,
+      debouncedSearch,
+    ],
+    queryFn,
+    staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 60 * 24,
     refetchOnWindowFocus: false,
   });
 
-  // Fetch initial platforms and genres if not available
+  // Fetch metadata only once on mount
   useEffect(() => {
     const fetchMetadata = async () => {
       try {
         const response = await fetch("/api/games/metadata");
-        if (!response.ok) throw new Error("Failed to fetch metadata");
+        if (!response.ok) {
+          throw new Error("Failed to fetch metadata");
+        }
         const data = await response.json();
-        setPlatforms(data.platforms || []);
-        setGenres(data.genres || []);
+        store.setPlatforms(data.platforms || []);
+        store.setGenres(data.genres || []);
       } catch (error) {
-        console.error("Failed to fetch platforms and genres:", error);
+        const message =
+          error instanceof Error ? error.message : "Failed to fetch metadata";
+        store.setError(message);
       }
     };
 
     fetchMetadata();
-  }, [setPlatforms, setGenres]);
-
-  // Clear old cache entries periodically
-  useEffect(() => {
-    const cleanupCache = () => {
-      if (typeof window === "undefined") return;
-
-      const maxAge = 1000 * 60 * 60 * 24; // 24 hours
-      const now = Date.now();
-
-      Object.keys(localStorage).forEach((key) => {
-        if (key.startsWith("games-")) {
-          try {
-            const { timestamp } = JSON.parse(localStorage.getItem(key)!);
-            if (now - timestamp > maxAge) {
-              localStorage.removeItem(key);
-            }
-          } catch (e) {
-            localStorage.removeItem(key);
-          }
-        }
-      });
-    };
-
-    cleanupCache();
-    const interval = setInterval(cleanupCache, 1000 * 60 * 60); // Clean up every hour
-    return () => clearInterval(interval);
   }, []);
 
   if (error) {
@@ -231,7 +317,7 @@ export default function AllGamesClient() {
           </p>
           <button
             className="mt-4 px-4 py-2 bg-gray-800 rounded-lg hover:bg-gray-700"
-            onClick={resetFilters}
+            onClick={storeMethods.handleResetFilters}
           >
             Reset Filters
           </button>
@@ -245,11 +331,11 @@ export default function AllGamesClient() {
       <GamesHeader />
       <div className="max-w-[2000px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <GamesGrid isLoading={isLoading} games={data?.games || []} />
-        <div className=" mt-10">
+        <div className="mt-10">
           <GamesPagination
-            currentPage={currentPage}
+            currentPage={storeValues.currentPage}
             totalPages={data?.totalPages || 1}
-            setCurrentPage={setCurrentPage}
+            setCurrentPage={storeMethods.setCurrentPage}
           />
         </div>
       </div>

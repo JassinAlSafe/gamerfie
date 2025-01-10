@@ -12,7 +12,7 @@ interface GameFilters {
     start: number;
     end: number;
   };
-  timeRange?: 'recent' | 'upcoming' | 'classic';
+  timeRange?: 'new_releases' | 'upcoming' | 'classic';
   isIndie?: boolean;
   isAnticipated?: boolean;
 }
@@ -61,7 +61,7 @@ export async function GET(request: NextRequest) {
     if (category && category !== 'all') {
       switch (category) {
         case 'recent':
-          filters.timeRange = 'recent';
+          filters.timeRange = 'new_releases';
           break;
         case 'upcoming':
           filters.timeRange = 'upcoming';

@@ -101,6 +101,26 @@ export class IGDBService {
         conditions.push(`name ~ "${filters.search}"*`);
       }
 
+      // Add time range filter
+      if (filters?.timeRange) {
+        const now = Math.floor(Date.now() / 1000); // Current time in Unix timestamp
+        const sixMonthsAgo = now - (180 * 24 * 60 * 60); // 180 days ago
+        const threeMonthsAhead = now + (90 * 24 * 60 * 60); // 90 days ahead
+        const fiveYearsAgo = now - (5 * 365 * 24 * 60 * 60); // 5 years ago
+
+        switch (filters.timeRange) {
+          case 'new_releases':
+            conditions.push(`first_release_date >= ${sixMonthsAgo} & first_release_date <= ${now}`);
+            break;
+          case 'upcoming':
+            conditions.push(`first_release_date > ${now} & first_release_date <= ${threeMonthsAhead}`);
+            break;
+          case 'classic':
+            conditions.push(`first_release_date < ${fiveYearsAgo}`);
+            break;
+        }
+      }
+
       // Build the sort condition with proper IGDB syntax
       let sortBy = '';
       switch (filters?.sortBy) {

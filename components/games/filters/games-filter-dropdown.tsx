@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo, useState } from "react";
 import { Filter } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -38,13 +39,124 @@ export function GamesFilterDropdown({
   onGenreChange,
   onYearChange,
 }: GamesFilterDropdownProps) {
-  const years = Array.from(
-    { length: 30 },
-    (_, i) => new Date().getFullYear() - i
+  const [isOpen, setIsOpen] = useState(false);
+
+  // Memoize the years array
+  const years = useMemo(
+    () => Array.from({ length: 30 }, (_, i) => new Date().getFullYear() - i),
+    []
+  );
+
+  // Memoize the platform items
+  const platformItems = useMemo(
+    () => (
+      <>
+        <DropdownMenuItem
+          onClick={() => {
+            onPlatformChange("all");
+            setIsOpen(false);
+          }}
+          className={cn(
+            "cursor-pointer hover:bg-gray-800 focus:bg-gray-800",
+            selectedPlatform === "all" && "bg-purple-500/20"
+          )}
+        >
+          All Platforms
+        </DropdownMenuItem>
+        {platforms?.map((platform) => (
+          <DropdownMenuItem
+            key={platform.id}
+            onClick={() => {
+              onPlatformChange(platform.id);
+              setIsOpen(false);
+            }}
+            className={cn(
+              "cursor-pointer hover:bg-gray-800 focus:bg-gray-800",
+              selectedPlatform === platform.id && "bg-purple-500/20"
+            )}
+          >
+            {platform.name}
+          </DropdownMenuItem>
+        ))}
+      </>
+    ),
+    [platforms, selectedPlatform, onPlatformChange]
+  );
+
+  // Memoize the genre items
+  const genreItems = useMemo(
+    () => (
+      <>
+        <DropdownMenuItem
+          onClick={() => {
+            onGenreChange("all");
+            setIsOpen(false);
+          }}
+          className={cn(
+            "cursor-pointer hover:bg-gray-800 focus:bg-gray-800",
+            selectedGenre === "all" && "bg-purple-500/20"
+          )}
+        >
+          All Genres
+        </DropdownMenuItem>
+        {genres?.map((genre) => (
+          <DropdownMenuItem
+            key={genre.id}
+            onClick={() => {
+              onGenreChange(genre.id);
+              setIsOpen(false);
+            }}
+            className={cn(
+              "cursor-pointer hover:bg-gray-800 focus:bg-gray-800",
+              selectedGenre === genre.id && "bg-purple-500/20"
+            )}
+          >
+            {genre.name}
+          </DropdownMenuItem>
+        ))}
+      </>
+    ),
+    [genres, selectedGenre, onGenreChange]
+  );
+
+  // Memoize the year items
+  const yearItems = useMemo(
+    () => (
+      <>
+        <DropdownMenuItem
+          onClick={() => {
+            onYearChange("all");
+            setIsOpen(false);
+          }}
+          className={cn(
+            "cursor-pointer hover:bg-gray-800 focus:bg-gray-800",
+            selectedYear === "all" && "bg-purple-500/20"
+          )}
+        >
+          All Years
+        </DropdownMenuItem>
+        {years.map((year) => (
+          <DropdownMenuItem
+            key={year}
+            onClick={() => {
+              onYearChange(year.toString());
+              setIsOpen(false);
+            }}
+            className={cn(
+              "cursor-pointer hover:bg-gray-800 focus:bg-gray-800",
+              selectedYear === year.toString() && "bg-purple-500/20"
+            )}
+          >
+            {year}
+          </DropdownMenuItem>
+        ))}
+      </>
+    ),
+    [years, selectedYear, onYearChange]
   );
 
   return (
-    <DropdownMenu>
+    <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
       <DropdownMenuTrigger asChild>
         <Button
           variant="outline"
@@ -54,7 +166,10 @@ export function GamesFilterDropdown({
           <Filter className="w-4 h-4 ml-2" />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-56 bg-gray-900 border-gray-800">
+      <DropdownMenuContent
+        className="w-56 bg-gray-900 border-gray-800"
+        onCloseAutoFocus={(e) => e.preventDefault()}
+      >
         <DropdownMenuGroup>
           <DropdownMenuSub>
             <DropdownMenuSubTrigger className="bg-gray-900">
@@ -62,27 +177,7 @@ export function GamesFilterDropdown({
             </DropdownMenuSubTrigger>
             <DropdownMenuPortal>
               <DropdownMenuSubContent className="bg-gray-900 border-gray-800 max-h-[300px] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-gray-900">
-                <DropdownMenuItem
-                  onClick={() => onPlatformChange("all")}
-                  className={cn(
-                    "cursor-pointer hover:bg-gray-800 focus:bg-gray-800",
-                    selectedPlatform === "all" && "bg-purple-500/20"
-                  )}
-                >
-                  All Platforms
-                </DropdownMenuItem>
-                {platforms?.map((platform) => (
-                  <DropdownMenuItem
-                    key={platform.id}
-                    onClick={() => onPlatformChange(platform.id)}
-                    className={cn(
-                      "cursor-pointer hover:bg-gray-800 focus:bg-gray-800",
-                      selectedPlatform === platform.id && "bg-purple-500/20"
-                    )}
-                  >
-                    {platform.name}
-                  </DropdownMenuItem>
-                ))}
+                {platformItems}
               </DropdownMenuSubContent>
             </DropdownMenuPortal>
           </DropdownMenuSub>
@@ -95,27 +190,7 @@ export function GamesFilterDropdown({
             </DropdownMenuSubTrigger>
             <DropdownMenuPortal>
               <DropdownMenuSubContent className="bg-gray-900 border-gray-800 max-h-[300px] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-gray-900">
-                <DropdownMenuItem
-                  onClick={() => onGenreChange("all")}
-                  className={cn(
-                    "cursor-pointer hover:bg-gray-800 focus:bg-gray-800",
-                    selectedGenre === "all" && "bg-purple-500/20"
-                  )}
-                >
-                  All Genres
-                </DropdownMenuItem>
-                {genres?.map((genre) => (
-                  <DropdownMenuItem
-                    key={genre.id}
-                    onClick={() => onGenreChange(genre.id)}
-                    className={cn(
-                      "cursor-pointer hover:bg-gray-800 focus:bg-gray-800",
-                      selectedGenre === genre.id && "bg-purple-500/20"
-                    )}
-                  >
-                    {genre.name}
-                  </DropdownMenuItem>
-                ))}
+                {genreItems}
               </DropdownMenuSubContent>
             </DropdownMenuPortal>
           </DropdownMenuSub>
@@ -128,27 +203,7 @@ export function GamesFilterDropdown({
             </DropdownMenuSubTrigger>
             <DropdownMenuPortal>
               <DropdownMenuSubContent className="bg-gray-900 border-gray-800 max-h-[300px] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-gray-900">
-                <DropdownMenuItem
-                  onClick={() => onYearChange("all")}
-                  className={cn(
-                    "cursor-pointer hover:bg-gray-800 focus:bg-gray-800",
-                    selectedYear === "all" && "bg-purple-500/20"
-                  )}
-                >
-                  All Years
-                </DropdownMenuItem>
-                {years.map((year) => (
-                  <DropdownMenuItem
-                    key={year}
-                    onClick={() => onYearChange(year.toString())}
-                    className={cn(
-                      "cursor-pointer hover:bg-gray-800 focus:bg-gray-800",
-                      selectedYear === year.toString() && "bg-purple-500/20"
-                    )}
-                  >
-                    {year}
-                  </DropdownMenuItem>
-                ))}
+                {yearItems}
               </DropdownMenuSubContent>
             </DropdownMenuPortal>
           </DropdownMenuSub>
