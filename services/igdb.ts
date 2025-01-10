@@ -12,7 +12,7 @@ interface GameFilters {
     start: number;
     end: number;
   };
-  timeRange?: 'recent' | 'upcoming' | 'classic';
+  timeRange?: 'new_releases' | 'upcoming' | 'classic';
   isIndie?: boolean;
   isAnticipated?: boolean;
 }
@@ -83,69 +83,29 @@ export class IGDBService {
       const offset = (page - 1) * limit;
       const headers = await this.getHeaders();
 
-      // Build the base query conditions
-      const conditions: string[] = ['cover != null', 'version_parent = null'];
+      // Build the base query conditions - only require that games have a cover
+      const conditions: string[] = ['cover != null'];
       
-      // Add platform filter
+      // Add platform filter - use proper IGDB syntax for array membership
       if (filters?.platformId) {
-        conditions.push(`platforms = ${filters.platformId}`);
+        conditions.push(`platforms = [${filters.platformId}]`);
       }
 
-      // Add genre filter
+      // Add genre filter - use proper IGDB syntax for array membership
       if (filters?.genreId) {
-        conditions.push(`genres = ${filters.genreId}`);
+        conditions.push(`genres = [${filters.genreId}]`);
       }
 
-      // Add release year filter
-      if (filters?.releaseYear) {
-        conditions.push(`first_release_date >= ${filters.releaseYear.start}`);
-        conditions.push(`first_release_date <= ${filters.releaseYear.end}`);
-      }
-
-      // Add time range filters
-      if (filters?.timeRange) {
-        const now = Math.floor(Date.now() / 1000);
-        const oneYearInSeconds = 31536000;
-        
-        switch (filters.timeRange) {
-          case 'recent':
-            // Games released in the last year
-            conditions.push(`first_release_date >= ${now - oneYearInSeconds}`);
-            break;
-          case 'upcoming':
-            // Games releasing in the future
-            conditions.push(`first_release_date > ${now}`);
-            break;
-          case 'classic':
-            // Games released more than 10 years ago
-            conditions.push(`first_release_date < ${now - (oneYearInSeconds * 10)}`);
-            break;
-        }
-      }
-
-      // Add indie games filter
-      if (filters?.isIndie) {
-        conditions.push('genres.name = "Indie"');
-      }
-
-      // Add anticipated games filter
-      if (filters?.isAnticipated) {
-        const now = Math.floor(Date.now() / 1000);
-        conditions.push(`first_release_date > ${now}`);
-        conditions.push('hypes != null');
-        conditions.push('hypes > 0');
-      }
-
-      // Add search filter
+      // Add search filter if provided - use exact IGDB search syntax
       if (filters?.search) {
-        conditions.push(`name ~ *"${filters.search}"*`);
+        conditions.push(`name ~ "${filters.search}"*`);
       }
 
-      // Build the sort condition
+      // Build the sort condition with proper IGDB syntax
       let sortBy = '';
       switch (filters?.sortBy) {
         case 'rating':
-          sortBy = 'rating desc';
+          sortBy = 'total_rating desc';
           break;
         case 'popularity':
           sortBy = 'total_rating_count desc';
@@ -162,6 +122,8 @@ export class IGDBService {
 
       // Get total count first
       const countQuery = `where ${conditions.join(' & ')};`;
+      console.log('Count Query:', countQuery);
+
       const countResponse = await fetch("https://api.igdb.com/v4/games/count", {
         method: "POST",
         headers,
@@ -177,12 +139,13 @@ export class IGDBService {
 
       // Fetch games with all necessary fields
       const query = `
-        fields name, cover.url, rating, total_rating_count, genres.*, platforms.*, first_release_date, summary;
+        fields name, cover.url, rating, total_rating_count, genres.*, platforms.*, first_release_date, summary, total_rating;
         where ${conditions.join(' & ')};
         sort ${sortBy};
         limit ${limit};
         offset ${offset};
       `;
+      console.log('Games Query:', query);
 
       const gamesResponse = await fetch("https://api.igdb.com/v4/games", {
         method: "POST",

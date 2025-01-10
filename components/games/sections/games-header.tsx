@@ -15,6 +15,8 @@ import { useGamesStore } from "@/stores/useGamesStore";
 import { useSearchStore } from "@/stores/useSearchStore";
 import { GamesFilterDropdown } from "../filters/games-filter-dropdown";
 import { cn } from "@/lib/utils";
+import { useRouter } from "next/navigation";
+import { useCallback, useEffect } from "react";
 
 const gameCategories = {
   all: "All Games",
@@ -27,6 +29,7 @@ const gameCategories = {
 };
 
 export function GamesHeader() {
+  const router = useRouter();
   const {
     sortBy,
     setSortBy,
@@ -43,6 +46,7 @@ export function GamesHeader() {
     setSelectedCategory,
     selectedYear,
     setSelectedYear,
+    timeRange,
     platforms,
     genres,
     isLoading,
@@ -50,8 +54,64 @@ export function GamesHeader() {
 
   const { query: searchQuery, setQuery: setSearchQuery } = useSearchStore();
 
+  const handleApplyFilters = () => {
+    const filterParams = new URLSearchParams();
+
+    // Only add parameters that are not default values
+    if (selectedPlatform !== "all")
+      filterParams.set("platform", selectedPlatform);
+    if (selectedGenre !== "all") filterParams.set("genre", selectedGenre);
+    if (selectedCategory !== "all")
+      filterParams.set("category", selectedCategory);
+    if (selectedYear !== "all") filterParams.set("year", selectedYear);
+    if (timeRange !== "all") filterParams.set("timeRange", timeRange);
+    if (sortBy !== "popularity") filterParams.set("sort", sortBy);
+    if (searchQuery) filterParams.set("search", searchQuery);
+
+    const queryString = filterParams.toString();
+    router.push(`/all-games${queryString ? `?${queryString}` : ""}`);
+  };
+
+  const handleRemoveFilter = (filterType: string) => {
+    switch (filterType) {
+      case "search":
+        setSearchQuery("");
+        break;
+      case "platform":
+        setSelectedPlatform("all");
+        break;
+      case "genre":
+        setSelectedGenre("all");
+        break;
+      case "category":
+        setSelectedCategory("all");
+        break;
+      case "year":
+        setSelectedYear("all");
+        break;
+    }
+  };
+
+  const handleResetAllFilters = () => {
+    setSearchQuery("");
+    setSelectedPlatform("all");
+    setSelectedGenre("all");
+    setSelectedCategory("all");
+    setSelectedYear("all");
+    setSortBy("popularity");
+    router.push("/all-games");
+  };
+
+  // Get the platform and genre names
+  const platformName = platforms?.find(
+    (p) => p.id.toString() === selectedPlatform
+  )?.name;
+  const genreName = genres?.find(
+    (g) => g.id.toString() === selectedGenre
+  )?.name;
+
   return (
-    <div className="max-w-[2000px] mx-auto px-4 sm:px-6 lg:px-8 space-y-6 space-x-6">
+    <div className="max-w-[2000px] mx-auto px-4 sm:px-6 lg:px-8 space-y-4">
       {/* Top Bar */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
@@ -73,7 +133,7 @@ export function GamesHeader() {
           <Button
             variant="outline"
             size="sm"
-            onClick={handleResetFilters}
+            onClick={handleResetAllFilters}
             className="text-gray-400 hover:text-white"
           >
             Reset Filters
@@ -164,8 +224,8 @@ export function GamesHeader() {
           {searchQuery && (
             <Badge
               variant="secondary"
-              className="bg-yellow-500/20 text-yellow-300 hover:bg-yellow-500/30"
-              onClick={() => setSearchQuery("")}
+              className="bg-yellow-500/20 text-yellow-300 hover:bg-yellow-500/30 cursor-pointer"
+              onClick={() => handleRemoveFilter("search")}
             >
               Search: {searchQuery} ×
             </Badge>
@@ -173,33 +233,29 @@ export function GamesHeader() {
           {selectedCategory !== "all" && (
             <Badge
               variant="secondary"
-              className="bg-green-500/20 text-green-300 hover:bg-green-500/30"
-              onClick={() => setSelectedCategory("all")}
+              className="bg-green-500/20 text-green-300 hover:bg-green-500/30 cursor-pointer"
+              onClick={() => handleRemoveFilter("category")}
             >
               {gameCategories[selectedCategory as keyof typeof gameCategories]}{" "}
               ×
             </Badge>
           )}
-          {selectedPlatform !== "all" && (
+          {selectedPlatform !== "all" && platformName && (
             <Badge
               variant="secondary"
-              className="bg-purple-500/20 text-purple-300 hover:bg-purple-500/30"
-              onClick={() => setSelectedPlatform("all")}
+              className="bg-purple-500/20 text-purple-300 hover:bg-purple-500/30 cursor-pointer"
+              onClick={() => handleRemoveFilter("platform")}
             >
-              {platforms?.find((p) => p.id === selectedPlatform)?.name ||
-                selectedPlatform}{" "}
-              ×
+              {platformName} ×
             </Badge>
           )}
-          {selectedGenre !== "all" && (
+          {selectedGenre !== "all" && genreName && (
             <Badge
               variant="secondary"
-              className="bg-blue-500/20 text-blue-300 hover:bg-blue-500/30"
-              onClick={() => setSelectedGenre("all")}
+              className="bg-blue-500/20 text-blue-300 hover:bg-blue-500/30 cursor-pointer"
+              onClick={() => handleRemoveFilter("genre")}
             >
-              {genres?.find((g) => g.id === selectedGenre)?.name ||
-                selectedGenre}{" "}
-              ×
+              {genreName} ×
             </Badge>
           )}
         </div>
@@ -214,6 +270,14 @@ export function GamesHeader() {
           `${totalGames?.toLocaleString()} Games • Page ${currentPage} of ${totalPages}`
         )}
       </div>
+
+      {/* Apply Filters Button */}
+      <Button
+        onClick={handleApplyFilters}
+        className="bg-purple-500 hover:bg-purple-600 text-white px-6"
+      >
+        Apply Filters
+      </Button>
     </div>
   );
 }

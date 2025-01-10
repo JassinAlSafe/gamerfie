@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useGamesStore } from "@/stores/useGamesStore";
 import { useSearchStore } from "@/stores/useSearchStore";
@@ -14,6 +14,15 @@ const ITEMS_PER_PAGE = 48;
 
 export default function AllGamesClient() {
   const searchParams = useSearchParams();
+  const [appliedFilters, setAppliedFilters] = useState({
+    platform: searchParams.get("platform") || "all",
+    genre: searchParams.get("genre") || "all",
+    category: searchParams.get("category") || "all",
+    year: searchParams.get("year") || "all",
+    timeRange: searchParams.get("timeRange") || "all",
+    sort: searchParams.get("sort") || "popularity",
+  });
+
   const {
     currentPage,
     sortBy,
@@ -33,20 +42,36 @@ export default function AllGamesClient() {
     setGenres,
     setSelectedCategory,
     setTimeRange,
+    setSelectedPlatform,
+    setSelectedGenre,
+    setSelectedYear,
+    setSortBy,
   } = useGamesStore();
 
-  // Read URL parameters on mount
+  // Read URL parameters on mount and when URL changes
   useEffect(() => {
     const category = searchParams.get("category");
     const timeRange = searchParams.get("timeRange");
+    const platform = searchParams.get("platform");
+    const genre = searchParams.get("genre");
+    const year = searchParams.get("year");
+    const sort = searchParams.get("sort");
 
-    if (category) {
-      setSelectedCategory(category);
-    }
-    if (timeRange) {
-      setTimeRange(timeRange);
-    }
-  }, [searchParams, setSelectedCategory, setTimeRange]);
+    if (category) setSelectedCategory(category);
+    if (timeRange) setTimeRange(timeRange);
+    if (platform) setSelectedPlatform(platform);
+    if (genre) setSelectedGenre(genre);
+    if (year) setSelectedYear(year);
+    if (sort) setSortBy(sort);
+  }, [
+    searchParams,
+    setSelectedCategory,
+    setTimeRange,
+    setSelectedPlatform,
+    setSelectedGenre,
+    setSelectedYear,
+    setSortBy,
+  ]);
 
   const { query: searchQuery } = useSearchStore();
   const debouncedSearch = useDebounce(searchQuery, 500); // 500ms debounce
@@ -56,25 +81,28 @@ export default function AllGamesClient() {
     () => [
       "allGames",
       currentPage,
-      sortBy,
-      selectedPlatform,
-      selectedGenre,
-      selectedCategory,
-      selectedYear,
-      timeRange,
+      appliedFilters.sort,
+      appliedFilters.platform,
+      appliedFilters.genre,
+      appliedFilters.category,
+      appliedFilters.year,
+      appliedFilters.timeRange,
       debouncedSearch,
     ],
-    [
-      currentPage,
-      sortBy,
-      selectedPlatform,
-      selectedGenre,
-      selectedCategory,
-      selectedYear,
-      timeRange,
-      debouncedSearch,
-    ]
+    [currentPage, appliedFilters, debouncedSearch]
   );
+
+  // Update appliedFilters when URL changes
+  useEffect(() => {
+    setAppliedFilters({
+      platform: searchParams.get("platform") || "all",
+      genre: searchParams.get("genre") || "all",
+      category: searchParams.get("category") || "all",
+      year: searchParams.get("year") || "all",
+      timeRange: searchParams.get("timeRange") || "all",
+      sort: searchParams.get("sort") || "popularity",
+    });
+  }, [searchParams]);
 
   const { data, isLoading, error } = useQuery({
     queryKey,
@@ -104,13 +132,13 @@ export default function AllGamesClient() {
         const params = new URLSearchParams({
           page: currentPage.toString(),
           limit: ITEMS_PER_PAGE.toString(),
-          platform: selectedPlatform,
-          genre: selectedGenre,
-          category: selectedCategory,
-          year: selectedYear,
-          sort: sortBy,
+          platform: appliedFilters.platform,
+          genre: appliedFilters.genre,
+          category: appliedFilters.category,
+          year: appliedFilters.year,
+          sort: appliedFilters.sort,
           search: debouncedSearch,
-          timeRange: timeRange,
+          timeRange: appliedFilters.timeRange,
         });
 
         const response = await fetch(`/api/games?${params.toString()}`);
