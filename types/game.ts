@@ -33,6 +33,7 @@ export interface Game {
   description: string;
   coverImage: string;
   rating: number;
+  total_rating?: number;
   releaseDate: string;
   platforms: Platform[];
   genres: Genre[];

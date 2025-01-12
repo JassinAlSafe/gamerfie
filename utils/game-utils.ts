@@ -304,6 +304,6 @@ export const checkGameInLibrary = async (
 };
 
 export const formatRating = (rating: number | null | undefined): string => {
-  if (!rating || rating === 0) return ''; // Return empty string for no rating
+  if (!rating || rating === null) return ''; // Return empty string for no rating
   return rating.toFixed(1);
 };
