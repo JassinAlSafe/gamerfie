@@ -1,10 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
+    domains: ["images.igdb.com", "upload.wikimedia.org"],
     remotePatterns: [
       {
         protocol: "https",
-        hostname: "**",
+        hostname: "**.igdb.com",
       },
     ],
     dangerouslyAllowSVG: true,
