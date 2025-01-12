@@ -28,24 +28,14 @@ interface GameActivity {
 }
 
 export interface Game {
-  id: number | string;
+  id: string;
   name: string;
-  cover?: { url: string } | null;
-  cover_url?: string | null;
-  rating?: number | null;
-  total_rating?: number | null;
-  total_rating_count?: number;
-  first_release_date?: number | null;
-  platforms?: Platform[] | null;
-  genres?: Genre[] | null;
-  summary?: string | null;
-  storyline?: string | null;
-  achievements?: Achievement[];
-  screenshots?: Screenshot[];
-  artworks?: { url: string }[];
-  websites?: any[];
-  relatedGames?: Game[];
-  activities?: GameActivity[];
+  description: string;
+  coverImage: string;
+  rating: number;
+  releaseDate: string;
+  platforms: Platform[];
+  genres: Genre[];
 }
 
 export interface UserGame {
@@ -66,12 +56,12 @@ export interface UserGame {
 export type GameStatus = 'playing' | 'completed' | 'want_to_play' | 'dropped';
 
 export interface Platform {
-  id: number;
+  id: string;
   name: string;
 }
 
 export interface Genre {
-  id: number;
+  id: string;
   name: string;
 }
 
@@ -82,7 +72,7 @@ export interface GameQueryParams {
   sortBy: SortOption;
 }
 
-export type SortOption = 'popularity' | 'releaseDate' | 'name';
+export type SortOption = 'rating' | 'popularity' | 'name' | 'release';
 
 export interface ProcessedGame extends Game {
   status?: GameStatus;
@@ -100,8 +90,8 @@ export interface ProcessedGame extends Game {
 export interface FetchGamesResponse {
   games: Game[];
   total: number;
-  page: number;
-  pageSize: number;
+  platforms: Platform[];
+  genres: Genre[];
 }
 
 export interface GameCategories {
@@ -109,5 +99,37 @@ export interface GameCategories {
   newReleases: Game[];
   upcoming: Game[];
   trending: Game[];
+}
+
+export interface GameCarouselProps {
+  games: Game[];
+  category?: string;
+  title: string;
+  icon: React.ComponentType<{ className?: string }>;
+  color: string;
+}
+
+export interface GameFiltersState {
+  platform?: string;
+  genre?: string;
+  category?: string;
+  sort?: 'rating' | 'popularity' | 'name' | 'release';
+  search?: string;
+}
+
+export interface GameFilters {
+  page?: number;
+  limit?: number;
+  platformId?: number;
+  genreId?: number;
+  timeRange?: 'recent' | 'upcoming' | 'classic';
+  isIndie?: boolean;
+  isAnticipated?: boolean;
+  search?: string;
+  sortBy?: 'rating' | 'popularity' | 'name' | 'release';
+  releaseYear?: {
+    start: number;
+    end: number;
+  };
 }
 

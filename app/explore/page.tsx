@@ -4,15 +4,7 @@ import React, { useCallback, useMemo, Suspense } from "react";
 import dynamic from "next/dynamic";
 import PopularGamesSection from "@/components/PopularGamesSection";
 import { Button } from "@/components/ui/button";
-import {
-  Search,
-  Sparkles,
-  Calendar,
-  Flame,
-  Star,
-  Users,
-  ArrowUp,
-} from "lucide-react";
+import { Search, Sparkles, Calendar, Flame } from "lucide-react";
 import { TracingBeam } from "@/components/ui/tracing-beam";
 import { TextGenerateEffect } from "@/components/ui/text-generate-effect";
 import { motion, AnimatePresence } from "framer-motion";
@@ -21,7 +13,7 @@ import { useGamesStore } from "@/stores/useGamesStore";
 import { useDebounce } from "@/hooks/useDebounce";
 import { useRouter } from "next/navigation";
 import { ErrorBoundary } from "react-error-boundary";
-import { Footer } from "@/components/Footer";
+import { useSearchStore } from "@/stores/useSearchStore";
 
 // Dynamically import heavy components
 const BackToTopButton = dynamic(() => import("@/components/BackToTopButton"), {
@@ -95,7 +87,7 @@ function GameCategoriesSkeleton() {
       {[1, 2, 3].map((section) => (
         <div key={section} className="space-y-6">
           <div className="h-8 bg-gray-800/50 rounded w-48" />
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
             {Array.from({ length: 6 }).map((_, i) => (
               <div key={i} className="aspect-[3/4] rounded-lg bg-gray-800/50" />
             ))}
@@ -106,6 +98,14 @@ function GameCategoriesSkeleton() {
   );
 }
 
+interface HeroSectionProps {
+  searchQuery: string;
+  handleSearchChange: (_e: React.ChangeEvent<HTMLInputElement>) => void;
+  handleKeyPress: (_e: React.KeyboardEvent<HTMLInputElement>) => void;
+  searchButton: React.ReactNode;
+  categoryButtons: React.ReactNode;
+}
+
 // Hero section component
 function HeroSection({
   searchQuery,
@@ -113,23 +113,25 @@ function HeroSection({
   handleKeyPress,
   searchButton,
   categoryButtons,
-}: any) {
+}: HeroSectionProps) {
   return (
-    <div className="relative flex flex-col items-center justify-center min-h-[50vh] text-center">
+    <div className="relative flex flex-col items-center justify-center min-h-[60vh] text-center px-4 py-16">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="max-w-4xl mx-auto mb-8"
+        className="max-w-4xl mx-auto space-y-12"
       >
-        <h1 className="text-5xl md:text-7xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-500 via-pink-500 to-cyan-500 mb-6">
+        <h1 className="text-5xl md:text-7xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-500 via-pink-500 to-cyan-500 mb-8">
           Discover Your Next Gaming Adventure
         </h1>
+
         <TextGenerateEffect
           words="Explore trending games, connect with fellow gamers, and keep track of your gaming journey."
-          className="text-gray-300 text-xl mb-12"
+          className="text-gray-300 text-xl"
         />
-        <div className="relative max-w-2xl mx-auto">
+
+        <div className="relative max-w-2xl mx-auto space-y-8">
           <div className="relative group">
             <Search
               className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 group-hover:text-white/70 transition-colors duration-200"
@@ -147,7 +149,8 @@ function HeroSection({
             />
             {searchButton}
           </div>
-          {categoryButtons}
+
+          <div className="pt-2">{categoryButtons}</div>
         </div>
       </motion.div>
     </div>
@@ -156,7 +159,10 @@ function HeroSection({
 
 export default function ExplorePage() {
   const router = useRouter();
-  const { searchQuery, setSearchQuery, setSelectedCategory } = useGamesStore();
+  const setSelectedCategory = useGamesStore(
+    (state) => state.setSelectedCategory
+  );
+  const { query: searchQuery, setQuery: setSearchQuery } = useSearchStore();
   const debouncedSearch = useDebounce(searchQuery);
 
   const handleSearch = useCallback(() => {
@@ -178,7 +184,14 @@ export default function ExplorePage() {
   const handleCategoryClick = useCallback(
     (category: string) => {
       setSelectedCategory(category);
-      router.push(`/all-games?category=${category}`);
+      // Map category to appropriate timeRange
+      const timeRangeMap = {
+        upcoming: "upcoming",
+        recent: "new_releases",
+        popular: "all",
+      };
+      const timeRange = timeRangeMap[category as keyof typeof timeRangeMap];
+      router.push(`/all-games?category=${category}&timeRange=${timeRange}`);
     },
     [router, setSelectedCategory]
   );
@@ -267,10 +280,10 @@ export default function ExplorePage() {
   );
 
   return (
-    <div className="min-h-screen bg-[#0B0F15]">
-      <div className="fixed inset-0 bg-gradient-to-b from-[#0B0F15] via-gray-900 to-[#0B0F15] pointer-events-none" />
+    <div className="relative min-h-full">
+      <div className="absolute inset-0 bg-gradient-to-b from-[#0B0F15] via-gray-900 to-[#0B0F15] pointer-events-none" />
 
-      <div className="relative z-10 pt-28">
+      <div className="relative z-10 pt-28 pb-24">
         <TracingBeam className="px-4">
           <div className="relative z-10 max-w-7xl mx-auto space-y-12">
             <Suspense fallback={<HeroSkeleton />}>
@@ -290,7 +303,6 @@ export default function ExplorePage() {
         </TracingBeam>
 
         <BackToTopButton />
-        <Footer />
       </div>
     </div>
   );

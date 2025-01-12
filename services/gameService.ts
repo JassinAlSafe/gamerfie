@@ -1,5 +1,5 @@
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
-import { Game, FetchGamesResponse, GameQueryParams, SortOption } from '@/types/game'
+import { Game, FetchGamesResponse, GameQueryParams, SortOption, Platform } from '@/types/game'
 import { GameServiceError } from '@/types/errors';
 
 export class GameService {
@@ -15,29 +15,45 @@ export class GameService {
   }: GameQueryParams): Promise<FetchGamesResponse> {
     try {
       const query = this.buildQuery({ page, platformId, searchTerm, sortBy });
+      console.log('Fetching games with query:', query);
       
       // First get the count
       const countQuery = query.replace(/fields.*?;/, 'fields id;').replace(/limit.*?;/, '').replace(/offset.*?;/, '');
+      console.log('Count query:', countQuery);
       
       const [gamesResponse, countResponse] = await Promise.all([
         fetch(`${this.API_BASE}/api/igdb-proxy`, {
           method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
           body: JSON.stringify({ endpoint: 'games', query })
         }),
         fetch(`${this.API_BASE}/api/igdb-proxy`, {
           method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
           body: JSON.stringify({ endpoint: 'games/count', query: countQuery })
         })
       ]);
 
       if (!gamesResponse.ok || !countResponse.ok) {
-        throw new GameServiceError('IGDB API Error');
+        const gamesError = await gamesResponse.text();
+        const countError = await countResponse.text();
+        console.error('IGDB API Error:', { gamesError, countError });
+        throw new GameServiceError(`IGDB API Error - Games: ${gamesError}, Count: ${countError}`);
       }
 
       const games = await gamesResponse.json();
       const { count } = await countResponse.json();
 
-      if (!games) throw new GameServiceError('No data received from IGDB');
+      if (!games) {
+        console.error('No data received from IGDB');
+        throw new GameServiceError('No data received from IGDB');
+      }
+
+      console.log('Successfully fetched games:', { count, gamesCount: games.length });
 
       return {
         games: games.map(this.processGameData),
@@ -47,6 +63,9 @@ export class GameService {
       };
     } catch (error) {
       console.error('GameService fetchGames error:', error);
+      if (error instanceof GameServiceError) {
+        throw error;
+      }
       throw new GameServiceError('Failed to fetch games', error);
     }
   }
@@ -62,13 +81,18 @@ export class GameService {
     // Build the base query
     const fields = [
       'name',
+      'cover.id',
       'cover.url',
       'platforms.name',
       'genres.name',
       'summary',
       'first_release_date',
       'total_rating',
-      'total_rating_count'
+      'total_rating_count',
+      'artworks.url',
+      'screenshots.url',
+      'websites',
+      'involved_companies.company.name'
     ].join(',');
 
     let query = `fields ${fields};`;
@@ -76,23 +100,31 @@ export class GameService {
     // Add search if provided (search results are automatically sorted by relevancy)
     if (searchTerm) {
       query += ` search "${searchTerm}";`;
+      query += ` where cover != null;`; // Ensure games have covers
       query += ` limit ${this.GAMES_PER_PAGE};`;
       query += ` offset ${offset};`;
       return query;
     }
 
     // If not searching, we can use filters and sorting
+    query += ' where cover != null'; // Base condition
+
     if (platformId !== 'all') {
-      query += ` where platforms = (${platformId});`;
+      query += ` & platforms = (${platformId})`;
     }
+
+    query += ';'; // Close where clause
 
     // Add sorting (only when not searching)
     const sortMapping: Record<SortOption, string> = {
       name: 'name asc',
-      releaseDate: 'first_release_date desc',
+      release: 'first_release_date desc',
+      rating: 'total_rating desc',
       popularity: 'total_rating_count desc'
     };
-    query += ` sort ${sortMapping[sortBy]};`;
+    
+    const sortClause = sortMapping[sortBy] || 'total_rating_count desc';
+    query += ` sort ${sortClause};`;
 
     // Add pagination
     query += ` limit ${this.GAMES_PER_PAGE};`;
@@ -101,7 +133,7 @@ export class GameService {
     return query;
   }
 
-  private static processGameData(game: Game) {
+  private static processGameData(game: Game): Game {
     return {
       id: game.id,
       name: game.name,
@@ -114,16 +146,16 @@ export class GameService {
       summary: game.summary,
       first_release_date: game.first_release_date,
       total_rating: game.total_rating,
-      artworks: game.artworks,
-      screenshots: game.screenshots,
-      websites: game.websites,
-      involved_companies: game.involved_companies
+      artworks: game.artworks ?? [],
+      screenshots: game.screenshots ?? [],
+      websites: game.websites ?? [],
+      involved_companies: game.involved_companies ?? []
     };
   }
 
-  static async fetchGameById(id: number): Promise<Game> {
+  static async fetchGameById(id: number): Promise<Game | null> {
     const query = `
-      fields name,cover.url,platforms.name,genres.name,summary,first_release_date,
+      fields name,cover.url,cover.id,platforms.name,genres.name,summary,first_release_date,
       total_rating,total_rating_count,artworks.url,screenshots.url,
       websites.*,involved_companies.company.name,involved_companies.*;
       where id = ${id};

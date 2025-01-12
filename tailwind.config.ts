@@ -112,8 +112,9 @@ const config: Config = {
         { values: flattenColorPalette(theme("backgroundColor")), type: "color" }
       );
     },
-      require("tailwindcss-animate")
-],
+    require("tailwindcss-animate"),
+    require("tailwind-scrollbar")
+  ],
 };
 
 export default config;

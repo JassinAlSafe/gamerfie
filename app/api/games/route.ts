@@ -1,6 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { IGDBService } from '@/services/igdb';
 
+interface GameFilters {
+  page: number;
+  limit: number;
+  search: string;
+  sortBy: 'popularity' | 'rating' | 'name' | 'release';
+  platformId?: number;
+  genreId?: number;
+  releaseYear?: {
+    start: number;
+    end: number;
+  };
+  timeRange?: 'new_releases' | 'upcoming' | 'classic';
+  isIndie?: boolean;
+  isAnticipated?: boolean;
+}
+
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
@@ -10,25 +26,25 @@ export async function GET(request: NextRequest) {
     const genre = searchParams.get('genre');
     const category = searchParams.get('category');
     const year = searchParams.get('year');
-    const sort = searchParams.get('sort') || 'rating';
+    const sort = searchParams.get('sort') || 'popularity';
     const search = searchParams.get('search') || '';
 
     // Build IGDB filters based on parameters
-    const filters: any = {
+    const filters: GameFilters = {
       page,
       limit,
       search: search.trim(),
-      sortBy: sort
+      sortBy: sort as GameFilters['sortBy']
     };
 
     // Add platform filter if specified
     if (platform && platform !== 'all') {
-      filters.platform = platform;
+      filters.platformId = parseInt(platform);
     }
 
     // Add genre filter if specified
     if (genre && genre !== 'all') {
-      filters.genre = genre;
+      filters.genreId = parseInt(genre);
     }
 
     // Add year filter if specified
@@ -45,7 +61,7 @@ export async function GET(request: NextRequest) {
     if (category && category !== 'all') {
       switch (category) {
         case 'recent':
-          filters.timeRange = 'recent';
+          filters.timeRange = 'new_releases';
           break;
         case 'upcoming':
           filters.timeRange = 'upcoming';

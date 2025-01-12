@@ -40,6 +40,8 @@ export const useSearchStore = create<SearchState>((set, get) => ({
       const response = await GameService.fetchGames({
         searchTerm: query,
         page: 1,
+        platformId: 'all',
+        sortBy: 'popularity'
       });
       set({ results: response.games });
     } catch (error) {
