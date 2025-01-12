@@ -21,26 +21,38 @@ export function EditEntryModal({
   onClose,
   entry,
 }: EditEntryModalProps) {
+  const [isSaving, setIsSaving] = useState(false);
   const updateEntry = useJournalStore((state) => state.updateEntry);
+  const error = useJournalStore((state) => state.error);
 
-  const handleSave = (formData: any) => {
-    // Extract game details if present
-    const { game_id, game, cover_url, ...otherData } = formData;
+  const handleSave = async (formData: any) => {
+    setIsSaving(true);
+    try {
+      // Create the entry object with proper typing
+      const entryData: Partial<JournalEntry> = {
+        title: formData.title || "",
+        content: formData.content || "",
+        progress: formData.progress ? Number(formData.progress) : undefined,
+        hoursPlayed: formData.hoursPlayed
+          ? Number(formData.hoursPlayed)
+          : undefined,
+        rating: formData.rating ? Number(formData.rating) : undefined,
+        game: formData.game
+          ? {
+              id: formData.game.id,
+              name: formData.game.name,
+              cover_url: formData.game.cover_url,
+            }
+          : undefined,
+      };
 
-    // Create the entry object
-    const entryData = {
-      ...otherData,
-    };
-
-    // Add game details if this is a game-related entry
-    if (game) {
-      entryData.game = game;
-      entryData.game_id = game_id;
-      entryData.cover_url = cover_url;
+      await updateEntry(entry.id, entryData);
+      onClose();
+    } catch (error) {
+      console.error("Failed to update entry:", error);
+    } finally {
+      setIsSaving(false);
     }
-
-    updateEntry(entry.id, entryData);
-    onClose();
   };
 
   return (
@@ -62,8 +74,10 @@ export function EditEntryModal({
             onSave={handleSave}
             onCancel={onClose}
             initialData={entry}
+            disabled={isSaving}
           />
         </div>
+        {error && <p className="text-sm text-red-500 mt-2">{error}</p>}
       </DialogContent>
     </Dialog>
   );

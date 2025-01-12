@@ -9,6 +9,7 @@ import { useJournalStore } from "@/stores/useJournalStore";
 import { EditEntryModal } from "./EditEntryModal";
 import { DeleteEntryDialog } from "./DeleteEntryDialog";
 import Image from "next/image";
+import { getCoverImageUrl } from "@/utils/image-utils";
 
 interface TimelineViewProps {
   entries: JournalEntry[];
@@ -26,8 +27,8 @@ function formatDate(date: string) {
 
 function getEntryTitle(entry: JournalEntry) {
   if (entry.type === "list") return entry.title;
-  if (entry.type === "progress") return `Progress Update: ${entry.game}`;
-  if (entry.type === "review") return `Game Review: ${entry.game}`;
+  if (entry.type === "progress") return `Progress Update: ${entry.game?.name}`;
+  if (entry.type === "review") return `Game Review: ${entry.game?.name}`;
   if (entry.type === "daily") return "Daily Gaming Log";
   return "Journal Entry";
 }
@@ -87,19 +88,21 @@ export function TimelineView({ entries }: TimelineViewProps) {
             <div className="text-gray-400 space-y-6">
               {(entry.type === "progress" || entry.type === "review") &&
                 entry.game && (
-                  <div className="flex items-start gap-6">
-                    {entry.cover_url && (
-                      <div className="relative w-20 h-24 rounded-md overflow-hidden shrink-0 border border-gray-800">
-                        <Image
-                          src={entry.cover_url}
-                          alt={entry.game}
-                          fill
-                          className="object-cover"
-                          sizes="80px"
-                          unoptimized
-                        />
-                      </div>
-                    )}
+                  <div className="flex items-center gap-4 mt-4">
+                    <div className="relative w-16 h-16 rounded overflow-hidden">
+                      <Image
+                        src={
+                          entry.game.cover_url
+                            ? getCoverImageUrl(entry.game.cover_url)
+                            : "/images/placeholders/game-cover.jpg"
+                        }
+                        alt={`Cover for ${entry.game.name}`}
+                        fill
+                        className="object-cover"
+                        sizes="64px"
+                        quality={90}
+                      />
+                    </div>
                     <div className="flex-1 min-w-0 space-y-3">
                       {entry.type === "progress" && (
                         <>
@@ -108,12 +111,16 @@ export function TimelineView({ entries }: TimelineViewProps) {
                               <div className="h-2 rounded-full bg-gray-800 overflow-hidden">
                                 <div
                                   className="h-full bg-white rounded-full"
-                                  style={{ width: entry.progress || "0%" }}
+                                  style={{
+                                    width: `${parseInt(
+                                      entry.progress || "0"
+                                    )}%`,
+                                  }}
                                 />
                               </div>
                             </div>
                             <span className="text-sm font-medium text-white">
-                              {entry.progress}
+                              {parseInt(entry.progress || "0")}%
                             </span>
                           </div>
                           <p className="text-sm">
@@ -164,12 +171,12 @@ export function TimelineView({ entries }: TimelineViewProps) {
                         {game.cover_url && (
                           <div className="relative w-8 h-10 rounded overflow-hidden flex-shrink-0">
                             <Image
-                              src={game.cover_url}
-                              alt={game.name}
+                              src={getCoverImageUrl(game.cover_url)}
+                              alt={`Cover for ${game.name}`}
                               fill
                               className="object-cover"
                               sizes="32px"
-                              unoptimized
+                              quality={90}
                             />
                           </div>
                         )}

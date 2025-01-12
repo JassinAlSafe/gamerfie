@@ -36,25 +36,14 @@ import type { JournalEntryType } from "@/stores/useJournalStore";
 import { cn } from "@/lib/utils";
 import { Slider } from "@/components/ui/slider";
 import { Trash2Icon } from "lucide-react";
+import { getCoverImageUrl } from "@/utils/image-utils";
 
 interface EntryFormProps {
   type: JournalEntryType;
   onSave: (formData: any) => void;
   onCancel: () => void;
-  initialData?: any;
-}
-
-function ensureImageUrl(url: string | undefined | null): string {
-  if (!url) return "";
-  // If the URL starts with '//', add https:
-  if (url.startsWith("//")) {
-    return `https:${url}`;
-  }
-  // If the URL doesn't start with http(s), add https://
-  if (!url.startsWith("http")) {
-    return `https://${url}`;
-  }
-  return url;
+  initialData?: Partial<JournalEntryType>;
+  disabled?: boolean;
 }
 
 export function EntryForm({
@@ -62,12 +51,15 @@ export function EntryForm({
   onSave,
   onCancel,
   initialData = {},
+  disabled = false,
 }: EntryFormProps) {
   const [formData, setFormData] = useState(initialData);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedGames, setSelectedGames] = useState<any[]>(
-    initialData.content ? JSON.parse(initialData.content) : []
+    type === "list" && initialData.content
+      ? JSON.parse(initialData.content)
+      : []
   );
   const {
     games: libraryGames,
@@ -91,7 +83,7 @@ export function EntryForm({
   }, [fetchUserLibrary]);
 
   const handleProgressChange = (value: number[]) => {
-    setFormData({ ...formData, progress: `${value[0]}%` });
+    setFormData({ ...formData, progress: value[0] });
   };
 
   const handleTextChange = (
@@ -110,7 +102,7 @@ export function EntryForm({
       const gameData = {
         id: game.id,
         name: game.name,
-        cover_url: game.cover?.url ? ensureImageUrl(game.cover.url) : null,
+        cover_url: game.cover?.url ? getCoverImageUrl(game.cover.url) : null,
       };
       setSelectedGames((prev) => [...prev, gameData]);
       setFormData({
@@ -118,12 +110,14 @@ export function EntryForm({
         content: JSON.stringify([...selectedGames, gameData]),
       });
     } else {
-      const coverUrl = game.cover?.url ? ensureImageUrl(game.cover.url) : null;
+      const gameData = {
+        id: game.id,
+        name: game.name,
+        cover_url: game.cover?.url ? getCoverImageUrl(game.cover.url) : null,
+      };
       setFormData({
         ...formData,
-        game: game.name,
-        game_id: game.id,
-        cover_url: coverUrl,
+        game: gameData,
       });
     }
     setIsSearchOpen(false);
@@ -147,7 +141,9 @@ export function EntryForm({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSave(formData);
+    if (!disabled) {
+      onSave(formData);
+    }
   };
 
   const inputClasses =
@@ -173,19 +169,7 @@ export function EntryForm({
             >
               {formData.game ? (
                 <div className="flex items-center gap-2">
-                  {formData.cover_url && (
-                    <div className="relative w-6 h-6 rounded overflow-hidden">
-                      <Image
-                        src={formData.cover_url}
-                        alt={formData.game}
-                        fill
-                        className="object-cover"
-                        sizes="24px"
-                        unoptimized
-                      />
-                    </div>
-                  )}
-                  {formData.game}
+                  {formData.game.name}
                 </div>
               ) : (
                 "Select a game"
@@ -232,8 +216,8 @@ export function EntryForm({
                               {game.cover && (
                                 <div className="relative w-8 h-8 rounded overflow-hidden flex-shrink-0">
                                   <Image
-                                    src={ensureImageUrl(game.cover.url)}
-                                    alt={game.name}
+                                    src={getCoverImageUrl(game.cover.url)}
+                                    alt={`Cover for ${game.name}`}
                                     fill
                                     className="object-cover"
                                     sizes="32px"
@@ -262,8 +246,8 @@ export function EntryForm({
                               {game.cover && (
                                 <div className="relative w-8 h-8 rounded overflow-hidden flex-shrink-0">
                                   <Image
-                                    src={ensureImageUrl(game.cover.url)}
-                                    alt={game.name}
+                                    src={getCoverImageUrl(game.cover.url)}
+                                    alt={`Cover for ${game.name}`}
                                     fill
                                     className="object-cover"
                                     sizes="32px"
@@ -293,7 +277,7 @@ export function EntryForm({
             </Label>
             <div className="space-y-2">
               <Slider
-                value={[parseInt(formData.progress || "0")]}
+                value={[parseInt(formData.progress?.toString() || "0")]}
                 onValueChange={handleProgressChange}
                 max={100}
                 step={1}
@@ -301,7 +285,7 @@ export function EntryForm({
               />
               <div className="flex justify-between text-sm text-gray-500">
                 <span>0%</span>
-                <span>{formData.progress || "0%"}</span>
+                <span>{formData.progress || 0}%</span>
                 <span>100%</span>
               </div>
             </div>
@@ -455,12 +439,12 @@ export function EntryForm({
                         {game.cover_url && (
                           <div className="relative w-8 h-10 rounded overflow-hidden flex-shrink-0">
                             <Image
-                              src={game.cover_url}
-                              alt={game.name}
+                              src={getCoverImageUrl(game.cover_url)}
+                              alt={`Cover for ${game.name}`}
                               fill
                               className="object-cover"
                               sizes="32px"
-                              unoptimized
+                              quality={90}
                             />
                           </div>
                         )}
@@ -522,8 +506,8 @@ export function EntryForm({
                               {game.cover && (
                                 <div className="relative w-8 h-8 rounded overflow-hidden flex-shrink-0">
                                   <Image
-                                    src={ensureImageUrl(game.cover.url)}
-                                    alt={game.name}
+                                    src={getCoverImageUrl(game.cover.url)}
+                                    alt={`Cover for ${game.name}`}
                                     fill
                                     className="object-cover"
                                     sizes="32px"
@@ -552,8 +536,8 @@ export function EntryForm({
                               {game.cover && (
                                 <div className="relative w-8 h-8 rounded overflow-hidden flex-shrink-0">
                                   <Image
-                                    src={ensureImageUrl(game.cover.url)}
-                                    alt={game.name}
+                                    src={getCoverImageUrl(game.cover.url)}
+                                    alt={`Cover for ${game.name}`}
                                     fill
                                     className="object-cover"
                                     sizes="32px"

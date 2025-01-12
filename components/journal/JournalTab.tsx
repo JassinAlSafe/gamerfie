@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useJournalStore } from "@/stores/useJournalStore";
 import { NewEntryButton } from "./NewEntryButton";
 import { TimelineView } from "./TimelineView";
@@ -15,7 +15,11 @@ export function JournalTab() {
     type: "all",
     date: "all",
   });
-  const { entries, isLoading, error } = useJournalStore();
+  const { entries, isLoading, error, fetchEntries } = useJournalStore();
+
+  useEffect(() => {
+    fetchEntries();
+  }, [fetchEntries]);
 
   const filteredEntries = entries.filter((entry) => {
     const searchMatch =
