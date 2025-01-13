@@ -268,7 +268,8 @@ export const useJournalStore = create<JournalState>((set) => ({
    - Always validate required fields
    - Ensure game data is complete for game-related entries
    - Format dates consistently
-   - Handle image URLs properly
+   - Use `getCoverImageUrl` utility for game covers to ensure high-quality images
+   - Handle missing cover images with placeholders
 
 2. UI/UX
 
@@ -276,6 +277,8 @@ export const useJournalStore = create<JournalState>((set) => ({
    - Provide clear feedback for actions
    - Use consistent styling
    - Implement responsive design
+   - Display game covers with proper sizing and quality
+   - Use proper image optimization with Next.js Image component
 
 3. State Management
 
@@ -283,9 +286,11 @@ export const useJournalStore = create<JournalState>((set) => ({
    - Handle errors gracefully
    - Maintain data consistency
    - Use optimistic updates
+   - Properly transform game data between Supabase and client
 
 4. Performance
-   - Lazy load images
+   - Lazy load images with proper `sizes` prop
+   - Use quality={90} for game covers
    - Implement pagination if needed
    - Cache game data
    - Optimize re-renders
@@ -300,39 +305,85 @@ create table journal_entries (
   id uuid default uuid_generate_v4() primary key,
   user_id uuid references auth.users(id) not null,
   type text not null check (type in ('progress', 'daily', 'review', 'list')),
-  game_id text references games(id),
+  date text not null,
   title text,
   content text,
-  progress text,
+  game_id text,
+  game text,
+  cover_url text,
+  progress integer check (progress >= 0 and progress <= 100),
   hours_played integer,
   rating integer check (rating >= 1 and rating <= 10),
-  cover_url text,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null,
   updated_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
+```
 
--- RLS Policies
-alter table journal_entries enable row level security;
+### Data Transformation
 
--- Users can only read their own entries
-create policy "Users can view own entries"
-  on journal_entries for select
-  using (auth.uid() = user_id);
+The store transforms Supabase data to match our interface:
 
--- Users can insert their own entries
-create policy "Users can create entries"
-  on journal_entries for insert
-  with check (auth.uid() = user_id);
+```typescript
+// Transform database entry to JournalEntry
+const transformEntry = (entry: any): JournalEntry => ({
+  id: entry.id,
+  type: entry.type,
+  date: entry.date,
+  title: entry.title,
+  content: entry.content,
+  game: entry.game_id
+    ? {
+        id: entry.game_id,
+        name: entry.game,
+        cover_url: entry.cover_url,
+      }
+    : undefined,
+  progress: entry.progress,
+  hoursPlayed: entry.hours_played,
+  rating: entry.rating,
+  createdAt: entry.created_at,
+  updatedAt: entry.updated_at,
+});
+```
 
--- Users can update their own entries
-create policy "Users can update own entries"
-  on journal_entries for update
-  using (auth.uid() = user_id);
+### Game Cover Handling
 
--- Users can delete their own entries
-create policy "Users can delete own entries"
-  on journal_entries for delete
-  using (auth.uid() = user_id);
+Game covers are handled using the `getCoverImageUrl` utility:
+
+```typescript
+// In components using game covers
+import { getCoverImageUrl } from "@/utils/image-utils";
+
+// Usage in Image component
+<Image
+  src={
+    game.cover_url
+      ? getCoverImageUrl(game.cover_url)
+      : "/images/placeholders/game-cover.jpg"
+  }
+  alt={`Cover for ${game.name}`}
+  fill
+  className="object-cover"
+  sizes="64px"
+  quality={90}
+/>;
+```
+
+### Progress Tracking
+
+Progress is stored as a number (0-100) and displayed with proper formatting:
+
+```typescript
+// In TimelineView
+<div
+  className="h-full bg-white rounded-full"
+  style={{
+    width: `${parseInt(entry.progress || "0")}%`,
+  }}
+/>
+<span className="text-sm font-medium text-white">
+  {parseInt(entry.progress || "0")}%
+</span>
 ```
 
 ### Integration with Zustand Store
