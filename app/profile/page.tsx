@@ -11,21 +11,25 @@ import { useFriendsStore } from "@/stores/useFriendsStore";
 import { useEffect } from "react";
 import { Users } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
-import { ActivityType } from "@/types/friend";
 import { activityIcons, activityText } from "@/lib/activity-constants";
+import Image from "next/image";
+import { getCoverImageUrl } from "@/utils/image-utils";
+import { useJournalStore } from "@/stores/useJournalStore";
 
 export default function ProfilePage() {
   const { profile, isLoading, error, gameStats, updateProfile } = useProfile();
   const { friends, activities, fetchFriends, fetchActivities } =
     useFriendsStore();
+  const { entries, fetchEntries } = useJournalStore();
   const router = useRouter();
 
   useEffect(() => {
     if (profile) {
       fetchFriends();
       fetchActivities();
+      fetchEntries();
     }
-  }, [profile, fetchFriends, fetchActivities]);
+  }, [profile, fetchFriends, fetchActivities, fetchEntries]);
 
   if (isLoading) {
     return (
@@ -189,8 +193,83 @@ export default function ProfilePage() {
               </div>
 
               {/* Right Column - Recent Activity */}
-              <div className="lg:col-span-2">
-                <div className="bg-gray-900/50 rounded-xl p-6 backdrop-blur-sm border border-white/5 h-full">
+              <div className="lg:col-span-2 space-y-8">
+                {/* Recent Reviews */}
+                <div className="bg-gray-900/50 rounded-xl p-6 backdrop-blur-sm border border-white/5">
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-xl font-bold text-white">
+                      Recent Reviews
+                    </h2>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => router.push("/profile/reviews")}
+                      className="text-purple-400 hover:text-purple-300"
+                    >
+                      View All
+                    </Button>
+                  </div>
+                  <div className="space-y-4">
+                    {entries
+                      .filter((entry) => entry.type === "review")
+                      .slice(0, 3)
+                      .map((review) => (
+                        <div
+                          key={review.id}
+                          className="flex items-start gap-4 p-4 bg-gray-800/50 rounded-lg"
+                        >
+                          {review.game && (
+                            <div className="relative w-12 h-16 rounded overflow-hidden flex-shrink-0">
+                              <Image
+                                src={
+                                  review.game.cover_url
+                                    ? getCoverImageUrl(review.game.cover_url)
+                                    : "/images/placeholders/game-cover.jpg"
+                                }
+                                alt={`Cover for ${review.game.name}`}
+                                fill
+                                className="object-cover"
+                                sizes="48px"
+                                quality={90}
+                              />
+                            </div>
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-medium text-white line-clamp-1">
+                              {review.game?.name}
+                            </h3>
+                            <div className="flex items-center gap-2 mt-1">
+                              <div className="flex gap-1">
+                                {[...Array(10)].map((_, i) => (
+                                  <div
+                                    key={i}
+                                    className={`w-1 h-4 rounded-sm ${
+                                      i < (review.rating || 0)
+                                        ? "bg-white"
+                                        : "bg-gray-700"
+                                    }`}
+                                  />
+                                ))}
+                              </div>
+                              <span className="text-sm font-medium text-white">
+                                {review.rating}/10
+                              </span>
+                            </div>
+                            <p className="text-sm text-gray-400 mt-2 line-clamp-2">
+                              {review.content}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    {entries.filter((entry) => entry.type === "review")
+                      .length === 0 && (
+                      <p className="text-gray-400">No reviews yet.</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Recent Activity */}
+                <div className="bg-gray-900/50 rounded-xl p-6 backdrop-blur-sm border border-white/5">
                   <div className="flex items-center justify-between mb-4">
                     <h2 className="text-xl font-bold text-white">
                       Recent Activity
