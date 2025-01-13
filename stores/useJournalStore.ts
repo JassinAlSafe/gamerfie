@@ -197,7 +197,7 @@ export const useJournalStore = create<JournalState>((set, get) => ({
         .from('journal_entries')
         .select('*')
         .eq('user_id', session.user.id)
-        .order('date', { ascending: false })
+        .order('created_at', { ascending: false })
 
       if (error) throw error
 

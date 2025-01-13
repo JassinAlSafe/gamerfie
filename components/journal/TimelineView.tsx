@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { EditIcon, Trash2Icon } from "lucide-react";
 import type { JournalEntry } from "@/stores/useJournalStore";
@@ -112,15 +111,15 @@ export function TimelineView({ entries }: TimelineViewProps) {
                                 <div
                                   className="h-full bg-white rounded-full"
                                   style={{
-                                    width: `${parseInt(
-                                      entry.progress || "0"
-                                    )}%`,
+                                    width: `${
+                                      (entry.progress ?? 0) as number
+                                    }%`,
                                   }}
                                 />
                               </div>
                             </div>
                             <span className="text-sm font-medium text-white">
-                              {parseInt(entry.progress || "0")}%
+                              {(entry.progress ?? 0) as number}%
                             </span>
                           </div>
                           <p className="text-sm">
@@ -161,7 +160,7 @@ export function TimelineView({ entries }: TimelineViewProps) {
 
               {entry.type === "list" && (
                 <div>
-                  <h4 className="font-medium text-white mb-3">{entry.title}</h4>
+                  <h3 className="font-medium text-white mb-3"></h3>
                   <div className="grid gap-2">
                     {JSON.parse(entry.content).map((game: any, i: number) => (
                       <div
