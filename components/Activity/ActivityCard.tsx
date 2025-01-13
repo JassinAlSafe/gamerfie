@@ -99,6 +99,12 @@ export function ActivityCard({ activity, index }: ActivityCardProps) {
           </p>
         )}
 
+        {activity.type !== "review" && activity.details?.comment && (
+          <p className="mt-4 text-sm text-gray-300">
+            &ldquo;{activity.details.comment}&rdquo;
+          </p>
+        )}
+
         {renderAchievementDetails()}
       </div>
 
