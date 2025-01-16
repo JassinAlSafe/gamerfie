@@ -5,12 +5,19 @@ import { ActivityType } from '@/types/friend'
 
 export type JournalEntryType = 'progress' | 'review' | 'daily' | 'list'
 
+interface ListGame {
+  id: string
+  name: string
+  cover_url?: string
+}
+
 export interface JournalEntry {
   id: string
   type: JournalEntryType
   date: string
   title: string
   content: string
+  games?: ListGame[] // Array of games for list type
   game?: {
     id: string
     name: string
@@ -34,6 +41,8 @@ interface JournalState {
   setLoading: (loading: boolean) => void
   setError: (error: string | null) => void
   fetchEntries: () => Promise<void>
+  addGameToList: (listId: string, game: ListGame) => Promise<void>
+  removeGameFromList: (listId: string, gameId: string) => Promise<void>
 }
 
 export const useJournalStore = create<JournalState>((set, get) => {
@@ -74,135 +83,138 @@ export const useJournalStore = create<JournalState>((set, get) => {
 
     addEntry: async (entry) => {
       try {
-        set({ loading: true, error: null })
         const supabase = createClientComponentClient()
-        const { data: { session } } = await supabase.auth.getSession()
-        if (!session?.user) throw new Error('No authenticated user')
+        const { data: session } = await supabase.auth.getSession()
+        if (!session?.session?.user) throw new Error('Not authenticated')
 
-        // Insert the entry into the journal_entries table
-        const { data: newEntry, error } = await supabase
+        // Prepare entry data
+        const entryData = {
+          user_id: session.session.user.id,
+          type: entry.type,
+          date: entry.date,
+          title: entry.title,
+          content: entry.content,
+          // Handle single game for non-list entries
+          game_id: entry.game?.id,
+          game: entry.game?.name,
+          cover_url: entry.game?.cover_url,
+          // Handle game array for list type
+          game_list: entry.type === 'list' ? entry.games?.map(game => ({
+            id: game.id,
+            name: game.name,
+            cover_url: game.cover_url
+          })) : null,
+          progress: entry.progress,
+          hours_played: entry.hoursPlayed,
+          rating: entry.rating,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }
+
+        const { data, error } = await supabase
           .from('journal_entries')
-          .insert({
-            user_id: session.user.id,
-            type: entry.type,
-            date: entry.date,
-            title: entry.title,
-            content: entry.content,
-            game_id: entry.game?.id,
-            game: entry.game?.name,
-            cover_url: entry.game?.cover_url,
-            progress: entry.progress,
-            hours_played: entry.hoursPlayed,
-            rating: entry.rating,
-          })
+          .insert([entryData])
           .select()
           .single()
 
         if (error) throw error
 
-        // Transform the entry to match our interface
+        // Transform the returned data to match our interface
         const transformedEntry: JournalEntry = {
-          id: newEntry.id,
-          type: newEntry.type,
-          date: newEntry.date,
-          title: newEntry.title,
-          content: newEntry.content,
-          game: newEntry.game_id ? {
-            id: newEntry.game_id,
-            name: newEntry.game,
-            cover_url: newEntry.cover_url,
+          id: data.id,
+          type: data.type,
+          date: data.date,
+          title: data.title,
+          content: data.content,
+          games: data.game_list ? data.game_list.map((g: ListGame) => ({
+            id: g.id,
+            name: g.name,
+            cover_url: g.cover_url
+          })) : [],
+          game: data.game_id ? {
+            id: data.game_id,
+            name: data.game,
+            cover_url: data.cover_url,
           } : undefined,
-          progress: newEntry.progress,
-          hoursPlayed: newEntry.hours_played,
-          rating: newEntry.rating,
-          createdAt: newEntry.created_at,
-          updatedAt: newEntry.updated_at,
+          progress: data.progress,
+          hoursPlayed: data.hours_played,
+          rating: data.rating,
+          createdAt: data.created_at,
+          updatedAt: data.updated_at,
         }
 
-        set(state => ({
-          entries: [transformedEntry, ...state.entries],
-          loading: false,
-        }))
-
-        // If this is a progress entry, update user_games and game_progress_history
-        if (entry.type === 'progress' && entry.game?.id && entry.progress !== undefined) {
-          try {
-            // Update user_games
-            const { error: updateError } = await supabase
-              .from('user_games')
-              .upsert({
-                user_id: session.user.id,
-                game_id: entry.game.id,
-                completion_percentage: entry.progress,
-                play_time: entry.hoursPlayed,
-                last_played_at: new Date().toISOString(),
-                updated_at: new Date().toISOString(),
-                status: entry.progress === 100 ? 'completed' : 'playing'
-              }, {
-                onConflict: 'user_id,game_id'
-              });
-
-            if (updateError) throw updateError;
-
-            // Record progress history
-            const { error: historyError } = await supabase
-              .from('game_progress_history')
-              .insert({
-                user_id: session.user.id,
-                game_id: entry.game.id,
-                play_time: entry.hoursPlayed,
-                completion_percentage: entry.progress,
-              });
-
-            if (historyError) {
-              console.error('Error recording progress history:', historyError);
-            }
-          } catch (error) {
-            console.error('Error updating game progress:', error);
-          }
-        }
-
-        // Create activity for any entry type that has a game associated
-        if (entry.game?.id) {
-          try {
-            switch (entry.type) {
-              case 'progress':
-                if (entry.progress === 100) {
-                  await createActivity('completed', entry.game.id, {
-                    comment: entry.content 
-                      ? `${entry.content} (Completed the game!)`
-                      : 'Completed the game!'
-                  });
-                } else {
-                  await createActivity('progress', entry.game.id, {
-                    progress: entry.progress,
-                    comment: entry.content || `Made progress: ${entry.progress}%`
-                  });
-                }
-                break;
-              case 'review':
-                await createActivity('review', entry.game.id, {
-                  comment: `Rated ${entry.game.name} ${entry.rating}/10 - ${entry.content}`
-                });
-                break;
-              case 'daily':
-                await createActivity('started_playing', entry.game.id, {
-                  comment: entry.content
-                });
-                break;
-              case 'list':
-                await createActivity('want_to_play', entry.game.id, {
-                  comment: `Added ${entry.game.name} to list: ${entry.title}`
-                });
-                break;
-            }
-          } catch (activityError) {
-            console.error('Error creating activity for journal entry:', activityError);
-          }
-        }
+        const entries = get().entries
+        set({ entries: [transformedEntry, ...entries] })
       } catch (error) {
-        console.error('Error adding journal entry:', error)
-        set({ error: (error as Error).message, loading: false })
+        set({ error: (error as Error).message })
+        throw error
+      }
+    },
+
+    addGameToList: async (listId: string, game: ListGame) => {
+      try {
+        const supabase = createClientComponentClient()
+        const entry = get().entries.find(e => e.id === listId)
+        if (!entry) throw new Error('List not found')
+
+        // Get current games and add new one
+        const currentGames = entry.games || []
+        const updatedGames = [...currentGames, game]
+
+        const { error } = await supabase
+          .from('journal_entries')
+          .update({ 
+            game_list: updatedGames,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', listId)
+
+        if (error) throw error
+
+        // Update local state
+        const entries = get().entries.map(e =>
+          e.id === listId ? { 
+            ...e, 
+            games: updatedGames,
+            updatedAt: new Date().toISOString()
+          } : e
+        )
+        set({ entries })
+      } catch (error) {
+        set({ error: (error as Error).message })
+        throw error
+      }
+    },
+
+    removeGameFromList: async (listId: string, gameId: string) => {
+      try {
+        const supabase = createClientComponentClient()
+        const entry = get().entries.find(e => e.id === listId)
+        if (!entry) throw new Error('List not found')
+
+        const updatedGames = (entry.games || []).filter(g => g.id !== gameId)
+
+        const { error } = await supabase
+          .from('journal_entries')
+          .update({ 
+            game_list: updatedGames,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', listId)
+
+        if (error) throw error
+
+        // Update local state
+        const entries = get().entries.map(e =>
+          e.id === listId ? { 
+            ...e, 
+            games: updatedGames,
+            updatedAt: new Date().toISOString()
+          } : e
+        )
+        set({ entries })
+      } catch (error) {
+        set({ error: (error as Error).message })
         throw error
       }
     },
@@ -427,6 +439,11 @@ export const useJournalStore = create<JournalState>((set, get) => {
           date: entry.date,
           title: entry.title,
           content: entry.content,
+          games: entry.game_list ? entry.game_list.map((g: ListGame) => ({
+            id: g.id,
+            name: g.name,
+            cover_url: g.cover_url
+          })) : [],
           game: entry.game_id ? {
             id: entry.game_id,
             name: entry.game,

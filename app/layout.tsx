@@ -8,6 +8,7 @@ import { ThemeProvider } from "next-themes";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useState } from "react";
 import SupabaseProvider from "@/components/providers/supabase-provider";
+import { Modal } from "@/components/ui/modal";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -44,6 +45,7 @@ export default function RootLayout({
             </ThemeProvider>
           </SupabaseProvider>
         </QueryClientProvider>
+        <Modal />
       </body>
     </html>
   );
