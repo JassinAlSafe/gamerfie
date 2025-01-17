@@ -3,6 +3,8 @@
 import { create } from 'zustand';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { createActivity } from '@/lib/activity';
+import { useGameProgressStore } from './useGameProgressStore';
+import { useProgressStore } from './useProgressStore';
 
 interface Game {
   id: string;
@@ -91,12 +93,30 @@ export const useJournalStore = create<JournalStore>((set) => ({
         hours_played: entry.hours_played
       };
 
-      // Create activity for game-related entries
+      // Create activity and sync progress for game-related entries
       if (type === 'progress' && data.game?.id) {
         await createActivity('progress', data.game.id, {
           comment: data.content,
           progress: data.progress,
         });
+
+        // Sync with user_games table directly
+        if (data.progress !== undefined) {
+          const { error: userGameError } = await supabase
+            .from('user_games')
+            .upsert({
+              user_id: session.session.user.id,
+              game_id: data.game.id,
+              completion_percentage: data.progress,
+              play_time: data.hours_played,
+              status: data.progress === 100 ? 'completed' : 'playing',
+              last_played_at: new Date().toISOString()
+            }, {
+              onConflict: 'user_id,game_id'
+            });
+
+          if (userGameError) throw userGameError;
+        }
       } else if (type === 'review' && data.game?.id) {
         await createActivity('review', data.game.id, {
           comment: data.content,
@@ -150,12 +170,30 @@ export const useJournalStore = create<JournalStore>((set) => ({
 
       if (error) throw error;
 
-      // Create activity for significant updates
+      // Create activity and sync progress for game-related entries
       if (data.type === 'progress' && data.game?.id) {
         await createActivity('progress', data.game.id, {
           comment: data.content,
           progress: data.progress,
         });
+
+        // Sync with user_games table directly
+        if (data.progress !== undefined) {
+          const { error: userGameError } = await supabase
+            .from('user_games')
+            .upsert({
+              user_id: session.session.user.id,
+              game_id: data.game.id,
+              completion_percentage: data.progress,
+              play_time: data.hours_played,
+              status: data.progress === 100 ? 'completed' : 'playing',
+              last_played_at: new Date().toISOString()
+            }, {
+              onConflict: 'user_id,game_id'
+            });
+
+          if (userGameError) throw userGameError;
+        }
       } else if (data.type === 'review' && data.game?.id) {
         await createActivity('review', data.game.id, {
           comment: data.content,
