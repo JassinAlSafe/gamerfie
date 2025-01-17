@@ -16,14 +16,13 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Slider } from "@/components/ui/slider";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
-import { Database } from "@/types/supabase";
 import { GameStatus } from "@/types/game";
 import { LoadingSpinner } from "@/components/loadingSpinner";
 import { useFriendsStore } from "@/stores/useFriendsStore";
 import { useChallengesStore } from "@/stores/useChallengesStore";
+import { useGameProgressStore } from "@/stores/useGameProgressStore";
+import { useAuthStore } from "@/stores/useAuthStore";
 import { toast } from "sonner";
-import { ActivityType } from "@/types/friend";
 
 interface GameLibraryActionsProps {
   gameId: string;
@@ -44,38 +43,25 @@ export function GameLibraryActions({
   platforms,
   genres,
 }: GameLibraryActionsProps) {
-  const [isLoading, setIsLoading] = useState(false);
-  const [currentStatus, setCurrentStatus] = useState<GameStatus | null>(null);
-  const [progress, setProgress] = useState<number>(0);
   const [showProgressDialog, setShowProgressDialog] = useState(false);
   const [matchingChallenges, setMatchingChallenges] = useState<any[]>([]);
+  const { user } = useAuthStore();
   const { createActivity } = useFriendsStore();
   const { userChallenges } = useChallengesStore();
-
-  const supabase = createClientComponentClient<Database>();
+  const {
+    isLoading,
+    currentStatus,
+    progress,
+    updateGameStatus,
+    updateProgress: updateGameProgress,
+    fetchGameProgress,
+  } = useGameProgressStore();
 
   useEffect(() => {
-    const fetchCurrentStatus = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const { data } = await supabase
-        .from("user_games")
-        .select("status, progress")
-        .eq("user_id", user.id)
-        .eq("game_id", gameId)
-        .single();
-
-      if (data) {
-        setCurrentStatus(data.status as GameStatus);
-        setProgress(data.progress || 0);
-      }
-    };
-
-    fetchCurrentStatus();
-  }, [gameId]);
+    if (user && gameId) {
+      fetchGameProgress(gameId);
+    }
+  }, [gameId, user, fetchGameProgress]);
 
   useEffect(() => {
     // Find matching active challenges based on game genres
@@ -92,129 +78,82 @@ export function GameLibraryActions({
 
   const handleStatusUpdate = async (newStatus: GameStatus) => {
     try {
-      setIsLoading(true);
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
       if (!user) {
         toast.error("Please sign in first");
         return;
       }
 
-      // First ensure game exists in games table
-      const { error: gameError } = await supabase.from("games").upsert(
-        {
-          id: gameId,
-          name: gameName,
-          cover_url: cover,
-          rating,
-          first_release_date: releaseDate,
-          platforms: platforms ? JSON.stringify(platforms) : null,
-          genres: genres ? JSON.stringify(genres) : null,
-        },
-        { onConflict: "id" }
-      );
-
-      if (gameError) throw gameError;
-
-      // Update user_games table
-      const { error: userGameError } = await supabase.from("user_games").upsert(
-        {
-          user_id: user.id,
-          game_id: gameId,
-          status: newStatus,
-          progress: newStatus === "completed" ? 100 : progress,
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: "user_id,game_id" }
-      );
-
-      if (userGameError) throw userGameError;
+      await updateGameStatus(gameId, newStatus, {
+        name: gameName,
+        cover_url: cover,
+        rating,
+        first_release_date: releaseDate,
+        platforms: platforms ? JSON.stringify(platforms) : null,
+        genres: genres ? JSON.stringify(genres) : null,
+      });
 
       // Create activity for significant status changes
       if (newStatus === "completed" || newStatus === "playing") {
-        const activityType: ActivityType =
+        const activityType =
           newStatus === "completed" ? "completed" : "started_playing";
         await createActivity(activityType, gameId);
       }
 
-      setCurrentStatus(newStatus);
-      if (newStatus === "completed") setProgress(100);
+      if (newStatus === "completed") {
+        // If completed, show matching challenges
+        if (matchingChallenges.length > 0) {
+          toast.message(
+            `This game counts towards ${matchingChallenges.length} active challenges!`,
+            {
+              description: matchingChallenges.map((c) => c.title).join(", "),
+            }
+          );
+
+          // Update progress for each matching challenge
+          for (const challenge of matchingChallenges) {
+            try {
+              const response = await fetch(
+                `/api/challenges/${challenge.id}/progress`,
+                {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify({}),
+                }
+              );
+
+              if (!response.ok) {
+                console.error(
+                  `Failed to update progress for challenge ${challenge.title}`
+                );
+              }
+            } catch (error) {
+              console.error(`Error updating challenge progress:`, error);
+            }
+          }
+        }
+      }
 
       toast.success(
         newStatus === "completed"
           ? "Game marked as completed!"
           : `Game status updated to ${newStatus}!`
       );
-
-      // If completed, show matching challenges
-      if (newStatus === "completed" && matchingChallenges.length > 0) {
-        toast.message(
-          `This game counts towards ${matchingChallenges.length} active challenges!`,
-          {
-            description: matchingChallenges.map((c) => c.title).join(", "),
-          }
-        );
-
-        // Update progress for each matching challenge
-        for (const challenge of matchingChallenges) {
-          try {
-            const response = await fetch(
-              `/api/challenges/${challenge.id}/progress`,
-              {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                },
-                body: JSON.stringify({}),
-              }
-            );
-
-            if (!response.ok) {
-              console.error(
-                `Failed to update progress for challenge ${challenge.title}`
-              );
-            }
-          } catch (error) {
-            console.error(`Error updating challenge progress:`, error);
-          }
-        }
-      }
     } catch (error) {
       console.error("Error:", error);
       toast.error("Failed to update game status");
-    } finally {
-      setIsLoading(false);
     }
   };
 
   const handleProgressUpdate = async (newProgress: number) => {
     try {
-      setIsLoading(true);
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
       if (!user) {
         toast.error("Please sign in first");
         return;
       }
 
-      const { error } = await supabase.from("user_games").upsert(
-        {
-          user_id: user.id,
-          game_id: gameId,
-          status: currentStatus || "playing",
-          progress: newProgress,
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: "user_id,game_id" }
-      );
-
-      if (error) throw error;
-
-      setProgress(newProgress);
+      await updateGameProgress(gameId, newProgress);
       toast.success("Progress updated successfully!");
 
       // If progress is 100%, suggest marking as completed
@@ -230,53 +169,27 @@ export function GameLibraryActions({
       console.error("Error:", error);
       toast.error("Failed to update progress");
     } finally {
-      setIsLoading(false);
       setShowProgressDialog(false);
     }
   };
-
-  if (!currentStatus) {
-    return (
-      <Button
-        onClick={() => handleStatusUpdate("want_to_play")}
-        disabled={isLoading}
-      >
-        {isLoading ? (
-          <>
-            <LoadingSpinner size="sm" />
-            <span className="ml-2">Adding to Library...</span>
-          </>
-        ) : (
-          "Add to Library"
-        )}
-      </Button>
-    );
-  }
 
   return (
     <div className="flex gap-2">
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="outline" disabled={isLoading}>
-            {isLoading ? (
-              <>
-                <LoadingSpinner size="sm" />
-                <span className="ml-2">Updating...</span>
-              </>
-            ) : (
-              `Status: ${currentStatus}`
-            )}
+            {isLoading ? <LoadingSpinner /> : currentStatus || "Add to Library"}
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent>
-          <DropdownMenuItem onClick={() => handleStatusUpdate("want_to_play")}>
-            Want to Play
-          </DropdownMenuItem>
           <DropdownMenuItem onClick={() => handleStatusUpdate("playing")}>
-            Currently Playing
+            Playing
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => handleStatusUpdate("completed")}>
             Completed
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => handleStatusUpdate("want_to_play")}>
+            Want to Play
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => handleStatusUpdate("dropped")}>
             Dropped
@@ -304,26 +217,12 @@ export function GameLibraryActions({
           </DialogHeader>
           <div className="py-4">
             <Slider
-              value={[progress]}
-              onValueChange={([value]) => setProgress(value)}
+              value={[progress || 0]}
+              onValueChange={([value]) => handleProgressUpdate(value)}
               max={100}
               step={1}
             />
-            <div className="mt-2 text-center">{progress}% Complete</div>
-          </div>
-          <div className="flex justify-end gap-2">
-            <Button
-              variant="outline"
-              onClick={() => setShowProgressDialog(false)}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={() => handleProgressUpdate(progress)}
-              disabled={isLoading}
-            >
-              {isLoading ? "Updating..." : "Save Progress"}
-            </Button>
+            <div className="mt-2 text-center">{progress || 0}% Complete</div>
           </div>
         </DialogContent>
       </Dialog>

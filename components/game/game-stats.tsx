@@ -1,97 +1,79 @@
 "use client";
 
-import { useMemo } from "react";
+import React from "react";
+import { Card } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
+import { Clock, Trophy, BarChart2 } from "lucide-react";
 import {
-  LineChart,
-  Line,
-  BarChart,
-  Bar,
+  ResponsiveContainer,
+  AreaChart,
+  Area,
   XAxis,
   YAxis,
   Tooltip,
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
+  BarChart,
+  Bar,
 } from "recharts";
-import { motion } from "framer-motion";
-import { Trophy, Clock, Target, BarChart2 } from "lucide-react";
-import { Card } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
-import { Button } from "@/components/ui/button";
-import {
-  Tooltip as UITooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { useGameProgressStore } from "@/stores/useGameProgressStore";
+import { useAuthStore } from "@/stores/useAuthStore";
+import { LoadingSpinner } from "@/components/loadingSpinner";
 
 interface GameStatsProps {
-  playTime: number;
-  completionPercentage: number;
-  achievementsCompleted: number;
+  gameId: string;
   totalAchievements: number;
-  playTimeHistory: Array<{ date: string; hours: number }>;
-  achievementHistory: Array<{ date: string; count: number }>;
 }
 
-const COLORS = ["#6366f1", "#8b5cf6", "#d946ef", "#f43f5e"];
+export function GameStats({ gameId, totalAchievements }: GameStatsProps) {
+  const { user } = useAuthStore();
+  const {
+    isLoading,
+    playTime,
+    progress,
+    achievementsCompleted,
+    playTimeHistory,
+    achievementHistory,
+    fetchGameProgress,
+  } = useGameProgressStore();
 
-export function GameStats({
-  playTime,
-  completionPercentage,
-  achievementsCompleted,
-  totalAchievements,
-  playTimeHistory,
-  achievementHistory,
-}: GameStatsProps) {
-  const achievementPercentage = useMemo(
-    () => (achievementsCompleted / totalAchievements) * 100,
-    [achievementsCompleted, totalAchievements]
-  );
+  React.useEffect(() => {
+    if (user && gameId) {
+      fetchGameProgress(gameId);
+    }
+  }, [user, gameId, fetchGameProgress]);
 
-  const pieData = useMemo(
-    () => [
-      { name: "Completed", value: completionPercentage },
-      { name: "Remaining", value: 100 - completionPercentage },
-    ],
-    [completionPercentage]
-  );
+  if (isLoading) {
+    return (
+      <div className="h-[600px] flex items-center justify-center">
+        <LoadingSpinner />
+      </div>
+    );
+  }
+
+  const achievementPercentage =
+    totalAchievements > 0
+      ? ((achievementsCompleted || 0) / totalAchievements) * 100
+      : 0;
+
+  const progressRate =
+    progress && playTime && progress > 0
+      ? (playTime / progress).toFixed(1)
+      : "0.0";
 
   return (
     <div className="space-y-6">
       {/* Quick Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card className="p-4 bg-gray-900/50 backdrop-blur-sm border-gray-800">
           <div className="flex items-start justify-between">
             <div>
-              <p className="text-sm text-gray-400">Total Playtime</p>
-              <h3 className="text-2xl font-bold mt-1">{playTime}h</h3>
+              <p className="text-sm text-gray-400">Play Time</p>
+              <h3 className="text-2xl font-bold mt-1">{playTime || 0}h</h3>
             </div>
             <div className="p-2 bg-blue-500/10 rounded-lg">
               <Clock className="w-5 h-5 text-blue-400" />
             </div>
           </div>
-          <Progress value={completionPercentage} className="mt-4" />
-        </Card>
-
-        <Card className="p-4 bg-gray-900/50 backdrop-blur-sm border-gray-800">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-sm text-gray-400">Completion</p>
-              <h3 className="text-2xl font-bold mt-1">
-                {completionPercentage}%
-              </h3>
-            </div>
-            <div className="p-2 bg-purple-500/10 rounded-lg">
-              <Target className="w-5 h-5 text-purple-400" />
-            </div>
-          </div>
-          <Progress
-            value={completionPercentage}
-            className="mt-4"
-            variant="purple"
-          />
+          <Progress value={progress || 0} className="mt-4" variant="blue" />
         </Card>
 
         <Card className="p-4 bg-gray-900/50 backdrop-blur-sm border-gray-800">
@@ -99,7 +81,7 @@ export function GameStats({
             <div>
               <p className="text-sm text-gray-400">Achievements</p>
               <h3 className="text-2xl font-bold mt-1">
-                {achievementsCompleted}/{totalAchievements}
+                {achievementsCompleted || 0}/{totalAchievements}
               </h3>
             </div>
             <div className="p-2 bg-yellow-500/10 rounded-lg">
@@ -117,9 +99,7 @@ export function GameStats({
           <div className="flex items-start justify-between">
             <div>
               <p className="text-sm text-gray-400">Progress Rate</p>
-              <h3 className="text-2xl font-bold mt-1">
-                {(playTime / completionPercentage).toFixed(1)}h/%
-              </h3>
+              <h3 className="text-2xl font-bold mt-1">{progressRate}h/%</h3>
             </div>
             <div className="p-2 bg-green-500/10 rounded-lg">
               <BarChart2 className="w-5 h-5 text-green-400" />
@@ -131,14 +111,26 @@ export function GameStats({
         </Card>
       </div>
 
-      {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Playtime Chart */}
+      {/* Detailed Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Play Time History */}
         <Card className="p-6 bg-gray-900/50 backdrop-blur-sm border-gray-800">
-          <h3 className="text-lg font-semibold mb-4">Playtime History</h3>
+          <h3 className="text-lg font-semibold mb-4">Play Time History</h3>
           <div className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={playTimeHistory}>
+              <AreaChart data={playTimeHistory}>
+                <defs>
+                  <linearGradient
+                    id="playTimeGradient"
+                    x1="0"
+                    y1="0"
+                    x2="0"
+                    y2="1"
+                  >
+                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
                 <XAxis
                   dataKey="date"
                   stroke="#6b7280"
@@ -158,14 +150,14 @@ export function GameStats({
                     borderRadius: "0.5rem",
                   }}
                 />
-                <Line
+                <Area
                   type="monotone"
                   dataKey="hours"
-                  stroke="#6366f1"
-                  strokeWidth={2}
-                  dot={false}
+                  stroke="#3b82f6"
+                  fillOpacity={1}
+                  fill="url(#playTimeGradient)"
                 />
-              </LineChart>
+              </AreaChart>
             </ResponsiveContainer>
           </div>
         </Card>
@@ -201,53 +193,6 @@ export function GameStats({
           </div>
         </Card>
 
-        {/* Completion Breakdown */}
-        <Card className="p-6 bg-gray-900/50 backdrop-blur-sm border-gray-800">
-          <h3 className="text-lg font-semibold mb-4">Completion Breakdown</h3>
-          <div className="h-[300px] flex items-center justify-center">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={pieData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={80}
-                  paddingAngle={5}
-                  dataKey="value"
-                >
-                  {pieData.map((entry, index) => (
-                    <Cell
-                      key={`cell-${index}`}
-                      fill={COLORS[index % COLORS.length]}
-                    />
-                  ))}
-                </Pie>
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "#1f2937",
-                    border: "none",
-                    borderRadius: "0.5rem",
-                  }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-          <div className="flex justify-center gap-4 mt-4">
-            {pieData.map((entry, index) => (
-              <div key={entry.name} className="flex items-center gap-2">
-                <div
-                  className="w-3 h-3 rounded-full"
-                  style={{ backgroundColor: COLORS[index % COLORS.length] }}
-                />
-                <span className="text-sm text-gray-400">
-                  {entry.name} ({entry.value}%)
-                </span>
-              </div>
-            ))}
-          </div>
-        </Card>
-
         {/* Achievement Stats */}
         <Card className="p-6 bg-gray-900/50 backdrop-blur-sm border-gray-800">
           <h3 className="text-lg font-semibold mb-4">Achievement Stats</h3>
@@ -256,7 +201,7 @@ export function GameStats({
               <div className="flex justify-between mb-2">
                 <span className="text-sm text-gray-400">Progress</span>
                 <span className="text-sm font-medium">
-                  {achievementsCompleted}/{totalAchievements}
+                  {achievementsCompleted || 0}/{totalAchievements}
                 </span>
               </div>
               <Progress value={achievementPercentage} variant="yellow" />
@@ -271,7 +216,7 @@ export function GameStats({
               <div className="p-4 bg-gray-800/50 rounded-lg">
                 <p className="text-sm text-gray-400">Remaining</p>
                 <p className="text-xl font-bold mt-1">
-                  {totalAchievements - achievementsCompleted}
+                  {totalAchievements - (achievementsCompleted || 0)}
                 </p>
               </div>
             </div>

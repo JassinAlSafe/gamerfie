@@ -1,50 +1,31 @@
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
+'use server';
+
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { NextResponse } from 'next/server';
 
 export async function GET(request: Request) {
-  const supabase = createRouteHandlerClient({ cookies });
   const { searchParams } = new URL(request.url);
-  const query = searchParams.get('q')?.trim();
+  const query = searchParams.get('q');
 
   if (!query) {
-    return NextResponse.json([], { status: 200 });
+    return NextResponse.json({ games: [] });
   }
 
   try {
-    // First try exact match
-    const { data: exactMatches, error: exactError } = await supabase
-      .from('games')
-      .select('id, name, cover_url')
-      .eq('name', query)
-      .limit(5);
-
-    if (exactError) {
-      console.error('Error searching games (exact):', exactError);
-      return NextResponse.json({ error: 'Failed to search games' }, { status: 500 });
-    }
-
-    // Then try partial matches
-    const { data: partialMatches, error: partialError } = await supabase
+    const supabase = createClientComponentClient();
+    const { data: games, error } = await supabase
       .from('games')
       .select('id, name, cover_url')
       .ilike('name', `%${query}%`)
-      .not('name', 'eq', query) // Exclude exact matches
-      .order('name')
       .limit(10);
 
-    if (partialError) {
-      console.error('Error searching games (partial):', partialError);
-      return NextResponse.json({ error: 'Failed to search games' }, { status: 500 });
-    }
+    if (error) throw error;
 
-    // Combine results, with exact matches first
-    const results = [...(exactMatches || []), ...(partialMatches || [])];
-    return NextResponse.json(results);
+    return NextResponse.json({ games: games || [] });
   } catch (error) {
-    console.error('Games search error:', error);
+    console.error('Search error:', error);
     return NextResponse.json(
-      { error: 'Internal Server Error' }, 
+      { error: 'Failed to search games' },
       { status: 500 }
     );
   }

@@ -1,36 +1,61 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useJournalStore } from "@/stores/useJournalStore";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useModal } from "@/hooks/useModal";
-import CreateListModal from "./CreateListModal";
+import { NewEntryModal } from "@/components/journal/NewEntryModal";
 import { formatDistanceToNow } from "date-fns";
 import Image from "next/image";
+import { getCoverImageUrl } from "@/utils/image-utils";
+
+interface Game {
+  id: string;
+  name: string;
+  cover_url: string;
+}
+
+interface GameList {
+  id: string;
+  type: "list";
+  title: string;
+  content?: string;
+  date: string;
+  created_at: string;
+  updated_at: string;
+  games?: Game[];
+}
 
 export default function GameListsClient() {
-  const {
-    entries,
-    loading: isLoading,
-    error,
-    fetchEntries,
-  } = useJournalStore();
+  const { entries, isLoading, error, fetchEntries } = useJournalStore();
   const router = useRouter();
-  const { openModal } = useModal();
+  const [isNewEntryModalOpen, setIsNewEntryModalOpen] = useState(false);
 
   useEffect(() => {
     fetchEntries();
   }, [fetchEntries]);
 
-  // Filter only list type entries and ensure they have games array
+  // Filter only list type entries and parse games from content
   const lists = entries
-    .filter((entry) => entry.type === "list")
-    .map((entry) => ({
-      ...entry,
-      games: entry.games || [],
-    }));
+    .filter((entry): entry is GameList => entry.type === "list")
+    .map((entry) => {
+      let games: Game[] = [];
+      if (entry.content) {
+        try {
+          // Only parse if content looks like a JSON array
+          if (entry.content.startsWith("[")) {
+            games = JSON.parse(entry.content);
+          }
+        } catch (e) {
+          console.error("Failed to parse games from content:", e);
+        }
+      }
+      return {
+        ...entry,
+        games,
+      };
+    });
 
   if (isLoading) {
     return (
@@ -42,7 +67,7 @@ export default function GameListsClient() {
 
   if (error) {
     return (
-      <div className="text-center py-8">
+      <div className="text-center">
         <p className="text-red-500">Error: {error}</p>
         <Button onClick={() => fetchEntries()} className="mt-4">
           Try Again
@@ -56,7 +81,7 @@ export default function GameListsClient() {
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">My Game Lists</h1>
         <Button
-          onClick={() => openModal(<CreateListModal />)}
+          onClick={() => setIsNewEntryModalOpen(true)}
           className="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white"
           variant="ghost"
           size="lg"
@@ -73,7 +98,7 @@ export default function GameListsClient() {
             Create your first game list to start organizing your games
           </p>
           <Button
-            onClick={() => openModal(<CreateListModal />)}
+            onClick={() => setIsNewEntryModalOpen(true)}
             className="flex items-center gap-2"
           >
             <Plus className="w-4 h-4" />
@@ -94,32 +119,34 @@ export default function GameListsClient() {
                     <h2 className="text-xl font-semibold">{list.title}</h2>
                     <p className="text-sm text-white/60">
                       Updated{" "}
-                      {formatDistanceToNow(new Date(list.updatedAt), {
-                        addSuffix: true,
-                      })}
+                      {list.updated_at
+                        ? formatDistanceToNow(new Date(list.updated_at), {
+                            addSuffix: true,
+                          })
+                        : "recently"}
                     </p>
                   </div>
                   <p className="text-sm text-white/60">
-                    {list.games.length}{" "}
-                    {list.games.length === 1 ? "game" : "games"}
+                    {list.games?.length || 0}{" "}
+                    {list.games?.length === 1 ? "game" : "games"}
                   </p>
                 </div>
 
-                {list.content && (
+                {list.content && !list.content.startsWith("[") && (
                   <p className="text-sm text-white/80 mb-6 line-clamp-2">
                     {list.content}
                   </p>
                 )}
 
                 <div className="grid grid-cols-4 gap-2">
-                  {list.games.slice(0, 4).map((game) => (
+                  {list.games?.slice(0, 4).map((game) => (
                     <div
                       key={game.id}
                       className="relative aspect-[3/4] rounded-md overflow-hidden group/game"
                     >
                       {game.cover_url ? (
                         <Image
-                          src={game.cover_url}
+                          src={getCoverImageUrl(game.cover_url)}
                           alt={game.name}
                           fill
                           className="object-cover transition-transform group-hover/game:scale-110"
@@ -132,23 +159,7 @@ export default function GameListsClient() {
                           </span>
                         </div>
                       )}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/0 to-transparent opacity-0 group-hover/game:opacity-100 transition-opacity">
-                        <div className="absolute bottom-2 left-2 right-2">
-                          <p className="text-xs font-medium line-clamp-2">
-                            {game.name}
-                          </p>
-                        </div>
-                      </div>
                     </div>
-                  ))}
-                  {/* Placeholder covers if less than 4 games */}
-                  {Array.from({
-                    length: Math.max(0, 4 - list.games.length),
-                  }).map((_, i) => (
-                    <div
-                      key={`placeholder-${i}`}
-                      className="relative aspect-[3/4] rounded-md bg-white/5 border border-white/10"
-                    />
                   ))}
                 </div>
               </div>
@@ -156,6 +167,11 @@ export default function GameListsClient() {
           ))}
         </div>
       )}
+
+      <NewEntryModal
+        isOpen={isNewEntryModalOpen}
+        onClose={() => setIsNewEntryModalOpen(false)}
+      />
     </div>
   );
 }

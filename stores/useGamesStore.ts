@@ -1,3 +1,5 @@
+'use client';
+
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { Game, Platform, Genre } from '@/types/game';
@@ -8,6 +10,8 @@ type CategoryOption = 'all' | 'recent' | 'popular' | 'upcoming' | 'classic';
 
 interface GamesState {
   games: Game[];
+  searchResults: Game[];
+  isSearching: boolean;
   totalGames: number;
   totalPages: number;
   currentPage: number;
@@ -24,6 +28,7 @@ interface GamesState {
   hasActiveFilters: boolean;
   searchQuery: string;
   setGames: (games: Game[]) => void;
+  setSearchResults: (results: Game[]) => void;
   setTotalGames: (total: number) => void;
   setTotalPages: (total: number) => void;
   setCurrentPage: (page: number) => void;
@@ -38,6 +43,7 @@ interface GamesState {
   setSelectedYear: (year: string) => void;
   setTimeRange: (range: string) => void;
   setSearchQuery: (query: string) => void;
+  searchGames: (query: string) => Promise<void>;
   removeFilter: (filterType: FilterType) => void;
   resetFilters: () => void;
   handleResetFilters: () => void;
@@ -67,6 +73,8 @@ export const useGamesStore = create<GamesState>()(
   persist(
     (set, get) => ({
       games: [],
+      searchResults: [],
+      isSearching: false,
       totalGames: 0,
       totalPages: 1,
       currentPage: 1,
@@ -84,6 +92,7 @@ export const useGamesStore = create<GamesState>()(
       searchQuery: "",
 
       setGames: (games) => set({ games }),
+      setSearchResults: (searchResults) => set({ searchResults }),
       setTotalGames: (totalGames) => set({ totalGames }),
       setTotalPages: (totalPages) => set({ totalPages }),
       setCurrentPage: (currentPage) => set({ currentPage }),
@@ -91,6 +100,27 @@ export const useGamesStore = create<GamesState>()(
       setError: (error) => set({ error }),
       setPlatforms: (platforms) => set({ platforms }),
       setGenres: (genres) => set({ genres }),
+
+      searchGames: async (query: string) => {
+        if (query.trim().length < 2) {
+          set({ searchResults: [], isSearching: false });
+          return;
+        }
+
+        set({ isSearching: true });
+        try {
+          const response = await fetch(`/api/games/search?q=${encodeURIComponent(query)}`);
+          if (!response.ok) throw new Error('Failed to search games');
+          const data = await response.json();
+          set({ searchResults: data.games || [], isSearching: false });
+        } catch (error) {
+          set({ 
+            error: error instanceof Error ? error.message : 'Failed to search games',
+            searchResults: [],
+            isSearching: false 
+          });
+        }
+      },
 
       updateHasActiveFilters: () => {
         const state = get();

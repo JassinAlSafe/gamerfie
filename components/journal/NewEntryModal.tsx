@@ -11,33 +11,45 @@ import {
 import { EntryTypeSelector } from "./EntryTypeSelector";
 import { EntryForm } from "./EntryForm";
 import { useJournalStore } from "@/stores/useJournalStore";
-import type { JournalEntryType, JournalEntry } from "@/stores/useJournalStore";
 
 interface NewEntryModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
+interface EntryFormData {
+  title?: string;
+  content?: string;
+  progress?: number;
+  hoursPlayed?: number;
+  rating?: number;
+  game?: {
+    id: string;
+    name: string;
+    cover_url: string;
+  };
+}
+
 export function NewEntryModal({ isOpen, onClose }: NewEntryModalProps) {
-  const [entryType, setEntryType] = useState<JournalEntryType | null>(null);
+  const [entryType, setEntryType] = useState<
+    "progress" | "review" | "daily" | "list" | null
+  >(null);
   const [isSaving, setIsSaving] = useState(false);
-  const addEntry = useJournalStore((state) => state.addEntry);
+  const createEntry = useJournalStore((state) => state.createEntry);
+  const fetchEntries = useJournalStore((state) => state.fetchEntries);
   const error = useJournalStore((state) => state.error);
 
-  const handleSave = async (formData: any) => {
+  const handleSave = async (formData: EntryFormData) => {
+    if (!entryType) return;
+
     setIsSaving(true);
     try {
-      // Create the entry object with proper typing
-      const entryData: Omit<JournalEntry, "id" | "createdAt" | "updatedAt"> = {
-        type: entryType!,
-        date: new Date().toISOString().split("T")[0],
+      await createEntry(entryType, {
         title: formData.title || "",
         content: formData.content || "",
-        progress: formData.progress ? Number(formData.progress) : undefined,
-        hoursPlayed: formData.hoursPlayed
-          ? Number(formData.hoursPlayed)
-          : undefined,
-        rating: formData.rating ? Number(formData.rating) : undefined,
+        progress: formData.progress,
+        hours_played: formData.hoursPlayed,
+        rating: formData.rating,
         game: formData.game
           ? {
               id: formData.game.id,
@@ -45,9 +57,11 @@ export function NewEntryModal({ isOpen, onClose }: NewEntryModalProps) {
               cover_url: formData.game.cover_url,
             }
           : undefined,
-      };
+      });
 
-      await addEntry(entryData);
+      // Refresh entries after successful creation
+      await fetchEntries();
+
       setEntryType(null);
       onClose();
     } catch (error) {
@@ -57,15 +71,8 @@ export function NewEntryModal({ isOpen, onClose }: NewEntryModalProps) {
     }
   };
 
-  const handleClose = () => {
-    if (!isSaving) {
-      setEntryType(null);
-      onClose();
-    }
-  };
-
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose} modal>
+    <Dialog open={isOpen} onOpenChange={onClose} modal>
       <DialogContent
         className="sm:max-w-[425px] bg-gray-900 border-gray-800"
         onOpenAutoFocus={(e) => e.preventDefault()}
@@ -75,8 +82,8 @@ export function NewEntryModal({ isOpen, onClose }: NewEntryModalProps) {
           <DialogTitle className="text-white">New Journal Entry</DialogTitle>
           <DialogDescription className="text-gray-400">
             {entryType
-              ? `Create a new ${entryType} entry.`
-              : "Choose the type of entry you want to create."}
+              ? `Create a new ${entryType} entry`
+              : "Choose the type of entry you want to create"}
           </DialogDescription>
         </DialogHeader>
         <div className="focus-visible:outline-none">

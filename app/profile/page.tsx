@@ -15,6 +15,7 @@ import { activityIcons, activityText } from "@/lib/activity-constants";
 import Image from "next/image";
 import { getCoverImageUrl } from "@/utils/image-utils";
 import { useJournalStore } from "@/stores/useJournalStore";
+import { Progress } from "@/components/ui/progress";
 
 export default function ProfilePage() {
   const { profile, isLoading, error, gameStats, updateProfile } = useProfile();
@@ -216,48 +217,87 @@ export default function ProfilePage() {
                       .map((review) => (
                         <div
                           key={review.id}
-                          className="flex items-start gap-4 p-4 bg-gray-800/50 rounded-lg"
+                          className="group relative bg-gray-800/50 rounded-lg overflow-hidden"
                         >
-                          {review.game && (
-                            <div className="relative w-12 h-16 rounded overflow-hidden flex-shrink-0">
+                          {/* Game Cover Background */}
+                          {review.game?.cover_url && (
+                            <div className="absolute inset-0 opacity-10">
                               <Image
-                                src={
-                                  review.game.cover_url
-                                    ? getCoverImageUrl(review.game.cover_url)
-                                    : "/images/placeholders/game-cover.jpg"
-                                }
-                                alt={`Cover for ${review.game.name}`}
+                                src={getCoverImageUrl(review.game.cover_url)}
+                                alt=""
                                 fill
                                 className="object-cover"
-                                sizes="48px"
-                                quality={90}
+                                sizes="(max-width: 640px) 100vw"
+                                quality={10}
                               />
                             </div>
                           )}
-                          <div className="flex-1 min-w-0">
-                            <h3 className="font-medium text-white line-clamp-1">
-                              {review.game?.name}
-                            </h3>
-                            <div className="flex items-center gap-2 mt-1">
-                              <div className="flex gap-1">
-                                {[...Array(10)].map((_, i) => (
-                                  <div
-                                    key={i}
-                                    className={`w-1 h-4 rounded-sm ${
-                                      i < (review.rating || 0)
-                                        ? "bg-white"
-                                        : "bg-gray-700"
-                                    }`}
-                                  />
-                                ))}
+
+                          <div className="relative p-4 flex gap-4">
+                            {review.game && (
+                              <div className="relative w-16 h-24 rounded-lg overflow-hidden flex-shrink-0 border border-white/10">
+                                <Image
+                                  src={
+                                    review.game.cover_url
+                                      ? getCoverImageUrl(review.game.cover_url)
+                                      : "/images/placeholders/game-cover.jpg"
+                                  }
+                                  alt={`Cover for ${review.game.name}`}
+                                  fill
+                                  className="object-cover"
+                                  sizes="64px"
+                                  quality={90}
+                                />
                               </div>
-                              <span className="text-sm font-medium text-white">
-                                {review.rating}/10
-                              </span>
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <h3 className="font-medium text-white line-clamp-1">
+                                {review.game?.name}
+                              </h3>
+                              <div className="flex flex-col gap-2 mt-2">
+                                {/* Rating Bars */}
+                                <div className="flex items-center gap-2">
+                                  <div className="flex gap-1">
+                                    {[...Array(10)].map((_, i) => (
+                                      <div
+                                        key={i}
+                                        className={`w-1 h-4 rounded-sm ${
+                                          i < (review.rating || 0)
+                                            ? "bg-purple-500"
+                                            : "bg-gray-700"
+                                        }`}
+                                      />
+                                    ))}
+                                  </div>
+                                  <span className="text-sm font-medium text-white">
+                                    {review.rating}/10
+                                  </span>
+                                </div>
+                                {/* Progress Bar */}
+                                {review.progress !== undefined &&
+                                  review.progress !== null && (
+                                    <div className="space-y-1">
+                                      <div className="flex justify-between text-xs text-gray-400">
+                                        <span>Progress</span>
+                                        <span>{review.progress}%</span>
+                                      </div>
+                                      <Progress
+                                        value={review.progress}
+                                        variant={
+                                          review.progress >= 100
+                                            ? "green"
+                                            : review.progress >= 50
+                                            ? "yellow"
+                                            : "blue"
+                                        }
+                                      />
+                                    </div>
+                                  )}
+                              </div>
+                              <p className="text-sm text-gray-300 mt-2 line-clamp-2">
+                                {review.content}
+                              </p>
                             </div>
-                            <p className="text-sm text-gray-400 mt-2 line-clamp-2">
-                              {review.content}
-                            </p>
                           </div>
                         </div>
                       ))}

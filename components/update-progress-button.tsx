@@ -2,11 +2,11 @@
 
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { useProgressStore } from "@/stores/useProgressStore";
+import { useGameProgressStore } from "@/stores/useGameProgressStore";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { CompletionDialog } from "@/components/game/dialogs/CompletionDialog";
 import { toast } from "sonner";
-import { Game, GameProgress } from "@/types/game";
+import { Game } from "@/types/game";
 import { BarChart2, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -30,38 +30,38 @@ export function UpdateProgressButton({
   const [dialogOpen, setDialogOpen] = React.useState(false);
   const { user } = useAuthStore();
   const {
+    isLoading,
+    progress,
+    playTime,
+    achievementsCompleted,
     updateProgress,
-    loading,
-    play_time,
-    completion_percentage,
-    achievements_completed,
-    fetchProgress,
-  } = useProgressStore();
+    fetchGameProgress,
+  } = useGameProgressStore();
 
   React.useEffect(() => {
     if (user && gameId) {
-      fetchProgress(user.id, gameId);
+      fetchGameProgress(gameId);
     }
-  }, [user, gameId, fetchProgress]);
+  }, [user, gameId, fetchGameProgress]);
 
-  const handleProgressUpdate = async (progress: Partial<GameProgress>) => {
+  const handleProgressUpdate = async (updates: {
+    progress?: number;
+    playTime?: number;
+    achievementsCompleted?: number;
+  }) => {
     if (!user) {
       toast.error("Please sign in to update progress");
       return;
     }
 
-    const updateData: Partial<GameProgress> = {
-      play_time: progress.play_time ?? play_time,
-      completion_percentage:
-        progress.completion_percentage ?? completion_percentage,
-    };
-
-    if (typeof progress.achievements_completed === "number") {
-      updateData.achievements_completed = progress.achievements_completed;
-    }
-
     try {
-      await updateProgress(user.id, gameId, updateData);
+      await updateProgress(gameId, {
+        completion_percentage: updates.progress ?? progress,
+        play_time: updates.playTime ?? playTime,
+        achievements_completed:
+          updates.achievementsCompleted ?? achievementsCompleted,
+      });
+
       toast.success("Progress updated successfully!");
       setDialogOpen(false);
     } catch (error) {
@@ -72,41 +72,33 @@ export function UpdateProgressButton({
     }
   };
 
-  const progressText = completion_percentage
-    ? `${completion_percentage}% Complete`
-    : "Update Progress";
-
   return (
     <>
       <Button
         variant={variant}
         size={size}
+        className={cn("gap-2", className)}
         onClick={() => setDialogOpen(true)}
-        disabled={loading}
-        className={cn(
-          "min-w-[140px] transition-all duration-200",
-          "bg-purple-600 hover:bg-purple-700 text-white",
-          className
-        )}
+        disabled={isLoading}
       >
-        {loading ? (
-          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+        {isLoading ? (
+          <Loader2 className="h-4 w-4 animate-spin" />
         ) : (
-          <BarChart2 className="w-4 h-4 mr-2" />
+          <BarChart2 className="h-4 w-4" />
         )}
-        {progressText}
+        Update Progress
       </Button>
 
       <CompletionDialog
         open={dialogOpen}
         onOpenChange={setDialogOpen}
-        onProgressUpdate={handleProgressUpdate}
         game={game}
-        progress={{
-          play_time: play_time ?? 0,
-          completion_percentage: completion_percentage ?? 0,
-          achievements_completed: achievements_completed ?? 0,
+        currentProgress={{
+          completion: progress || 0,
+          playTime: playTime || 0,
+          achievements: achievementsCompleted || 0,
         }}
+        onUpdateProgress={handleProgressUpdate}
       />
     </>
   );

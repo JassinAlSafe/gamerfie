@@ -8,9 +8,10 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
-import { X, Search, Plus } from "lucide-react";
-import { useGamesStore } from "@/stores/useGamesStore";
+import { X, Search, Plus, Loader2 } from "lucide-react";
 import Image from "next/image";
+import { getCoverImageUrl } from "@/utils/image-utils";
+import { useGameSearch } from "@/hooks/use-game-search";
 import {
   Command,
   CommandEmpty,
@@ -38,10 +39,11 @@ export default function CreateListModal() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
-  const { addEntry } = useJournalStore();
+  const { createEntry } = useJournalStore();
   const { closeModal } = useModal();
   const { toast } = useToast();
-  const { searchGames, searchResults, isSearching } = useGamesStore();
+  const { games: searchResults, isLoading: isSearching } =
+    useGameSearch(searchQuery);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,12 +51,10 @@ export default function CreateListModal() {
 
     setIsSubmitting(true);
     try {
-      await addEntry({
-        type: "list",
+      await createEntry("list", {
         title: title.trim(),
-        content: description.trim(),
+        content: JSON.stringify(selectedGames),
         date: new Date().toISOString(),
-        games: selectedGames,
       });
 
       toast({
@@ -75,9 +75,6 @@ export default function CreateListModal() {
 
   const handleGameSearch = (value: string) => {
     setSearchQuery(value);
-    if (value.trim().length >= 2) {
-      searchGames(value);
-    }
   };
 
   const addGame = (game: SelectedGame) => {
@@ -157,36 +154,44 @@ export default function CreateListModal() {
                     value={searchQuery}
                     onValueChange={handleGameSearch}
                   />
-                  <CommandEmpty>No games found</CommandEmpty>
-                  <CommandGroup className="max-h-[300px] overflow-auto">
-                    {searchResults.map((game) => (
-                      <CommandItem
-                        key={game.id}
-                        value={game.id}
-                        onSelect={() =>
-                          addGame({
-                            id: game.id,
-                            name: game.name,
-                            cover_url: game.coverImage,
-                          })
-                        }
-                        className="flex items-center gap-2 cursor-pointer"
-                      >
-                        {game.coverImage && (
-                          <div className="relative w-8 h-12 rounded overflow-hidden">
-                            <Image
-                              src={game.coverImage}
-                              alt={game.name}
-                              fill
-                              className="object-cover"
-                            />
-                          </div>
-                        )}
-                        <span>{game.name}</span>
-                        <Plus className="ml-auto w-4 h-4" />
-                      </CommandItem>
-                    ))}
-                  </CommandGroup>
+                  {isSearching ? (
+                    <div className="py-6 text-center">
+                      <Loader2 className="w-6 h-6 animate-spin mx-auto" />
+                    </div>
+                  ) : (
+                    <>
+                      <CommandEmpty>No games found</CommandEmpty>
+                      <CommandGroup className="max-h-[300px] overflow-auto">
+                        {searchResults?.map((game) => (
+                          <CommandItem
+                            key={game.id}
+                            value={game.id}
+                            onSelect={() =>
+                              addGame({
+                                id: game.id,
+                                name: game.name,
+                                cover_url: game.cover_url,
+                              })
+                            }
+                            className="flex items-center gap-2 cursor-pointer"
+                          >
+                            {game.cover_url && (
+                              <div className="relative w-8 h-12 rounded overflow-hidden">
+                                <Image
+                                  src={getCoverImageUrl(game.cover_url)}
+                                  alt={game.name}
+                                  fill
+                                  className="object-cover"
+                                />
+                              </div>
+                            )}
+                            <span>{game.name}</span>
+                            <Plus className="ml-auto w-4 h-4" />
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </>
+                  )}
                 </Command>
               </PopoverContent>
             </Popover>
@@ -199,12 +204,13 @@ export default function CreateListModal() {
                     className="group relative aspect-[3/4] rounded-md overflow-hidden"
                   >
                     <Image
-                      src={game.cover_url}
+                      src={getCoverImageUrl(game.cover_url)}
                       alt={game.name}
                       fill
                       className="object-cover"
                     />
                     <button
+                      type="button"
                       onClick={() => removeGame(game.id)}
                       className="absolute top-1 right-1 p-1 rounded-full bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity"
                     >

@@ -1,22 +1,38 @@
+'use client';
+
 import { create } from 'zustand';
-import { GameList, CreateGameListDTO, UpdateGameListDTO, AddGameToListDTO } from '@/types/gameList';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createActivity } from '@/lib/activity';
+
+interface GameListItem {
+  id: string;
+  name: string;
+  cover_url: string;
+  added_at: string;
+}
+
+interface GameList {
+  id: string;
+  title: string;
+  description?: string;
+  games: GameListItem[];
+  created_at: string;
+  updated_at: string;
+}
 
 interface GameListStore {
   lists: GameList[];
   currentList: GameList | null;
   isLoading: boolean;
   error: string | null;
-  fetchUserLists: () => Promise<void>;
-  createList: (data: CreateGameListDTO) => Promise<GameList>;
-  updateList: (listId: string, data: UpdateGameListDTO) => Promise<void>;
+  createList: (title: string, description?: string) => Promise<GameList>;
+  updateList: (listId: string, title: string, description?: string) => Promise<void>;
   deleteList: (listId: string) => Promise<void>;
-  addGameToList: (listId: string, data: AddGameToListDTO) => Promise<void>;
+  addGameToList: (listId: string, gameId: string, gameName: string, coverUrl: string) => Promise<void>;
   removeGameFromList: (listId: string, gameId: string) => Promise<void>;
-  setCurrentList: (list: GameList | null) => void;
+  fetchUserLists: () => Promise<void>;
+  fetchListDetails: (listId: string) => Promise<void>;
 }
-
-const supabase = createClientComponentClient();
 
 export const useGameListStore = create<GameListStore>((set, get) => ({
   lists: [],
@@ -24,54 +40,42 @@ export const useGameListStore = create<GameListStore>((set, get) => ({
   isLoading: false,
   error: null,
 
-  fetchUserLists: async () => {
+  createList: async (title: string, description?: string) => {
     set({ isLoading: true, error: null });
     try {
+      const supabase = createClientComponentClient();
       const { data: session } = await supabase.auth.getSession();
       if (!session?.session?.user) throw new Error('Not authenticated');
 
-      const { data, error } = await supabase
-        .from('game_lists')
-        .select(`
-          *,
-          games:game_list_items (
-            *,
-            game:games (*)
-          )
-        `)
-        .eq('user_id', session.session.user.id);
-
-      if (error) throw error;
-      set({ lists: data as GameList[] });
-    } catch (error) {
-      set({ error: (error as Error).message });
-    } finally {
-      set({ isLoading: false });
-    }
-  },
-
-  createList: async (data: CreateGameListDTO) => {
-    set({ isLoading: true, error: null });
-    try {
-      const { data: session } = await supabase.auth.getSession();
-      if (!session?.session?.user) throw new Error('Not authenticated');
-
+      // Create journal entry for the list
       const { data: list, error } = await supabase
-        .from('game_lists')
-        .insert([
-          {
-            ...data,
-            user_id: session.session.user.id,
-          },
-        ])
+        .from('journal_entries')
+        .insert([{
+          user_id: session.session.user.id,
+          type: 'list',
+          title,
+          content: description,
+          game_list: [], // Initialize empty game list
+          date: new Date().toISOString(),
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }])
         .select()
         .single();
 
       if (error) throw error;
-      
-      const lists = get().lists;
-      set({ lists: [...lists, list as GameList] });
-      return list as GameList;
+
+      const newList: GameList = {
+        id: list.id,
+        title: list.title,
+        description: list.content,
+        games: [],
+        created_at: list.created_at,
+        updated_at: list.updated_at
+      };
+
+      set(state => ({ lists: [...state.lists, newList] }));
+      return newList;
     } catch (error) {
       set({ error: (error as Error).message });
       throw error;
@@ -80,20 +84,35 @@ export const useGameListStore = create<GameListStore>((set, get) => ({
     }
   },
 
-  updateList: async (listId: string, data: UpdateGameListDTO) => {
+  updateList: async (listId: string, title: string, description?: string) => {
     set({ isLoading: true, error: null });
     try {
+      const supabase = createClientComponentClient();
+      const { data: session } = await supabase.auth.getSession();
+      if (!session?.session?.user) throw new Error('Not authenticated');
+
       const { error } = await supabase
-        .from('game_lists')
-        .update(data)
-        .eq('id', listId);
+        .from('journal_entries')
+        .update({
+          title,
+          content: description,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', listId)
+        .eq('user_id', session.session.user.id);
 
       if (error) throw error;
 
-      const lists = get().lists.map(list =>
-        list.id === listId ? { ...list, ...data } : list
-      );
-      set({ lists });
+      set(state => ({
+        lists: state.lists.map(list =>
+          list.id === listId
+            ? { ...list, title, description, updated_at: new Date().toISOString() }
+            : list
+        ),
+        currentList: state.currentList?.id === listId
+          ? { ...state.currentList, title, description, updated_at: new Date().toISOString() }
+          : state.currentList
+      }));
     } catch (error) {
       set({ error: (error as Error).message });
       throw error;
@@ -102,43 +121,52 @@ export const useGameListStore = create<GameListStore>((set, get) => ({
     }
   },
 
-  deleteList: async (listId: string) => {
+  addGameToList: async (listId: string, gameId: string, gameName: string, coverUrl: string) => {
     set({ isLoading: true, error: null });
     try {
+      const supabase = createClientComponentClient();
+      const { data: session } = await supabase.auth.getSession();
+      if (!session?.session?.user) throw new Error('Not authenticated');
+
+      const list = get().lists.find(l => l.id === listId);
+      if (!list) throw new Error('List not found');
+
+      const newGame: GameListItem = {
+        id: gameId,
+        name: gameName,
+        cover_url: coverUrl,
+        added_at: new Date().toISOString()
+      };
+
+      const updatedGames = [...(list.games || []), newGame];
+
       const { error } = await supabase
-        .from('game_lists')
-        .delete()
-        .eq('id', listId);
+        .from('journal_entries')
+        .update({
+          game_list: updatedGames,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', listId)
+        .eq('user_id', session.session.user.id);
 
       if (error) throw error;
 
-      const lists = get().lists.filter(list => list.id !== listId);
-      set({ lists });
-    } catch (error) {
-      set({ error: (error as Error).message });
-      throw error;
-    } finally {
-      set({ isLoading: false });
-    }
-  },
+      // Create activity
+      await createActivity('added_to_list', gameId, {
+        name: gameName,
+        comment: `Added ${gameName} to list: ${list.title}`
+      });
 
-  addGameToList: async (listId: string, data: AddGameToListDTO) => {
-    set({ isLoading: true, error: null });
-    try {
-      const { error } = await supabase
-        .from('game_list_items')
-        .insert([
-          {
-            list_id: listId,
-            game_id: data.gameId,
-            notes: data.notes,
-          },
-        ]);
-
-      if (error) throw error;
-
-      // Refresh the list to get updated games
-      await get().fetchUserLists();
+      set(state => ({
+        lists: state.lists.map(l =>
+          l.id === listId
+            ? { ...l, games: updatedGames, updated_at: new Date().toISOString() }
+            : l
+        ),
+        currentList: state.currentList?.id === listId
+          ? { ...state.currentList, games: updatedGames, updated_at: new Date().toISOString() }
+          : state.currentList
+      }));
     } catch (error) {
       set({ error: (error as Error).message });
       throw error;
@@ -150,16 +178,36 @@ export const useGameListStore = create<GameListStore>((set, get) => ({
   removeGameFromList: async (listId: string, gameId: string) => {
     set({ isLoading: true, error: null });
     try {
+      const supabase = createClientComponentClient();
+      const { data: session } = await supabase.auth.getSession();
+      if (!session?.session?.user) throw new Error('Not authenticated');
+
+      const list = get().lists.find(l => l.id === listId);
+      if (!list) throw new Error('List not found');
+
+      const updatedGames = list.games.filter(g => g.id !== gameId);
+
       const { error } = await supabase
-        .from('game_list_items')
-        .delete()
-        .eq('list_id', listId)
-        .eq('game_id', gameId);
+        .from('journal_entries')
+        .update({
+          game_list: updatedGames,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', listId)
+        .eq('user_id', session.session.user.id);
 
       if (error) throw error;
 
-      // Refresh the list to get updated games
-      await get().fetchUserLists();
+      set(state => ({
+        lists: state.lists.map(l =>
+          l.id === listId
+            ? { ...l, games: updatedGames, updated_at: new Date().toISOString() }
+            : l
+        ),
+        currentList: state.currentList?.id === listId
+          ? { ...state.currentList, games: updatedGames, updated_at: new Date().toISOString() }
+          : state.currentList
+      }));
     } catch (error) {
       set({ error: (error as Error).message });
       throw error;
@@ -168,7 +216,98 @@ export const useGameListStore = create<GameListStore>((set, get) => ({
     }
   },
 
-  setCurrentList: (list: GameList | null) => {
-    set({ currentList: list });
+  deleteList: async (listId: string) => {
+    set({ isLoading: true, error: null });
+    try {
+      const supabase = createClientComponentClient();
+      const { data: session } = await supabase.auth.getSession();
+      if (!session?.session?.user) throw new Error('Not authenticated');
+
+      const { error } = await supabase
+        .from('journal_entries')
+        .delete()
+        .eq('id', listId)
+        .eq('user_id', session.session.user.id);
+
+      if (error) throw error;
+
+      set(state => ({
+        lists: state.lists.filter(l => l.id !== listId),
+        currentList: state.currentList?.id === listId ? null : state.currentList
+      }));
+    } catch (error) {
+      set({ error: (error as Error).message });
+      throw error;
+    } finally {
+      set({ isLoading: false });
+    }
   },
+
+  fetchUserLists: async () => {
+    set({ isLoading: true, error: null });
+    try {
+      const supabase = createClientComponentClient();
+      const { data: session } = await supabase.auth.getSession();
+      if (!session?.session?.user) throw new Error('Not authenticated');
+
+      const { data, error } = await supabase
+        .from('journal_entries')
+        .select('*')
+        .eq('type', 'list')
+        .eq('user_id', session.session.user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      const transformedLists: GameList[] = data.map(entry => ({
+        id: entry.id,
+        title: entry.title,
+        description: entry.content,
+        games: entry.game_list || [],
+        created_at: entry.created_at,
+        updated_at: entry.updated_at
+      }));
+
+      set({ lists: transformedLists });
+    } catch (error) {
+      set({ error: (error as Error).message });
+      throw error;
+    } finally {
+      set({ isLoading: false });
+    }
+  },
+
+  fetchListDetails: async (listId: string) => {
+    set({ isLoading: true, error: null });
+    try {
+      const supabase = createClientComponentClient();
+      const { data: session } = await supabase.auth.getSession();
+      if (!session?.session?.user) throw new Error('Not authenticated');
+
+      const { data, error } = await supabase
+        .from('journal_entries')
+        .select('*')
+        .eq('id', listId)
+        .eq('user_id', session.session.user.id)
+        .single();
+
+      if (error) throw error;
+
+      const list: GameList = {
+        id: data.id,
+        title: data.title,
+        description: data.content,
+        games: data.game_list || [],
+        created_at: data.created_at,
+        updated_at: data.updated_at
+      };
+
+      set({ currentList: list });
+    } catch (error) {
+      set({ error: (error as Error).message });
+      throw error;
+    } finally {
+      set({ isLoading: false });
+    }
+  }
 })); 
