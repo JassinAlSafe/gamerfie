@@ -1,54 +1,71 @@
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
+import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
+import { Database } from '@/types/supabase';
 
+interface FriendData {
+  id: string;
+  username: string;
+  bio?: string;
+  avatar_url?: string;
+  display_name?: string;
+}
 
+interface FriendRequest {
+  user_id: string;
+  friend_id: string;
+  status: string;
+}
 
 export async function GET(request: Request) {
-  const supabase = createRouteHandlerClient({ cookies });
-  const { searchParams } = new URL(request.url);
-  const status = searchParams.get('status');
-
   try {
+    const supabase = createRouteHandlerClient<Database>({ cookies });
     const { data: { session } } = await supabase.auth.getSession();
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+    if (!session) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      );
     }
 
-    let query = supabase
-      .from('friends')
-      .select('*')
+    const { data: friends, error: friendsError } = await supabase
+      .from("friends")
+      .select("*")
       .or(`user_id.eq.${session.user.id},friend_id.eq.${session.user.id}`);
 
-    if (status) {
-      query = query.eq('status', status);
+    if (friendsError) {
+      console.error("Error fetching friends:", friendsError);
+      return NextResponse.json(
+        { error: "Failed to fetch friends" },
+        { status: 500 }
+      );
     }
 
-    const { data: friends, error } = await query;
-
-    if (error) throw error;
-    if (!friends) return NextResponse.json([]);
-
     // Get all unique user IDs from both user_id and friend_id fields
-    const userIds = [...new Set(friends.map(f => 
+    const userIds = Array.from(new Set(friends.map((f: FriendRequest) => 
       f.user_id === session.user.id ? f.friend_id : f.user_id
-    ))];
+    )));
 
     // Fetch user details from profiles
-    const { data: users } = await supabase
-      .from('profiles')
-      .select('id, username')
-      .in('id', userIds);
+    const { data: profiles, error: profilesError } = await supabase
+      .from("profiles")
+      .select("*")
+      .in("id", userIds);
 
-    if (!users) return NextResponse.json([]);
+    if (profilesError) {
+      console.error("Error fetching profiles:", profilesError);
+      return NextResponse.json(
+        { error: "Failed to fetch profiles" },
+        { status: 500 }
+      );
+    }
 
-    // Create a map of user details
-    const userMap = new Map(users.map(user => [user.id, user]));
-
-    // Transform the data
-    const transformedFriends = friends.map(f => {
+    // Map friend data with profile data
+    const friendsList = friends.map((f: FriendRequest) => {
       const friendId = f.user_id === session.user.id ? f.friend_id : f.user_id;
-      const friendData = userMap.get(friendId);
+      const friendData = profiles?.find((p: FriendData) => p.id === friendId);
+
       return {
         id: friendId,
         username: friendData?.username || '',
@@ -60,18 +77,18 @@ export async function GET(request: Request) {
       };
     });
 
-    return NextResponse.json(transformedFriends);
+    return NextResponse.json(friendsList);
   } catch (error) {
-    console.error('Friends fetch error:', error);
+    console.error("Friends fetch error:", error);
     return NextResponse.json(
-      { error: 'Internal Server Error' }, 
+      { error: "Internal Server Error" },
       { status: 500 }
     );
   }
 }
 
 export async function POST(request: Request) {
-  const supabase = createRouteHandlerClient({ cookies });
+  const supabase = createRouteHandlerClient<Database>({ cookies });
 
   try {
     const { friendId } = await request.json();

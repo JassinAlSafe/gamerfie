@@ -3,7 +3,6 @@
 import { useEffect, useRef, useMemo, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useGamesStore } from "@/stores/useGamesStore";
-import { useSearchStore } from "@/stores/useSearchStore";
 import { useDebounce } from "@/hooks/useDebounce";
 import { GamesHeader } from "./sections/games-header";
 import { GamesGrid } from "./sections/games-grid";
@@ -16,8 +15,7 @@ export default function AllGamesClient() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const store = useGamesStore();
-  const { query: searchQuery } = useSearchStore();
-  const debouncedSearch = useDebounce(searchQuery, 500);
+  const debouncedSearch = useDebounce(store.searchQuery, 500);
   const isInitialMount = useRef(true);
   const isUpdatingFromUrl = useRef(false);
   const previousUrl = useRef("");

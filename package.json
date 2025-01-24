@@ -88,6 +88,8 @@
     "@types/react-dom": "^18",
     "@types/react-slick": "^0.23.13",
     "@types/uuid": "^10.0.0",
+    "@typescript-eslint/eslint-plugin": "^8.21.0",
+    "@typescript-eslint/parser": "^8.21.0",
     "eslint": "^8",
     "eslint-config-next": "14.2.8",
     "postcss": "^8",

@@ -1,10 +1,21 @@
 import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
 import { cookies } from "next/headers";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
-export async function withAuth(handler: Function) {
-  return async (request: Request, params?: any) => {
+type RouteHandler = (
+  request: NextRequest,
+  params: any,
+  context: {
+    supabase: any;
+    session: any;
+    profile?: any;
+    participant?: any;
+  }
+) => Promise<NextResponse>;
+
+export function withAuth(handler: RouteHandler) {
+  return async (request: NextRequest, params?: any): Promise<NextResponse> => {
     try {
       console.log("withAuth middleware - Starting authentication check");
       
@@ -78,8 +89,8 @@ export async function withAuth(handler: Function) {
   };
 }
 
-export function withValidation<T>(schema: z.Schema<T>, handler: Function) {
-  return withAuth(async (request: Request, params: any, context: any) => {
+export function withValidation<T>(schema: z.Schema<T>, handler: RouteHandler) {
+  return withAuth(async (request: NextRequest, params: any, context: any) => {
     try {
       console.log("withValidation middleware - Starting validation");
       
@@ -103,7 +114,7 @@ export function withValidation<T>(schema: z.Schema<T>, handler: Function) {
       }
 
       console.log("Validation successful");
-      return handler(request, params, result.data, context);
+      return handler(request, params, { ...context, data: result.data });
     } catch (error) {
       console.error("Validation middleware error:", error);
       return NextResponse.json(
@@ -117,8 +128,8 @@ export function withValidation<T>(schema: z.Schema<T>, handler: Function) {
   });
 }
 
-export async function withCreatorAuth(handler: Function) {
-  return async (request: Request, { params }: { params: { id: string } }) => {
+export function withCreatorAuth(handler: RouteHandler) {
+  return async (request: NextRequest, { params }: { params: { id: string } }): Promise<NextResponse> => {
     try {
       const cookieStore = cookies();
       const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
@@ -163,8 +174,8 @@ export async function withCreatorAuth(handler: Function) {
   };
 }
 
-export async function withParticipantAuth(handler: Function) {
-  return async (request: Request, { params }: { params: { id: string } }) => {
+export function withParticipantAuth(handler: RouteHandler) {
+  return async (request: NextRequest, { params }: { params: { id: string } }): Promise<NextResponse> => {
     try {
       const cookieStore = cookies();
       const supabase = createRouteHandlerClient({ cookies: () => cookieStore });

@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useEffect } from "react";
+import { memo, useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Calendar, Sparkles, Flame } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,13 @@ interface GameCategoryData {
 
 interface PopularGamesSectionProps {
   category?: "popular" | "upcoming" | "new";
+}
+
+interface PopularGamesData {
+  topRated: Game[];
+  newReleases: Game[];
+  upcoming: Game[];
+  trending: Game[];
 }
 
 const getCategoryLabel = (category: string) => {
@@ -48,6 +55,8 @@ const getCategoryLabel = (category: string) => {
 export const PopularGamesSection = memo(
   ({ category = "popular" }: PopularGamesSectionProps) => {
     const queryClient = useQueryClient();
+    const [data, setData] = useState<PopularGamesData | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
 
     // Prefetch the next category
     useEffect(() => {
@@ -60,6 +69,21 @@ export const PopularGamesSection = memo(
         queryFn: () => fetchGames(nextCategory),
       });
     }, [category, queryClient]);
+
+    useEffect(() => {
+      async function fetchData() {
+        try {
+          const response = await fetch("/api/games/popular");
+          const result = (await response.json()) as PopularGamesData;
+          setData(result);
+        } catch (error) {
+          console.error("Failed to fetch popular games:", error);
+        } finally {
+          setIsLoading(false);
+        }
+      }
+      void fetchData();
+    }, []);
 
     const fetchGames = async (cat: string): Promise<GameCategoryData> => {
       const response = await fetch(`/api/games/popular?category=${cat}`);
@@ -75,56 +99,18 @@ export const PopularGamesSection = memo(
       };
     };
 
-    const {
-      data: categories,
-      isLoading,
-      error,
-      refetch,
-    } = useQuery<GameCategoryData, Error>({
-      queryKey: ["popularGames", category],
-      queryFn: () => fetchGames(category),
-      staleTime: 5 * 60 * 1000, // 5 minutes
-      gcTime: 10 * 60 * 1000, // 10 minutes
-      retry: 2,
-      refetchOnWindowFocus: false,
-    });
-
-    if (isLoading) {
+    if (isLoading || !data) {
       return <CategorySkeleton />;
-    }
-
-    if (error) {
-      return (
-        <ErrorBoundary FallbackComponent={ErrorFallback}>
-          <ErrorDisplay
-            message={
-              error instanceof Error ? error.message : "Failed to load games"
-            }
-            onRetry={() => refetch()}
-          />
-        </ErrorBoundary>
-      );
-    }
-
-    if (!categories) {
-      return (
-        <div className="text-center py-12 text-gray-400">
-          <p>No games found at the moment.</p>
-          <Button variant="outline" onClick={() => refetch()} className="mt-4">
-            Refresh
-          </Button>
-        </div>
-      );
     }
 
     const games =
       category === "popular"
-        ? categories.topRated
+        ? data.topRated
         : category === "new"
-        ? categories.newReleases
+        ? data.newReleases
         : category === "upcoming"
-        ? categories.upcoming
-        : categories.trending;
+        ? data.upcoming
+        : data.trending;
 
     const { title, color, icon } = getCategoryLabel(category);
 

@@ -60,6 +60,7 @@ export interface Challenge {
     target: number;
     description?: string;
   };
+  goal_target?: number;
   goals?: Array<{
     id: string;
     type: string;
@@ -112,6 +113,7 @@ export interface ChallengeParticipant {
   joined_at: string;
   user?: UserProfile;
   avatar_url?: string;
+  completion_percentage?: number;
 }
 
 export interface ProgressMilestone {

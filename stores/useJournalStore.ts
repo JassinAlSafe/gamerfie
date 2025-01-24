@@ -3,8 +3,7 @@
 import { create } from 'zustand';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { createActivity } from '@/lib/activity';
-import { useGameProgressStore } from './useGameProgressStore';
-import { useProgressStore } from './useProgressStore';
+
 
 interface Game {
   id: string;

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useMemo, Suspense } from "react";
+import React, { useCallback, useMemo, Suspense, useEffect } from "react";
 import dynamic from "next/dynamic";
 import PopularGamesSection from "@/components/PopularGamesSection";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,8 @@ import { useDebounce } from "@/hooks/useDebounce";
 import { useRouter } from "next/navigation";
 import { ErrorBoundary } from "react-error-boundary";
 import { useSearchStore } from "@/stores/useSearchStore";
+import { GAME_CATEGORIES, type GameCategory } from "@/types/index";
+import { useGames } from "@/hooks/useGames";
 
 // Dynamically import heavy components
 const BackToTopButton = dynamic(() => import("@/components/BackToTopButton"), {
@@ -60,21 +62,18 @@ function ErrorFallback({
   );
 }
 
-// Loading skeleton for the hero section
+// Loading skeleton for hero section
 function HeroSkeleton() {
   return (
-    <div className="relative flex flex-col items-center justify-center min-h-[50vh] text-center animate-pulse">
-      <div className="max-w-4xl mx-auto mb-8">
-        <div className="h-20 bg-gray-800/50 rounded-lg mb-6 w-3/4 mx-auto" />
-        <div className="h-6 bg-gray-800/50 rounded w-2/3 mx-auto mb-12" />
-        <div className="relative max-w-2xl mx-auto">
-          <div className="h-16 bg-gray-800/50 rounded-full mb-6" />
-          <div className="flex justify-center gap-3">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="h-10 w-32 bg-gray-800/50 rounded-full" />
-            ))}
-          </div>
-        </div>
+    <div className="space-y-8">
+      <div className="space-y-4">
+        <div className="h-12 bg-gray-800/50 rounded w-3/4 max-w-2xl" />
+        <div className="h-6 bg-gray-800/50 rounded w-1/2" />
+      </div>
+      <div className="flex gap-4 flex-wrap">
+        {Array.from({ length: 5 }).map((_, i) => (
+          <div key={i} className="h-10 bg-gray-800/50 rounded-full w-32" />
+        ))}
       </div>
     </div>
   );
@@ -162,15 +161,29 @@ export default function ExplorePage() {
   const setSelectedCategory = useGamesStore(
     (state) => state.setSelectedCategory
   );
-  const { query: searchQuery, setQuery: setSearchQuery } = useSearchStore();
+  const {
+    query: searchQuery,
+    setQuery: setSearchQuery,
+    executeSearch,
+  } = useSearchStore();
+
+  const { prefetchPopularCategories } = useGames({
+    category: "all",
+    limit: 10,
+  });
+
+  // Prefetch popular categories on page load
+  useEffect(() => {
+    prefetchPopularCategories();
+  }, [prefetchPopularCategories]);
+
   const debouncedSearch = useDebounce(searchQuery);
 
   const handleSearch = useCallback(() => {
     if (debouncedSearch.trim()) {
-      setSelectedCategory("all");
-      router.push(`/all-games?search=${encodeURIComponent(debouncedSearch)}`);
+      executeSearch(debouncedSearch);
     }
-  }, [debouncedSearch, router, setSelectedCategory]);
+  }, [debouncedSearch, executeSearch]);
 
   const handleKeyPress = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -182,15 +195,19 @@ export default function ExplorePage() {
   );
 
   const handleCategoryClick = useCallback(
-    (category: string) => {
+    (category: GameCategory) => {
       setSelectedCategory(category);
       // Map category to appropriate timeRange
-      const timeRangeMap = {
+      const timeRangeMap: Record<GameCategory, string> = {
         upcoming: "upcoming",
         recent: "new_releases",
         popular: "all",
+        all: "all",
+        classic: "classic",
+        indie: "indie",
+        anticipated: "anticipated",
       };
-      const timeRange = timeRangeMap[category as keyof typeof timeRangeMap];
+      const timeRange = timeRangeMap[category];
       router.push(`/all-games?category=${category}&timeRange=${timeRange}`);
     },
     [router, setSelectedCategory]
@@ -236,7 +253,7 @@ export default function ExplorePage() {
             variant="ghost"
             size="sm"
             className={`bg-white/5 hover:bg-white/10 text-gray-300 flex items-center space-x-2 px-4 py-2 rounded-full transition-all duration-200 hover:scale-105`}
-            onClick={() => handleCategoryClick(id)}
+            onClick={() => handleCategoryClick(id as GameCategory)}
           >
             <Icon className={`w-4 h-4 ${color}`} />
             <span>{label}</span>
@@ -280,30 +297,21 @@ export default function ExplorePage() {
   );
 
   return (
-    <div className="relative min-h-full">
-      <div className="absolute inset-0 bg-gradient-to-b from-[#0B0F15] via-gray-900 to-[#0B0F15] pointer-events-none" />
-
-      <div className="relative z-10 pt-28 pb-24">
-        <TracingBeam className="px-4">
-          <div className="relative z-10 max-w-7xl mx-auto space-y-12">
-            <Suspense fallback={<HeroSkeleton />}>
-              <HeroSection
-                searchQuery={searchQuery}
-                handleSearchChange={handleSearchChange}
-                handleKeyPress={handleKeyPress}
-                searchButton={searchButton}
-                categoryButtons={categoryButtons}
-              />
-            </Suspense>
-
-            <Suspense fallback={<GameCategoriesSkeleton />}>
-              {gameCategories}
-            </Suspense>
-          </div>
-        </TracingBeam>
-
-        <BackToTopButton />
-      </div>
+    <div className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-950">
+      <ErrorBoundary FallbackComponent={ErrorFallback}>
+        <Suspense fallback={<HeroSkeleton />}>
+          <HeroSection
+            searchQuery={searchQuery}
+            handleSearchChange={handleSearchChange}
+            handleKeyPress={handleKeyPress}
+            searchButton={searchButton}
+            categoryButtons={categoryButtons}
+          />
+        </Suspense>
+        <Suspense fallback={<GameCategoriesSkeleton />}>
+          {gameCategories}
+        </Suspense>
+      </ErrorBoundary>
     </div>
   );
 }

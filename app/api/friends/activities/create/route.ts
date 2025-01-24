@@ -1,7 +1,8 @@
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
+import { Database } from '@/types/supabase';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
-import { FriendActivity } from '../../../../types/friend';
+import { FriendActivity, RequestBody, FriendActivityRecord, ProfileRecord, GameRecord } from '@/types/friend';
 
 const COOLDOWN_PERIODS = {
   started_playing: 24 * 60 * 60, // 24 hours in seconds
@@ -13,7 +14,7 @@ const COOLDOWN_PERIODS = {
 };
 
 export async function POST(request: Request) {
-  const supabase = createRouteHandlerClient({ cookies });
+  const supabase = createRouteHandlerClient<Database>({ cookies });
 
   try {
     // Get user session
@@ -27,7 +28,8 @@ export async function POST(request: Request) {
     }
 
     // Parse the request body
-    const { activity_type, game_id, details } = await request.json();
+    const body = await request.json() as RequestBody;
+    const { activity_type, game_id, details } = body;
     console.log('Creating activity:', { activity_type, game_id, details, user_id: session.user.id });
 
     if (!activity_type) {
@@ -35,7 +37,7 @@ export async function POST(request: Request) {
     }
 
     // Check cooldown period
-    const cooldownPeriod = COOLDOWN_PERIODS[activity_type];
+    const cooldownPeriod = COOLDOWN_PERIODS[activity_type as keyof typeof COOLDOWN_PERIODS] ?? 0;
     if (cooldownPeriod > 0) {
       const { data: recentActivity } = await supabase
         .from('friend_activities')
@@ -47,7 +49,7 @@ export async function POST(request: Request) {
         .limit(1)
         .single();
 
-      if (recentActivity) {
+      if (recentActivity && typeof recentActivity.created_at === 'string') {
         const lastActivityTime = new Date(recentActivity.created_at).getTime() / 1000;
         const currentTime = Date.now() / 1000;
         const timeSinceLastActivity = currentTime - lastActivityTime;
@@ -94,7 +96,7 @@ export async function POST(request: Request) {
       .from('friend_activities')
       .select('*')
       .eq('id', newActivity.id)
-      .single();
+      .single() as { data: FriendActivityRecord | null };
 
     if (!activity) {
       console.error('No activity found after creation');
@@ -110,7 +112,7 @@ export async function POST(request: Request) {
       .from('profiles')
       .select('id, username, avatar_url')
       .eq('id', activity.user_id)
-      .single();
+      .single() as { data: ProfileRecord | null };
 
     console.log('User profile fetched:', userProfile);
 
@@ -121,7 +123,7 @@ export async function POST(request: Request) {
         .from('games')
         .select('id, name, cover_url')
         .eq('id', activity.game_id)
-        .single();
+        .single() as { data: GameRecord | null };
       gameDetails = game;
       console.log('Game details fetched:', gameDetails);
     }
@@ -130,8 +132,10 @@ export async function POST(request: Request) {
     const transformedActivity: FriendActivity = {
       id: activity.id,
       type: activity.activity_type,
+      user_id: activity.user_id,
+      game_id: activity.game_id,
+      created_at: activity.created_at,
       details: activity.details,
-      timestamp: activity.created_at,
       user: userProfile ? {
         id: userProfile.id,
         username: userProfile.username,

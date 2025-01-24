@@ -3,6 +3,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { Game, Platform, Genre } from '@/types/game';
+import { GameCategory } from '@/types/index';
 
 type FilterType = 'platform' | 'genre' | 'category' | 'year' | 'search' | 'sort';
 type SortOption = 'popularity' | 'rating' | 'name' | 'release';
@@ -22,7 +23,7 @@ interface GamesState {
   sortBy: SortOption;
   selectedPlatform: string;
   selectedGenre: string;
-  selectedCategory: CategoryOption;
+  selectedCategory: GameCategory;
   selectedYear: string;
   timeRange: string;
   hasActiveFilters: boolean;
@@ -39,7 +40,7 @@ interface GamesState {
   setSortBy: (sort: SortOption) => void;
   setSelectedPlatform: (platform: string) => void;
   setSelectedGenre: (genre: string) => void;
-  setSelectedCategory: (category: CategoryOption) => void;
+  setSelectedCategory: (category: GameCategory) => void;
   setSelectedYear: (year: string) => void;
   setTimeRange: (range: string) => void;
   setSearchQuery: (query: string) => void;
@@ -51,7 +52,7 @@ interface GamesState {
   fetchGames: () => Promise<void>;
   updateHasActiveFilters: () => void;
   batchUpdate: (updates: Partial<{
-    selectedCategory: CategoryOption;
+    selectedCategory: GameCategory;
     selectedPlatform: string;
     selectedGenre: string;
     selectedYear: string;
@@ -64,7 +65,7 @@ const DEFAULT_VALUES = {
   SORT: 'popularity' as SortOption,
   PLATFORM: 'all',
   GENRE: 'all',
-  CATEGORY: 'all' as CategoryOption,
+  CATEGORY: 'all' as GameCategory,
   YEAR: 'all',
   TIME_RANGE: 'all',
 };

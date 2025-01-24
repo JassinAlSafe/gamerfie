@@ -9,14 +9,27 @@ import { useGamesStore } from "@/stores/useGamesStore";
 interface GamesGridProps {
   isLoading: boolean;
   games: Game[];
+  inView: boolean;
+  hasNextPage: boolean;
 }
 
-export function GamesGrid({ isLoading, games }: GamesGridProps) {
-  const { fetchMetadata } = useGamesStore();
+export function GamesGrid({
+  isLoading,
+  games,
+  inView,
+  hasNextPage,
+}: GamesGridProps) {
+  const { fetchMetadata, fetchGames } = useGamesStore();
 
   useEffect(() => {
-    fetchMetadata();
+    void fetchMetadata();
   }, [fetchMetadata]);
+
+  useEffect(() => {
+    if (inView && hasNextPage) {
+      void fetchGames();
+    }
+  }, [inView, hasNextPage, fetchGames]);
 
   if (isLoading) {
     return (
@@ -40,9 +53,9 @@ export function GamesGrid({ isLoading, games }: GamesGridProps) {
 
   return (
     <div className="max-w-[2000px] mx-auto px-4 sm:px-6 lg:px-8">
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-        {games.map((game: Game, index: number) => (
-          <GameCard key={game.id} game={game} index={index} inView={true} />
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-6">
+        {games.map((game: Game) => (
+          <GameCard key={game.id} game={game} />
         ))}
       </div>
     </div>

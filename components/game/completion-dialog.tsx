@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Game } from "@/types/game";
-import { useProgressStore } from "@/stores/useProgressStore";
+import { useGameProgressStore } from "@/stores/useGameProgressStore";
 import { useChallengesStore } from "@/stores/useChallengesStore";
 import { useProfile } from "@/hooks/use-profile";
 import { toast } from "react-hot-toast";
@@ -21,7 +21,7 @@ import { Slider } from "@/components/ui/slider";
 import { ProgressIndicator } from "@/components/ui/progress-indicator";
 import { Clock, Trophy, Target, ChevronRight, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Challenge } from "@/types/challenge";
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 
 interface CompletionDialogProps {
   isOpen: boolean;
@@ -37,17 +37,13 @@ export function CompletionDialog({
   const { profile } = useProfile();
   const {
     updateProgress,
-    fetchProgress,
+    fetchGameProgress,
     playTime,
-    completionPercentage,
+    progress: completionPercentage,
     achievementsCompleted,
-  } = useProgressStore();
+  } = useGameProgressStore();
 
-  const {
-    userChallenges,
-    updateProgress: updateChallengeProgress,
-    fetchUserChallenges,
-  } = useChallengesStore();
+  const { challenges, fetchChallenges } = useChallengesStore();
 
   const [step, setStep] = useState<"completion" | "challenges">("completion");
   const [localPlayTime, setLocalPlayTime] = useState(0);
@@ -60,17 +56,18 @@ export function CompletionDialog({
   // Reset state when dialog opens
   useEffect(() => {
     if (isOpen) {
+      const supabase = createClientComponentClient();
       setStep("completion");
       setSelectedChallenges([]);
-      fetchUserChallenges();
+      fetchChallenges(supabase);
     }
-  }, [isOpen, fetchUserChallenges]);
+  }, [isOpen, fetchChallenges]);
 
   useEffect(() => {
-    if (profile?.id && game?.id) {
-      fetchProgress(profile.id.toString(), game.id.toString());
+    if (game?.id) {
+      fetchGameProgress(game.id.toString());
     }
-  }, [profile?.id, game?.id, fetchProgress]);
+  }, [game?.id, fetchGameProgress]);
 
   useEffect(() => {
     setLocalPlayTime(playTime || 0);
@@ -78,75 +75,64 @@ export function CompletionDialog({
     setLocalAchievementsCompleted(achievementsCompleted || 0);
   }, [playTime, completionPercentage, achievementsCompleted]);
 
+  // Add debug logging for challenges
+  useEffect(() => {
+    console.log("CompletionDialog - Current challenges:", {
+      total: challenges.length,
+      challenges: challenges.map((c) => ({
+        id: c.id,
+        title: c.title,
+        status: c.status,
+        goal: c.goal,
+        rules: c.rules,
+        participants: c.participants?.map((p) => ({
+          userId: p.user_id,
+          username: p.username,
+        })),
+      })),
+    });
+  }, [challenges, profile?.id]);
+
   if (!game) {
     return null;
   }
 
-  const totalAchievements = game.achievements?.length ?? 0;
+  const totalAchievements = 100; // Using a fixed value since achievements are tracked in the progress store
   const achievementPercentage =
     totalAchievements > 0
       ? (localAchievementsCompleted / totalAchievements) * 100
       : 0;
 
-  // Add debug logging for userChallenges
-  useEffect(() => {
-    console.log("CompletionDialog - Current userChallenges:", {
-      total: userChallenges.length,
-      challenges: userChallenges.map((c) => ({
-        id: c.id,
-        title: c.title,
-        status: c.status,
-        goalType: c.goal_type,
-        requirements: c.requirements,
-        progress: c.participants?.find((p) => p.user.id === profile?.id)
-          ?.progress,
-      })),
-    });
-  }, [userChallenges, profile?.id]);
-
   // Filter eligible challenges
   console.log("Starting challenge filtering with:", {
-    totalChallenges: userChallenges.length,
-    allChallenges: userChallenges.map((c) => ({
+    totalChallenges: challenges.length,
+    allChallenges: challenges.map((c) => ({
       id: c.id,
       title: c.title,
       status: c.status,
-      requirements: c.requirements,
-      goalType: c.goal_type,
+      goal: c.goal,
+      rules: c.rules,
     })),
   });
 
-  const eligibleChallenges = userChallenges.filter((challenge) => {
+  const eligibleChallenges = challenges.filter((challenge) => {
     console.log("Checking challenge:", {
       title: challenge.title,
       status: challenge.status,
-      goalType: challenge.goal_type,
-      requirements: challenge.requirements,
-      gameDetails: {
-        name: game.name,
-        releaseDate: game.first_release_date,
-        releaseYear: game.first_release_date
-          ? new Date(game.first_release_date * 1000).getFullYear()
-          : null,
-        platforms: game.platforms?.map((p) => p.name),
-        genres: game.genres?.map((g) => g.name),
-      },
+      goal: challenge.goal,
+      rules: challenge.rules,
+      participants: challenge.participants?.map((p) => ({
+        userId: p.user_id,
+        username: p.username,
+      })),
     });
 
-    const participantProgress =
-      challenge.participants?.find((p) => p.user.id === profile?.id)
-        ?.progress || 0;
-
-    console.log("Checking challenge eligibility:", {
-      title: challenge.title,
-      status: challenge.status,
-      goalType: challenge.goal_type,
-      requirements: challenge.requirements,
-      participantProgress,
-      isCompleted: participantProgress >= 100,
-    });
+    const participant = challenge.participants?.find(
+      (p) => p.user_id === profile?.id
+    );
 
     // Skip completed challenges
+    const participantProgress = participant?.completion_percentage ?? 0;
     if (participantProgress >= 100) {
       console.log(
         "Challenge filtered out - already completed:",
@@ -160,7 +146,7 @@ export function CompletionDialog({
       return false;
     }
 
-    if (challenge.goal_type !== "complete_games") {
+    if (challenge.goal?.type !== "complete_games") {
       console.log(
         "Challenge filtered out - not complete_games:",
         challenge.title
@@ -169,7 +155,8 @@ export function CompletionDialog({
     }
 
     // Check genre requirement
-    if (challenge.requirements?.genre) {
+    const genreRule = challenge.rules?.find((r) => r.rule.startsWith("genre:"));
+    if (genreRule) {
       const normalizeGenre = (genre: string) => {
         genre = genre.toLowerCase().trim();
         if (
@@ -184,7 +171,7 @@ export function CompletionDialog({
         return genre;
       };
 
-      const requiredGenre = normalizeGenre(challenge.requirements.genre);
+      const requiredGenre = normalizeGenre(genreRule.rule.split(":")[1]);
       const gameGenres = game.genres?.map((g) => normalizeGenre(g.name)) || [];
       console.log("Genre check in dialog:", {
         challengeTitle: challenge.title,
@@ -197,11 +184,14 @@ export function CompletionDialog({
     }
 
     // Check platform requirement
-    if (challenge.requirements?.platform) {
+    const platformRule = challenge.rules?.find((r) =>
+      r.rule.startsWith("platform:")
+    );
+    if (platformRule) {
       const normalizePlatform = (platform: string) =>
         platform.toLowerCase().trim();
       const requiredPlatform = normalizePlatform(
-        challenge.requirements.platform
+        platformRule.rule.split(":")[1]
       );
       const gamePlatforms =
         game.platforms?.map((p) => normalizePlatform(p.name)) || [];
@@ -224,17 +214,19 @@ export function CompletionDialog({
     }
 
     // Check release year requirement
-    if (challenge.requirements?.releaseYear && game.first_release_date) {
+    const yearRule = challenge.rules?.find((r) => r.rule.startsWith("year:"));
+    if (yearRule && game.first_release_date) {
       const gameReleaseYear = new Date(
         game.first_release_date * 1000
       ).getFullYear();
+      const requiredYear = parseInt(yearRule.rule.split(":")[1], 10);
       console.log("Release year check:", {
         challengeTitle: challenge.title,
-        requiredYear: challenge.requirements.releaseYear,
+        requiredYear,
         gameYear: gameReleaseYear,
-        matches: gameReleaseYear === challenge.requirements.releaseYear,
+        matches: gameReleaseYear === requiredYear,
       });
-      if (gameReleaseYear !== challenge.requirements.releaseYear) {
+      if (gameReleaseYear !== requiredYear) {
         console.log(
           "Challenge filtered out - wrong release year:",
           challenge.title
@@ -252,9 +244,8 @@ export function CompletionDialog({
       id: c.id,
       title: c.title,
       status: c.status,
-      requirements: c.requirements,
-      progress: c.participants?.find((p) => p.user.id === profile?.id)
-        ?.progress,
+      goal: c.goal,
+      rules: c.rules,
     })),
   });
 
@@ -271,10 +262,10 @@ export function CompletionDialog({
       });
 
       // First update game progress
-      await updateProgress(profile.id.toString(), game.id.toString(), {
-        playTime: localPlayTime,
-        completionPercentage: localCompletion,
-        achievementsCompleted: localAchievementsCompleted,
+      await updateProgress(game.id.toString(), {
+        play_time: localPlayTime,
+        completion_percentage: localCompletion,
+        achievements_completed: localAchievementsCompleted,
       });
 
       if (step === "completion") {
@@ -283,7 +274,8 @@ export function CompletionDialog({
           step,
           eligibleChallenges: eligibleChallenges.map((c) => ({
             title: c.title,
-            requirements: c.requirements,
+            goal: c.goal,
+            rules: c.rules,
           })),
         });
 
@@ -307,8 +299,8 @@ export function CompletionDialog({
             continue;
           }
 
-          const participant = challenge.participants.find(
-            (p) => p.user.id === profile.id
+          const participant = challenge.participants?.find(
+            (p) => p.user_id === profile.id
           );
           if (!participant) {
             console.log(
@@ -318,22 +310,34 @@ export function CompletionDialog({
             continue;
           }
 
-          const currentCompleted = Math.floor(
-            (participant.progress / 100) * challenge.goal_target
-          );
+          const target = challenge.goal?.target ?? 1;
+          const currentProgress = participant.completion_percentage ?? 0;
+          const currentCompleted = Math.floor((currentProgress / 100) * target);
           const newCompleted = currentCompleted + 1;
           const newProgress = Math.min(
-            Math.round((newCompleted / challenge.goal_target) * 100),
+            Math.round((newCompleted / target) * 100),
             100
           );
 
           console.log("Updating challenge progress:", {
             challengeTitle: challenge.title,
-            currentProgress: participant.progress,
+            currentProgress,
             newProgress,
           });
 
-          await updateChallengeProgress(challengeId, newProgress);
+          if (!challenge || !challenge.goals?.length) {
+            console.log("Challenge has no goals:", challenge?.title);
+            continue;
+          }
+
+          await fetch(
+            `/api/challenges/${challengeId}/goals/${challenge.goals[0].id}/progress`,
+            {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ progress: newProgress }),
+            }
+          );
         }
       }
 
@@ -523,7 +527,7 @@ export function CompletionDialog({
                 console.log("Rendering challenges step with:", {
                   eligibleChallenges: eligibleChallenges.map((c) => ({
                     title: c.title,
-                    requirements: c.requirements,
+                    goal: c.goal,
                   })),
                 });
                 return (
@@ -546,18 +550,24 @@ export function CompletionDialog({
                             </h4>
                             <p className="text-sm text-gray-400">
                               Progress:{" "}
-                              {challenge.participants.find(
-                                (p) => p.user.id === profile?.id
-                              )?.progress || 0}
+                              {challenge.participants?.find(
+                                (p) => p.user_id === profile?.id
+                              )?.completion_percentage ?? 0}
                               %
                             </p>
-                            {challenge.requirements?.genre && (
+                            {challenge.rules
+                              ?.find((r) => r.rule.startsWith("genre:"))
+                              ?.rule.split(":")[1] && (
                               <div className="flex items-center gap-2 mt-2">
                                 <span className="text-xs text-gray-500">
                                   Required Genre:
                                 </span>
                                 <span className="text-xs bg-gray-700/50 px-2 py-0.5 rounded">
-                                  {challenge.requirements.genre}
+                                  {
+                                    challenge.rules
+                                      .find((r) => r.rule.startsWith("genre:"))!
+                                      .rule.split(":")[1]
+                                  }
                                 </span>
                               </div>
                             )}

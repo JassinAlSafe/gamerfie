@@ -75,13 +75,19 @@ export const GET = withAuth(async (
       }, 0) / (challenge.goals.length || 1);
 
       // Calculate progress for each team
-      const teamsWithProgress = challenge.teams.map((team: ChallengeTeam) => ({
-        ...team,
-        progress: team.progress.reduce(
-          (avg: number, p: { progress: number }) => avg + (p.progress || 0),
-          0
-        ) / (team.progress.length || 1),
-      }));
+      const teamsWithProgress = challenge.teams.map((team: any) => {
+        const teamProgress = team.progress?.length > 0
+          ? team.progress.reduce(
+              (avg: number, p: { progress: number }) => avg + (p.progress || 0),
+              0
+            ) / team.progress.length
+          : 0;
+
+        return {
+          ...team,
+          progress: teamProgress,
+        };
+      });
 
       // Find user's team
       const userTeam = challenge.teams.find((team: ChallengeTeam) =>

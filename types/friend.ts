@@ -29,17 +29,14 @@ export interface FriendsFilter {
 export interface ActivityDetails {
   name?: string;
   comment?: string;
-  achievement?: string;
+  achievement_name?: string;
+  achievement_description?: string;
+  rating?: number;
+  review_content?: string;
   progress?: number;
 }
 
-export type ActivityType = 
-  | "started_playing" 
-  | "completed" 
-  | "achievement" 
-  | "review" 
-  | "want_to_play"
-  | "progress";
+export type ActivityType = 'started_playing' | 'completed_game' | 'earned_achievement' | 'reviewed_game';
 
 export interface ActivityReaction {
   id: string;
@@ -65,27 +62,27 @@ export interface ActivityComment {
   };
 }
 
+export interface FriendActivityUser {
+  id: string;
+  username: string;
+  avatar_url: string | null;
+}
+
+export interface FriendActivityGame {
+  id: string;
+  name: string;
+  cover_url: string | null;
+}
+
 export interface FriendActivity {
   id: string;
   type: ActivityType;
   user_id: string;
   game_id: string;
-  timestamp: string;
   created_at: string;
-  details?: {
-    name?: string;
-    comment?: string;
-  };
-  user: {
-    id: string;
-    username: string;
-    avatar_url: string | null;
-  };
-  game: {
-    id: string;
-    name: string;
-    cover_url: string | null;
-  };
+  details?: ActivityDetails;
+  user: FriendActivityUser;
+  game: FriendActivityGame;
   reactions?: ActivityReaction[];
   comments?: ActivityComment[];
 }
@@ -111,4 +108,31 @@ export interface FriendsState {
   removeReaction: (activityId: string, emoji: string) => Promise<void>;
   addComment: (activityId: string, content: string) => Promise<void>;
   deleteComment: (commentId: string) => Promise<void>;
+}
+
+export interface RequestBody {
+  activity_type: ActivityType;
+  game_id: string;
+  details?: Record<string, unknown>;
+}
+
+export interface FriendActivityRecord {
+  id: string;
+  activity_type: ActivityType;
+  user_id: string;
+  game_id: string;
+  created_at: string;
+  details: Record<string, unknown>;
+}
+
+export interface ProfileRecord {
+  id: string;
+  username: string;
+  avatar_url: string | null;
+}
+
+export interface GameRecord {
+  id: string;
+  name: string;
+  cover_url: string | null;
 } 

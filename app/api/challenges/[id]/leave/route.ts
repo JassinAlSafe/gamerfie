@@ -14,13 +14,13 @@ type HandlerContext = {
       id: string;
     };
   };
-  participant: any;
+  participant?: any;
 };
 
 export const POST = withParticipantAuth(async (
   request: Request,
   { params }: RouteParams,
-  { supabase, session }: HandlerContext
+  { supabase, session, participant }: HandlerContext
 ) => {
   try {
     // Leave the challenge

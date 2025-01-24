@@ -34,6 +34,7 @@ export interface Game {
   coverImage: string;
   rating: number;
   releaseDate: string;
+  first_release_date?: number;
   platforms: Platform[];
   genres: Genre[];
 }
@@ -118,18 +119,13 @@ export interface GameFiltersState {
 }
 
 export interface GameFilters {
-  page?: number;
-  limit?: number;
-  platformId?: number;
-  genreId?: number;
-  timeRange?: 'recent' | 'upcoming' | 'classic';
-  isIndie?: boolean;
-  isAnticipated?: boolean;
+  platformId?: string;
+  genreId?: string;
+  category?: string;
+  timeRange?: string;
   search?: string;
-  sortBy?: 'rating' | 'popularity' | 'name' | 'release';
-  releaseYear?: {
-    start: number;
-    end: number;
-  };
+  limit?: number;
+  page?: number;
+  sortBy?: string;
 }
 

@@ -1,7 +1,17 @@
-import { GameApiResponse, GameReview, Game, UserGame, Platform } from "@/types/index";
+import {  Game } from "@/types/index";
 import { SupabaseClient } from '@supabase/supabase-js';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { Database } from '@/types/supabase';
+
+type DbGame = Database['public']['Tables']['games']['Row'];
+
+interface GameStats {
+  total_played: number;
+  backlog: number;
+  currentlyPlaying: number;
+  completedGames: number;
+  droppedGames: number;
+}
 
 export const fetchGameDetails = async (gameIds: string[]) => {
   try {
@@ -29,12 +39,12 @@ export const fetchGameDetails = async (gameIds: string[]) => {
     }
 
     // Filter out any undefined/null entries
-    const validGames = data.filter(game => game && game.id);
+    const validGames = data.filter((game: Game) => game && game.id);
     
     if (validGames.length !== gameIds.length) {
       console.warn(
         `Received ${validGames.length} valid games out of ${gameIds.length} requested:`,
-        validGames.map(g => g.id)
+        validGames.map((g: Game) => g.id)
       );
     }
 
@@ -90,20 +100,23 @@ export const fetchUserGames = async (
     throw error;
   }
 
-  return data?.map(userGame => ({
-    ...userGame.games,
-    cover: userGame.games?.cover_url ? {
-      url: userGame.games.cover_url
-    } : undefined,
-    status: userGame.status,
-    playTime: userGame.play_time,
-    userRating: userGame.user_rating,
-    completedAt: userGame.completed_at,
-    lastPlayedAt: userGame.last_played_at,
-    completionPercentage: userGame.completion_percentage,
-    achievementsCompleted: userGame.achievements_completed,
-    notes: userGame.notes
-  }));
+  return data?.map(userGame => {
+    const game = userGame.games as unknown as DbGame;
+    return {
+      ...game,
+      cover: game?.cover_url ? {
+        url: game.cover_url
+      } : undefined,
+      status: userGame.status,
+      playTime: userGame.play_time,
+      userRating: userGame.user_rating,
+      completedAt: userGame.completed_at,
+      lastPlayedAt: userGame.last_played_at,
+      completionPercentage: userGame.completion_percentage,
+      achievementsCompleted: userGame.achievements_completed,
+      notes: userGame.notes
+    };
+  });
 };
 
 export const updateGameStatus = async (

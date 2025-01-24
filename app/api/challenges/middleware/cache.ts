@@ -9,7 +9,7 @@ const redis = new Redis({
 interface CacheConfig {
   ttl: number;        // Time to live in seconds
   prefix?: string;    // Cache key prefix
-  invalidateOn?: string[]; // Endpoints that should invalidate this cache
+  invalidateOn?: readonly string[]; // Endpoints that should invalidate this cache
 }
 
 const defaultConfig: CacheConfig = {
@@ -36,11 +36,14 @@ export const cacheConfigs = {
   },
 } as const;
 
-export const withCache = (handler: Function, config: CacheConfig = defaultConfig) => {
-  return async (request: Request, ...args: any[]) => {
+export const withCache = (
+  handler: (request: Request, context: { params: Record<string, string> }) => Promise<Response>,
+  config: CacheConfig = defaultConfig
+) => {
+  return async (request: Request, context: { params: Record<string, string> }) => {
     // Only cache GET requests
     if (request.method !== "GET") {
-      const response = await handler(request, ...args);
+      const response = await handler(request, context);
       
       // Check if this endpoint should invalidate any caches
       if (config.invalidateOn) {
@@ -62,12 +65,12 @@ export const withCache = (handler: Function, config: CacheConfig = defaultConfig
     try {
       // Try to get from cache
       const cached = await redis.get(key);
-      if (cached) {
+      if (cached && typeof cached === 'string') {
         return NextResponse.json(JSON.parse(cached));
       }
 
       // If not in cache, call handler
-      const response = await handler(request, ...args);
+      const response = await handler(request, context);
       const data = await response.json();
 
       // Cache the response
@@ -77,7 +80,7 @@ export const withCache = (handler: Function, config: CacheConfig = defaultConfig
     } catch (error) {
       console.error("Caching error:", error);
       // If caching fails, just return the normal response
-      return handler(request, ...args);
+      return handler(request, context);
     }
   };
 };

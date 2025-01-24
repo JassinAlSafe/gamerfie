@@ -4,6 +4,7 @@ interface ActivityDetails {
   comment?: string;
   progress?: number;
   rating?: number;
+  name?: string;
 }
 
 export async function createActivity(

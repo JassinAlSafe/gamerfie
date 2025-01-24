@@ -55,6 +55,87 @@ export const getIGDBToken = cache(async () => {
   }
 }); 
 
+export async function fetchGameDetails(gameId: string) {
+  try {
+    const token = await getIGDBToken();
+    
+    const response = await fetch('https://api.igdb.com/v4/games', {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Client-ID': process.env.NEXT_PUBLIC_TWITCH_CLIENT_ID!,
+        'Authorization': `Bearer ${token}`,
+      },
+      body: `
+        fields name, summary, storyline, rating, rating_count, total_rating, total_rating_count, 
+               first_release_date, cover.url, screenshots.url, videos.video_id, genres.name, 
+               platforms.name, involved_companies.company.name, involved_companies.developer,
+               involved_companies.publisher, game_modes.name, themes.name, player_perspectives.name,
+               status, category, version_title, dlcs, expanded_games, expansions, 
+               standalone_expansions, remakes, remasters, bundles, collection.name,
+               aggregated_rating, aggregated_rating_count, follows, hypes, websites.url, 
+               websites.category, artworks.url;
+        where id = ${gameId};
+      `,
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('IGDB game details error:', errorText);
+      throw new Error('Failed to fetch game details');
+    }
+
+    const [gameDetails] = await response.json();
+    
+    if (!gameDetails) {
+      console.error('No game details found for ID:', gameId);
+      return null;
+    }
+
+    // Process cover URL to get the highest quality version
+    if (gameDetails.cover?.url) {
+      let url = gameDetails.cover.url;
+      if (url.startsWith('//')) {
+        url = `https:${url}`;
+      }
+      gameDetails.cover.url = url.replace('t_thumb', 't_cover_big');
+    }
+
+    // Process screenshot URLs to get high quality versions
+    if (gameDetails.screenshots) {
+      gameDetails.screenshots = gameDetails.screenshots.map((screenshot: { url: string }) => {
+        let url = screenshot.url;
+        if (url.startsWith('//')) {
+          url = `https:${url}`;
+        }
+        return {
+          ...screenshot,
+          url: url.replace('t_thumb', 't_screenshot_huge')
+        };
+      });
+    }
+
+    // Process artwork URLs to get high quality versions
+    if (gameDetails.artworks) {
+      gameDetails.artworks = gameDetails.artworks.map((artwork: { url: string }) => {
+        let url = artwork.url;
+        if (url.startsWith('//')) {
+          url = `https:${url}`;
+        }
+        return {
+          ...artwork,
+          url: url.replace('t_thumb', 't_original')
+        };
+      });
+    }
+
+    return gameDetails;
+  } catch (error) {
+    console.error('Error fetching game details:', error);
+    throw error;
+  }
+}
+
 export async function fetchGameAchievements(gameId: string) {
   try {
     const token = await getIGDBToken();
@@ -124,7 +205,7 @@ export async function fetchRelatedGames(gameId: string) {
     }
 
     // Get company IDs
-    const companyIds = gameInfo.involved_companies?.map(ic => ic.company.id).filter(Boolean) || [];
+    const companyIds = gameInfo.involved_companies?.map((ic: { company: { id: number } }) => ic.company.id).filter(Boolean) || [];
     console.log('Found company IDs:', companyIds);
     
     // Get all related game IDs
@@ -132,7 +213,7 @@ export async function fetchRelatedGames(gameId: string) {
 
     // Add games from the same collection/series
     if (gameInfo.collection?.games) {
-      gameInfo.collection.games.forEach(id => relatedGameIds.add(id));
+      gameInfo.collection.games.forEach((id: number) => relatedGameIds.add(id));
     }
 
     // Add DLCs and expansions
@@ -177,7 +258,13 @@ export async function fetchRelatedGames(gameId: string) {
 
       const companyGames = await companyGamesResponse.json();
       console.log('Found company games:', companyGames.length);
-      return companyGames;
+      return companyGames.map((game: any) => ({
+        ...game,
+        cover: game.cover ? {
+          ...game.cover,
+          url: game.cover.url.startsWith('//') ? `https:${game.cover.url}` : game.cover.url
+        } : game.cover
+      }));
     }
 
     // If we have related games (DLCs, series games), fetch their details
@@ -208,7 +295,13 @@ export async function fetchRelatedGames(gameId: string) {
 
       const relatedGames = await relatedGamesResponse.json();
       console.log('Found related games:', relatedGames.length);
-      return relatedGames;
+      return relatedGames.map((game: any) => ({
+        ...game,
+        cover: game.cover ? {
+          ...game.cover,
+          url: game.cover.url.startsWith('//') ? `https:${game.cover.url}` : game.cover.url
+        } : game.cover
+      }));
     }
 
     console.log('No related games found');

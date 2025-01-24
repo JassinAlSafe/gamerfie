@@ -16,7 +16,7 @@ import { useSearchStore } from "@/stores/useSearchStore";
 import { GamesFilterDropdown } from "../filters/games-filter-dropdown";
 import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 const gameCategories = {
   all: "All Games",
@@ -52,7 +52,7 @@ export function GamesHeader() {
     isLoading,
   } = useGamesStore();
 
-  const { query: searchQuery, setQuery: setSearchQuery } = useSearchStore();
+  const { query: searchQuery, setQuery } = useSearchStore();
 
   const handleApplyFilters = () => {
     const filterParams = new URLSearchParams();
@@ -75,7 +75,7 @@ export function GamesHeader() {
   const handleRemoveFilter = (filterType: string) => {
     switch (filterType) {
       case "search":
-        setSearchQuery("");
+        setQuery("");
         break;
       case "platform":
         setSelectedPlatform("all");
@@ -93,7 +93,7 @@ export function GamesHeader() {
   };
 
   const handleResetAllFilters = () => {
-    setSearchQuery("");
+    setQuery("");
     setSelectedPlatform("all");
     setSelectedGenre("all");
     setSelectedCategory("all");
@@ -109,6 +109,13 @@ export function GamesHeader() {
   const genreName = genres?.find(
     (g) => g.id.toString() === selectedGenre
   )?.name;
+
+  const [searchQueryState, setSearchQueryState] = useState("");
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    setQuery(searchQueryState);
+  };
 
   return (
     <div className="max-w-[2000px] mx-auto px-4 sm:px-6 lg:px-8 space-y-4">
@@ -144,17 +151,18 @@ export function GamesHeader() {
       {/* Search and Filters Bar */}
       <div className="flex flex-col sm:flex-row gap-4">
         <div className="relative flex-1">
-          <Input
-            type="text"
-            placeholder="Search games..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="bg-gray-900/50 border-gray-800 pl-10"
-          />
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-          {searchQuery && isLoading && (
-            <Loader2 className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 animate-spin text-purple-500" />
-          )}
+          <form onSubmit={handleSearch} className="flex-1 flex gap-2">
+            <Input
+              type="search"
+              placeholder="Search games..."
+              value={searchQueryState}
+              onChange={(e) => setSearchQueryState(e.target.value)}
+              className="max-w-md"
+            />
+            <Button type="submit">
+              <Search className="h-4 w-4" />
+            </Button>
+          </form>
         </div>
 
         <DropdownMenu>

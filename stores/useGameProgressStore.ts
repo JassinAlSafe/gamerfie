@@ -150,17 +150,32 @@ export const useGameProgressStore = create<GameProgressStore>((set, get) => ({
       if (!session?.session?.user) throw new Error('Not authenticated');
 
       // Fetch current progress
-      const { data: currentProgress, error: currentError } = await supabase
+      const { data: progressData, error: currentError } = await supabase
         .from('user_games')
         .select('*')
         .eq('user_id', session.session.user.id)
-        .eq('game_id', gameId)
-        .single();
+        .eq('game_id', gameId);
 
       if (currentError) throw currentError;
 
-      // Fetch progress history
-      const { data: history, error: historyError } = await supabase
+      // Get the most recent progress or null if none exists
+      const currentProgress = progressData?.[0] || null;
+
+      // If no progress exists yet, set default values and return early
+      if (!currentProgress) {
+        set({
+          currentStatus: null,
+          progress: null,
+          playTime: null,
+          achievementsCompleted: null,
+          playTimeHistory: [],
+          achievementHistory: []
+        });
+        return;
+      }
+
+      // Fetch progress history only if we have current progress
+      const { data: history = [], error: historyError } = await supabase
         .from('game_progress_history')
         .select('*')
         .eq('user_id', session.session.user.id)
@@ -170,27 +185,28 @@ export const useGameProgressStore = create<GameProgressStore>((set, get) => ({
       if (historyError) throw historyError;
 
       // Transform history data
-      const playTimeHistory = history.map(entry => ({
+      const playTimeHistory = (history || []).map(entry => ({
         date: new Date(entry.created_at).toLocaleDateString(),
         hours: entry.play_time || 0
       }));
 
-      const achievementHistory = history.map(entry => ({
+      const achievementHistory = (history || []).map(entry => ({
         date: new Date(entry.created_at).toLocaleDateString(),
         count: entry.achievements_completed || 0
       }));
 
       set({
-        currentStatus: currentProgress?.status || null,
-        progress: currentProgress?.progress || null,
-        playTime: currentProgress?.play_time || null,
-        achievementsCompleted: currentProgress?.achievements_completed || null,
+        currentStatus: currentProgress.status || null,
+        progress: currentProgress.progress || null,
+        playTime: currentProgress.play_time || null,
+        achievementsCompleted: currentProgress.achievements_completed || null,
         playTimeHistory,
         achievementHistory
       });
     } catch (error) {
       set({ error: (error as Error).message });
-      throw error;
+      // Don't throw the error, just log it
+      console.error('Error fetching game progress:', error);
     } finally {
       set({ isLoading: false });
     }

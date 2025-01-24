@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { withAuth } from "../../middleware";
 
 interface RouteParams {
@@ -16,11 +16,11 @@ type HandlerContext = {
   };
 };
 
-export const POST = withAuth(async (
-  request: Request,
+async function handler(
+  request: NextRequest,
   { params }: RouteParams,
   { supabase, session }: HandlerContext
-) => {
+): Promise<NextResponse> {
   try {
     // Check if user is already a participant
     const { data: existingParticipant, error: participantError } = await supabase
@@ -107,4 +107,6 @@ export const POST = withAuth(async (
       { status: 500 }
     );
   }
-}); 
+}
+
+export const POST = withAuth(handler); 

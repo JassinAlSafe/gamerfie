@@ -9,6 +9,7 @@ interface ChallengesState {
   fetchChallenge: (id: string) => Promise<void>;
   fetchUserChallenges: () => Promise<void>;
   clearError: () => void;
+  createChallenge: (data: any) => Promise<void>;
 }
 
 export const useChallengesStore = create<ChallengesState>((set) => ({
@@ -54,6 +55,31 @@ export const useChallengesStore = create<ChallengesState>((set) => ({
     } catch (error) {
       console.error("Error in fetchUserChallenges:", error);
       set({ error: error instanceof Error ? error.message : "Failed to fetch user challenges" });
+    } finally {
+      set({ isLoading: false });
+    }
+  },
+  createChallenge: async (data) => {
+    try {
+      set({ isLoading: true, error: null });
+      const response = await fetch('/api/challenges', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to create challenge');
+      }
+
+      const newChallenge = await response.json();
+      set(state => ({ 
+        userChallenges: [...state.userChallenges, newChallenge],
+        error: null 
+      }));
+    } catch (error) {
+      set({ error: error instanceof Error ? error.message : 'Failed to create challenge' });
+      throw error;
     } finally {
       set({ isLoading: false });
     }

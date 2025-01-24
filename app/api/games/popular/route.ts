@@ -174,7 +174,7 @@ export async function GET() {
       newReleases: processGames(newReleases),
       upcoming: processGames(upcoming),
       trending: processGames(popularGames.slice(0, 10)),
-      mostAnticipated: processGames(upcoming.filter(game => game.total_rating_count && game.total_rating_count > 50))
+      mostAnticipated: processGames(upcoming.filter((game: IGDBGame) => game.total_rating_count && game.total_rating_count > 50))
     });
 
   } catch (error) {

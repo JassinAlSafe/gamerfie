@@ -14,9 +14,10 @@ export function isSupabaseError(error: unknown): error is AuthError {
 
 // Game related types
 export interface Game {
-  id: number;
+  id: string;
   name: string;
   cover?: {
+    id?: string;
     url: string;
   };
   rating?: number;
@@ -25,6 +26,7 @@ export interface Game {
   platforms?: Platform[];
   first_release_date?: number;
   summary?: string;
+  storyline?: string;
 }
 
 export interface Genre {

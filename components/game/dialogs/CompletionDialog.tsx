@@ -25,21 +25,23 @@ export function CompletionDialog({
   open,
   onOpenChange,
   game,
-  progress,
+  progress = {},
   onProgressUpdate,
 }: CompletionDialogProps) {
-  const [completionPercentage, setCompletionPercentage] = React.useState(
-    progress.completion_percentage ?? 0
-  );
-  const [playTime, setPlayTime] = React.useState(progress.play_time ?? 0);
+  const [completionPercentage, setCompletionPercentage] = React.useState(0);
+  const [playTime, setPlayTime] = React.useState(0);
+  const [mounted, setMounted] = React.useState(false);
 
-  // Reset state when dialog opens
+  // Handle initial mount and updates
   React.useEffect(() => {
-    if (open) {
-      setCompletionPercentage(progress.completion_percentage ?? 0);
-      setPlayTime(progress.play_time ?? 0);
-    }
-  }, [open, progress]);
+    setMounted(true);
+    setCompletionPercentage(progress?.completion_percentage ?? 0);
+    setPlayTime(progress?.play_time ?? 0);
+  }, [progress]);
+
+  if (!mounted) {
+    return null;
+  }
 
   const handleSave = () => {
     onProgressUpdate({

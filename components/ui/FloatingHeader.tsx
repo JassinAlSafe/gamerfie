@@ -178,7 +178,11 @@ export const FloatingHeader: React.FC = () => {
                       <div className="absolute right-3 top-1/2 -translate-y-1/2">
                         <motion.div
                           animate={{ rotate: 360 }}
-                          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                          transition={{
+                            duration: 1,
+                            repeat: Infinity,
+                            ease: "linear",
+                          }}
                         >
                           <Search className="w-4 h-4 text-purple-400" />
                         </motion.div>
@@ -198,16 +202,24 @@ export const FloatingHeader: React.FC = () => {
                           <div className="flex items-center justify-center gap-2">
                             <motion.div
                               animate={{ rotate: 360 }}
-                              transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                              transition={{
+                                duration: 1,
+                                repeat: Infinity,
+                                ease: "linear",
+                              }}
                             >
                               <Search className="w-4 h-4 text-purple-400" />
                             </motion.div>
                             <span className="text-gray-400">Searching...</span>
                           </div>
                         ) : query.length < 3 ? (
-                          <span className="text-gray-400">Type at least 3 characters to search...</span>
+                          <span className="text-gray-400">
+                            Type at least 3 characters to search...
+                          </span>
                         ) : (
-                          <span className="text-gray-400">No results found.</span>
+                          <span className="text-gray-400">
+                            No results found.
+                          </span>
                         )}
                       </CommandEmpty>
                       {searchResults && searchResults.length > 0 && (
@@ -273,15 +285,10 @@ export const FloatingHeader: React.FC = () => {
                 <ProfileDropdown user={user} onSignOut={handleSignOut} />
               ) : (
                 <div className="flex items-center space-x-4">
-                  <AnimatedButton
-                    variant="ghost"
-                    onClick={handleLogIn}
-                  >
+                  <AnimatedButton variant="ghost" onClick={handleLogIn}>
                     Sign In
                   </AnimatedButton>
-                  <AnimatedButton
-                    onClick={handleSignUp}
-                  >
+                  <AnimatedButton onClick={handleSignUp}>
                     Sign Up
                   </AnimatedButton>
                 </div>

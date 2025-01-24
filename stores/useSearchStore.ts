@@ -1,17 +1,21 @@
+'use client';
+
 import { create } from 'zustand';
-import { GameService } from '@/services/gameService';
-import { ProcessedGame } from '@/types/game';
+import { Game } from '@/types/game';
 
 interface SearchState {
   query: string;
-  results: ProcessedGame[];
+  results: Game[];
   isLoading: boolean;
   isOpen: boolean;
+  error: string | null;
   setQuery: (query: string) => void;
-  setResults: (results: ProcessedGame[]) => void;
-  setIsLoading: (isLoading: boolean) => void;
-  setIsOpen: (isOpen: boolean) => void;
+  setResults: (results: Game[]) => void;
+  setLoading: (loading: boolean) => void;
+  setError: (error: string | null) => void;
+  setOpen: (open: boolean) => void;
   search: (query: string) => Promise<void>;
+  executeSearch: (query: string) => Promise<void>;
   reset: () => void;
 }
 
@@ -20,36 +24,57 @@ export const useSearchStore = create<SearchState>((set, get) => ({
   results: [],
   isLoading: false,
   isOpen: false,
+  error: null,
+
   setQuery: (query) => {
     set({ query });
-    if (query.length === 0) {
-      set({ results: [] });
+    if (!query) {
+      set({ isOpen: false, results: [] });
     }
   },
+
   setResults: (results) => set({ results }),
-  setIsLoading: (isLoading) => set({ isLoading }),
-  setIsOpen: (isOpen) => set({ isOpen }),
-  search: async (query) => {
-    if (query.length < 3) {
-      set({ results: [], isLoading: false });
+  setLoading: (isLoading) => set({ isLoading }),
+  setError: (error) => set({ error }),
+  setOpen: (isOpen) => set({ isOpen }),
+
+  search: async (query: string) => {
+    if (query.trim().length < 2) {
+      set({ results: [], isLoading: false, isOpen: false });
       return;
     }
-    
-    set({ isLoading: true });
+
+    set({ isLoading: true, isOpen: true });
     try {
-      const response = await GameService.fetchGames({
-        searchTerm: query,
-        page: 1,
-        platformId: 'all',
-        sortBy: 'popularity'
+      const response = await fetch(`/api/games/search?q=${encodeURIComponent(query)}&limit=5`);
+      if (!response.ok) throw new Error('Failed to search games');
+      const data = await response.json();
+      set({ 
+        results: data.games || [], 
+        isLoading: false,
+        error: null
       });
-      set({ results: response.games });
     } catch (error) {
-      console.error('Search error:', error);
-      set({ results: [] });
-    } finally {
-      set({ isLoading: false });
+      set({ 
+        error: error instanceof Error ? error.message : 'Failed to search games',
+        results: [],
+        isLoading: false 
+      });
     }
   },
-  reset: () => set({ query: '', results: [], isLoading: false, isOpen: false }),
+
+  executeSearch: async (query: string) => {
+    set({ query, isOpen: false });
+    await get().search(query);
+  },
+
+  reset: () => {
+    set({
+      query: '',
+      results: [],
+      isLoading: false,
+      isOpen: false,
+      error: null
+    });
+  }
 })); 

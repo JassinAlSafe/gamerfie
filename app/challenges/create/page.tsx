@@ -6,12 +6,41 @@ import { useChallengesStore } from "@/store/challenges";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/components/ui/use-toast";
 
+interface ChallengeData {
+  title: string;
+  description: string;
+  startDate?: Date;
+  endDate?: Date;
+  gameId?: string;
+  type: "competitive" | "collaborative";
+  start_date: Date;
+  end_date: Date;
+  rules: string[];
+  goals: {
+    type:
+      | "complete_games"
+      | "achieve_trophies"
+      | "play_time"
+      | "review_games"
+      | "score_points"
+      | "reach_level";
+    target: number;
+    description?: string;
+  }[];
+  rewards: {
+    type: "title" | "points" | "badge";
+    name: string;
+    description: string;
+  }[];
+  min_participants?: number;
+}
+
 export default function CreateChallengePage() {
   const router = useRouter();
   const { createChallenge } = useChallengesStore();
   const { toast } = useToast();
 
-  const handleCreateChallenge = async (data: any) => {
+  const handleCreateChallenge = async (data: ChallengeData) => {
     try {
       await createChallenge(data);
       toast({

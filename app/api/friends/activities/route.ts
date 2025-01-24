@@ -2,9 +2,10 @@ import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { FriendActivity } from '@/types/friend';
+import { Database } from '@/types/supabase';
 
 export async function GET(request: Request) {
-  const supabase = createRouteHandlerClient({ cookies });
+  const supabase = createRouteHandlerClient<Database>({ cookies });
   const { searchParams } = new URL(request.url);
   const offset = parseInt(searchParams.get('offset') || '0');
   const limit = 20;
@@ -109,7 +110,7 @@ export async function GET(request: Request) {
       type: activity.activity_type,
       user_id: activity.user_id,
       game_id: activity.game_id,
-      timestamp: activity.created_at,
+      created_at: activity.created_at,
       details: activity.details,
       reactions: activity.reactions || [],
       comments: activity.comments || [],

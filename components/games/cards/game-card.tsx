@@ -7,11 +7,20 @@ import { Star, Users, Gamepad2 } from "lucide-react";
 import { Game } from "@/types/game";
 import { BlurImage } from "./blur-image";
 import { ensureAbsoluteUrl } from "@/lib/utils";
+import Image from "next/image";
+import { Card } from "@/components/ui/card";
 
 interface GameCardProps {
-  game: Game;
-  index: number;
-  inView: boolean;
+  game: {
+    id: string;
+    name: string;
+    cover?: {
+      url: string;
+    } | null;
+    rating?: number;
+    total_rating_count?: number;
+  };
+  onSelect?: (gameId: string) => void;
 }
 
 const formatNumber = (num: number): string => {
@@ -26,61 +35,66 @@ const formatRating = (rating: number | null | undefined): string => {
   return Math.round(rating).toString();
 };
 
-export const GameCard = memo(({ game, index, inView }: GameCardProps) => {
+export function GameCard({ game, onSelect }: GameCardProps) {
+  const coverUrl = game.cover?.url
+    ? ensureAbsoluteUrl(game.cover.url.replace("t_thumb", "t_cover_big"))
+    : null;
+  const rating =
+    typeof game.rating === "number" ? Math.round(game.rating) : undefined;
+
   return (
-    <Link href={`/game/${game.id}`} className="flex-shrink-0 w-[240px] group">
-      <motion.div
-        className="relative aspect-[2/3] rounded-xl overflow-hidden cursor-pointer"
-        whileHover={{
-          scale: 1.05,
-          transition: { duration: 0.3, ease: "easeOut" },
-        }}
-      >
-        {game.cover?.url ? (
-          <BlurImage
-            src={ensureAbsoluteUrl(game.cover.url)}
+    <Link
+      href={`/game/${game.id}`}
+      className="group relative block w-full h-full overflow-hidden rounded-lg bg-gray-900/80 transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-purple-500/20"
+      onClick={() => onSelect?.(game.id)}
+    >
+      <div className="relative aspect-[3/4] w-full">
+        {coverUrl ? (
+          <Image
+            src={coverUrl}
             alt={game.name}
-            priority={index < 4}
-            inView={inView}
+            fill
+            priority
+            className="object-cover transition-all duration-300"
+            sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 16vw"
+            quality={90}
           />
         ) : (
-          <div className="absolute inset-0 bg-gray-800/80 backdrop-blur-sm flex items-center justify-center">
-            <Gamepad2 className="w-10 h-10 text-gray-400" />
+          <div className="absolute inset-0 flex items-center justify-center bg-gray-800">
+            <Gamepad2 className="h-10 w-10 text-gray-600" />
           </div>
         )}
+      </div>
 
-        {/* Permanent gradient overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent opacity-60" />
+      {/* Base gradient overlay */}
+      <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/40 to-transparent opacity-60" />
 
-        {/* Hover gradient overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-purple-900/90 via-purple-900/40 to-transparent opacity-0 group-hover:opacity-80 transition-all duration-300 ease-out" />
+      {/* Hover gradient overlay */}
+      <div className="absolute inset-0 bg-gradient-to-t from-purple-900/90 via-purple-900/40 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300" />
 
-        {/* Game info container */}
-        <div className="absolute inset-x-0 bottom-0 p-4 translate-y-2 group-hover:translate-y-0 transition-transform duration-300 ease-out">
-          <h3 className="text-base font-bold text-white mb-2 line-clamp-2 drop-shadow-lg">
-            {game.name}
-          </h3>
+      {/* Game info container */}
+      <div className="absolute inset-x-0 bottom-0 p-4 translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
+        <h3 className="text-lg font-semibold text-white line-clamp-2 mb-2">
+          {game.name}
+        </h3>
 
-          <div className="flex items-center gap-4 text-sm">
-            {game.rating ? (
-              <div className="flex items-center text-yellow-300 font-medium">
-                <Star className="h-4 w-4 mr-1.5 fill-current drop-shadow" />
-                <span>{formatRating(game.rating)}</span>
-              </div>
-            ) : null}
-            {game.total_rating_count && game.total_rating_count > 0 && (
-              <div className="flex items-center text-gray-200 font-medium">
-                <Users className="h-4 w-4 mr-1.5 drop-shadow" />
-                <span>{formatNumber(game.total_rating_count)}</span>
-              </div>
-            )}
-          </div>
+        <div className="flex items-center gap-4 text-sm">
+          {rating && (
+            <div className="flex items-center text-yellow-300 font-medium">
+              <Star className="h-4 w-4 mr-1.5 fill-current" />
+              <span>{formatRating(rating)}</span>
+            </div>
+          )}
+          {game.total_rating_count && game.total_rating_count > 0 && (
+            <div className="flex items-center text-gray-200 font-medium">
+              <Users className="h-4 w-4 mr-1.5" />
+              <span>{formatNumber(game.total_rating_count)}</span>
+            </div>
+          )}
         </div>
-
-        {/* Platform badges could go here if needed */}
-      </motion.div>
+      </div>
     </Link>
   );
-});
+}
 
 GameCard.displayName = "GameCard";

@@ -13,9 +13,6 @@ const nextConfig = {
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
   },
   reactStrictMode: true,
-  experimental: {
-    serverActions: true,
-  },
 };
 
 module.exports = nextConfig;

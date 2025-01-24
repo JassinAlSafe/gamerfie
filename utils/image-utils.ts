@@ -3,10 +3,10 @@
  */
 function ensureHttps(url: string): string {
   if (!url) return url;
-  if (url.startsWith("//")) {
+  if (url.startsWith('//')) {
     return `https:${url}`;
   }
-  if (!url.startsWith("http")) {
+  if (!url.startsWith('http')) {
     return `https://${url}`;
   }
   return url;
