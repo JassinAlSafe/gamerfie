@@ -133,3 +133,8 @@ export interface GameFilters {
   };
 }
 
+export interface GamePageProps {
+  params: Promise<{
+    id: string;
+  }>;
+}

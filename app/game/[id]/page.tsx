@@ -1,18 +1,13 @@
 "use client";
 
-import React from "react";
+import React, { Suspense } from "react";
 import { GameDetails } from "@/components/game/GameDetails";
 import { useGame } from "@/hooks/useGame";
 import { LoadingSpinner } from "@/components/loadingSpinner";
+import { GamePageProps } from "@/types/game";
 
-interface GamePageProps {
-  params: {
-    id: string;
-  };
-}
-
-export default function GamePage({ params }: GamePageProps) {
-  const { game, isLoading, error } = useGame(params.id);
+function GameContent({ id }: { id: string }) {
+  const { game, isLoading, error } = useGame(id);
 
   if (isLoading) {
     return (
@@ -36,4 +31,20 @@ export default function GamePage({ params }: GamePageProps) {
   }
 
   return <GameDetails game={game} />;
+}
+
+export default function GamePage({ params }: GamePageProps) {
+  const resolvedParams = React.use(params);
+
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-gray-950 flex items-center justify-center">
+          <LoadingSpinner size="lg" />
+        </div>
+      }
+    >
+      <GameContent id={resolvedParams.id} />
+    </Suspense>
+  );
 }
