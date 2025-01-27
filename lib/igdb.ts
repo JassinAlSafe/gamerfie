@@ -1,4 +1,5 @@
 import { cache } from 'react'
+import type { IGDBGame } from '@/types/igdb-types'
 
 let cachedToken: string | null = null
 let tokenExpiry: number | null = null
@@ -117,14 +118,14 @@ export async function fetchRelatedGames(gameId: string) {
     const gameInfoData = await gameInfoResponse.json();
     console.log('Game info response:', gameInfoData);
     
-    const [gameInfo] = gameInfoData;
+    const [gameInfo] = gameInfoData as IGDBGame[];
     if (!gameInfo) {
       console.error('No game info found for ID:', gameId);
       throw new Error('Game not found');
     }
 
     // Get company IDs
-    const companyIds = gameInfo.involved_companies?.map(ic => ic.company.id).filter(Boolean) || [];
+    const companyIds = gameInfo.involved_companies?.map((ic: { company: { id: number } }) => ic.company.id).filter(Boolean) || [];
     console.log('Found company IDs:', companyIds);
     
     // Get all related game IDs
@@ -132,7 +133,7 @@ export async function fetchRelatedGames(gameId: string) {
 
     // Add games from the same collection/series
     if (gameInfo.collection?.games) {
-      gameInfo.collection.games.forEach(id => relatedGameIds.add(id));
+      gameInfo.collection.games.forEach((id: number) => relatedGameIds.add(id));
     }
 
     // Add DLCs and expansions

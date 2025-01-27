@@ -26,8 +26,8 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
       const gameData = {
         id: game.id?.toString(),
         name: game.name,
-        cover_url: game.cover?.url || game.cover_url,
-        rating: game.rating || game.total_rating,
+        cover_url: game.cover?.url || null,
+        rating: game.rating,
         first_release_date: game.first_release_date,
         platforms: game.platforms ? JSON.stringify(game.platforms) : null,
         genres: game.genres ? JSON.stringify(game.genres) : null,

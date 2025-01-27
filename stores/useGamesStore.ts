@@ -3,8 +3,8 @@ import { persist } from 'zustand/middleware';
 import { Game, Platform, Genre } from '@/types/game';
 
 type FilterType = 'platform' | 'genre' | 'category' | 'year' | 'search' | 'sort';
-type SortOption = 'popularity' | 'rating' | 'name' | 'release';
-type CategoryOption = 'all' | 'recent' | 'popular' | 'upcoming' | 'classic';
+export type SortOption = 'popularity' | 'rating' | 'name' | 'release';
+export type CategoryOption = 'all' | 'recent' | 'popular' | 'upcoming' | 'classic';
 
 interface GamesState {
   games: Game[];
@@ -51,6 +51,8 @@ interface GamesState {
     selectedYear: string;
     sortBy: SortOption;
     timeRange: string;
+    currentPage: number;
+    searchQuery: string;
   }>) => void;
 }
 

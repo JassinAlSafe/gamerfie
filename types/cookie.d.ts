@@ -1,10 +1,11 @@
-// types/cookie.d.ts
+// Type definitions for cookie module
+// Ambient module declaration - parameters are part of the API signature
 
 declare module 'cookie' {
     export function serialize(
-      name: string,
-      value: string,
-      options?: {
+      _name: string,
+      _value: string,
+      _options?: {
         httpOnly?: boolean;
         secure?: boolean;
         maxAge?: number;
@@ -13,5 +14,5 @@ declare module 'cookie' {
       }
     ): string;
   
-    export function parse(cookieHeader: string): { [key: string]: string };
-  }
+    export function parse(_cookieHeader: string): { [key: string]: string };
+}

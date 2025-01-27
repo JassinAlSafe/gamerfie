@@ -39,7 +39,11 @@ export type ActivityType =
   | "achievement" 
   | "review" 
   | "want_to_play"
-  | "progress";
+  | "progress"
+  | "game_status_updated"
+  | "achievement_unlocked"
+  | "game_completed"
+  | "review_added";
 
 export interface ActivityReaction {
   id: string;

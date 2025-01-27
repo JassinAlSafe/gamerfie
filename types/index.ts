@@ -1,8 +1,25 @@
+import type { AuthError } from '@supabase/supabase-js';
+
 export * from './game';
 export * from './timeline';
 export * from './about';
+export * from './profile';
+export * from './settings';
+export * from './supabase';
+export * from './badge';
+export * from './activity';
+export type { 
+  IGDBGame,
+  IGDBCover,
+  IGDBPlatform,
+  IGDBGenre,
+  IGDBCompany,
+  IGDBCollection,
+  GameAPIError,
+  GameListResponse
+} from './igdb-types';
 
-// Keep this utility here or move to utils/
+// Utility function for Supabase error checking
 export function isSupabaseError(error: unknown): error is AuthError {
   return (
     typeof error === 'object' &&
@@ -12,33 +29,7 @@ export function isSupabaseError(error: unknown): error is AuthError {
   );
 }
 
-// Game related types
-export interface Game {
-  id: number;
-  name: string;
-  cover?: {
-    url: string;
-  };
-  rating?: number;
-  total_rating_count?: number;
-  genres?: Genre[];
-  platforms?: Platform[];
-  first_release_date?: number;
-  summary?: string;
-}
-
-export interface Genre {
-  id: number;
-  name: string;
-}
-
-export interface Platform {
-  id: number;
-  name: string;
-  category?: number;
-}
-
-// API Response types
+// Generic API Response types
 export interface PaginatedResponse<T> {
   data: T[];
   totalItems: number;
@@ -47,29 +38,7 @@ export interface PaginatedResponse<T> {
   limit: number;
 }
 
-export interface IGDBResponse {
-  games: Game[];
-  totalGames: number;
-  currentPage: number;
-  totalPages: number;
-  limit: number;
-}
-
-// Filter and Sort types
-export interface GameFilters {
-  platform?: string;
-  genre?: string;
-  timeRange?: 'recent' | 'upcoming' | 'classic';
-  isIndie?: boolean;
-  isAnticipated?: boolean;
-  sortBy?: 'rating' | 'popularity' | 'name' | 'release';
-  search?: string;
-  releaseYear?: {
-    start: number;
-    end: number;
-  };
-}
-
+// Sort options
 export interface SortOption {
   value: string;
   label: string;
@@ -82,7 +51,7 @@ export const SORT_OPTIONS: SortOption[] = [
   { value: "release", label: "Release Date" }
 ];
 
-// Category types
+// Game categories
 export const GAME_CATEGORIES = {
   all: "All Games",
   recent: "Recent Games",

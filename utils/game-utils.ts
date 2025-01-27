@@ -1,7 +1,7 @@
-import { GameApiResponse, GameReview, Game, UserGame, Platform } from "@/types/index";
-import { SupabaseClient } from '@supabase/supabase-js';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
-import { Database } from '@/types/supabase';
+import type { Game, GameStats } from "@/types/index";
+import type { SupabaseClient } from '@supabase/supabase-js';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import type { Database } from '@/types/supabase';
 
 export const fetchGameDetails = async (gameIds: string[]) => {
   try {
@@ -29,12 +29,12 @@ export const fetchGameDetails = async (gameIds: string[]) => {
     }
 
     // Filter out any undefined/null entries
-    const validGames = data.filter(game => game && game.id);
+    const validGames = data.filter((game: Game) => game && game.id);
     
     if (validGames.length !== gameIds.length) {
       console.warn(
         `Received ${validGames.length} valid games out of ${gameIds.length} requested:`,
-        validGames.map(g => g.id)
+        validGames.map((g: Game) => g.id)
       );
     }
 
@@ -52,10 +52,14 @@ export const fetchUserGames = async (
 ) => {
   const supabase = createClientComponentClient<Database>();
   
-  // Validate userId
   if (!userId || typeof userId !== 'string') {
     throw new Error('Invalid userId provided');
   }
+
+  type DbGame = Database['public']['Tables']['games']['Row'];
+  type DbUserGame = Database['public']['Tables']['user_games']['Row'] & {
+    games: DbGame;
+  };
 
   const { data, error } = await supabase
     .from('user_games')
@@ -69,32 +73,25 @@ export const fetchUserGames = async (
       last_played_at,
       completion_percentage,
       achievements_completed,
-      games (
-        id,
-        name,
-        cover_url,
-        rating,
-        first_release_date,
-        platforms,
-        genres,
-        summary,
-        storyline
-      )
+      games (*)
     `)
     .eq('user_id', userId)
     .order('created_at', { ascending: false })
     .range(offset, offset + limit - 1);
 
-  if (error) {
-    console.error('Error in fetchUserGames:', error);
-    throw error;
-  }
+  if (error) throw error;
 
-  return data?.map(userGame => ({
-    ...userGame.games,
-    cover: userGame.games?.cover_url ? {
+  return (data as unknown as DbUserGame[])?.map(userGame => ({
+    id: userGame.games.id,
+    name: userGame.games.name,
+    cover: userGame.games.cover_url ? {
       url: userGame.games.cover_url
     } : undefined,
+    rating: userGame.games.rating || 0,
+    first_release_date: userGame.games.first_release_date,
+    platforms: userGame.games.platforms || [],
+    genres: userGame.games.genres || [],
+    summary: userGame.games.summary || '',
     status: userGame.status,
     playTime: userGame.play_time,
     userRating: userGame.user_rating,
@@ -103,7 +100,7 @@ export const fetchUserGames = async (
     completionPercentage: userGame.completion_percentage,
     achievementsCompleted: userGame.achievements_completed,
     notes: userGame.notes
-  }));
+  })) || [];
 };
 
 export const updateGameStatus = async (
@@ -146,7 +143,8 @@ export const fetchUserStats = async (
     droppedGames: 0,
   };
 
-  data.forEach((game: any) => {
+  type GameStatus = { status: string | null };
+  data.forEach((game: GameStatus) => {
     switch (game.status) {
       case 'playing':
         stats.currentlyPlaying += 1;
@@ -292,15 +290,25 @@ export const checkGameInLibrary = async (
 ) => {
   const supabase = createClientComponentClient<Database>();
 
-  const { data, error } = await supabase
-    .from('user_games')
-    .select('status')
-    .eq('user_id', userId)
-    .eq('game_id', gameId)
-    .single();
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      throw new Error('User not authenticated');
+    }
 
-  if (error && error.code !== 'PGRST116') throw error; // PGRST116 is "not found"
-  return data;
+    const { data, error } = await supabase
+      .from('user_games')
+      .select('status')
+      .eq('user_id', userId)
+      .eq('game_id', gameId)
+      .maybeSingle();
+
+    if (error && error.code !== 'PGRST116') throw error;
+    return data;
+  } catch (error) {
+    console.error('Error checking game in library:', error);
+    return null;
+  }
 };
 
 export const formatRating = (rating: number | null | undefined): string => {

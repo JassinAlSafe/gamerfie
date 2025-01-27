@@ -1,3 +1,7 @@
+import type { Profile } from './profile';
+import type { Badge } from './badge';
+
+// Challenge Enums
 export type ChallengeType = "competitive" | "collaborative";
 export type ChallengeStatus = "upcoming" | "active" | "completed" | "cancelled";
 export type TeamType = 'open' | 'invite_only' | 'auto_assign';
@@ -5,6 +9,7 @@ export type InvitationStatus = 'pending' | 'accepted' | 'rejected' | 'expired';
 export type RewardType = 'badge' | 'points' | 'title';
 export type RewardDistribution = 'individual' | 'team' | 'top_performers';
 
+// Base interfaces
 export interface Requirements {
   minLevel?: number;
   maxLevel?: number;
@@ -25,16 +30,7 @@ export interface GameRequirements {
   [key: string]: number | string | string[] | undefined;
 }
 
-export interface UserProfile {
-  id: string;
-  username: string;
-  avatar_url?: string;
-  email?: string;
-  full_name?: string;
-  created_at?: string;
-  updated_at?: string;
-}
-
+// Core Challenge interfaces
 export interface Challenge {
   id: string;
   title: string;
@@ -47,25 +43,10 @@ export interface Challenge {
   max_participants: number | null;
   creator_id: string;
   created_at: string;
-  creator?: UserProfile;
-  badge?: {
-    id: string;
-    name: string;
-    description: string;
-    icon_url: string;
-  };
-  goal?: {
-    id: string;
-    type: string;
-    target: number;
-    description?: string;
-  };
-  goals?: Array<{
-    id: string;
-    type: string;
-    target: number;
-    description?: string;
-  }>;
+  creator?: Profile;
+  badge?: Badge;
+  goal?: ChallengeGoal;
+  goals?: ChallengeGoal[];
   participants?: ChallengeParticipant[];
   rewards?: ChallengeReward[];
   rules?: ChallengeRule[];
@@ -100,8 +81,8 @@ export interface TeamInvitation {
   status: InvitationStatus;
   created_at: string;
   expires_at: string;
-  inviter?: UserProfile;
-  invitee?: UserProfile;
+  inviter?: Profile;
+  invitee?: Profile;
 }
 
 export interface ChallengeParticipant {
@@ -110,10 +91,11 @@ export interface ChallengeParticipant {
   username: string;
   team_id?: string;
   joined_at: string;
-  user?: UserProfile;
+  user?: Profile;
   avatar_url?: string;
 }
 
+// Progress tracking interfaces
 export interface ProgressMilestone {
   id: string;
   challenge_id: string;
@@ -141,7 +123,7 @@ export interface TeamProgressHistory {
   recorded_at: string;
 }
 
-// Request/Response types
+// Request types
 export interface CreateTeamRequest {
   name: string;
   description?: string;
@@ -149,12 +131,8 @@ export interface CreateTeamRequest {
   max_members?: number;
 }
 
-export interface UpdateTeamRequest {
+export interface UpdateTeamRequest extends Partial<CreateTeamRequest> {
   team_id: string;
-  name?: string;
-  description?: string;
-  team_type?: TeamType;
-  max_members?: number;
 }
 
 export interface CreateMilestoneRequest {
@@ -165,13 +143,8 @@ export interface CreateMilestoneRequest {
   reward_amount?: number;
 }
 
-export interface UpdateMilestoneRequest {
+export interface UpdateMilestoneRequest extends Partial<CreateMilestoneRequest> {
   milestone_id: string;
-  title?: string;
-  description?: string;
-  required_progress?: number;
-  reward_type?: RewardType;
-  reward_amount?: number;
 }
 
 export interface UpdateProgressRequest {
@@ -196,6 +169,21 @@ export interface ChallengeProgressResponse {
   milestones: ProgressMilestone[];
 }
 
+export interface ChallengeLeaderboard {
+  challenge_id: string;
+  entries: Array<{
+    user_id: string;
+    username: string;
+    avatar_url: string | null;
+    score: number;
+    rank: number;
+    progress: number;
+    last_updated: string;
+  }>;
+  total_participants: number;
+  last_updated: string;
+}
+
 export interface ChallengeGoal {
   id: string;
   challenge_id: string;
@@ -208,7 +196,7 @@ export interface ChallengeGoal {
 export interface ChallengeReward {
   id: string;
   challenge_id: string;
-  type: "badge" | "points" | "title";
+  type: RewardType;
   name: string;
   description: string;
   badge_id?: string;

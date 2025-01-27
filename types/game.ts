@@ -10,15 +10,23 @@ export interface Achievement {
   game_id: number;
 }
 
-interface Screenshot {
+export interface Screenshot {
   id: number;
   url: string;
 }
 
-interface GameActivity {
+export interface GameActivityDetails {
+  achievement?: Achievement;
+  status?: GameStatus;
+  rating?: number;
+  review?: string;
+  playtime?: number;
+}
+
+export interface GameActivity {
   id: string;
   type: ActivityType;
-  details: any;
+  details: GameActivityDetails;
   timestamp: string;
   user: {
     id: string;
@@ -32,10 +40,17 @@ export interface Game {
   name: string;
   description: string;
   coverImage: string;
+  cover?: {
+    id: number;
+    url: string;
+  };
   rating: number;
   releaseDate: string;
+  first_release_date?: number;
   platforms: Platform[];
   genres: Genre[];
+  summary?: string;
+  storyline?: string;
 }
 
 export interface UserGame {
@@ -113,7 +128,7 @@ export interface GameFiltersState {
   platform?: string;
   genre?: string;
   category?: string;
-  sort?: 'rating' | 'popularity' | 'name' | 'release';
+  sort?: SortOption;
   search?: string;
 }
 
@@ -126,7 +141,7 @@ export interface GameFilters {
   isIndie?: boolean;
   isAnticipated?: boolean;
   search?: string;
-  sortBy?: 'rating' | 'popularity' | 'name' | 'release';
+  sortBy?: SortOption;
   releaseYear?: {
     start: number;
     end: number;
@@ -137,4 +152,19 @@ export interface GamePageProps {
   params: Promise<{
     id: string;
   }>;
+}
+
+export interface ReviewUpdateData {
+  gameId: string;
+  rating?: number;
+  review?: string;
+  status?: GameStatus;
+}
+
+export interface GameStats {
+  total_played: number;
+  backlog: number;
+  currentlyPlaying: number;
+  completedGames: number;
+  droppedGames: number;
 }

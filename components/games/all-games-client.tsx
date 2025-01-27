@@ -3,6 +3,7 @@
 import { useEffect, useRef, useMemo, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useGamesStore } from "@/stores/useGamesStore";
+import type { CategoryOption, SortOption } from "@/stores/useGamesStore";
 import { useSearchStore } from "@/stores/useSearchStore";
 import { useDebounce } from "@/hooks/useDebounce";
 import { GamesHeader } from "./sections/games-header";
@@ -11,6 +12,28 @@ import { GamesPagination } from "./GamesPagination";
 import { useSearchParams, useRouter } from "next/navigation";
 
 const ITEMS_PER_PAGE = 48;
+
+type StoreKey =
+  | "selectedCategory"
+  | "selectedPlatform"
+  | "selectedGenre"
+  | "selectedYear"
+  | "sortBy"
+  | "timeRange"
+  | "currentPage"
+  | "searchQuery";
+type ParamMapping = {
+  [key: string]: StoreKey;
+};
+
+const paramToStoreKeyMap: ParamMapping = {
+  category: "selectedCategory",
+  platform: "selectedPlatform",
+  genre: "selectedGenre",
+  year: "selectedYear",
+  sort: "sortBy",
+  timeRange: "timeRange",
+};
 
 export default function AllGamesClient() {
   const searchParams = useSearchParams();
@@ -48,20 +71,6 @@ export default function AllGamesClient() {
     ]
   );
 
-  type StoreKey = keyof typeof storeValues;
-  type ParamMapping = {
-    [key: string]: StoreKey;
-  };
-
-  const paramToStoreKeyMap: ParamMapping = {
-    category: "selectedCategory",
-    platform: "selectedPlatform",
-    genre: "selectedGenre",
-    year: "selectedYear",
-    sort: "sortBy",
-    timeRange: "timeRange",
-  };
-
   // Memoize store methods to prevent unnecessary re-renders
   const storeMethods = useMemo(
     () => ({
@@ -70,7 +79,18 @@ export default function AllGamesClient() {
       setTotalGames: store.setTotalGames,
       setLoading: store.setLoading,
       setError: store.setError,
-      batchUpdate: (updates: any) => {
+      batchUpdate: (
+        updates: Partial<{
+          selectedCategory: CategoryOption;
+          selectedPlatform: string;
+          selectedGenre: string;
+          selectedYear: string;
+          sortBy: SortOption;
+          timeRange: string;
+          currentPage: number;
+          searchQuery: string;
+        }>
+      ) => {
         store.batchUpdate(updates);
         // Force a refetch after batch update
         setTimeout(() => {
@@ -99,14 +119,21 @@ export default function AllGamesClient() {
 
     // Filter out null values
     return Object.fromEntries(
-      Object.entries(params).filter(([_, value]) => value !== null)
+      Object.entries(params).filter(([_key, value]) => value !== null)
     );
   }, [searchParams]);
 
   // Memoize the update function
   const updateStoreFromParams = useCallback(
-    (params: Record<string, any>) => {
-      const updates: Record<string, any> = {};
+    (params: Record<string, string | null>) => {
+      const updates: Partial<{
+        selectedCategory: CategoryOption;
+        selectedPlatform: string;
+        selectedGenre: string;
+        selectedYear: string;
+        sortBy: SortOption;
+        timeRange: string;
+      }> = {};
       let hasUpdates = false;
 
       // Helper function to check and update a parameter
@@ -305,7 +332,7 @@ export default function AllGamesClient() {
     };
 
     fetchMetadata();
-  }, []);
+  }, []); // Empty dependency array since we only want to fetch once on mount
 
   if (error) {
     return (

@@ -5,18 +5,34 @@ import { toast } from 'react-hot-toast';
 interface GameActivity {
   id: string;
   type: ActivityType;
-  details: {
-    name?: string;
-    comment?: string;
-    achievements?: { name: string }[];
-    isBatched?: boolean;
+  metadata: {
+    status?: string;
+    achievement?: {
+      name: string;
+      icon_url?: string;
+    };
+    rating?: number;
+    review?: string;
+    playtime?: number;
   };
-  timestamp: string;
+  created_at: string;
   user: {
     id: string;
     username: string;
-    avatar_url: string | null;
+    avatar_url?: string;
   };
+  reactions?: {
+    count: number;
+    user_has_reacted: boolean;
+  };
+  comments?: {
+    count: number;
+  };
+}
+
+interface ActivitiesResponse {
+  data: GameActivity[];
+  hasMore: boolean;
 }
 
 export function useGameActivities(gameId: string) {
@@ -39,7 +55,7 @@ export function useGameActivities(gameId: string) {
         throw new Error(errorData.error || 'Failed to fetch game activities');
       }
 
-      const data = await response.json();
+      const { data, hasMore }: ActivitiesResponse = await response.json();
       
       if (pageNum === 1) {
         setActivities(data);
@@ -47,7 +63,7 @@ export function useGameActivities(gameId: string) {
         setActivities(prev => [...prev, ...data]);
       }
       
-      setHasMore(data.length === 10); // Since we're using ITEMS_PER_PAGE = 10
+      setHasMore(hasMore);
       
       if (isInitial) {
         setIsInitialLoad(false);

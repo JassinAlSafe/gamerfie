@@ -1,13 +1,19 @@
+// Badge Enums
+export type BadgeType = 'challenge' | 'achievement' | 'special' | 'community';
+export type BadgeRarity = 'common' | 'rare' | 'epic' | 'legendary';
+
+// Core Badge interfaces
 export interface Badge {
   id: string;
   name: string;
   description: string;
   icon_url?: string;
-  type: 'challenge' | 'achievement' | 'special' | 'community';
-  rarity: 'common' | 'rare' | 'epic' | 'legendary';
+  type: BadgeType;
+  rarity: BadgeRarity;
   created_at: string;
 }
 
+// User Badge relationships
 export interface UserBadge {
   badge: Badge;
   claimed_at: string;
@@ -23,6 +29,7 @@ export interface ChallengeBadge {
   created_at: string;
 }
 
+// Badge Actions
 export type BadgeAward = {
   user_id: string;
   badge_id: string;
