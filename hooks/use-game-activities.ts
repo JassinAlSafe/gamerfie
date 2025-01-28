@@ -1,39 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
-import { ActivityType } from '@/types/friend';
+import { ActivityType, GameActivityFeed } from '@/types/activity';
+import { GameActivity } from '@/types/game';
 import { toast } from 'react-hot-toast';
-
-interface GameActivity {
-  id: string;
-  type: ActivityType;
-  metadata: {
-    status?: string;
-    achievement?: {
-      name: string;
-      icon_url?: string;
-    };
-    rating?: number;
-    review?: string;
-    playtime?: number;
-  };
-  created_at: string;
-  user: {
-    id: string;
-    username: string;
-    avatar_url?: string;
-  };
-  reactions?: {
-    count: number;
-    user_has_reacted: boolean;
-  };
-  comments?: {
-    count: number;
-  };
-}
-
-interface ActivitiesResponse {
-  data: GameActivity[];
-  hasMore: boolean;
-}
 
 export function useGameActivities(gameId: string) {
   const [activities, setActivities] = useState<GameActivity[]>([]);
@@ -55,7 +23,7 @@ export function useGameActivities(gameId: string) {
         throw new Error(errorData.error || 'Failed to fetch game activities');
       }
 
-      const { data, hasMore }: ActivitiesResponse = await response.json();
+      const { data, hasMore }: GameActivityFeed = await response.json();
       
       if (pageNum === 1) {
         setActivities(data);

@@ -60,7 +60,7 @@ export async function POST(request: Request) {
           'Content-Type': 'text/plain'
         },
         body: `
-          fields name, cover.*, first_release_date, rating, genres.name, platforms.name, summary, storyline;
+          fields name, cover.*, cover.url, cover.image_id, first_release_date, rating, genres.name, platforms.name, summary, storyline;
           where id = (${missingIds.join(',')});
         `
       });
@@ -78,10 +78,20 @@ export async function POST(request: Request) {
       const transformedGames: GameDetails[] = igdbGames.map(game => ({
         id: game.id.toString(),
         name: game.name,
-        cover_url: game.cover?.url || null,
+        cover_url: game.cover?.url ? (
+          game.cover.url.startsWith('//') 
+            ? `https:${game.cover.url.replace('t_thumb', 't_cover_big')}`
+            : game.cover.url.startsWith('https:') 
+              ? game.cover.url.replace('t_thumb', 't_cover_big')
+              : `https://${game.cover.url.replace('t_thumb', 't_cover_big')}`
+        ) : null,
         cover: game.cover ? {
           id: game.cover.id,
-          url: game.cover.url
+          url: game.cover.url.startsWith('//') 
+            ? `https:${game.cover.url.replace('t_thumb', 't_cover_big')}`
+            : game.cover.url.startsWith('https:') 
+              ? game.cover.url.replace('t_thumb', 't_cover_big')
+              : `https://${game.cover.url.replace('t_thumb', 't_cover_big')}`
         } : null,
         rating: game.rating || null,
         first_release_date: game.first_release_date || null,

@@ -16,6 +16,7 @@ export function GameCard({ game }: { game: ProcessedGame }) {
           src={coverUrl}
           alt={game.name}
           fill
+          sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
           className="object-cover transition-transform duration-200 group-hover:scale-105"
         />
         {game.status && (

@@ -38,9 +38,9 @@ interface GamesTabProps {
 const GameListItem = ({ game }: { game: GameWithUserData }) => {
   const router = useRouter();
 
-  const coverUrl = game.game.cover_url?.startsWith("//")
-    ? `https:${game.game.cover_url}`
-    : game.game.cover_url;
+  const coverUrl = game.game.cover_url
+    ? getCoverImageUrl(game.game.cover_url)
+    : undefined;
 
   return (
     <motion.div

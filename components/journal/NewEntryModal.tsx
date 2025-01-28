@@ -13,9 +13,10 @@ import { EntryForm } from "./EntryForm";
 import { useJournalStore } from "@/stores/useJournalStore";
 import type { JournalEntryType, JournalEntry } from "@/stores/useJournalStore";
 
-interface NewEntryModalProps {
+export interface NewEntryModalProps {
   isOpen: boolean;
   onClose: () => void;
+  type: JournalEntryType;
 }
 
 export function NewEntryModal({ isOpen, onClose }: NewEntryModalProps) {

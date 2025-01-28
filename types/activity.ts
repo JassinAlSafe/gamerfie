@@ -1,60 +1,92 @@
 import type { Game } from './game';
 import type { Profile } from './profile';
+import type { GameActivity } from './game';
 
 // Activity Enums
 export type ActivityType = 
   | "want_to_play"
   | "started_playing"
   | "completed"
-  | "reviewed"
-  | "liked"
-  | "disliked"
+  | "achievement"
+  | "review"
+  | "progress"
   | "game_status_updated"
   | "achievement_unlocked"
   | "game_completed"
   | "review_added";
 
-// Activity interfaces
+export interface ActivityDetails {
+  name?: string;
+  comment?: string;
+  achievement?: string;
+  progress?: number;
+  isBatched?: boolean;
+  achievements?: Array<{ name: string }>;
+}
+
+export interface ActivityReaction {
+  id: string;
+  activity_id: string;
+  user_id: string;
+  emoji: string;
+  created_at: string;
+  user: {
+    username: string;
+    avatar_url: string | null;
+  };
+}
+
+export interface ActivityComment {
+  id: string;
+  activity_id: string;
+  user_id: string;
+  content: string;
+  created_at: string;
+  user: {
+    username: string;
+    avatar_url: string | null;
+  };
+}
+
+// Base Activity interface
 export interface Activity {
   id: string;
   user_id: string;
   game_id: string;
   type: ActivityType;
-  details?: string;
+  details?: ActivityDetails;
   created_at: string;
   game?: Pick<Game, 'name' | 'coverImage'>;
   user?: Pick<Profile, 'username' | 'avatar_url'>;
 }
 
-export interface GameActivity {
+// Friend Activity interface (extends base Activity)
+export interface FriendActivity {
   id: string;
   type: ActivityType;
-  metadata: {
-    status?: string;
-    achievement?: {
-      name: string;
-      icon_url?: string;
-    };
-    rating?: number;
-    review?: string;
-    playtime?: number;
-  };
+  user_id: string;
+  game_id: string;
+  timestamp: string;
   created_at: string;
+  details?: ActivityDetails;
   user: {
     id: string;
     username: string;
-    avatar_url?: string;
+    avatar_url: string | null;
   };
-  reactions?: {
-    count: number;
-    user_has_reacted: boolean;
+  game: {
+    id: string;
+    name: string;
+    cover_url: string | null;
   };
-  comments?: {
-    count: number;
-  };
+  reactions?: ActivityReaction[];
+  comments?: ActivityComment[];
 }
 
-// Activity Response types
+// Game Activity interface (for game-specific activities)
+export type { GameActivity };
+
+// Response types
 export interface ActivityFeed {
   activities: Activity[];
   hasMore: boolean;

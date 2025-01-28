@@ -6,8 +6,8 @@ import { Game } from '@/types/game'
 interface LibraryState {
   games: Game[];
   loading: boolean;
-  error: Error | null;
-  addGame: (game: Partial<Game>) => Promise<void>;
+  error: string | null;
+  addGame: (game: Partial<Game>) => Promise<Game>;
   removeGame: (gameId: string) => Promise<void>;
   fetchUserLibrary: (userId: string) => Promise<void>;
 }
@@ -18,74 +18,93 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
   error: null,
 
   addGame: async (game: Partial<Game>) => {
-    const supabase = createClientComponentClient<Database>()
-    set({ loading: true, error: null })
-
     try {
+      set({ loading: true, error: null });
+      const supabase = createClientComponentClient<Database>();
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) throw new Error('No authenticated user');
+
+      // Transform IGDB cover URL to proper format
+      let coverUrl = null;
+      if (game.cover?.url) {
+        try {
+          const imageId = game.cover.url.split('/').pop()?.replace('t_thumb/', '');
+          if (!imageId) {
+            console.warn('Could not extract image ID from cover URL:', game.cover.url);
+          } else {
+            coverUrl = `https://images.igdb.com/igdb/image/upload/t_cover_big/${imageId}`;
+          }
+        } catch (error) {
+          console.error('Error processing cover URL:', error);
+          // Don't throw here, just log the error and continue without a cover
+        }
+      }
+
+      const timestamp = new Date().toISOString();
       // First, ensure the game exists in the games table
       const gameData = {
-        id: game.id?.toString(),
+        id: game.id,
         name: game.name,
-        cover_url: game.cover?.url || null,
+        cover_url: coverUrl,
         rating: game.rating,
         first_release_date: game.first_release_date,
         platforms: game.platforms ? JSON.stringify(game.platforms) : null,
         genres: game.genres ? JSON.stringify(game.genres) : null,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      }
+        summary: game.summary,
+        created_at: timestamp,
+        updated_at: timestamp
+      };
 
-      console.log('Adding game to games table:', gameData)
-
-      // First insert/update the game in the games table
-      const { error: gameError } = await supabase
+      const { error: gameError, data: gameResult } = await supabase
         .from('games')
         .upsert(gameData)
+        .select()
+        .single();
 
       if (gameError) {
-        console.error('Error upserting game:', gameError)
-        throw gameError
+        console.error('Error upserting game:', gameError);
+        throw new Error(gameError.message);
       }
 
-      // Get the current user
-      const { data: { user }, error: userError } = await supabase.auth.getUser()
-      if (userError) throw userError
-      if (!user) throw new Error('No user found')
-
-      console.log('Adding game to user_games:', { user_id: user.id, game_id: gameData.id })
-
-      // Then add the game to user_games
+      // Then add the game to user's library
       const { error: userGameError } = await supabase
         .from('user_games')
         .upsert({
-          user_id: user.id,
-          game_id: gameData.id,
+          user_id: session.user.id,
+          game_id: game.id,
           status: 'want_to_play',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        })
+          updated_at: timestamp,
+        });
 
       if (userGameError) {
-        console.error('Error adding to user_games:', userGameError)
-        throw userGameError
+        console.error('Error adding game to library:', userGameError);
+        throw new Error(userGameError.message);
       }
 
-      // Update local state
-      set(state => ({
-        games: [...state.games, game as Game],
-        loading: false
-      }))
+      // Update local state with the processed game data
+      const processedGame = {
+        ...gameResult,
+        cover: coverUrl ? { url: coverUrl } : null,
+      } as Game;
 
-      console.log('Game added successfully')
+      set(state => ({
+        games: [...state.games, processedGame],
+        loading: false
+      }));
+
+      return processedGame;
     } catch (error) {
-      console.error('Error adding game:', error)
-      set({ error: error as Error, loading: false })
-      throw error
+      console.error('Error adding game:', error);
+      set({ 
+        error: error instanceof Error ? error.message : 'Failed to add game', 
+        loading: false 
+      });
+      throw error;
     }
   },
 
   removeGame: async (gameId: string) => {
-    const supabase = createClientComponentClient()
+      const supabase = createClientComponentClient()
     set({ loading: true, error: null })
 
     try {
@@ -143,17 +162,23 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
       const transformedGames = games.map(game => ({
         id: game.id,
         name: game.name,
-        cover: game.cover_url ? { url: game.cover_url } : null,
+        cover: game.cover_url ? {
+          url: game.cover_url.startsWith('//') 
+            ? `https:${game.cover_url.replace('t_thumb', 't_cover_big').replace('t_micro', 't_cover_big')}` 
+            : game.cover_url.replace('t_thumb', 't_cover_big').replace('t_micro', 't_cover_big')
+        } : null,
         rating: game.rating,
         first_release_date: game.first_release_date,
-        platforms: game.platforms,
-        genres: game.genres
+        platforms: game.platforms ? JSON.parse(game.platforms as string) : null,
+        genres: game.genres ? JSON.parse(game.genres as string) : null,
+        summary: game.summary
       })) as Game[];
 
+      console.log('Transformed games:', transformedGames); // Debug log
       set({ games: transformedGames, loading: false });
     } catch (error) {
       console.error('Error fetching library:', error);
-      set({ error: error as Error, loading: false });
+      set({ error: error instanceof Error ? error.message : 'Failed to fetch library', loading: false });
     }
   },
 })) 

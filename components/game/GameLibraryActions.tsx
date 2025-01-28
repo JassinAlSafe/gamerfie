@@ -107,7 +107,15 @@ export function GameLibraryActions({
         {
           id: gameId,
           name: gameName,
-          cover_url: cover,
+          cover_url: cover
+            ? cover.startsWith("//")
+              ? `https:${cover
+                  .replace("t_thumb", "t_cover_big")
+                  .replace("t_micro", "t_cover_big")}`
+              : cover
+                  .replace("t_thumb", "t_cover_big")
+                  .replace("t_micro", "t_cover_big")
+            : null,
           rating,
           first_release_date: releaseDate,
           platforms: platforms ? JSON.stringify(platforms) : null,

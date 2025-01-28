@@ -8,6 +8,7 @@ export * from './settings';
 export * from './supabase';
 export * from './badge';
 export * from './activity';
+export * from './friend';
 export type { 
   IGDBGame,
   IGDBCover,

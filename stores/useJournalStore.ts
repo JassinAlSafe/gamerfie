@@ -1,9 +1,10 @@
 import { create } from 'zustand'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { useFriendsStore } from './useFriendsStore'
-import { ActivityType } from '@/types/friend'
+import { ActivityType } from '@/types/activity'
+import toast from 'react-hot-toast'
 
-export type JournalEntryType = 'progress' | 'review' | 'daily' | 'list'
+export type JournalEntryType = 'progress' | 'review' | 'daily' | 'list' | 'note' | 'achievement'
 
 export interface JournalEntry {
   id: string
@@ -200,9 +201,12 @@ export const useJournalStore = create<JournalState>((set, get) => {
             console.error('Error creating activity for journal entry:', activityError);
           }
         }
+
+        toast.success('Entry added successfully')
       } catch (error) {
         console.error('Error adding journal entry:', error)
         set({ error: (error as Error).message, loading: false })
+        toast.error('Failed to add entry')
         throw error
       }
     },
@@ -369,9 +373,12 @@ export const useJournalStore = create<JournalState>((set, get) => {
             console.error('Error creating activity for journal entry:', activityError);
           }
         }
+
+        toast.success('Entry updated successfully')
       } catch (error) {
         console.error('Error updating journal entry:', error)
         set({ error: (error as Error).message, loading: false })
+        toast.error('Failed to update entry')
         throw error
       }
     },
@@ -394,9 +401,12 @@ export const useJournalStore = create<JournalState>((set, get) => {
           entries: state.entries.filter(e => e.id !== id),
           loading: false,
         }))
+
+        toast.success('Entry deleted successfully')
       } catch (error) {
         console.error('Error deleting journal entry:', error)
         set({ error: (error as Error).message, loading: false })
+        toast.error('Failed to delete entry')
         throw error
       }
     },
@@ -443,6 +453,7 @@ export const useJournalStore = create<JournalState>((set, get) => {
       } catch (error) {
         console.error('Error fetching journal entries:', error)
         set({ error: (error as Error).message, loading: false })
+        toast.error('Failed to load journal entries')
         throw error
       }
     },

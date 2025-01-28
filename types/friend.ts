@@ -1,3 +1,5 @@
+import type { ActivityType, ActivityDetails, FriendActivity } from './activity';
+
 export type FriendStatus = 'pending' | 'accepted' | 'declined';
 export type OnlineStatus = 'online' | 'offline';
 
@@ -26,74 +28,6 @@ export interface FriendsFilter {
   status?: FriendStatus | 'all';
 }
 
-export interface ActivityDetails {
-  name?: string;
-  comment?: string;
-  achievement?: string;
-  progress?: number;
-}
-
-export type ActivityType = 
-  | "started_playing" 
-  | "completed" 
-  | "achievement" 
-  | "review" 
-  | "want_to_play"
-  | "progress"
-  | "game_status_updated"
-  | "achievement_unlocked"
-  | "game_completed"
-  | "review_added";
-
-export interface ActivityReaction {
-  id: string;
-  activity_id: string;
-  user_id: string;
-  emoji: string;
-  created_at: string;
-  user: {
-    username: string;
-    avatar_url: string | null;
-  };
-}
-
-export interface ActivityComment {
-  id: string;
-  activity_id: string;
-  user_id: string;
-  content: string;
-  created_at: string;
-  user: {
-    username: string;
-    avatar_url: string | null;
-  };
-}
-
-export interface FriendActivity {
-  id: string;
-  type: ActivityType;
-  user_id: string;
-  game_id: string;
-  timestamp: string;
-  created_at: string;
-  details?: {
-    name?: string;
-    comment?: string;
-  };
-  user: {
-    id: string;
-    username: string;
-    avatar_url: string | null;
-  };
-  game: {
-    id: string;
-    name: string;
-    cover_url: string | null;
-  };
-  reactions?: ActivityReaction[];
-  comments?: ActivityComment[];
-}
-
 export interface FriendsState {
   friends: Friend[];
   isLoading: boolean;
@@ -115,4 +49,19 @@ export interface FriendsState {
   removeReaction: (activityId: string, emoji: string) => Promise<void>;
   addComment: (activityId: string, content: string) => Promise<void>;
   deleteComment: (commentId: string) => Promise<void>;
-} 
+}
+
+export interface SupabaseFriendData {
+  id: string;
+  username: string;
+  avatar_url: string | null;
+  online_status?: OnlineStatus;
+}
+
+export interface SupabaseFriendRecord {
+  id: string;
+  status: FriendStatus;
+  user_id: string;
+  friend_id: string;
+  friend_profile: SupabaseFriendData;
+}

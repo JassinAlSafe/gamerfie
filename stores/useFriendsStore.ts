@@ -1,43 +1,31 @@
 import { create } from 'zustand';
-import { FriendsState, FriendStatus, ActivityType, ActivityDetails, ActivityReaction, ActivityComment, Friend, OnlineStatus } from '../types/friend';
+import { 
+  FriendsState, 
+  FriendStatus, 
+  Friend, 
+  OnlineStatus,
+  SupabaseFriendData,
+  SupabaseFriendRecord 
+} from '../types/friend';
+import { ActivityType, ActivityDetails, ActivityReaction, ActivityComment } from '../types/activity';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 
-interface FriendsStore {
-  friends: FriendsState['friends'];
-  isLoading: FriendsState['isLoading'];
-  error: FriendsState['error'];
-  filter: FriendsState['filter'];
-  activities: FriendsState['activities'];
-  isLoadingActivities: FriendsState['isLoadingActivities'];
-  activitiesPage: FriendsState['activitiesPage'];
+type FriendsStore = Omit<FriendsState, 'setFilter'> & {
+  setFilter: (filter: FriendStatus | 'all') => void;
+  batchAchievements: (gameId: string, achievements: { name: string }[]) => Promise<void>;
   fetchFriends: () => Promise<void>;
   fetchActivities: () => Promise<void>;
-  createActivity: (type: ActivityType, gameId: string, details?: any) => Promise<void>;
-  batchAchievements: (gameId: string, achievements: { name: string }[]) => Promise<void>;
+  createActivity: (activity_type: ActivityType, game_id?: string, details?: ActivityDetails) => Promise<void>;
   addFriend: (request: { friendId: string }) => Promise<void>;
   removeFriend: (friendId: string) => Promise<void>;
   updateFriendStatus: (friendId: string, status: FriendStatus) => Promise<void>;
-  setFilter: (filter: FriendStatus | 'all') => void;
   addReaction: (activityId: string, emoji: string) => Promise<void>;
   removeReaction: (activityId: string, emoji: string) => Promise<void>;
   addComment: (activityId: string, comment: string) => Promise<void>;
-  
-}
-
-interface SupabaseFriendData {
-  id: string;
-  username: string;
-  avatar_url: string | null;
-  online_status?: OnlineStatus;
-}
-
-interface SupabaseFriendRecord {
-  id: string;
-  status: FriendStatus;
-  user_id: string;
-  friend_id: string;
-  friend_profile: SupabaseFriendData;
-}
+  loadMoreActivities: () => Promise<void>;
+  getGameActivities: (gameId: string, page: number) => Promise<void>;
+  deleteComment: (commentId: string) => Promise<void>;
+};
 
 export const useFriendsStore = create<FriendsStore>((set, get) => ({
   friends: [],
@@ -206,12 +194,12 @@ export const useFriendsStore = create<FriendsStore>((set, get) => ({
   },
 
   // Activity-related functions
-  createActivity: async (type: ActivityType, gameId: string, details?: any) => {
+  createActivity: async (activity_type: ActivityType, game_id?: string, details?: ActivityDetails) => {
     try {
       const response = await fetch('/api/friends/activities/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ activity_type: type, game_id: gameId, details }),
+        body: JSON.stringify({ activity_type, game_id, details }),
       });
 
       if (!response.ok) {
@@ -292,7 +280,6 @@ export const useFriendsStore = create<FriendsStore>((set, get) => ({
             emoji: emoji,
             created_at: new Date().toISOString(),
             user: {
-              id: session.user.id,
               username: session.user.user_metadata.username || 'Unknown',
               avatar_url: session.user.user_metadata.avatar_url
             }
@@ -373,7 +360,6 @@ export const useFriendsStore = create<FriendsStore>((set, get) => ({
             content: comment,
             created_at: new Date().toISOString(),
             user: {
-              id: session.user.id,
               username: session.user.user_metadata.username || 'Unknown',
               avatar_url: session.user.user_metadata.avatar_url
             }
@@ -386,6 +372,51 @@ export const useFriendsStore = create<FriendsStore>((set, get) => ({
         }
         return activity;
       })
+    }));
+  },
+
+  loadMoreActivities: async () => {
+    try {
+      const nextPage = get().activitiesPage + 1;
+      const response = await fetch(`/api/friends/activities?offset=${nextPage * 20}&include=reactions,comments`);
+      if (!response.ok) throw new Error('Failed to fetch more activities');
+      const newActivities = await response.json();
+      
+      set(state => ({
+        activities: [...state.activities, ...newActivities],
+        activitiesPage: nextPage,
+      }));
+    } catch (error) {
+      set({ error: (error as Error).message });
+      throw error;
+    }
+  },
+
+  getGameActivities: async (gameId: string, page: number = 0) => {
+    try {
+      const response = await fetch(`/api/games/${gameId}/activities?offset=${page * 20}`);
+      if (!response.ok) throw new Error('Failed to fetch game activities');
+      return response.json();
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  deleteComment: async (commentId: string) => {
+    const supabase = createClientComponentClient();
+    const { error } = await supabase
+      .from('activity_comments')
+      .delete()
+      .eq('id', commentId);
+
+    if (error) throw error;
+
+    // Update local state
+    set(state => ({
+      activities: state.activities.map(activity => ({
+        ...activity,
+        comments: activity.comments?.filter(c => c.id !== commentId)
+      }))
     }));
   },
 }));

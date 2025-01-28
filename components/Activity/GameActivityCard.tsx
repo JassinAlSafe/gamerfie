@@ -4,11 +4,11 @@ import React from "react";
 import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Trophy, Star, Activity } from "lucide-react";
-import type { GameActivity } from "@/types/activity";
 import type {
+  GameActivity,
   FriendActivity,
-  ActivityType as FriendActivityType,
-} from "@/types/friend";
+  ActivityType,
+} from "@/types/activity";
 import { ActivityReactions } from "./ActivityReactions";
 import { ActivityComments } from "./ActivityComments";
 import { ActivityShare } from "./ActivityShare";
@@ -29,7 +29,7 @@ export function GameActivityCard({ activity, gameId }: GameActivityCardProps) {
   const userInitial = username[0].toUpperCase();
 
   // Map game activity type to friend activity type
-  const mapActivityType = (type: GameActivity["type"]): FriendActivityType => {
+  const mapActivityType = (type: GameActivity["type"]): ActivityType => {
     switch (type) {
       case "achievement_unlocked":
         return "achievement";
