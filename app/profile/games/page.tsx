@@ -8,7 +8,7 @@ import {
   GameFilters,
   type GameFilters as GameFiltersType,
 } from "@/components/profile/game-filters";
-import { GamesTab } from "@/components/profile/games-tab";
+import GamesTab from "@/components/profile/games-tab";
 import { LoadingState } from "@/components/ui/loading-state";
 import { ErrorState } from "@/components/ui/error-state";
 import { Button } from "@/components/ui/button";

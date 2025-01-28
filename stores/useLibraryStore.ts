@@ -104,10 +104,11 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
   },
 
   removeGame: async (gameId: string) => {
-      const supabase = createClientComponentClient()
+    const supabase = createClientComponentClient()
     set({ loading: true, error: null })
 
     try {
+      console.log('Starting game removal process for gameId:', gameId);
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('User not authenticated')
 
@@ -117,13 +118,25 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
         .eq('user_id', user.id)
         .eq('game_id', gameId)
 
-      if (error) throw error
+      if (error) {
+        console.error('Error removing game from database:', error);
+        throw error;
+      }
+
+      console.log('Successfully removed game from database');
 
       // Update local state
-      set(state => ({
-        games: state.games.filter(game => game.id !== gameId),
-        loading: false
-      }))
+      set(state => {
+        console.log('Updating local state - removing game:', gameId);
+        const updatedGames = state.games.filter(game => game.id !== gameId);
+        console.log('Updated games count:', updatedGames.length);
+        return {
+          games: updatedGames,
+          loading: false
+        };
+      });
+
+      console.log('Game removal process completed successfully');
     } catch (error) {
       console.error('Error removing game:', error)
       set({ error: 'Failed to remove game', loading: false })
