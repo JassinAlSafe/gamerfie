@@ -5,31 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { useGamesStore } from "@/stores/useGamesStore";
 import { useLibraryStore } from "@/stores/useLibraryStore";
 import { useSearchStore } from "@/stores/useSearchStore";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
 import { Separator } from "@/components/ui/separator";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import { Loader2, Search } from "lucide-react";
 import Image from "next/image";
 import type { JournalEntryType } from "@/stores/useJournalStore";
@@ -37,6 +16,7 @@ import { cn } from "@/lib/utils";
 import { Slider } from "@/components/ui/slider";
 import { Trash2Icon } from "lucide-react";
 import { getCoverImageUrl } from "@/utils/image-utils";
+import { toast } from "react-hot-toast";
 
 interface EntryFormProps {
   type: JournalEntryType;
@@ -97,7 +77,13 @@ export function EntryForm({
     return text ? text.length : 0;
   };
 
-  const handleGameSelect = (game: any) => {
+  const handleGameSelect = async (game: any) => {
+    // Validate that we have a valid game object
+    if (!game?.id) {
+      console.error("Invalid game object:", game);
+      return;
+    }
+
     if (type === "list") {
       const gameData = {
         id: game.id,
@@ -125,6 +111,20 @@ export function EntryForm({
     reset();
   };
 
+  const handleGameSearch = async (value: string) => {
+    setSearchQuery(value);
+    if (value.trim()) {
+      try {
+        await search(value);
+      } catch (error) {
+        console.error("Error searching for games:", error);
+        toast.error("Failed to search for games. Please try again.");
+      }
+    } else {
+      reset();
+    }
+  };
+
   const removeGame = (gameId: string) => {
     const newGames = selectedGames.filter((g) => g.id !== gameId);
     setSelectedGames(newGames);
@@ -132,11 +132,6 @@ export function EntryForm({
       ...formData,
       content: JSON.stringify(newGames),
     });
-  };
-
-  const handleGameSearch = (value: string) => {
-    setSearchQuery(value);
-    search(value);
   };
 
   const handleSubmit = (e: React.FormEvent) => {

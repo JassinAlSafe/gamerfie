@@ -80,6 +80,45 @@ export const useJournalStore = create<JournalState>((set, get) => {
         const { data: { session } } = await supabase.auth.getSession()
         if (!session?.user) throw new Error('No authenticated user')
 
+        // Debug logging
+        console.log('Adding entry with game:', {
+          gameId: entry.game?.id,
+          gameName: entry.game?.name,
+          entryType: entry.type,
+        })
+
+        // If there's a game, ensure it exists in the database
+        if (entry.game?.id) {
+          console.log('Checking game:', entry.game.id)
+          const { count, error: gameCheckError } = await supabase
+            .from('games')
+            .select('*', { count: 'exact', head: true })
+            .eq('id', entry.game.id)
+
+          if (gameCheckError) {
+            console.error('Error checking game existence:', gameCheckError)
+          }
+
+          // If game doesn't exist, add it
+          if (count === 0) {
+            console.log('Game not found, adding to database:', entry.game)
+            const { error: insertError } = await supabase
+              .from('games')
+              .insert({
+                id: entry.game.id,
+                name: entry.game.name,
+                cover_url: entry.game.cover_url,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+              })
+
+            if (insertError) {
+              console.error('Error adding game to database:', insertError)
+              throw new Error('Failed to add game to database')
+            }
+          }
+        }
+
         // Insert the entry into the journal_entries table
         const { data: newEntry, error } = await supabase
           .from('journal_entries')
@@ -128,22 +167,33 @@ export const useJournalStore = create<JournalState>((set, get) => {
         // If this is a progress entry, update user_games and game_progress_history
         if (entry.type === 'progress' && entry.game?.id && entry.progress !== undefined) {
           try {
-            // Update user_games
+            // Get current user_games entry if it exists
+            const { data: existingUserGame } = await supabase
+              .from('user_games')
+              .select('*')
+              .eq('user_id', session.user.id)
+              .eq('game_id', entry.game.id)
+              .single()
+
+            // Update user_games with merged data
             const { error: updateError } = await supabase
               .from('user_games')
               .upsert({
                 user_id: session.user.id,
                 game_id: entry.game.id,
                 completion_percentage: entry.progress,
-                play_time: entry.hoursPlayed,
+                play_time: entry.hoursPlayed ?? existingUserGame?.play_time ?? 0,
                 last_played_at: new Date().toISOString(),
                 updated_at: new Date().toISOString(),
-                status: entry.progress === 100 ? 'completed' : 'playing'
+                status: entry.progress === 100 ? 'completed' : (existingUserGame?.status || 'playing'),
+                // Preserve other fields if they exist
+                achievements_completed: existingUserGame?.achievements_completed,
+                notes: existingUserGame?.notes,
               }, {
                 onConflict: 'user_id,game_id'
-              });
+              })
 
-            if (updateError) throw updateError;
+            if (updateError) throw updateError
 
             // Record progress history
             const { error: historyError } = await supabase
@@ -153,13 +203,14 @@ export const useJournalStore = create<JournalState>((set, get) => {
                 game_id: entry.game.id,
                 play_time: entry.hoursPlayed,
                 completion_percentage: entry.progress,
-              });
+              })
 
             if (historyError) {
-              console.error('Error recording progress history:', historyError);
+              console.error('Error recording progress history:', historyError)
             }
           } catch (error) {
-            console.error('Error updating game progress:', error);
+            console.error('Error updating game progress:', error)
+            // Don't throw here, allow the journal entry to be saved even if progress update fails
           }
         }
 
@@ -173,32 +224,33 @@ export const useJournalStore = create<JournalState>((set, get) => {
                     comment: entry.content 
                       ? `${entry.content} (Completed the game!)`
                       : 'Completed the game!'
-                  });
+                  }).catch(e => console.error('Activity creation failed:', e))
                 } else {
                   await createActivity('progress', entry.game.id, {
                     progress: entry.progress,
                     comment: entry.content || `Made progress: ${entry.progress}%`
-                  });
+                  }).catch(e => console.error('Activity creation failed:', e))
                 }
-                break;
+                break
               case 'review':
                 await createActivity('review', entry.game.id, {
                   comment: `Rated ${entry.game.name} ${entry.rating}/10 - ${entry.content}`
-                });
-                break;
+                }).catch(e => console.error('Activity creation failed:', e))
+                break
               case 'daily':
                 await createActivity('started_playing', entry.game.id, {
                   comment: entry.content
-                });
-                break;
+                }).catch(e => console.error('Activity creation failed:', e))
+                break
               case 'list':
                 await createActivity('want_to_play', entry.game.id, {
                   comment: `Added ${entry.game.name} to list: ${entry.title}`
-                });
-                break;
+                }).catch(e => console.error('Activity creation failed:', e))
+                break
             }
           } catch (activityError) {
-            console.error('Error creating activity for journal entry:', activityError);
+            console.error('Error creating activity for journal entry:', activityError)
+            // Don't throw here, allow the journal entry to be saved even if activity creation fails
           }
         }
 
@@ -206,7 +258,7 @@ export const useJournalStore = create<JournalState>((set, get) => {
       } catch (error) {
         console.error('Error adding journal entry:', error)
         set({ error: (error as Error).message, loading: false })
-        toast.error('Failed to add entry')
+        toast.error(error instanceof Error ? error.message : 'Failed to add entry')
         throw error
       }
     },
@@ -217,6 +269,23 @@ export const useJournalStore = create<JournalState>((set, get) => {
         const supabase = createClientComponentClient()
         const { data: { session } } = await supabase.auth.getSession()
         if (!session?.user) throw new Error('No authenticated user')
+
+        // If there's a game, verify it exists first
+        if (entry.game?.id) {
+          const { count, error: gameCheckError } = await supabase
+            .from('games')
+            .select('*', { count: 'exact', head: true })
+            .eq('id', entry.game.id)
+
+          if (gameCheckError) {
+            console.error('Error checking game existence:', gameCheckError)
+            throw new Error('Failed to verify game existence')
+          }
+
+          if (count === 0) {
+            throw new Error(`Game with ID ${entry.game.id} not found in the database. Please make sure the game exists before adding an entry.`)
+          }
+        }
 
         // Update the entry in the journal_entries table
         const { data: updatedEntry, error } = await supabase
