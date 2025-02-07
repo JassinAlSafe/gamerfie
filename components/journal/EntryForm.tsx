@@ -17,12 +17,24 @@ import { Slider } from "@/components/ui/slider";
 import { Trash2Icon } from "lucide-react";
 import { getCoverImageUrl } from "@/utils/image-utils";
 import { toast } from "react-hot-toast";
+import { JournalGameData, SearchGameResult } from "@/types/game";
+
+interface JournalFormData {
+  type: JournalEntryType;
+  title?: string;
+  content?: string;
+  game?: JournalGameData;
+  progress?: number;
+  hoursPlayed?: number;
+  rating?: number;
+  date?: string;
+}
 
 interface EntryFormProps {
   type: JournalEntryType;
-  onSave: (formData: any) => void;
+  onSave: (formData: JournalFormData) => void;
   onCancel: () => void;
-  initialData?: Partial<JournalEntryType>;
+  initialData?: Partial<JournalFormData>;
   disabled?: boolean;
 }
 
@@ -33,19 +45,19 @@ export function EntryForm({
   initialData = {},
   disabled = false,
 }: EntryFormProps) {
-  const [formData, setFormData] = useState(initialData);
+  const [formData, setFormData] = useState<JournalFormData>({
+    type,
+    ...initialData,
+  });
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedGames, setSelectedGames] = useState<any[]>(
+  const [selectedGames, setSelectedGames] = useState<JournalGameData[]>(
     type === "list" && initialData.content
       ? JSON.parse(initialData.content)
       : []
   );
-  const {
-    games: libraryGames,
-    loading: libraryLoading,
-    fetchUserLibrary,
-  } = useLibraryStore();
+
+  const { games: libraryGames, fetchUserLibrary } = useLibraryStore();
   const { results, isLoading: searchLoading, search, reset } = useSearchStore();
 
   useEffect(() => {
@@ -63,49 +75,45 @@ export function EntryForm({
   }, [fetchUserLibrary]);
 
   const handleProgressChange = (value: number[]) => {
-    setFormData({ ...formData, progress: value[0] });
+    setFormData((prev) => ({ ...prev, progress: value[0] }));
   };
 
   const handleTextChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const getCharacterCount = (text: string) => {
-    return text ? text.length : 0;
+  const getCharacterCount = (text: string = "") => {
+    return text.length;
   };
 
-  const handleGameSelect = async (game: any) => {
-    // Validate that we have a valid game object
+  const handleGameSelect = async (game: SearchGameResult) => {
     if (!game?.id) {
       console.error("Invalid game object:", game);
       return;
     }
 
+    const gameData: JournalGameData = {
+      id: game.id,
+      name: game.name,
+      cover_url: game.cover?.url ? getCoverImageUrl(game.cover.url) : undefined,
+    };
+
     if (type === "list") {
-      const gameData = {
-        id: game.id,
-        name: game.name,
-        cover_url: game.cover?.url ? getCoverImageUrl(game.cover.url) : null,
-      };
       setSelectedGames((prev) => [...prev, gameData]);
-      setFormData({
-        ...formData,
+      setFormData((prev) => ({
+        ...prev,
         content: JSON.stringify([...selectedGames, gameData]),
-      });
+      }));
     } else {
-      const gameData = {
-        id: game.id,
-        name: game.name,
-        cover_url: game.cover?.url ? getCoverImageUrl(game.cover.url) : null,
-      };
-      setFormData({
-        ...formData,
+      setFormData((prev) => ({
+        ...prev,
         game: gameData,
-      });
+      }));
     }
+
     setIsSearchOpen(false);
     setSearchQuery("");
     reset();
@@ -128,10 +136,10 @@ export function EntryForm({
   const removeGame = (gameId: string) => {
     const newGames = selectedGames.filter((g) => g.id !== gameId);
     setSelectedGames(newGames);
-    setFormData({
-      ...formData,
+    setFormData((prev) => ({
+      ...prev,
       content: JSON.stringify(newGames),
-    });
+    }));
   };
 
   const handleSubmit = (e: React.FormEvent) => {

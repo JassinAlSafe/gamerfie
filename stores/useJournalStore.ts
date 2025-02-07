@@ -3,6 +3,7 @@ import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { useFriendsStore } from './useFriendsStore'
 import { ActivityType } from '@/types/activity'
 import toast from 'react-hot-toast'
+import { JournalGameData } from '@/types/game'
 
 export type JournalEntryType = 'progress' | 'review' | 'daily' | 'list' | 'note' | 'achievement'
 
@@ -12,11 +13,7 @@ export interface JournalEntry {
   date: string
   title: string
   content: string
-  game?: {
-    id: string
-    name: string
-    cover_url?: string
-  }
+  game?: JournalGameData
   progress?: number
   hoursPlayed?: number
   rating?: number
@@ -83,28 +80,23 @@ export const useJournalStore = create<JournalState>((set, get) => {
         const { data: { session } } = await supabase.auth.getSession()
         if (!session?.user) throw new Error('No authenticated user')
 
-        // Debug logging
-        console.log('Adding entry with game:', {
-          gameId: entry.game?.id,
-          gameName: entry.game?.name,
-          entryType: entry.type,
-        })
-
         // If there's a game, ensure it exists in the database
         if (entry.game?.id) {
-          console.log('Checking game:', entry.game.id)
-          const { count, error: gameCheckError } = await supabase
+          // First, try to get the game
+          const { data: existingGame, error: getGameError } = await supabase
             .from('games')
-            .select('*', { count: 'exact', head: true })
+            .select('id, name, cover_url')
             .eq('id', entry.game.id)
+            .single()
 
-          if (gameCheckError) {
-            console.error('Error checking game existence:', gameCheckError)
+          if (getGameError && getGameError.code !== 'PGRST116') { // PGRST116 is "not found"
+            console.error('Error checking game:', getGameError)
+            throw new Error('Failed to verify game existence')
           }
 
           // If game doesn't exist, add it
-          if (count === 0) {
-            console.log('Game not found, adding to database:', entry.game)
+          if (!existingGame) {
+            console.log('Adding new game to database:', entry.game)
             const { error: insertError } = await supabase
               .from('games')
               .insert({
