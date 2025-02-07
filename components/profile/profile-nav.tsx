@@ -23,7 +23,7 @@ const navItems = [
   { label: "Journal", href: "/profile/journal", icon: BookText },
   { label: "Activity", href: "/profile/activity", icon: Activity },
   { label: "Reviews", href: "/profile/reviews", icon: Star },
-  { label: "Lists", href: "/profile/lists", icon: ListOrdered },
+  { label: "Lists", href: "/profile/list", icon: ListOrdered },
   { label: "Friends", href: "/profile/friends", icon: Users },
   { label: "Likes", href: "/profile/likes", icon: Heart },
   { label: "Badges", href: "/profile/badges", icon: Medal },

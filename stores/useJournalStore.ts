@@ -35,6 +35,8 @@ interface JournalState {
   setLoading: (loading: boolean) => void
   setError: (error: string | null) => void
   fetchEntries: () => Promise<void>
+  isLoading: boolean;
+  setIsLoading: (isLoading: boolean) => void;
 }
 
 export const useJournalStore = create<JournalState>((set, get) => {
@@ -72,6 +74,7 @@ export const useJournalStore = create<JournalState>((set, get) => {
     entries: [],
     loading: false,
     error: null,
+    isLoading: false,
 
     addEntry: async (entry) => {
       try {
@@ -526,5 +529,6 @@ export const useJournalStore = create<JournalState>((set, get) => {
         throw error
       }
     },
+    setIsLoading: (isLoading: boolean) => set({ isLoading }),
   }
-}) 
+})
