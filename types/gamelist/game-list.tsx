@@ -3,8 +3,8 @@ import { JournalEntry } from "@/stores/useJournalStore";
 export interface GameListItem {
   id: string;
   name: string;
-  cover_url: string;
-  added_at: string;
+  cover_url?: string;
+  added_at?: string;
 }
 
 export interface GameList extends JournalEntry {

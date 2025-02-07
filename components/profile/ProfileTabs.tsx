@@ -16,11 +16,15 @@ interface ProfileTabsProps {
   onTabChange: (value: string) => void;
 }
 
-export function ProfileTabs({ tabs, activeTab, onTabChange }: ProfileTabsProps) {
+export function ProfileTabs({
+  tabs,
+  activeTab,
+  onTabChange,
+}: ProfileTabsProps) {
   const router = useRouter();
 
   const handleTabClick = (value: string) => {
-    const tab = tabs.find(t => t.value === value);
+    const tab = tabs.find((t) => t.value === value);
     if (tab?.href) {
       router.push(tab.href);
     } else {

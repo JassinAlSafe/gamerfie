@@ -4,6 +4,7 @@ import { create } from 'zustand';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { createActivity } from '@/lib/activity/activity';
 import { GameList, GameListItem, GameListStore } from '@/types/gamelist/game-list';
+import { Database } from '@/types/supabase';
 
 export const useGameListStore = create<GameListStore>((set, get) => ({
   lists: [],
@@ -48,7 +49,11 @@ export const useGameListStore = create<GameListStore>((set, get) => ({
         updatedAt: list.updated_at,
         is_public: list.is_public,
         user_id: list.user_id,
-        content: list.content
+        content: list.content,
+        user: {
+          username: session?.session?.user?.username || 'Unknown User',
+          avatar_url: session?.session?.user?.user_metadata?.avatar_url || ''
+        }
       };
 
       set(state => ({ lists: [...state.lists, newList] }));
@@ -276,37 +281,57 @@ export const useGameListStore = create<GameListStore>((set, get) => ({
   fetchListDetails: async (listId: string): Promise<void> => {
     set({ isLoading: true, error: null });
     try {
-      const supabase = createClientComponentClient();
-      const { data: session } = await supabase.auth.getSession();
-      if (!session?.session?.user) throw new Error('Not authenticated');
-
-      const { data, error } = await supabase
+      const supabase = createClientComponentClient<Database>();
+      
+      // First, get the journal entry
+      const { data: listData, error: listError } = await supabase
         .from('journal_entries')
         .select('*')
         .eq('id', listId)
-        .eq('user_id', session.session.user.id)
         .single();
 
-      if (error) throw error;
+      if (listError) throw listError;
 
-      const list: GameList = {
-        id: data.id,
-        type: 'list',
-        title: data.title,
-        description: data.content || '',
-        games: data.game_list || [],
-        date: data.date,
-        createdAt: data.created_at,
-        updatedAt: data.updated_at,
-        is_public: data.is_public,
-        user_id: data.user_id,
-        content: data.content
-      };
+      // Then, get the user's profile
+      if (listData) {
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', listData.user_id)
+          .single();
 
-      set({ currentList: list });
+        let games = [];
+        if (listData?.content && listData.content.startsWith('[')) {
+          try {
+            games = JSON.parse(listData.content);
+          } catch (parseError) {
+            console.error('Error parsing games:', parseError);
+          }
+        }
+
+        const list: GameList = {
+          id: listData.id,
+          type: 'list',
+          title: listData.title,
+          description: listData.content && !listData.content.startsWith('[') ? listData.content : '',
+          games: games,
+          date: listData.date,
+          createdAt: listData.created_at,
+          updatedAt: listData.updated_at,
+          is_public: listData.is_public,
+          user_id: listData.user_id,
+          content: listData.content,
+          user: {
+            username: profileData?.username || 'Unknown User',
+            avatar_url: profileData?.avatar_url
+          }
+        };
+
+        set({ currentList: list });
+      }
     } catch (error) {
+      console.error('Supabase error:', error);
       set({ error: (error as Error).message });
-      throw error;
     } finally {
       set({ isLoading: false });
     }

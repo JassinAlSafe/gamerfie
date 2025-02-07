@@ -23,7 +23,7 @@ export interface Database {
           id?: string
           name: string
           cover_url?: string | null
-          cover?: {
+          cover: {
             id: number
             url: string
           } | null
@@ -107,10 +107,8 @@ export interface Database {
           id: string
           username: string
           avatar_url: string | null
-          full_name: string | null
-          bio: string | null
-          created_at: string
           updated_at: string
+          created_at: string
         }
         Insert: {
           id?: string
@@ -130,6 +128,31 @@ export interface Database {
           updated_at?: string
         }
       }
+      list_comments: {
+        Row: {
+          id: string
+          list_id: string
+          user_id: string
+          content: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          list_id: string
+          user_id: string
+          content: string
+          created_at: string
+          updated_at: string
+        }
+        Update: {
+          id?: string
+          list_id?: string
+          user_id?: string
+          content?: string
+          updated_at?: string
+        }
+      }
     }
     Functions: {
       increment_participants_count: {
@@ -142,4 +165,4 @@ export interface Database {
       }
     }
   }
-} 
+}
