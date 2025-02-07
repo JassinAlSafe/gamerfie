@@ -5,6 +5,7 @@ import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { createActivity } from '@/lib/activity/activity';
 import { GameList, GameListItem, GameListStore } from '@/types/gamelist/game-list';
 import { Database } from '@/types/supabase';
+import * as Sentry from "@sentry/nextjs";
 
 export const useGameListStore = create<GameListStore>((set, get) => ({
   lists: [],
@@ -330,6 +331,12 @@ export const useGameListStore = create<GameListStore>((set, get) => ({
         set({ currentList: list });
       }
     } catch (error) {
+      Sentry.captureException(error, {
+        tags: {
+          action: 'fetchListDetails',
+          listId
+        }
+      });
       console.error('Supabase error:', error);
       set({ error: (error as Error).message });
     } finally {

@@ -144,54 +144,39 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
     }
   },
 
-  fetchUserLibrary: async (userId: string) => {
-    const supabase = createClientComponentClient<Database>();
-    set({ loading: true, error: null });
-
+  fetchUserLibrary: async () => {
     try {
-      // First get all user's games
-      const { data: userGames, error: userGamesError } = await supabase
+      const supabase = createClientComponentClient<Database>();
+      const { data: session } = await supabase.auth.getSession();
+      
+      if (!session?.session?.user) throw new Error('Not authenticated');
+
+      const { data, error } = await supabase
         .from('user_games')
-        .select('game_id')
-        .eq('user_id', userId);
-
-      if (userGamesError) throw userGamesError;
-
-      if (!userGames.length) {
-        set({ games: [], loading: false });
-        return;
-      }
-
-      // Then get the game details for each game
-      const gameIds = userGames.map(ug => ug.game_id);
-      const { data: games, error: gamesError } = await supabase
-        .from('games')
         .select('*')
-        .in('id', gameIds);
+        .eq('user_id', session.session.user.id)
+        .order('created_at', { ascending: false });
 
-      if (gamesError) throw gamesError;
+      if (error) throw error;
 
-      // Transform the games to match the Game interface
-      const transformedGames = games.map(game => ({
-        id: game.id,
-        name: game.name,
-        cover: game.cover_url ? {
-          url: game.cover_url.startsWith('//') 
-            ? `https:${game.cover_url.replace('t_thumb', 't_cover_big').replace('t_micro', 't_cover_big')}` 
-            : game.cover_url.replace('t_thumb', 't_cover_big').replace('t_micro', 't_cover_big')
-        } : null,
-        rating: game.rating,
-        first_release_date: game.first_release_date,
-        platforms: game.platforms ? JSON.parse(game.platforms as string) : null,
-        genres: game.genres ? JSON.parse(game.genres as string) : null,
-        summary: game.summary
-      })) as Game[];
+      // Transform the data without attempting to parse
+      const transformedData = data.map(item => ({
+        ...item,
+        // Only parse if the field is a string and starts with '[' or '{'
+        metadata: typeof item.metadata === 'string' 
+          ? JSON.parse(item.metadata) 
+          : item.metadata || {},
+        notes: typeof item.notes === 'string'
+          ? JSON.parse(item.notes)
+          : item.notes || {},
+      }));
 
-      console.log('Transformed games:', transformedGames); // Debug log
-      set({ games: transformedGames, loading: false });
+      set({ library: transformedData, error: null });
+      return transformedData;
     } catch (error) {
       console.error('Error fetching library:', error);
-      set({ error: error instanceof Error ? error.message : 'Failed to fetch library', loading: false });
+      set({ error: error as Error });
+      throw error;
     }
   },
-})) 
+}))

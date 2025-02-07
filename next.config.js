@@ -1,3 +1,5 @@
+const { withSentryConfig } = require("@sentry/nextjs");
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
@@ -18,4 +20,9 @@ const nextConfig = {
   },
 };
 
-module.exports = nextConfig;
+module.exports = withSentryConfig(nextConfig, {
+  org: "jassin-al-safe",
+  project: "gamerfie",
+  authToken: process.env.SENTRY_AUTH_TOKEN,
+  silent: false,
+});
