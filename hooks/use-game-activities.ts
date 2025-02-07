@@ -1,23 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
-import { ActivityType } from '@/types/friend';
+import { ActivityType, GameActivityFeed } from '@/types/activity';
+import { GameActivity } from '@/types/game';
 import { toast } from 'react-hot-toast';
-
-interface GameActivity {
-  id: string;
-  type: ActivityType;
-  details: {
-    name?: string;
-    comment?: string;
-    achievements?: { name: string }[];
-    isBatched?: boolean;
-  };
-  timestamp: string;
-  user: {
-    id: string;
-    username: string;
-    avatar_url: string | null;
-  };
-}
 
 export function useGameActivities(gameId: string) {
   const [activities, setActivities] = useState<GameActivity[]>([]);
@@ -39,7 +23,7 @@ export function useGameActivities(gameId: string) {
         throw new Error(errorData.error || 'Failed to fetch game activities');
       }
 
-      const data = await response.json();
+      const { data, hasMore }: GameActivityFeed = await response.json();
       
       if (pageNum === 1) {
         setActivities(data);
@@ -47,7 +31,7 @@ export function useGameActivities(gameId: string) {
         setActivities(prev => [...prev, ...data]);
       }
       
-      setHasMore(data.length === 10); // Since we're using ITEMS_PER_PAGE = 10
+      setHasMore(hasMore);
       
       if (isInitial) {
         setIsInitialLoad(false);

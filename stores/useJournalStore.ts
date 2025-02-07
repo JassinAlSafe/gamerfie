@@ -1,28 +1,27 @@
-'use client';
+import { create } from 'zustand'
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { useFriendsStore } from './useFriendsStore'
+import { ActivityType } from '@/types/activity'
+import toast from 'react-hot-toast'
 
-import { create } from 'zustand';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
-import { createActivity } from '@/lib/activity';
+export type JournalEntryType = 'progress' | 'review' | 'daily' | 'list' | 'note' | 'achievement'
 
-
-interface Game {
-  id: string;
-  name: string;
-  cover_url: string;
-}
-
-interface JournalEntry {
-  id: string;
-  type: 'progress' | 'review' | 'daily' | 'list';
-  title?: string;
-  content?: string;
-  date: string;
-  created_at: string;
-  updated_at: string;
-  game?: Game;
-  progress?: number;
-  rating?: number;
-  hours_played?: number;
+export interface JournalEntry {
+  id: string
+  type: JournalEntryType
+  date: string
+  title: string
+  content: string
+  game?: {
+    id: string
+    name: string
+    cover_url?: string
+  }
+  progress?: number
+  hoursPlayed?: number
+  rating?: number
+  createdAt: string
+  updatedAt: string
 }
 
 interface JournalStore {
@@ -46,126 +45,305 @@ export const useJournalStore = create<JournalStore>((set) => ({
   createEntry: async (type: JournalEntry['type'], data: Partial<JournalEntry>) => {
     set({ isLoading: true, error: null });
     try {
-      const supabase = createClientComponentClient();
-      const { data: session } = await supabase.auth.getSession();
-      if (!session?.session?.user) throw new Error('Not authenticated');
-
-      const entryData = {
-        user_id: session.session.user.id,
-        type,
-        title: data.title,
-        content: data.content,
-        date: data.date || new Date().toISOString(),
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        game_id: data.game?.id,
-        game: data.game?.name,
-        cover_url: data.game?.cover_url,
-        progress: data.progress,
-        rating: data.rating,
-        hours_played: data.hours_played
-      };
-
-      const { data: entry, error } = await supabase
-        .from('journal_entries')
-        .insert([entryData])
-        .select('*')
-        .single();
-
-      if (error) throw error;
-
-      const newEntry: JournalEntry = {
-        id: entry.id,
-        type: entry.type,
-        title: entry.title,
-        content: entry.content,
-        date: entry.date,
-        created_at: entry.created_at,
-        updated_at: entry.updated_at,
-        game: entry.game_id ? {
-          id: entry.game_id,
-          name: entry.game,
-          cover_url: entry.cover_url
-        } : undefined,
-        progress: entry.progress,
-        rating: entry.rating,
-        hours_played: entry.hours_played
-      };
-
-      // Create activity and sync progress for game-related entries
-      if (type === 'progress' && data.game?.id) {
-        await createActivity('progress', data.game.id, {
-          comment: data.content,
-          progress: data.progress,
-        });
-
-        // Sync with user_games table directly
-        if (data.progress !== undefined) {
-          const { error: userGameError } = await supabase
-            .from('user_games')
-            .upsert({
-              user_id: session.session.user.id,
-              game_id: data.game.id,
-              completion_percentage: data.progress,
-              play_time: data.hours_played,
-              status: data.progress === 100 ? 'completed' : 'playing',
-              last_played_at: new Date().toISOString()
-            }, {
-              onConflict: 'user_id,game_id'
-            });
-
-          if (userGameError) throw userGameError;
-        }
-      } else if (type === 'review' && data.game?.id) {
-        await createActivity('review', data.game.id, {
-          comment: data.content,
-          rating: data.rating,
-        });
-      }
-
-      // Update the entries list with the new entry
-      set(state => {
-        const newEntries = [newEntry, ...state.entries].sort((a, b) => 
-          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-        );
-        return { entries: newEntries };
+      const response = await fetch('/api/friends/activities/create', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          activity_type: activityType,
+          game_id: gameId,
+          details,
+        }),
       });
 
-      return newEntry;
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create activity');
+      }
+
+      return await response.json();
     } catch (error) {
-      set({ error: (error as Error).message });
+      console.error('Error creating activity:', error);
       throw error;
-    } finally {
-      set({ isLoading: false });
     }
-  },
+  };
 
-  updateEntry: async (entryId: string, data: Partial<JournalEntry>) => {
-    set({ isLoading: true, error: null });
-    try {
-      const supabase = createClientComponentClient();
-      const { data: session } = await supabase.auth.getSession();
-      if (!session?.session?.user) throw new Error('Not authenticated');
+  return {
+    entries: [],
+    loading: false,
+    error: null,
 
-      const updateData = {
-        title: data.title,
-        content: data.content,
-        progress: data.progress,
-        hours_played: data.hours_played,
-        rating: data.rating,
-        game_id: data.game?.id,
-        game: data.game?.name,
-        cover_url: data.game?.cover_url,
-        updated_at: new Date().toISOString()
-      };
+    addEntry: async (entry) => {
+      try {
+        set({ loading: true, error: null })
+        const supabase = createClientComponentClient()
+        const { data: { session } } = await supabase.auth.getSession()
+        if (!session?.user) throw new Error('No authenticated user')
 
-      const { data: updatedEntry, error } = await supabase
-        .from('journal_entries')
-        .update(updateData)
-        .eq('id', entryId)
-        .eq('user_id', session.session.user.id)
-        .select('*')
-        .single();
+        // Debug logging
+        console.log('Adding entry with game:', {
+          gameId: entry.game?.id,
+          gameName: entry.game?.name,
+          entryType: entry.type,
+        })
+
+        // If there's a game, ensure it exists in the database
+        if (entry.game?.id) {
+          console.log('Checking game:', entry.game.id)
+          const { count, error: gameCheckError } = await supabase
+            .from('games')
+            .select('*', { count: 'exact', head: true })
+            .eq('id', entry.game.id)
+
+          if (gameCheckError) {
+            console.error('Error checking game existence:', gameCheckError)
+          }
+
+          // If game doesn't exist, add it
+          if (count === 0) {
+            console.log('Game not found, adding to database:', entry.game)
+            const { error: insertError } = await supabase
+              .from('games')
+              .insert({
+                id: entry.game.id,
+                name: entry.game.name,
+                cover_url: entry.game.cover_url,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+              })
+
+            if (insertError) {
+              console.error('Error adding game to database:', insertError)
+              throw new Error('Failed to add game to database')
+            }
+          }
+        }
+
+        // Insert the entry into the journal_entries table
+        const { data: newEntry, error } = await supabase
+          .from('journal_entries')
+          .insert({
+            user_id: session.user.id,
+            type: entry.type,
+            date: entry.date,
+            title: entry.title,
+            content: entry.content,
+            game_id: entry.game?.id,
+            game: entry.game?.name,
+            cover_url: entry.game?.cover_url,
+            progress: entry.progress,
+            hours_played: entry.hoursPlayed,
+            rating: entry.rating,
+          })
+          .select()
+          .single()
+
+        if (error) throw error
+
+        // Transform the entry to match our interface
+        const transformedEntry: JournalEntry = {
+          id: newEntry.id,
+          type: newEntry.type,
+          date: newEntry.date,
+          title: newEntry.title,
+          content: newEntry.content,
+          game: newEntry.game_id ? {
+            id: newEntry.game_id,
+            name: newEntry.game,
+            cover_url: newEntry.cover_url,
+          } : undefined,
+          progress: newEntry.progress,
+          hoursPlayed: newEntry.hours_played,
+          rating: newEntry.rating,
+          createdAt: newEntry.created_at,
+          updatedAt: newEntry.updated_at,
+        }
+
+        set(state => ({
+          entries: [transformedEntry, ...state.entries],
+          loading: false,
+        }))
+
+        // If this is a progress entry, update user_games and game_progress_history
+        if (entry.type === 'progress' && entry.game?.id && entry.progress !== undefined) {
+          try {
+            // Get current user_games entry if it exists
+            const { data: existingUserGame } = await supabase
+              .from('user_games')
+              .select('*')
+              .eq('user_id', session.user.id)
+              .eq('game_id', entry.game.id)
+              .single()
+
+            // Update user_games with merged data
+            const { error: updateError } = await supabase
+              .from('user_games')
+              .upsert({
+                user_id: session.user.id,
+                game_id: entry.game.id,
+                completion_percentage: entry.progress,
+                play_time: entry.hoursPlayed ?? existingUserGame?.play_time ?? 0,
+                last_played_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+                status: entry.progress === 100 ? 'completed' : (existingUserGame?.status || 'playing'),
+                // Preserve other fields if they exist
+                achievements_completed: existingUserGame?.achievements_completed,
+                notes: existingUserGame?.notes,
+              }, {
+                onConflict: 'user_id,game_id'
+              })
+
+            if (updateError) throw updateError
+
+            // Record progress history
+            const { error: historyError } = await supabase
+              .from('game_progress_history')
+              .insert({
+                user_id: session.user.id,
+                game_id: entry.game.id,
+                play_time: entry.hoursPlayed,
+                completion_percentage: entry.progress,
+              })
+
+            if (historyError) {
+              console.error('Error recording progress history:', historyError)
+            }
+          } catch (error) {
+            console.error('Error updating game progress:', error)
+            // Don't throw here, allow the journal entry to be saved even if progress update fails
+          }
+        }
+
+        // Create activity for any entry type that has a game associated
+        if (entry.game?.id) {
+          try {
+            switch (entry.type) {
+              case 'progress':
+                if (entry.progress === 100) {
+                  await createActivity('completed', entry.game.id, {
+                    comment: entry.content 
+                      ? `${entry.content} (Completed the game!)`
+                      : 'Completed the game!'
+                  }).catch(e => console.error('Activity creation failed:', e))
+                } else {
+                  await createActivity('progress', entry.game.id, {
+                    progress: entry.progress,
+                    comment: entry.content || `Made progress: ${entry.progress}%`
+                  }).catch(e => console.error('Activity creation failed:', e))
+                }
+                break
+              case 'review':
+                await createActivity('review', entry.game.id, {
+                  comment: `Rated ${entry.game.name} ${entry.rating}/10 - ${entry.content}`
+                }).catch(e => console.error('Activity creation failed:', e))
+                break
+              case 'daily':
+                await createActivity('started_playing', entry.game.id, {
+                  comment: entry.content
+                }).catch(e => console.error('Activity creation failed:', e))
+                break
+              case 'list':
+                await createActivity('want_to_play', entry.game.id, {
+                  comment: `Added ${entry.game.name} to list: ${entry.title}`
+                }).catch(e => console.error('Activity creation failed:', e))
+                break
+            }
+          } catch (activityError) {
+            console.error('Error creating activity for journal entry:', activityError)
+            // Don't throw here, allow the journal entry to be saved even if activity creation fails
+          }
+        }
+
+        toast.success('Entry added successfully')
+      } catch (error) {
+        console.error('Error adding journal entry:', error)
+        set({ error: (error as Error).message, loading: false })
+        toast.error(error instanceof Error ? error.message : 'Failed to add entry')
+        throw error
+      }
+    },
+
+    updateEntry: async (id: string, entry) => {
+      try {
+        set({ loading: true, error: null })
+        const supabase = createClientComponentClient()
+        const { data: { session } } = await supabase.auth.getSession()
+        if (!session?.user) throw new Error('No authenticated user')
+
+        // If there's a game, verify it exists first
+        if (entry.game?.id) {
+          const { count, error: gameCheckError } = await supabase
+            .from('games')
+            .select('*', { count: 'exact', head: true })
+            .eq('id', entry.game.id)
+
+          if (gameCheckError) {
+            console.error('Error checking game existence:', gameCheckError)
+            throw new Error('Failed to verify game existence')
+          }
+
+          if (count === 0) {
+            throw new Error(`Game with ID ${entry.game.id} not found in the database. Please make sure the game exists before adding an entry.`)
+          }
+        }
+
+        // Update the entry in the journal_entries table
+        const { data: updatedEntry, error } = await supabase
+          .from('journal_entries')
+          .update({
+            type: entry.type,
+            date: entry.date,
+            title: entry.title,
+            content: entry.content,
+            game_id: entry.game?.id,
+            game: entry.game?.name,
+            cover_url: entry.game?.cover_url,
+            progress: entry.progress,
+            hours_played: entry.hoursPlayed,
+            rating: entry.rating,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', id)
+          .select()
+          .single()
+
+        if (error) throw error
+
+        // Transform the entry to match our interface
+        const transformedEntry: JournalEntry = {
+          id: updatedEntry.id,
+          type: updatedEntry.type,
+          date: updatedEntry.date,
+          title: updatedEntry.title,
+          content: updatedEntry.content,
+          game: updatedEntry.game_id ? {
+            id: updatedEntry.game_id,
+            name: updatedEntry.game,
+            cover_url: updatedEntry.cover_url,
+          } : undefined,
+          progress: updatedEntry.progress,
+          hoursPlayed: updatedEntry.hours_played,
+          rating: updatedEntry.rating,
+          createdAt: updatedEntry.created_at,
+          updatedAt: updatedEntry.updated_at,
+        }
+
+        set(state => ({
+          entries: state.entries.map(e => e.id === id ? transformedEntry : e),
+          loading: false,
+        }))
+
+        // If this is a progress entry, update user_games and game_progress_history
+        if (entry.type === 'progress' && entry.game?.id && entry.progress !== undefined) {
+          try {
+            // First, get the current user_games entry to preserve existing data
+            const { data: currentUserGame } = await supabase
+              .from('user_games')
+              .select('*')
+              .eq('user_id', session.user.id)
+              .eq('game_id', entry.game.id)
+              .single();
 
       if (error) throw error;
 
@@ -191,39 +369,95 @@ export const useJournalStore = create<JournalStore>((set) => ({
               onConflict: 'user_id,game_id'
             });
 
-          if (userGameError) throw userGameError;
+            if (updateError) throw updateError;
+
+            // Record progress history
+            const { error: historyError } = await supabase
+              .from('game_progress_history')
+              .insert({
+                user_id: session.user.id,
+                game_id: entry.game.id,
+                play_time: entry.hoursPlayed,
+                completion_percentage: entry.progress,
+                created_at: new Date().toISOString(),
+              });
+
+            if (historyError) {
+              console.error('Error recording progress history:', historyError);
+            }
+          } catch (error) {
+            console.error('Error updating game progress:', error);
+          }
         }
-      } else if (data.type === 'review' && data.game?.id) {
-        await createActivity('review', data.game.id, {
-          comment: data.content,
-          rating: data.rating,
-        });
+
+        // Create activity for any entry type that has a game associated
+        if (entry.game?.id) {
+          try {
+            switch (entry.type) {
+              case 'progress':
+                if (entry.progress === 100) {
+                  await createActivity('completed', entry.game.id, {
+                    comment: entry.content 
+                      ? `${entry.content} (Completed the game!)`
+                      : 'Completed the game!'
+                  });
+                } else {
+                  await createActivity('progress', entry.game.id, {
+                    progress: entry.progress,
+                    comment: entry.content || `Updated progress to ${entry.progress}%`
+                  });
+                }
+                break;
+              case 'review':
+                await createActivity('review', entry.game.id, {
+                  comment: `Updated review for ${entry.game.name} - ${entry.rating}/10 - ${entry.content}`
+                });
+                break;
+              case 'daily':
+                await createActivity('started_playing', entry.game.id, {
+                  comment: entry.content
+                });
+                break;
+              case 'list':
+                await createActivity('want_to_play', entry.game.id, {
+                  comment: `Updated list: ${entry.title}`
+                });
+                break;
+            }
+
+            // Trigger real-time updates by updating timestamps
+            const timestamp = new Date().toISOString();
+            
+            // Update user_games timestamp to trigger profile/games refresh
+            await supabase
+              .from('user_games')
+              .update({ updated_at: timestamp })
+              .eq('user_id', session.user.id)
+              .eq('game_id', entry.game.id);
+
+            // Update game_progress_history timestamp to trigger game-details refresh
+            if (entry.type === 'progress') {
+              await supabase
+                .from('game_progress_history')
+                .update({ updated_at: timestamp })
+                .eq('user_id', session.user.id)
+                .eq('game_id', entry.game.id)
+                .order('created_at', { ascending: false })
+                .limit(1);
+            }
+          } catch (activityError) {
+            console.error('Error creating activity for journal entry:', activityError);
+          }
+        }
+
+        toast.success('Entry updated successfully')
+      } catch (error) {
+        console.error('Error updating journal entry:', error)
+        set({ error: (error as Error).message, loading: false })
+        toast.error('Failed to update entry')
+        throw error
       }
-
-      // Transform the updated entry
-      const transformedEntry: JournalEntry = {
-        ...updatedEntry,
-        game: updatedEntry.game_id ? {
-          id: updatedEntry.game_id,
-          name: updatedEntry.game,
-          cover_url: updatedEntry.cover_url
-        } : undefined
-      };
-
-      // Update both entries and currentEntry with the transformed data
-      set(state => ({
-        entries: state.entries.map(entry =>
-          entry.id === entryId ? transformedEntry : entry
-        ).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()),
-        currentEntry: state.currentEntry?.id === entryId ? transformedEntry : state.currentEntry
-      }));
-    } catch (error) {
-      set({ error: (error as Error).message });
-      throw error;
-    } finally {
-      set({ isLoading: false });
-    }
-  },
+    },
 
   deleteEntry: async (entryId: string) => {
     set({ isLoading: true, error: null });
@@ -240,17 +474,23 @@ export const useJournalStore = create<JournalStore>((set) => ({
 
       if (error) throw error;
 
-      set(state => ({
-        entries: state.entries.filter(entry => entry.id !== entryId),
-        currentEntry: state.currentEntry?.id === entryId ? null : state.currentEntry
-      }));
-    } catch (error) {
-      set({ error: (error as Error).message });
-      throw error;
-    } finally {
-      set({ isLoading: false });
-    }
-  },
+        set(state => ({
+          entries: state.entries.filter(e => e.id !== id),
+          loading: false,
+        }))
+
+        toast.success('Entry deleted successfully')
+      } catch (error) {
+        console.error('Error deleting journal entry:', error)
+        set({ error: (error as Error).message, loading: false })
+        toast.error('Failed to delete entry')
+        throw error
+      }
+    },
+
+    setEntries: (entries) => set({ entries }),
+    setLoading: (loading) => set({ loading }),
+    setError: (error) => set({ error }),
 
   fetchEntries: async () => {
     set({ isLoading: true, error: null });
@@ -285,55 +525,13 @@ export const useJournalStore = create<JournalStore>((set) => ({
         hours_played: entry.hours_played
       }));
 
-      set({ entries: transformedEntries });
-    } catch (error) {
-      set({ error: (error as Error).message });
-      throw error;
-    } finally {
-      set({ isLoading: false });
-    }
-  },
-
-  fetchEntryById: async (entryId: string) => {
-    set({ isLoading: true, error: null });
-    try {
-      const supabase = createClientComponentClient();
-      const { data: session } = await supabase.auth.getSession();
-      if (!session?.session?.user) throw new Error('Not authenticated');
-
-      const { data, error } = await supabase
-        .from('journal_entries')
-        .select('*')
-        .eq('id', entryId)
-        .eq('user_id', session.session.user.id)
-        .single();
-
-      if (error) throw error;
-
-      const entry: JournalEntry = {
-        id: data.id,
-        type: data.type,
-        title: data.title,
-        content: data.content,
-        date: data.date,
-        created_at: data.created_at,
-        updated_at: data.updated_at,
-        game: data.game_id ? {
-          id: data.game_id,
-          name: data.game,
-          cover_url: data.cover_url
-        } : undefined,
-        progress: data.progress,
-        rating: data.rating,
-        hours_played: data.hours_played
-      };
-
-      set({ currentEntry: entry });
-    } catch (error) {
-      set({ error: (error as Error).message });
-      throw error;
-    } finally {
-      set({ isLoading: false });
-    }
+        set({ entries: transformedEntries, loading: false })
+      } catch (error) {
+        console.error('Error fetching journal entries:', error)
+        set({ error: (error as Error).message, loading: false })
+        toast.error('Failed to load journal entries')
+        throw error
+      }
+    },
   }
 })); 

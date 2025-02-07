@@ -246,28 +246,45 @@ export function AddToLibraryButton({
 
       // Add game to library using LibraryStore
       try {
-        await addGame({
+        const addedGame = await addGame({
           id: gameId,
           name: gameName,
-          cover_url: cover,
+          cover: cover
+            ? {
+                url: cover, // Pass the raw cover URL, let the store handle transformation
+                id: 0,
+              }
+            : null,
           rating,
           first_release_date: releaseDate,
           platforms,
           genres,
         });
-        console.log("Game added to library");
+
+        console.log("Game added to library:", addedGame);
         toast.success("Game added to library");
 
         // Create activity for adding to library
-        await createActivity("want_to_play", gameId);
+        try {
+          await createActivity("want_to_play", gameId);
+        } catch (activityError) {
+          console.error("Error creating activity:", activityError);
+          // Don't fail the whole operation if activity creation fails
+          toast.error("Added to library, but couldn't create activity");
+        }
 
         setIsInLibrary(true);
         setGameStatus("want_to_play");
         onSuccess?.("want_to_play");
         router.refresh();
       } catch (error: any) {
+        console.error("Error adding game:", error);
+
         // If the error is a duplicate key error, update the UI state
-        if (error.code === "23505") {
+        if (
+          error.code === "23505" ||
+          (error.message && error.message.includes("duplicate"))
+        ) {
           setIsInLibrary(true);
           const result = await checkGameInLibrary(gameId, user.id);
           if (result) {
@@ -277,7 +294,10 @@ export function AddToLibraryButton({
             description: `Current status: ${result?.status || "unknown"}`,
           });
         } else {
-          addError("api", "Failed to add game to library");
+          addError(
+            "api",
+            `Failed to add game: ${error.message || "Unknown error"}`
+          );
           throw error;
         }
       }

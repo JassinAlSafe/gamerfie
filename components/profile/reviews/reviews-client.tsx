@@ -1,18 +1,17 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useJournalStore, type JournalEntry } from "@/stores/useJournalStore";
 import { Button } from "@/components/ui/button";
-import { PlusIcon } from "lucide-react";
+import { PlusIcon, EditIcon, Trash2Icon } from "lucide-react";
 import { NewEntryModal } from "@/components/journal/NewEntryModal";
-import { useState } from "react";
 import Image from "next/image";
 import { getCoverImageUrl } from "@/utils/image-utils";
 import { EditEntryModal } from "@/components/journal/EditEntryModal";
 import { DeleteEntryDialog } from "@/components/journal/DeleteEntryDialog";
-import { EditIcon, Trash2Icon } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { useGameProgressStore } from "@/stores/useGameProgressStore";
+import { LoadingSpinner } from "@/components/loadingSpinner";
 
 export default function ReviewsClient() {
   const [isNewEntryModalOpen, setIsNewEntryModalOpen] = useState(false);
@@ -20,9 +19,15 @@ export default function ReviewsClient() {
   const [deletingEntry, setDeletingEntry] = useState<JournalEntry | null>(null);
   const { entries, fetchEntries, deleteEntry } = useJournalStore();
   const { fetchGameProgress } = useGameProgressStore();
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    fetchEntries();
+    const loadEntries = async () => {
+      setIsLoading(true);
+      await fetchEntries();
+      setIsLoading(false);
+    };
+    loadEntries();
   }, [fetchEntries]);
 
   const reviews = useMemo(() => {
@@ -31,12 +36,20 @@ export default function ReviewsClient() {
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   }, [entries]);
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (deletingEntry) {
-      deleteEntry(deletingEntry.id);
+      await deleteEntry(deletingEntry.id);
       setDeletingEntry(null);
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center py-12">
+        <LoadingSpinner />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">
@@ -170,7 +183,7 @@ export default function ReviewsClient() {
       <NewEntryModal
         isOpen={isNewEntryModalOpen}
         onClose={() => setIsNewEntryModalOpen(false)}
-        defaultType="review"
+        type="review"
       />
 
       {editingEntry && (

@@ -9,7 +9,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { FriendActivity } from "@/types/friend";
+import { FriendActivity } from "@/types/activity";
 import { toast } from "react-hot-toast";
 
 interface ActivityShareProps {

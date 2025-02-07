@@ -1,3 +1,5 @@
+import type { ActivityType, ActivityDetails, FriendActivity } from './activity';
+
 export type FriendStatus = 'pending' | 'accepted' | 'declined';
 export type OnlineStatus = 'online' | 'offline';
 
@@ -26,67 +28,6 @@ export interface FriendsFilter {
   status?: FriendStatus | 'all';
 }
 
-export interface ActivityDetails {
-  name?: string;
-  comment?: string;
-  achievement_name?: string;
-  achievement_description?: string;
-  rating?: number;
-  review_content?: string;
-  progress?: number;
-}
-
-export type ActivityType = 'started_playing' | 'completed_game' | 'earned_achievement' | 'reviewed_game';
-
-export interface ActivityReaction {
-  id: string;
-  activity_id: string;
-  user_id: string;
-  emoji: string;
-  created_at: string;
-  user: {
-    username: string;
-    avatar_url: string | null;
-  };
-}
-
-export interface ActivityComment {
-  id: string;
-  activity_id: string;
-  user_id: string;
-  content: string;
-  created_at: string;
-  user: {
-    username: string;
-    avatar_url: string | null;
-  };
-}
-
-export interface FriendActivityUser {
-  id: string;
-  username: string;
-  avatar_url: string | null;
-}
-
-export interface FriendActivityGame {
-  id: string;
-  name: string;
-  cover_url: string | null;
-}
-
-export interface FriendActivity {
-  id: string;
-  type: ActivityType;
-  user_id: string;
-  game_id: string;
-  created_at: string;
-  details?: ActivityDetails;
-  user: FriendActivityUser;
-  game: FriendActivityGame;
-  reactions?: ActivityReaction[];
-  comments?: ActivityComment[];
-}
-
 export interface FriendsState {
   friends: Friend[];
   isLoading: boolean;
@@ -110,29 +51,17 @@ export interface FriendsState {
   deleteComment: (commentId: string) => Promise<void>;
 }
 
-export interface RequestBody {
-  activity_type: ActivityType;
-  game_id: string;
-  details?: Record<string, unknown>;
-}
-
-export interface FriendActivityRecord {
-  id: string;
-  activity_type: ActivityType;
-  user_id: string;
-  game_id: string;
-  created_at: string;
-  details: Record<string, unknown>;
-}
-
-export interface ProfileRecord {
+export interface SupabaseFriendData {
   id: string;
   username: string;
   avatar_url: string | null;
+  online_status?: OnlineStatus;
 }
 
-export interface GameRecord {
+export interface SupabaseFriendRecord {
   id: string;
-  name: string;
-  cover_url: string | null;
-} 
+  status: FriendStatus;
+  user_id: string;
+  friend_id: string;
+  friend_profile: SupabaseFriendData;
+}

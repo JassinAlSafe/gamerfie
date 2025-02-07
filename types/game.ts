@@ -1,4 +1,4 @@
-import { ActivityType } from "./friend";
+import { ActivityType } from "./activity";
 
 export interface Achievement {
   id: number;
@@ -10,20 +10,46 @@ export interface Achievement {
   game_id: number;
 }
 
-interface Screenshot {
+export interface Screenshot {
   id: number;
   url: string;
 }
 
-interface GameActivity {
+export interface GameActivityDetails {
+  achievement?: Achievement;
+  status?: GameStatus;
+  rating?: number;
+  review?: string;
+  playtime?: number;
+}
+
+export interface GameActivity {
   id: string;
   type: ActivityType;
-  details: any;
+  details: GameActivityDetails;
+  metadata: {
+    status?: string;
+    achievement?: {
+      name: string;
+      icon_url?: string;
+    };
+    rating?: number;
+    review?: string;
+    playtime?: number;
+  };
   timestamp: string;
+  created_at: string;
   user: {
     id: string;
     username: string;
     avatar_url: string | null;
+  };
+  reactions?: {
+    count: number;
+    user_has_reacted: boolean;
+  };
+  comments?: {
+    count: number;
   };
 }
 
@@ -31,12 +57,18 @@ export interface Game {
   id: string;
   name: string;
   description: string;
-  coverImage: string;
+  cover_url: string;
+  cover?: {
+    id: number;
+    url: string;
+  };
   rating: number;
   releaseDate: string;
   first_release_date?: number;
   platforms: Platform[];
   genres: Genre[];
+  summary?: string;
+  storyline?: string;
 }
 
 export interface UserGame {
@@ -114,7 +146,7 @@ export interface GameFiltersState {
   platform?: string;
   genre?: string;
   category?: string;
-  sort?: 'rating' | 'popularity' | 'name' | 'release';
+  sort?: SortOption;
   search?: string;
 }
 
@@ -124,8 +156,30 @@ export interface GameFilters {
   category?: string;
   timeRange?: string;
   search?: string;
-  limit?: number;
-  page?: number;
-  sortBy?: string;
+  sortBy?: SortOption;
+  releaseYear?: {
+    start: number;
+    end: number;
+  };
 }
 
+export interface GamePageProps {
+  params: Promise<{
+    id: string;
+  }>;
+}
+
+export interface ReviewUpdateData {
+  gameId: string;
+  rating?: number;
+  review?: string;
+  status?: GameStatus;
+}
+
+export interface GameStats {
+  total_played: number;
+  backlog: number;
+  currentlyPlaying: number;
+  completedGames: number;
+  droppedGames: number;
+}

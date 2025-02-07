@@ -1,14 +1,13 @@
-import { UserSettings } from "./settings";
+import { UserGame } from "./game";
 
-export interface Profile {
+export interface GameReview {
   id: string;
-  email: string;
-  username?: string;
-  avatar_url?: string;
-  bio?: string;
+  user_id: string;
+  game_id: string;
+  review: string;
+  rating: number;
   created_at: string;
   updated_at: string;
-  settings?: UserSettings;
 }
 
 export interface QueryData {

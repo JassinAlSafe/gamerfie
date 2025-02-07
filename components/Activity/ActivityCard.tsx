@@ -5,8 +5,8 @@ import { format } from "date-fns";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { ActivityType, FriendActivity } from "@/types/friend";
+import { FriendActivity } from "@/types/activity";
+
 import { ActivityReactions } from "./ActivityReactions";
 import { ActivityComments } from "./ActivityComments";
 import { ActivityShare } from "./ActivityShare";
@@ -28,10 +28,11 @@ export function ActivityCard({ activity, index }: ActivityCardProps) {
         return (
           <div className="mt-4 space-y-2">
             <p className="text-sm text-yellow-400">
-              🏆 Unlocked {activity.details.achievements.length} achievements:
+              🏆 Unlocked {activity.details?.achievements?.length || 0}{" "}
+              achievements:
             </p>
             <div className="pl-4 space-y-1">
-              {activity.details.achievements.map(
+              {activity.details?.achievements?.map(
                 (achievement: { name: string }, i: number) => (
                   <p key={i} className="text-sm text-gray-300">
                     • {achievement.name}

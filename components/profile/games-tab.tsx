@@ -2,21 +2,40 @@
 
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { Database } from "@/types/supabase";
 import { useEffect, useState, useMemo } from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { Gamepad2, Clock, BarChart3 } from "lucide-react";
+import {
+  Gamepad2,
+  Clock,
+  BarChart3,
+  MoreVertical,
+  Pencil,
+  Trash2,
+} from "lucide-react";
 import { Game, GameStatus, UserGame } from "@/types/game";
 import type { GameFilters } from "@/components/profile/game-filters";
 import { useSettingsStore } from "@/stores/useSettingsStore";
 import { getCoverImageUrl } from "@/utils/image-utils";
 import { GameStatusDropdown } from "@/components/game/game-status-dropdown";
+import { DeleteFromLibraryButton } from "../delete-from-library-button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface GameWithUserData extends UserGame {
-  game: Game;
+  game: {
+    id: string;
+    name: string;
+    cover_url?: string;
+  };
   completion_percentage?: number;
 }
 
@@ -35,18 +54,25 @@ interface GamesTabProps {
 }
 
 // List View Component
-const GameListItem = ({ game }: { game: GameWithUserData }) => {
+const GameListItem = ({
+  game,
+  onDelete,
+}: {
+  game: GameWithUserData;
+  onDelete: () => void;
+}) => {
   const router = useRouter();
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
-  const coverUrl = game.game.cover_url?.startsWith("//")
-    ? `https:${game.game.cover_url}`
-    : game.game.cover_url;
+  const coverUrl = game.game.cover_url
+    ? getCoverImageUrl(game.game.cover_url)
+    : undefined;
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="group flex items-center space-x-4 bg-gray-900/50 p-4 rounded-xl hover:bg-gray-800/70 transition-all duration-300 shadow-lg hover:shadow-xl border border-white/10 hover:border-purple-500/20 backdrop-blur-sm cursor-pointer"
+      className="group relative flex items-center space-x-4 bg-gray-900/50 p-4 rounded-xl hover:bg-gray-800/70 transition-all duration-300 shadow-lg hover:shadow-xl border border-white/10 hover:border-purple-500/20 backdrop-blur-sm cursor-pointer"
       onClick={() => router.push(`/game/${game.game_id}`)}
     >
       <div className="relative w-20 h-24 flex-shrink-0 overflow-hidden rounded-lg ring-2 ring-white/5 group-hover:ring-purple-500/20 transition-all duration-300">
@@ -56,6 +82,7 @@ const GameListItem = ({ game }: { game: GameWithUserData }) => {
             alt={game.game.name}
             fill
             className="object-cover transition-transform duration-300 group-hover:scale-105"
+            sizes="80px"
             onError={(e) => {
               console.error("Image load error:", e);
             }}
@@ -85,24 +112,79 @@ const GameListItem = ({ game }: { game: GameWithUserData }) => {
           </div>
           <div className="flex items-center text-sm text-gray-400 group-hover:text-gray-300 transition-colors duration-200">
             <BarChart3 className="w-4 h-4 mr-1" />
-            {game.completion_percentage}%
+            {game.completion_percentage || 0}%
           </div>
         </div>
       </div>
-      <GameStatusDropdown
-        status={game.status}
-        gameId={game.game_id}
-        onStatusChange={(newStatus) =>
-          handleStatusChange(game.game_id, newStatus)
-        }
-      />
+      <div
+        className="flex items-center gap-4"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <GameStatusDropdown
+          status={game.status}
+          gameId={game.game_id}
+          onStatusChange={(newStatus) =>
+            handleStatusChange(game.game_id, newStatus)
+          }
+        />
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon">
+              <MoreVertical className="w-4 h-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem>
+              <Pencil className="w-4 h-4 mr-2" />
+              Edit Progress
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              className="text-red-500 focus:text-red-500"
+              onClick={(e) => {
+                setShowDeleteDialog(true);
+              }}
+            >
+              <Trash2 className="w-4 h-4 mr-2" />
+              Remove from Library
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+      {showDeleteDialog && (
+        <div
+          onClick={(e) => e.stopPropagation()}
+          className="absolute inset-0 z-50 flex items-center justify-center bg-black/50 rounded-xl"
+        >
+          <DeleteFromLibraryButton
+            gameId={game.game_id}
+            gameName={game.game.name}
+            onSuccess={() => {
+              console.log(
+                "Delete success in list view for game:",
+                game.game_id
+              );
+              setShowDeleteDialog(false);
+              onDelete();
+            }}
+          />
+        </div>
+      )}
     </motion.div>
   );
 };
 
 // Grid View Component
-const GameGridItem = ({ game }: { game: GameWithUserData }) => {
+const GameGridItem = ({
+  game,
+  onDelete,
+}: {
+  game: GameWithUserData;
+  onDelete: () => void;
+}) => {
   const router = useRouter();
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+
   const coverUrl = game.game.cover_url
     ? getCoverImageUrl(game.game.cover_url)
     : undefined;
@@ -114,6 +196,38 @@ const GameGridItem = ({ game }: { game: GameWithUserData }) => {
       className="group relative cursor-pointer rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 border border-white/10 hover:border-purple-500/20 backdrop-blur-sm"
       onClick={() => router.push(`/game/${game.game_id}`)}
     >
+      <div
+        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="bg-zinc-900/80 hover:bg-zinc-900"
+            >
+              <MoreVertical className="w-4 h-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem>
+              <Pencil className="w-4 h-4 mr-2" />
+              Edit Progress
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              className="text-red-500 focus:text-red-500"
+              onClick={(e) => {
+                setShowDeleteDialog(true);
+              }}
+            >
+              <Trash2 className="w-4 h-4 mr-2" />
+              Remove from Library
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
       <div className="aspect-[3/4] bg-gray-900/80 relative">
         {coverUrl ? (
           <Image
@@ -170,6 +284,25 @@ const GameGridItem = ({ game }: { game: GameWithUserData }) => {
           </div>
         </div>
       </div>
+      {showDeleteDialog && (
+        <div
+          onClick={(e) => e.stopPropagation()}
+          className="absolute inset-0 z-50 flex items-center justify-center bg-black/50"
+        >
+          <DeleteFromLibraryButton
+            gameId={game.game_id}
+            gameName={game.game.name}
+            onSuccess={() => {
+              console.log(
+                "Delete success in grid view for game:",
+                game.game_id
+              );
+              setShowDeleteDialog(false);
+              onDelete();
+            }}
+          />
+        </div>
+      )}
     </motion.div>
   );
 };
@@ -204,22 +337,64 @@ const EmptyState = ({ router }: { router: ReturnType<typeof useRouter> }) => (
   </div>
 );
 
-export function GamesTab({ filters }: GamesTabProps) {
+export default function GamesTab({ filters }: GamesTabProps) {
   const router = useRouter();
   const supabase = createClientComponentClient<Database>();
   const [userId, setUserId] = useState<string | null>(null);
   const { libraryView } = useSettingsStore();
+  const [localGames, setLocalGames] = useState<GameWithUserData[]>([]);
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     const checkSession = async () => {
       const {
         data: { session },
       } = await supabase.auth.getSession();
-      console.log("Session:", session);
       setUserId(session?.user?.id || null);
     };
     checkSession();
   }, [supabase]);
+
+  // Subscribe to realtime changes
+  useEffect(() => {
+    if (!userId) return;
+
+    const channel = supabase
+      .channel("user_games_changes")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "user_games",
+          filter: `user_id=eq.${userId}`,
+        },
+        () => {
+          // Invalidate and refetch when there are changes
+          queryClient.invalidateQueries({
+            queryKey: ["userGames", userId, "v2"],
+          });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [userId, queryClient, supabase]);
+
+  const handleGameRemoval = (removedGameId: string) => {
+    console.log("Handling game removal in UI for gameId:", removedGameId);
+    setLocalGames((currentGames) => {
+      const updatedGames = currentGames.filter(
+        (game) => game.game_id !== removedGameId
+      );
+      console.log("Updated games list length:", updatedGames.length);
+      return updatedGames;
+    });
+    // Invalidate the cache to trigger a refetch
+    queryClient.invalidateQueries({ queryKey: ["userGames", userId, "v2"] });
+  };
 
   const { data: games, isLoading } = useQuery<GameWithUserData[]>({
     queryKey: ["userGames", userId, "v2"],
@@ -227,16 +402,6 @@ export function GamesTab({ filters }: GamesTabProps) {
       if (!userId) return [];
       console.log("Fetching games for user:", userId);
 
-      // First, let's check what we get from a simpler query
-      const testQuery = await supabase
-        .from("user_games")
-        .select("*, games(*)")
-        .eq("user_id", userId)
-        .limit(1);
-      console.log("Test query result:", testQuery);
-      console.log("Test query data structure:", testQuery.data?.[0]);
-
-      // Now try the full query with the correct field names
       const { data, error } = await supabase
         .from("user_games")
         .select(
@@ -247,7 +412,7 @@ export function GamesTab({ filters }: GamesTabProps) {
           play_time,
           created_at,
           completion_percentage,
-          game:games(
+          games (
             id,
             name,
             cover_url
@@ -261,27 +426,21 @@ export function GamesTab({ filters }: GamesTabProps) {
         throw error;
       }
 
-      console.log("Raw data from Supabase:", data);
-
-      // Transform the response to match our Game interface
-      const transformedData = (data as GameResponse[]).map((item) => {
-        const game = item.game[0] || null;
-        console.log("Processing game:", game);
-        if (!game) return item;
-
-        return {
-          user_id: userId,
-          game_id: item.game_id,
-          status: item.status as GameStatus,
-          play_time: item.play_time,
-          created_at: item.created_at,
-          game: {
-            id: game.id,
-            name: game.name,
-            cover_url: game.cover_url,
-          },
-        };
-      }) as GameWithUserData[];
+      // Transform the response to match our interface
+      const transformedData: GameWithUserData[] = data.map((item: any) => ({
+        id: item.id,
+        user_id: userId,
+        game_id: item.game_id,
+        status: item.status as GameStatus,
+        play_time: item.play_time || 0,
+        created_at: item.created_at,
+        completion_percentage: item.completion_percentage || 0,
+        game: {
+          id: item.game_id,
+          name: item.games.name,
+          cover_url: item.games.cover_url,
+        },
+      }));
 
       console.log("Transformed games:", transformedData);
       return transformedData;
@@ -289,10 +448,16 @@ export function GamesTab({ filters }: GamesTabProps) {
     enabled: !!userId,
   });
 
-  const sortedGames = useMemo(() => {
-    if (!games) return [];
+  // Update local state when query data changes
+  useEffect(() => {
+    if (games) {
+      setLocalGames(games);
+    }
+  }, [games]);
 
-    let sorted = [...games];
+  const sortedGames = useMemo(() => {
+    if (!localGames.length) return [];
+    let sorted = [...localGames];
 
     // Apply status filter
     if (filters.status !== "all") {
@@ -306,12 +471,6 @@ export function GamesTab({ filters }: GamesTabProps) {
           return filters.sortOrder === "asc"
             ? a.game.name.localeCompare(b.game.name)
             : b.game.name.localeCompare(a.game.name);
-        case "rating":
-          const ratingA = a.game.total_rating || 0;
-          const ratingB = b.game.total_rating || 0;
-          return filters.sortOrder === "asc"
-            ? ratingA - ratingB
-            : ratingB - ratingA;
         case "recent":
         default:
           const dateA = new Date(a.created_at).getTime();
@@ -321,47 +480,40 @@ export function GamesTab({ filters }: GamesTabProps) {
     });
 
     return sorted;
-  }, [games, filters]);
+  }, [localGames, filters]);
 
-  if (!userId) {
+  const renderGameItem = (game: GameWithUserData) => {
+    if (libraryView === "list") {
+      return (
+        <GameListItem
+          key={game.game_id}
+          game={game}
+          onDelete={() => handleGameRemoval(game.game_id)}
+        />
+      );
+    }
     return (
-      <div className="flex flex-col items-center justify-center p-12 text-center bg-gray-900/50 rounded-xl border border-white/10 backdrop-blur-sm">
-        <h2 className="text-2xl font-bold mb-4 text-white">
-          Sign in to view your games
-        </h2>
-        <Button
-          onClick={() => router.push("/auth/signin")}
-          className="bg-purple-500 hover:bg-purple-600 text-white transition-colors duration-200"
-        >
-          Sign In
-        </Button>
-      </div>
+      <GameGridItem
+        key={game.game_id}
+        game={game}
+        onDelete={() => handleGameRemoval(game.game_id)}
+      />
     );
-  }
+  };
 
-  if (isLoading) {
-    return <LoadingState />;
-  }
-
-  if (!games?.length) {
-    return <EmptyState router={router} />;
-  }
-
-  if (libraryView === "list") {
-    return (
-      <div className="space-y-4">
-        {sortedGames.map((game) => (
-          <GameListItem key={game.game_id} game={game} />
-        ))}
-      </div>
-    );
-  }
+  if (isLoading) return <LoadingState />;
+  if (!userId) return <EmptyState router={router} />;
+  if (!localGames.length) return <EmptyState router={router} />;
 
   return (
-    <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-      {sortedGames.map((game) => (
-        <GameGridItem key={game.game_id} game={game} />
-      ))}
+    <div
+      className={
+        libraryView === "grid"
+          ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
+          : "space-y-4"
+      }
+    >
+      {sortedGames.map(renderGameItem)}
     </div>
   );
 }

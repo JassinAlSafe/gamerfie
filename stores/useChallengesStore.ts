@@ -1,9 +1,10 @@
 import { create } from "zustand";
-import { Challenge, ChallengeStatus, ChallengeType } from "@/types/challenge";
+import type { Challenge, ChallengeStatus, ChallengeType, ChallengeGoal, ChallengeTeam } from "@/types/challenge";
 import type { SupabaseClient } from "@supabase/auth-helpers-nextjs";
 
 interface ChallengesState {
   challenges: Challenge[];
+  challenge: Challenge | null;
   isLoading: boolean;
   error: string | null;
   filter: "all" | ChallengeType;
@@ -17,15 +18,29 @@ interface ChallengesState {
   getCompletedChallenges: () => Challenge[];
   getAllChallenges: () => Challenge[];
 
-  // Actions
-  setFilter: (filter: "all" | ChallengeType) => void;
-  setStatusFilter: (status: "all" | ChallengeStatus) => void;
-  setSortBy: (sortBy: "date" | "participants") => void;
-  fetchChallenges: (supabase: SupabaseClient) => Promise<void>;
+  // Challenge Actions
+  setFilter: (_filter: "all" | ChallengeType) => void;
+  setStatusFilter: (_status: "all" | ChallengeStatus) => void;
+  setSortBy: (_sortBy: "date" | "participants") => void;
+  fetchChallenges: (_supabase: SupabaseClient) => Promise<void>;
+  fetchChallenge: (_id: string) => Promise<Challenge & {
+    goals: ChallengeGoal[];
+    teams: ChallengeTeam[];
+  } | null>;
+  clearError: () => void;
+
+  // Team Management
+  createTeam: (_challengeId: string, _name: string) => Promise<string>;
+  joinTeam: (_challengeId: string, _teamId: string) => Promise<void>;
+  leaveTeam: (_challengeId: string) => Promise<void>;
+
+  // Goal Management
+  updateGoalProgress: (_challengeId: string, _goalId: string, _progress: number) => Promise<void>;
 }
 
 export const useChallengesStore = create<ChallengesState>((set, get) => ({
   challenges: [],
+  challenge: null,
   isLoading: false,
   error: null,
   filter: "all",
@@ -37,17 +52,14 @@ export const useChallengesStore = create<ChallengesState>((set, get) => ({
     const { challenges, filter, statusFilter, sortBy } = get();
     let filtered = [...challenges];
 
-    // Apply type filter
     if (filter !== "all") {
       filtered = filtered.filter((c) => c.type === filter);
     }
 
-    // Apply status filter
     if (statusFilter !== "all") {
       filtered = filtered.filter((c) => c.status === statusFilter);
     }
 
-    // Apply sorting
     filtered.sort((a, b) => {
       if (sortBy === "date") {
         return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
@@ -77,13 +89,54 @@ export const useChallengesStore = create<ChallengesState>((set, get) => ({
     return get().challenges;
   },
 
-  // Actions
-  setFilter: (newFilter) => set({ filter: newFilter }),
-  setStatusFilter: (newStatus) => set({ statusFilter: newStatus }),
-  setSortBy: (newSort) => set({ sortBy: newSort }),
+  // Challenge Actions
+  setFilter: (_filter: "all" | ChallengeType) => set({ filter: _filter }),
+  setStatusFilter: (_status: "all" | ChallengeStatus) => set({ statusFilter: _status }),
+  setSortBy: (_sortBy: "date" | "participants") => set({ sortBy: _sortBy }),
+  clearError: () => set({ error: null }),
 
-  fetchChallenges: async (supabase) => {
-    const { data: { session } } = await supabase.auth.getSession();
+  fetchChallenge: async (_id: string) => {
+    try {
+      set({ isLoading: true, error: null });
+      const response = await fetch(`/api/challenges/${_id}`);
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to fetch challenge");
+      }
+
+      // Fetch additional data
+      const [goalsResponse, teamsResponse] = await Promise.all([
+        fetch(`/api/challenges/${_id}/goals`),
+        fetch(`/api/challenges/${_id}/teams`)
+      ]);
+
+      if (!goalsResponse.ok) throw new Error("Failed to fetch goals");
+      if (!teamsResponse.ok) throw new Error("Failed to fetch teams");
+
+      const [goals, teams] = await Promise.all([
+        goalsResponse.json(),
+        teamsResponse.json()
+      ]);
+
+      const data = await response.json();
+      const challenge = {
+        ...data,
+        goals,
+        teams
+      };
+      set({ challenge, error: null });
+      return challenge;
+    } catch (error) {
+      set({ error: error instanceof Error ? error.message : "Failed to fetch challenge" });
+      return null;
+    } finally {
+      set({ isLoading: false });
+    }
+  },
+
+  fetchChallenges: async (_supabase: SupabaseClient) => {
+    const { data: { session } } = await _supabase.auth.getSession();
     if (!session?.user) {
       console.log("No authenticated user session");
       return;
@@ -92,8 +145,7 @@ export const useChallengesStore = create<ChallengesState>((set, get) => ({
     set({ isLoading: true, error: null });
 
     try {
-      // Fetch all challenges with their details
-      const { data: challenges, error: challengesError } = await supabase
+      const { data: challenges, error: challengesError } = await _supabase
         .from("challenges")
         .select(`
           *,
@@ -135,7 +187,6 @@ export const useChallengesStore = create<ChallengesState>((set, get) => ({
 
       if (challengesError) throw challengesError;
 
-      // Transform and update challenge statuses based on dates
       const now = new Date();
       const transformedChallenges = challenges?.map(challenge => {
         const startDate = new Date(challenge.start_date);
@@ -163,7 +214,7 @@ export const useChallengesStore = create<ChallengesState>((set, get) => ({
         };
       }) || [];
 
-      set({ challenges: transformedChallenges, isLoading: false });
+      set({ challenges: transformedChallenges, error: null });
     } catch (error) {
       console.error("Error fetching challenges:", error);
       set({ 
@@ -171,5 +222,49 @@ export const useChallengesStore = create<ChallengesState>((set, get) => ({
         isLoading: false 
       });
     }
+  },
+
+  // Team Management
+  createTeam: async (_challengeId: string, _name: string) => {
+    const response = await fetch(`/api/challenges/${_challengeId}/teams`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: _name }),
+    });
+
+    if (!response.ok) throw new Error("Failed to create team");
+    const team = await response.json();
+    return team.id;
+  },
+
+  joinTeam: async (_challengeId: string, _teamId: string) => {
+    const response = await fetch(`/api/challenges/${_challengeId}/teams`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ teamId: _teamId, action: "join" }),
+    });
+
+    if (!response.ok) throw new Error("Failed to join team");
+  },
+
+  leaveTeam: async (_challengeId: string) => {
+    const response = await fetch(`/api/challenges/${_challengeId}/teams`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "leave" }),
+    });
+
+    if (!response.ok) throw new Error("Failed to leave team");
+  },
+
+  // Goal Management
+  updateGoalProgress: async (_challengeId: string, _goalId: string, _progress: number) => {
+    const response = await fetch(`/api/challenges/${_challengeId}/goals`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ goalId: _goalId, progress: _progress }),
+    });
+
+    if (!response.ok) throw new Error("Failed to update progress");
   },
 })); 

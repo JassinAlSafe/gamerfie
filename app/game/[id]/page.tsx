@@ -1,39 +1,48 @@
 "use client";
 
-import React from "react";
+import React, { Suspense } from "react";
 import { GameDetails } from "@/components/game/GameDetails";
 import { useGame } from "@/hooks/useGame";
 import { LoadingSpinner } from "@/components/loadingSpinner";
+import { GamePageProps } from "@/types/game";
 
-interface GamePageProps {
-  params: {
-    id: string;
-  };
+function LoadingFallback() {
+  return (
+    <div className="flex flex-col items-center justify-center min-h-screen p-8 bg-gray-950">
+      <LoadingSpinner size="lg" />
+      <p className="mt-4 text-gray-400 animate-pulse">
+        Loading game details...
+      </p>
+    </div>
+  );
 }
 
-export default function GamePage({ params }: GamePageProps) {
-  const { game, isLoading, error } = useGame(params.id);
+function GameContent({ id }: { id: string }) {
+  const { game, isLoading, error } = useGame(id);
 
-  if (isLoading) {
+  if (error) {
     return (
-      <div className="min-h-screen bg-gray-950 flex items-center justify-center">
-        <LoadingSpinner size="lg" />
-      </div>
-    );
-  }
-
-  if (error || !game) {
-    return (
-      <div className="min-h-screen bg-gray-950 flex items-center justify-center">
+      <div className="flex flex-col items-center justify-center min-h-screen p-8 bg-gray-950">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-white mb-2">Game Not Found</h1>
-          <p className="text-gray-400">
-            {error || "The game you're looking for doesn't exist."}
-          </p>
+          <p className="text-gray-400">{error}</p>
         </div>
       </div>
     );
   }
 
+  if (!game) {
+    return <LoadingFallback />;
+  }
+
   return <GameDetails game={game} />;
+}
+
+export default function GamePage({ params }: GamePageProps) {
+  const resolvedParams = React.use(params);
+  return (
+    <Suspense fallback={<LoadingFallback />}>
+      <GameContent id={resolvedParams.id} />
+    </Suspense>
+  );
 }

@@ -1,21 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getIGDBToken } from '@/lib/igdb';
-
-interface IGDBPlatform {
-  id: number;
-  name: string;
-  category: number;
-}
-
-interface IGDBGenre {
-  id: number;
-  name: string;
-}
-
-interface ProcessedPlatform {
-  id: number;
-  name: string;
-}
+import { Platform, Genre } from '@/types/game';
+import { IGDBPlatform, IGDBGenre } from '@/types/igdb-types';
 
 export async function GET() {
   try {
@@ -65,10 +51,10 @@ export async function GET() {
     ]);
 
     // Filter out duplicate platform names and process platforms
-    const uniquePlatforms = platforms.reduce((acc: ProcessedPlatform[], platform: IGDBPlatform) => {
+    const uniquePlatforms: Platform[] = platforms.reduce((acc: Platform[], platform: IGDBPlatform) => {
       if (!acc.find(p => p.name === platform.name)) {
         acc.push({
-          id: platform.id,
+          id: platform.id.toString(),
           name: platform.name
         });
       }
@@ -76,8 +62,8 @@ export async function GET() {
     }, []);
 
     // Process genres
-    const processedGenres = genres.map((genre: IGDBGenre) => ({
-      id: genre.id,
+    const processedGenres: Genre[] = genres.map((genre: IGDBGenre) => ({
+      id: genre.id.toString(),
       name: genre.name
     }));
 

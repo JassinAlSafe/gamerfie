@@ -10,7 +10,7 @@ import { GameCarouselProps } from "@/types/game";
 import { GameCard } from "@/components/games/cards/game-card";
 
 export const GameCarousel = memo(
-  ({ games, category, title, icon: Icon, color }: GameCarouselProps) => {
+  ({ games = [], category, title, icon: Icon, color }: GameCarouselProps) => {
     const scrollContainerRef = useRef<HTMLDivElement>(null);
     const router = useRouter();
     const { ref, inView } = useInView({
@@ -20,7 +20,7 @@ export const GameCarousel = memo(
 
     // Virtual scrolling setup
     const virtualizer = useVirtualizer({
-      count: games.length,
+      count: games?.length ?? 0,
       getScrollElement: () => scrollContainerRef.current,
       estimateSize: () => 240 + 16, // Width + larger gap
       horizontal: true,
@@ -34,6 +34,11 @@ export const GameCarousel = memo(
         container.scrollBy({ left: scrollAmount, behavior: "smooth" });
       }
     }, []);
+
+    // If games is undefined or null, return early
+    if (!games) {
+      return null;
+    }
 
     return (
       <div className="relative group" ref={ref}>
@@ -87,11 +92,7 @@ export const GameCarousel = memo(
                     }}
                     className="pr-4" // Increased gap between cards
                   >
-                    <GameCard
-                      game={game}
-                      index={virtualItem.index}
-                      inView={inView}
-                    />
+                    <GameCard game={game} />
                   </div>
                 );
               })}

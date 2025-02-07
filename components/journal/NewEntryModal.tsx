@@ -12,9 +12,10 @@ import { EntryTypeSelector } from "./EntryTypeSelector";
 import { EntryForm } from "./EntryForm";
 import { useJournalStore } from "@/stores/useJournalStore";
 
-interface NewEntryModalProps {
+export interface NewEntryModalProps {
   isOpen: boolean;
   onClose: () => void;
+  type: JournalEntryType;
 }
 
 interface EntryFormData {

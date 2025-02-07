@@ -91,6 +91,43 @@ export function GameLibraryActions({
         platforms: platforms ? JSON.stringify(platforms) : null,
         genres: genres ? JSON.stringify(genres) : null,
       });
+      // First ensure game exists in games table
+      const { error: gameError } = await supabase.from("games").upsert(
+        {
+          id: gameId,
+          name: gameName,
+          cover_url: cover
+            ? cover.startsWith("//")
+              ? `https:${cover
+                  .replace("t_thumb", "t_cover_big")
+                  .replace("t_micro", "t_cover_big")}`
+              : cover
+                  .replace("t_thumb", "t_cover_big")
+                  .replace("t_micro", "t_cover_big")
+            : null,
+          rating,
+          first_release_date: releaseDate,
+          platforms: platforms ? JSON.stringify(platforms) : null,
+          genres: genres ? JSON.stringify(genres) : null,
+        },
+        { onConflict: "id" }
+      );
+
+      if (gameError) throw gameError;
+
+      // Update user_games table
+      const { error: userGameError } = await supabase.from("user_games").upsert(
+        {
+          user_id: user.id,
+          game_id: gameId,
+          status: newStatus,
+          progress: newStatus === "completed" ? 100 : progress,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "user_id,game_id" }
+      );
+
+      if (userGameError) throw userGameError;
 
       // Create activity for significant status changes
       if (newStatus === "completed" || newStatus === "playing") {

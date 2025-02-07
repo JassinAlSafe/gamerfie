@@ -1,5 +1,6 @@
 "use client";
 
+import type { ScreenshotModalProps } from "@/types/screenshot";
 import {
   Dialog,
   DialogContent,
@@ -7,34 +8,19 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import Image from "next/image";
-import { ChevronLeft, ChevronRight, X } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 const ensureAbsoluteUrl = (url: string) => {
-  if (url.startsWith("//")) {
-    return `https:${url}`;
-  }
-  return url;
+  return url.startsWith("//") ? `https:${url}` : url;
 };
 
-interface ScreenshotModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  screenshots: Screenshot[];
-  currentIndex: number;
-  onIndexChange: (index: number) => void;
-}
-
-export const ScreenshotModal: React.FC<ScreenshotModalProps> = ({
+export function ScreenshotModal({
   isOpen,
   onClose,
   screenshots,
   currentIndex,
   onIndexChange,
-}) => {
-  console.log("Screenshots:", screenshots);
-  console.log("Current screenshot:", screenshots[currentIndex]);
-  console.log("Current URL:", ensureAbsoluteUrl(screenshots[currentIndex].url));
-
+}: ScreenshotModalProps) {
   const handlePrevious = () => {
     if (currentIndex > 0) {
       onIndexChange(currentIndex - 1);
@@ -47,11 +33,23 @@ export const ScreenshotModal: React.FC<ScreenshotModalProps> = ({
     }
   };
 
+  const currentScreenshot = screenshots[currentIndex];
+  const isFirstScreenshot = currentIndex === 0;
+  const isLastScreenshot = currentIndex === screenshots.length - 1;
+  const screenshotCount = screenshots.length;
+
+  if (!currentScreenshot) {
+    return null;
+  }
+
+  // Replace 't_thumb' with 't_1080p' or 't_720p' for higher quality
+  const highQualityUrl = currentScreenshot.url.replace("t_thumb", "t_1080p");
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-[90vw] max-h-[90vh] p-0 bg-black/95 border-gray-800">
         <DialogTitle className="sr-only">
-          Screenshot {currentIndex + 1} of {screenshots.length}
+          Screenshot {currentIndex + 1} of {screenshotCount}
         </DialogTitle>
 
         <DialogDescription className="sr-only">
@@ -60,17 +58,8 @@ export const ScreenshotModal: React.FC<ScreenshotModalProps> = ({
         </DialogDescription>
 
         <div className="relative w-full h-[80vh]">
-          {/* Close button */}
-          <button
-            onClick={onClose}
-            className="absolute top-4 right-4 z-50 p-2 rounded-full bg-black/50 hover:bg-black/70 transition-colors"
-            aria-label="Close screenshot viewer"
-          >
-            <X className="w-6 h-6 text-white" />
-          </button>
-
           {/* Navigation buttons */}
-          {currentIndex > 0 && (
+          {!isFirstScreenshot && (
             <button
               onClick={handlePrevious}
               className="absolute left-4 top-1/2 -translate-y-1/2 z-50 p-2 rounded-full bg-black/50 hover:bg-black/70 transition-colors"
@@ -79,7 +68,7 @@ export const ScreenshotModal: React.FC<ScreenshotModalProps> = ({
               <ChevronLeft className="w-6 h-6 text-white" />
             </button>
           )}
-          {currentIndex < screenshots.length - 1 && (
+          {!isLastScreenshot && (
             <button
               onClick={handleNext}
               className="absolute right-4 top-1/2 -translate-y-1/2 z-50 p-2 rounded-full bg-black/50 hover:bg-black/70 transition-colors"
@@ -92,23 +81,24 @@ export const ScreenshotModal: React.FC<ScreenshotModalProps> = ({
           {/* Screenshot */}
           <div className="relative w-full h-full flex items-center justify-center bg-black">
             <Image
-              src={ensureAbsoluteUrl(screenshots[currentIndex].url)}
-              alt={`Screenshot ${currentIndex + 1} of ${screenshots.length}`}
-              fill
+              src={ensureAbsoluteUrl(highQualityUrl)}
+              alt={`Screenshot ${currentIndex + 1} of ${screenshotCount}`}
+              width={1920}
+              height={1080}
               sizes="90vw"
-              className="object-contain"
+              className="object-contain w-full h-full"
               quality={100}
-              priority
-              unoptimized
+              priority={true}
+              loading="eager"
             />
           </div>
 
           {/* Counter */}
           <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/50 px-4 py-2 rounded-full text-white text-sm">
-            {currentIndex + 1} / {screenshots.length}
+            {currentIndex + 1} / {screenshotCount}
           </div>
         </div>
       </DialogContent>
     </Dialog>
   );
-};
+}

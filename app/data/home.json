@@ -1,0 +1,64 @@
+{
+  "features": [
+    {
+      "title": "Track Your Games",
+      "description": "Keep track of your gaming achievements, completion status, and playtime across your entire library.",
+      "icon": "Gamepad2",
+      "iconColor": "text-purple-500",
+      "link": "/explore"
+    },
+    {
+      "title": "Community Stats",
+      "description": "See what games are trending, most completed, and highest rated in the community.",
+      "icon": "BarChart3",
+      "iconColor": "text-pink-500",
+      "link": "/explore"
+    },
+    {
+      "title": "Achievement Tracking",
+      "description": "Track your gaming milestones and compare with friends. Never miss an achievement.",
+      "icon": "Trophy",
+      "iconColor": "text-yellow-500",
+      "link": "/explore"
+    },
+    {
+      "title": "Connect with Gamers",
+      "description": "Join a vibrant community of gamers, share experiences, and make new friends.",
+      "icon": "Users",
+      "iconColor": "text-cyan-500",
+      "link": "/explore"
+    },
+    {
+      "title": "Trending Games",
+      "description": "Discover what's hot in the gaming world with our curated lists and recommendations.",
+      "icon": "Zap",
+      "iconColor": "text-orange-500",
+      "link": "/explore"
+    },
+    {
+      "title": "Game Ratings",
+      "description": "Rate games you've played and see what others think. Find your next favorite game.",
+      "icon": "Star",
+      "iconColor": "text-green-500",
+      "link": "/explore"
+    }
+  ],
+  "stats": [
+    {
+      "label": "Active Gamers",
+      "value": "10K+"
+    },
+    {
+      "label": "Games Tracked",
+      "value": "50K+"
+    },
+    {
+      "label": "Reviews Written",
+      "value": "100K+"
+    },
+    {
+      "label": "Achievements Unlocked",
+      "value": "1M+"
+    }
+  ]
+}
