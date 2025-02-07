@@ -1,6 +1,5 @@
 import { create } from 'zustand'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
-import { useFriendsStore } from './useFriendsStore'
 import { ActivityType } from '@/types/activity'
 import toast from 'react-hot-toast'
 import { JournalGameData } from '@/types/game'
