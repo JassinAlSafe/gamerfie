@@ -24,26 +24,25 @@ export interface JournalEntry {
   updatedAt: string
 }
 
-interface JournalStore {
-  entries: JournalEntry[];
-  currentEntry: JournalEntry | null;
-  isLoading: boolean;
-  error: string | null;
-  createEntry: (type: JournalEntry['type'], data: Partial<JournalEntry>) => Promise<JournalEntry>;
-  updateEntry: (entryId: string, data: Partial<JournalEntry>) => Promise<void>;
-  deleteEntry: (entryId: string) => Promise<void>;
-  fetchEntries: () => Promise<void>;
-  fetchEntryById: (entryId: string) => Promise<void>;
+interface JournalState {
+  entries: JournalEntry[]
+  loading: boolean
+  error: string | null
+  addEntry: (entry: Omit<JournalEntry, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>
+  updateEntry: (id: string, entry: Partial<JournalEntry>) => Promise<void>
+  deleteEntry: (id: string) => Promise<void>
+  setEntries: (entries: JournalEntry[]) => void
+  setLoading: (loading: boolean) => void
+  setError: (error: string | null) => void
+  fetchEntries: () => Promise<void>
 }
 
-export const useJournalStore = create<JournalStore>((set) => ({
-  entries: [],
-  currentEntry: null,
-  isLoading: false,
-  error: null,
-
-  createEntry: async (type: JournalEntry['type'], data: Partial<JournalEntry>) => {
-    set({ isLoading: true, error: null });
+export const useJournalStore = create<JournalState>((set, get) => {
+  const createActivity = async (
+    activityType: ActivityType,
+    gameId: string,
+    details?: { name?: string; comment?: string; progress?: number }
+  ) => {
     try {
       const response = await fetch('/api/friends/activities/create', {
         method: 'POST',
@@ -345,29 +344,23 @@ export const useJournalStore = create<JournalStore>((set) => ({
               .eq('game_id', entry.game.id)
               .single();
 
-      if (error) throw error;
-
-      // Create activity and sync progress for game-related entries
-      if (data.type === 'progress' && data.game?.id) {
-        await createActivity('progress', data.game.id, {
-          comment: data.content,
-          progress: data.progress,
-        });
-
-        // Sync with user_games table directly
-        if (data.progress !== undefined) {
-          const { error: userGameError } = await supabase
-            .from('user_games')
-            .upsert({
-              user_id: session.session.user.id,
-              game_id: data.game.id,
-              completion_percentage: data.progress,
-              play_time: data.hours_played,
-              status: data.progress === 100 ? 'completed' : 'playing',
-              last_played_at: new Date().toISOString()
-            }, {
-              onConflict: 'user_id,game_id'
-            });
+            // Update user_games with merged data
+            const { error: updateError } = await supabase
+              .from('user_games')
+              .upsert({
+                user_id: session.user.id,
+                game_id: entry.game.id,
+                completion_percentage: entry.progress,
+                play_time: entry.hoursPlayed ?? currentUserGame?.play_time,
+                last_played_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+                status: entry.progress === 100 ? 'completed' : 'playing',
+                // Preserve other fields from the current entry
+                achievements_completed: currentUserGame?.achievements_completed,
+                notes: currentUserGame?.notes,
+              }, {
+                onConflict: 'user_id,game_id'
+              });
 
             if (updateError) throw updateError;
 
@@ -459,20 +452,19 @@ export const useJournalStore = create<JournalStore>((set) => ({
       }
     },
 
-  deleteEntry: async (entryId: string) => {
-    set({ isLoading: true, error: null });
-    try {
-      const supabase = createClientComponentClient();
-      const { data: session } = await supabase.auth.getSession();
-      if (!session?.session?.user) throw new Error('Not authenticated');
+    deleteEntry: async (id) => {
+      try {
+        set({ loading: true, error: null })
+        const supabase = createClientComponentClient()
+        const { data: { session } } = await supabase.auth.getSession()
+        if (!session?.user) throw new Error('No authenticated user')
 
-      const { error } = await supabase
-        .from('journal_entries')
-        .delete()
-        .eq('id', entryId)
-        .eq('user_id', session.session.user.id);
+        const { error } = await supabase
+          .from('journal_entries')
+          .delete()
+          .eq('id', id)
 
-      if (error) throw error;
+        if (error) throw error
 
         set(state => ({
           entries: state.entries.filter(e => e.id !== id),
@@ -492,38 +484,39 @@ export const useJournalStore = create<JournalStore>((set) => ({
     setLoading: (loading) => set({ loading }),
     setError: (error) => set({ error }),
 
-  fetchEntries: async () => {
-    set({ isLoading: true, error: null });
-    try {
-      const supabase = createClientComponentClient();
-      const { data: session } = await supabase.auth.getSession();
-      if (!session?.session?.user) throw new Error('Not authenticated');
+    fetchEntries: async () => {
+      try {
+        set({ loading: true, error: null })
+        const supabase = createClientComponentClient()
+        const { data: { session } } = await supabase.auth.getSession()
+        if (!session?.user) throw new Error('No authenticated user')
 
-      const { data, error } = await supabase
-        .from('journal_entries')
-        .select('*')
-        .eq('user_id', session.session.user.id)
-        .order('created_at', { ascending: false });
+        const { data: entries, error } = await supabase
+          .from('journal_entries')
+          .select('*')
+          .eq('user_id', session.user.id)
+          .order('created_at', { ascending: false })
 
-      if (error) throw error;
+        if (error) throw error
 
-      const transformedEntries: JournalEntry[] = data.map(entry => ({
-        id: entry.id,
-        type: entry.type,
-        title: entry.title,
-        content: entry.content,
-        date: entry.date,
-        created_at: entry.created_at,
-        updated_at: entry.updated_at,
-        game: entry.game_id ? {
-          id: entry.game_id,
-          name: entry.game,
-          cover_url: entry.cover_url
-        } : undefined,
-        progress: entry.progress,
-        rating: entry.rating,
-        hours_played: entry.hours_played
-      }));
+        // Transform entries to match our interface
+        const transformedEntries: JournalEntry[] = entries.map(entry => ({
+          id: entry.id,
+          type: entry.type,
+          date: entry.date,
+          title: entry.title,
+          content: entry.content,
+          game: entry.game_id ? {
+            id: entry.game_id,
+            name: entry.game,
+            cover_url: entry.cover_url,
+          } : undefined,
+          progress: entry.progress,
+          hoursPlayed: entry.hours_played,
+          rating: entry.rating,
+          createdAt: entry.created_at,
+          updatedAt: entry.updated_at,
+        }))
 
         set({ entries: transformedEntries, loading: false })
       } catch (error) {
@@ -534,4 +527,4 @@ export const useJournalStore = create<JournalStore>((set) => ({
       }
     },
   }
-})); 
+}) 
