@@ -167,9 +167,9 @@ export interface GameFilters {
 }
 
 export interface GamePageProps {
-  params: Promise<{
+  params: {
     id: string;
-  }>;
+  }
 }
 
 export interface ReviewUpdateData {
