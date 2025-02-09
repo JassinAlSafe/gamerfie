@@ -43,7 +43,14 @@ import { toast } from "sonner";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
-import type { ProgressMilestone, RewardType } from "@/types/challenge";
+import type {
+  ProgressMilestone,
+  RewardType,
+  ChallengeGoal,
+} from "@/types/challenge";
+import { useChallengesStore } from "@/store/challenges";
+import { Slider } from "@/components/ui/slider";
+import { Label } from "@/components/ui/label";
 
 const milestoneSchema = z.object({
   title: z.string().min(3, "Title must be at least 3 characters"),
@@ -66,11 +73,13 @@ const defaultValues: MilestoneFormValues = {
 interface MilestoneManagementProps {
   challengeId: string;
   isCreator: boolean;
+  goals: ChallengeGoal[];
 }
 
 export function MilestoneManagement({
   challengeId,
   isCreator,
+  goals,
 }: MilestoneManagementProps) {
   const [milestones, setMilestones] = useState<ProgressMilestone[]>([]);
   const [loading, setLoading] = useState(true);
@@ -78,6 +87,8 @@ export function MilestoneManagement({
   const [editingMilestone, setEditingMilestone] =
     useState<ProgressMilestone | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
+  const [progress, setProgress] = useState<{ [key: string]: number }>({});
+  const { updateGoalProgress } = useChallengesStore();
 
   const supabase = createClientComponentClient();
   const form = useForm<MilestoneFormValues>({
@@ -225,6 +236,17 @@ export function MilestoneManagement({
         return <Star className="h-5 w-5 text-purple-500" />;
       default:
         return null;
+    }
+  };
+
+  const handleProgressChange = async (goalId: string, value: number) => {
+    try {
+      await updateGoalProgress(challengeId, goalId, value);
+      setProgress((prev) => ({ ...prev, [goalId]: value }));
+      toast.success("Progress updated successfully");
+    } catch (error) {
+      console.error("Failed to update progress:", error);
+      toast.error("Failed to update progress");
     }
   };
 
@@ -392,65 +414,28 @@ export function MilestoneManagement({
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          {milestones.length === 0 ? (
-            <p className="text-center text-gray-500 py-4">
-              No milestones created yet
-            </p>
-          ) : (
-            milestones.map((milestone) => (
-              <div
-                key={milestone.id}
-                className="flex items-center justify-between p-4 rounded-lg border border-gray-200"
-              >
-                <div className="flex items-center gap-4">
-                  <div className="flex-shrink-0">
-                    {getRewardIcon(milestone.reward_type)}
-                  </div>
-                  <div>
-                    <h4 className="font-medium">{milestone.title}</h4>
-                    {milestone.description && (
-                      <p className="text-sm text-gray-500">
-                        {milestone.description}
-                      </p>
-                    )}
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Badge variant="outline">
-                    {milestone.required_progress}% Required
-                  </Badge>
-                  {milestone.reward_type && (
-                    <Badge>
-                      {milestone.reward_type}
-                      {milestone.reward_amount &&
-                        ` (${milestone.reward_amount})`}
-                    </Badge>
-                  )}
-                  {isCreator && userId === milestone.created_by && (
-                    <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => {
-                          setEditingMilestone(milestone);
-                          setIsDialogOpen(true);
-                        }}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => handleDelete(milestone.id)}
-                      >
-                        <Trash2 className="h-4 w-4 text-red-500" />
-                      </Button>
-                    </div>
-                  )}
+          {goals.map((goal) => (
+            <div key={goal.id} className="space-y-2">
+              <Label className="text-gray-300">{goal.description}</Label>
+              <div className="space-y-2">
+                <Slider
+                  value={[progress[goal.id] || 0]}
+                  onValueChange={(value) =>
+                    handleProgressChange(goal.id, value[0])
+                  }
+                  max={goal.target}
+                  step={1}
+                  className="py-4"
+                />
+                <div className="flex justify-between text-sm text-gray-500">
+                  <span>0</span>
+                  <span>
+                    {progress[goal.id] || 0}/{goal.target}
+                  </span>
                 </div>
               </div>
-            ))
-          )}
+            </div>
+          ))}
         </div>
       </CardContent>
     </Card>

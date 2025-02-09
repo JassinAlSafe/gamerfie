@@ -57,9 +57,9 @@ export interface Game {
   id: string;
   name: string;
   description: string;
-  cover_url: string;
+  cover_url?: string;
   cover?: {
-    id: number;
+    id: string;
     url: string;
   };
   rating: number;
@@ -72,18 +72,18 @@ export interface Game {
 }
 
 export interface UserGame {
+  id: string;
   user_id: string;
   game_id: string;
   status: GameStatus;
-  play_time?: number;
+  play_time: number;
   completion_percentage?: number;
-  achievements_completed?: number;
-  user_rating?: number;
-  completed_at?: string;
-  notes?: string;
-  last_played_at?: string;
   created_at: string;
-  updated_at?: string;
+  updated_at: string;
+  last_played_at?: string;
+  achievements_completed?: number;
+  notes?: string;
+  game?: Game;
 }
 
 export type GameStatus = 'playing' | 'completed' | 'want_to_play' | 'dropped';
@@ -167,9 +167,9 @@ export interface GameFilters {
 }
 
 export interface GamePageProps {
-  params: Promise<{
+  params: {
     id: string;
-  }>;
+  }
 }
 
 export interface ReviewUpdateData {
@@ -185,4 +185,23 @@ export interface GameStats {
   currentlyPlaying: number;
   completedGames: number;
   droppedGames: number;
+}
+
+export interface SearchGameResult extends Game {
+  cover?: {
+    id: string;
+    url: string;
+  };
+}
+
+export interface GameWithProgress extends Game {
+  progress?: number;
+  hoursPlayed?: number;
+  rating?: number;
+}
+
+export interface JournalGameData {
+  id: string;
+  name: string;
+  cover_url?: string;
 }

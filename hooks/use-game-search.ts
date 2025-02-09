@@ -1,20 +1,65 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { Game } from '@/types/game';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { useDebounce } from '@/hooks/use-debounce';
+import { useGamesStore } from '@/stores/useGamesStore';
+import { useSearchStore } from '@/stores/useSearchStore';
 
-export function useGameSearch(query: string) {
+
+export interface SearchState {
+  query: string;
+  setQuery: (query: string) => void;
+  handleSearch: () => void;
+  handleSearchChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  handleKeyPress: (e: React.KeyboardEvent<HTMLInputElement>) => void;
+}
+
+interface SearchResults {
+  games: Game[];
+  isLoading: boolean;
+  error: Error | null;
+}
+
+export function useGameSearch(): SearchResults & SearchState {
+  const router = useRouter();
+  const { query, setQuery } = useSearchStore();
   const [games, setGames] = useState<Game[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
-  const debouncedQuery = useDebounce(query, 300);
+  const debouncedSearch = useDebounce(query, 300);
+  const setSelectedCategory = useGamesStore((state) => state.setSelectedCategory);
   const supabase = createClientComponentClient();
+
+  const handleSearch = useCallback(() => {
+    if (debouncedSearch.trim()) {
+      setSelectedCategory("all");
+      router.push(`/all-games?search=${encodeURIComponent(debouncedSearch)}`);
+    }
+  }, [debouncedSearch, router, setSelectedCategory]);
+
+
+  const handleSearchChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      setQuery(e.target.value);
+    },
+    [setQuery]
+  );
+
+  const handleKeyPress = useCallback(
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === "Enter") {
+        handleSearch();
+      }
+    },
+    [handleSearch]
+  );
 
   useEffect(() => {
     const searchGames = async () => {
-      if (!debouncedQuery.trim()) {
+      if (!debouncedSearch.trim()) {
         setGames([]);
         return;
       }
@@ -29,15 +74,29 @@ export function useGameSearch(query: string) {
             id,
             name,
             cover_url,
-            genres:game_genres(id, name),
-            achievements:game_achievements(id, name, description)
+           description,
+           rating,
+           release_date,
+           platforms,
           `)
-          .ilike('name', `%${debouncedQuery}%`)
+          .ilike('name', `%${debouncedSearch}%`)
           .limit(10);
 
         if (searchError) throw searchError;
 
-        setGames(data || []);
+        const mappedGames: Game[] = (data || []).map((game: any) => ({
+          id: game.id,
+          name: game.name,
+          cover_url: game.cover_url,
+          description: game.description || '',
+          rating: game.rating || 0,
+          releaseDate: game.release_date || '',
+          platforms: game.platforms || [],
+          genres: [],
+          achievements: []
+        }));
+
+        setGames(mappedGames);
       } catch (err) {
         console.error('Error searching games:', err);
         setError(err instanceof Error ? err : new Error('Failed to search games'));
@@ -47,7 +106,18 @@ export function useGameSearch(query: string) {
     };
 
     searchGames();
-  }, [debouncedQuery, supabase]);
+  }, [debouncedSearch, supabase]);
 
-  return { games, isLoading, error };
-} 
+  return {
+    // Search results
+    games,
+    isLoading,
+    error,
+    // Search state and handlers
+    query,
+    setQuery,
+    handleSearch,
+    handleSearchChange,
+    handleKeyPress,
+  };
+}
