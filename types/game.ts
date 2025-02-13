@@ -114,6 +114,8 @@ export interface GameQueryParams {
 
 export type SortOption = 'rating' | 'popularity' | 'name' | 'release';
 
+export type CategoryOption = "popular" | "trending" | "upcoming";
+
 export interface ProcessedGame extends Game {
   play_time?: number;
   completion_percentage?: number;
