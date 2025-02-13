@@ -102,9 +102,7 @@ export default function ExplorePage() {
                       // Reset the error boundary state
                     }}
                   >
-                    <PopularGamesSection
-                      category={id === "recent" ? "new" : id}
-                    />
+                    <PopularGamesSection category={id} />
                   </ErrorBoundary>
                 ))}
               </div>

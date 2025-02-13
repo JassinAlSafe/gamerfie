@@ -1,5 +1,6 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { GameFilters, IGDBResponse, Game } from "@/types";
+import { GameFilters, Game } from "@/types";
+import { IGDBResponse } from "@/types/igdb-types";
 
 export function useGames(
   page: number = 1,
@@ -15,13 +16,13 @@ export function useGames(
       const params = new URLSearchParams({
         page: page.toString(),
         limit: limit.toString(),
-        ...(filters?.platform && { platform: filters.platform }),
-        ...(filters?.genre && { genre: filters.genre }),
-        ...(filters?.category && { category: filters.category }),
-        ...(filters?.searchQuery && { search: filters.searchQuery })
+        ...(filters?.platformId && { platformId: filters.platformId.toString() }),
+        ...(filters?.genreId && { genreId: filters.genreId.toString() }),
+        ...(filters?.timeRange && { timeRange: filters.timeRange }),
+        ...(filters?.search && { search: filters.search })
       });
 
-      const response = await fetch(\`/api/games?\${params.toString()}\`);
+      const response = await fetch(`/api/games?${params.toString()}`);
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || "Failed to fetch games");
@@ -29,24 +30,27 @@ export function useGames(
       return response.json();
     },
     staleTime: 1000 * 60 * 5, // 5 minutes
-    keepPreviousData: true,
-    onSuccess: (data) => {
+    placeholderData: (previousData) => previousData,
+    select: (data) => {
       // Prefetch next page
       if (data.currentPage < data.totalPages) {
         const nextPageParams = new URLSearchParams({
           page: (page + 1).toString(),
           limit: limit.toString(),
-          ...(filters?.platform && { platform: filters.platform }),
-          ...(filters?.genre && { genre: filters.genre }),
-          ...(filters?.category && { category: filters.category }),
-          ...(filters?.searchQuery && { search: filters.searchQuery })
+          ...(filters?.platformId && { platformId: filters.platformId.toString() }),
+          ...(filters?.genreId && { genreId: filters.genreId.toString() }),
+          ...(filters?.timeRange && { timeRange: filters.timeRange }),
+          ...(filters?.search && { search: filters.search })
         });
-        queryClient.prefetchQuery({
+
+        void queryClient.prefetchQuery({
           queryKey: ["games", page + 1, limit, filters],
-          queryFn: () => fetch(\`/api/games?\${nextPageParams.toString()}\`).then(res => res.json()),
+          queryFn: () => 
+            fetch(`/api/games?${nextPageParams.toString()}`).then(res => res.json()),
           staleTime: 1000 * 60 * 5
         });
       }
+      return data;
     }
   });
 }
@@ -55,7 +59,7 @@ export function usePopularGames(limit: number = 10) {
   return useQuery<Game[]>({
     queryKey: ["popularGames", limit],
     queryFn: async () => {
-      const response = await fetch(\`/api/games/popular?limit=\${limit}\`);
+      const response = await fetch(`/api/games/popular?limit=${limit}`);
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || "Failed to fetch popular games");
@@ -71,7 +75,7 @@ export function useSearchGames(query: string, enabled: boolean = false) {
   return useQuery<Game[]>({
     queryKey: ["searchGames", query],
     queryFn: async () => {
-      const response = await fetch(\`/api/games/search?q=\${encodeURIComponent(query)}\`);
+      const response = await fetch(`/api/games/search?q=${encodeURIComponent(query)}`);
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || "Failed to search games");
@@ -89,7 +93,7 @@ export function useGameDetails(gameId: number | null) {
     queryKey: ["game", gameId],
     queryFn: async () => {
       if (!gameId) throw new Error("Game ID is required");
-      const response = await fetch(\`/api/games/\${gameId}\`);
+      const response = await fetch(`/api/games/${gameId}`);
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || "Failed to fetch game details");

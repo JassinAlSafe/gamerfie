@@ -10,9 +10,10 @@ interface LibraryState {
   addGame: (game: Partial<Game>) => Promise<Game>;
   removeGame: (gameId: string) => Promise<void>;
   fetchUserLibrary: (userId: string) => Promise<void>;
+  updateGamesOrder: (games: Game[]) => void;
 }
 
-export const useLibraryStore = create<LibraryState>((set, get) => ({
+export const useLibraryStore = create<LibraryState>((set) => ({
   games: [],
   loading: false,
   error: null,
@@ -144,7 +145,7 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
     }
   },
 
-  fetchUserLibrary: async () => {
+  fetchUserLibrary: async (userId: string) => {
     try {
       const supabase = createClientComponentClient<Database>();
       const { data: session } = await supabase.auth.getSession();
@@ -154,7 +155,7 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
       const { data, error } = await supabase
         .from('user_games')
         .select('*')
-        .eq('user_id', session.session.user.id)
+        .eq('user_id', userId)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -171,12 +172,15 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
           : item.notes || {},
       }));
 
-      set({ library: transformedData, error: null });
-      return transformedData;
+      set({ games: transformedData, error: null });
     } catch (error) {
       console.error('Error fetching library:', error);
-      set({ error: error as Error });
+      set({ error: error instanceof Error ? error.message : 'An unknown error occurred' });
       throw error;
     }
+  },
+
+  updateGamesOrder: (games) => {
+    set({ games });
   },
 }))

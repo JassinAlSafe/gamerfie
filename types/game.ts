@@ -1,3 +1,4 @@
+import { LucideIcon } from "lucide-react";
 import { ActivityType } from "./activity";
 
 export interface Achievement {
@@ -56,19 +57,25 @@ export interface GameActivity {
 export interface Game {
   id: string;
   name: string;
-  description: string;
+  description?: string;
   cover_url?: string;
   cover?: {
     id: string;
     url: string;
   };
-  rating: number;
-  releaseDate: string;
+  rating?: number;
+  releaseDate?: string;  // Make optional
   first_release_date?: number;
   platforms: Platform[];
   genres: Genre[];
   summary?: string;
   storyline?: string;
+  total_rating?: number;
+  total_rating_count?: number;
+  rating_count?: number;
+  follows_count?: number;
+  hype_count?: number;
+  status?: GameStatus;
 }
 
 export interface UserGame {
@@ -108,11 +115,11 @@ export interface GameQueryParams {
 export type SortOption = 'rating' | 'popularity' | 'name' | 'release';
 
 export interface ProcessedGame extends Game {
-  status?: GameStatus;
   play_time?: number;
   completion_percentage?: number;
   achievements_completed?: number;
   user_rating?: number;
+  total_rating_count?: number;
   completed_at?: string;
   last_played_at?: string;
   notes?: string;
@@ -134,11 +141,13 @@ export interface GameCategories {
   trending: Game[];
 }
 
+export type GameCategory = "popular" | "upcoming" | "trending";
+
 export interface GameCarouselProps {
-  games: Game[];
-  category?: string;
+  games: ProcessedGame[];
+  category: GameCategory;
   title: string;
-  icon: React.ComponentType<{ className?: string }>;
+  icon: LucideIcon;
   color: string;
 }
 
@@ -204,4 +213,10 @@ export interface JournalGameData {
   id: string;
   name: string;
   cover_url?: string;
+}
+
+export interface GameCardProps {
+  game: ProcessedGame;
+  index?: number;
+  category?: GameCategory;
 }

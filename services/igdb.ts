@@ -1,4 +1,5 @@
-import { Game, IGDBResponse } from "@/types/index";
+import { Game } from "@/types/game";
+import { IGDBResponse } from "@/types/igdb-types";
 import { getIGDBToken } from "@/lib/igdb";
 
 interface GameFilters {
@@ -60,15 +61,18 @@ export class IGDBService {
 
   private static processGame(game: IGDBGameResponse): Game {
     return {
-      id: game.id,
+      id: game.id.toString(),
       name: game.name,
       cover: game.cover ? {
+        id: game.cover.id.toString(),
         url: game.cover.url.replace(/t_[a-zA-Z_]+/, 't_cover_big_2x')
       } : undefined,
-      rating: game.rating ? Math.round(game.rating) : undefined,
+      rating: game.rating ? Math.round(game.rating) : 0,
       total_rating_count: game.total_rating_count || 0,
-      genres: game.genres?.map((g) => ({ id: g.id, name: g.name })) || [],
-      platforms: game.platforms?.map((p) => ({ id: p.id, name: p.name })) || [],
+      genres: game.genres?.map((g) => ({ id: g.id.toString(), name: g.name })) || [],
+      platforms: game.platforms?.map((p) => ({ id: p.id.toString(), name: p.name })) || [],
+      description: game.summary,
+      releaseDate: game.first_release_date ? new Date(game.first_release_date * 1000).toISOString() : undefined,
       first_release_date: game.first_release_date,
       summary: game.summary
     };
@@ -183,10 +187,11 @@ export class IGDBService {
 
       return {
         games: processedGames,
-        totalGames,
+        totalCount: totalGames, // Changed from totalGames
         currentPage: page,
         totalPages: Math.ceil(totalGames / limit),
-        limit
+        hasNextPage: page < Math.ceil(totalGames / limit), // Added
+        hasPreviousPage: page > 1, // Added
       };
     } catch (error) {
       console.error("Error in IGDB service:", error);
@@ -222,4 +227,4 @@ export class IGDBService {
       throw error;
     }
   }
-} 
+}

@@ -2,7 +2,7 @@
 
 import { memo, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Calendar, Sparkles, Flame } from "lucide-react";
+import { CalendarDays, TrendingUp, Flame } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ErrorBoundary } from "react-error-boundary";
 import { Game } from "@/types/game";
@@ -10,30 +10,30 @@ import { GameCarousel } from "../carousel/game-carousel";
 import { CategorySkeleton } from "../ui/category-skeleton";
 import { ErrorDisplay, ErrorFallback } from "../ui/error-display";
 
+
 interface GameCategoryData {
   topRated: Game[];
-  newReleases: Game[];
   upcoming: Game[];
   trending: Game[];
 }
 
 interface PopularGamesSectionProps {
-  category?: "popular" | "upcoming" | "new";
+  category?: "popular" | "upcoming" | "trending";
 }
 
 const getCategoryLabel = (category: string) => {
   switch (category) {
     case "upcoming":
       return {
-        title: "Upcoming Games",
+        title: "Coming Soon",
         color: "text-purple-500",
-        icon: Calendar,
+        icon: CalendarDays,
       };
-    case "new":
+    case "trending":
       return {
-        title: "New Releases",
-        color: "text-yellow-500",
-        icon: Sparkles,
+        title: "Recently Trending",
+        color: "text-green-500",
+        icon: TrendingUp,
       };
     case "popular":
     default:
@@ -51,7 +51,7 @@ export const PopularGamesSection = memo(
 
     // Prefetch the next category
     useEffect(() => {
-      const categories = ["popular", "upcoming", "new"];
+      const categories = ["popular", "trending", "upcoming"];
       const currentIndex = categories.indexOf(category);
       const nextCategory = categories[(currentIndex + 1) % categories.length];
 
@@ -69,7 +69,6 @@ export const PopularGamesSection = memo(
       const data = await response.json();
       return {
         topRated: data.topRated || [],
-        newReleases: data.newReleases || [],
         upcoming: data.upcoming || [],
         trending: data.trending || [],
       };
@@ -120,11 +119,11 @@ export const PopularGamesSection = memo(
     const games =
       category === "popular"
         ? categories.topRated
-        : category === "new"
-        ? categories.newReleases
+        : category === "trending"
+        ? categories.trending
         : category === "upcoming"
         ? categories.upcoming
-        : categories.trending;
+        : [];
 
     const { title, color, icon } = getCategoryLabel(category);
 
