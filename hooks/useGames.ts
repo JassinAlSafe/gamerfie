@@ -1,108 +1,108 @@
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { GameFilters, Game } from "@/types";
-import { IGDBResponse } from "@/types/igdb-types";
+import  {useEffect} from "react";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
+import { useGamesStore } from "@/stores/useGamesStore";
+import { useSearchStore } from "@/stores/useSearchStore";
+import { useGameDetailsStore } from "@/stores/useGameDetailsStore";
+import { useDebounce } from "@/hooks/useDebounce";
+import { Game } from "@/types/game";
 
-export function useGames(
-  page: number = 1,
-  limit: number = 24,
-  filters?: GameFilters
-) {
-  const queryClient = useQueryClient();
-  const queryKey = ["games", page, limit, filters];
+const ITEMS_PER_PAGE = 48;
+const STALE_TIME = 1000 * 60 * 5; // 5 minutes
 
-  return useQuery<IGDBResponse>({
-    queryKey,
-    queryFn: async () => {
+interface GameResponse {
+  games: Game[];
+  totalGames: number;
+  totalPages: number;
+  currentPage: number;
+  hasMore: boolean;
+}
+
+export function useGamesInfinite() {
+  const store = useGamesStore();
+  const { query: searchQuery } = useSearchStore();
+  const debouncedSearch = useDebounce(searchQuery, 500);
+
+  const query = useInfiniteQuery<GameResponse>({
+    queryKey: [
+      "games",
+      store.sortBy,
+      store.selectedPlatform,
+      store.selectedGenre,
+      store.selectedCategory,
+      store.selectedYear,
+      store.timeRange,
+      debouncedSearch,
+    ],
+    queryFn: async ({ pageParam = 1 }) => {
       const params = new URLSearchParams({
-        page: page.toString(),
-        limit: limit.toString(),
-        ...(filters?.platformId && { platformId: filters.platformId.toString() }),
-        ...(filters?.genreId && { genreId: filters.genreId.toString() }),
-        ...(filters?.timeRange && { timeRange: filters.timeRange }),
-        ...(filters?.search && { search: filters.search })
+        page: String(pageParam),
+        limit: String(ITEMS_PER_PAGE),
+        platform: store.selectedPlatform || 'all',
+        genre: store.selectedGenre || 'all',
+        category: store.selectedCategory || 'all',
+        year: store.selectedYear || 'all',
+        sort: store.sortBy || 'popularity',
+        search: debouncedSearch || '',
+        timeRange: store.timeRange || 'all'
       });
 
       const response = await fetch(`/api/games?${params.toString()}`);
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to fetch games");
-      }
-      return response.json();
+      if (!response.ok) throw new Error("Failed to fetch games");
+      const data = await response.json();
+      
+      return {
+        ...data,
+        hasMore: data.currentPage < data.totalPages
+      };
     },
-    staleTime: 1000 * 60 * 5, // 5 minutes
-    placeholderData: (previousData) => previousData,
-    select: (data) => {
-      // Prefetch next page
-      if (data.currentPage < data.totalPages) {
-        const nextPageParams = new URLSearchParams({
-          page: (page + 1).toString(),
-          limit: limit.toString(),
-          ...(filters?.platformId && { platformId: filters.platformId.toString() }),
-          ...(filters?.genreId && { genreId: filters.genreId.toString() }),
-          ...(filters?.timeRange && { timeRange: filters.timeRange }),
-          ...(filters?.search && { search: filters.search })
-        });
+    getNextPageParam: (lastPage) => lastPage.hasMore ? lastPage.currentPage + 1 : undefined,
+    initialPageParam: 1,
+    staleTime: STALE_TIME,
+  });
 
-        void queryClient.prefetchQuery({
-          queryKey: ["games", page + 1, limit, filters],
-          queryFn: () => 
-            fetch(`/api/games?${nextPageParams.toString()}`).then(res => res.json()),
-          staleTime: 1000 * 60 * 5
-        });
-      }
-      return data;
+  return {
+    ...query,
+    allGames: query.data?.pages.flatMap(page => page.games) || [],
+  };
+}
+
+export function useGame(id: string | number) {
+  const { fetchGame, getGame } = useGameDetailsStore(); // Remove unused isLoading and error
+  const numericId = typeof id === 'string' ? parseInt(id, 10) : id;
+
+  useEffect(() => {
+    if (!isNaN(numericId)) {
+      fetchGame(numericId);
     }
-  });
-}
+  }, [numericId, fetchGame]);
 
-export function usePopularGames(limit: number = 10) {
-  return useQuery<Game[]>({
-    queryKey: ["popularGames", limit],
+  const query = useQuery({
+    queryKey: ["game", numericId],
     queryFn: async () => {
-      const response = await fetch(`/api/games/popular?limit=${limit}`);
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to fetch popular games");
-      }
+      if (!numericId) throw new Error("Game ID is required");
+      const response = await fetch(`/api/games/${numericId}`);
+      if (!response.ok) throw new Error("Failed to fetch game details");
       return response.json();
     },
-    staleTime: 1000 * 60 * 5, // 5 minutes
-    retry: 2
+    enabled: !isNaN(numericId),
+    staleTime: STALE_TIME,
   });
+
+  return {
+    ...query,
+    game: getGame(numericId)
+  };
 }
 
-export function useSearchGames(query: string, enabled: boolean = false) {
-  return useQuery<Game[]>({
-    queryKey: ["searchGames", query],
+export function useGamesList(type: 'trending' | 'popular' | 'upcoming', limit: number = 10) {
+  return useQuery<GameResponse>({
+    queryKey: [`${type}-games`, limit],
     queryFn: async () => {
-      const response = await fetch(`/api/games/search?q=${encodeURIComponent(query)}`);
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to search games");
-      }
+      const response = await fetch(`/api/games/${type}?limit=${limit}`);
+      if (!response.ok) throw new Error(`Failed to fetch ${type} games`);
       return response.json();
     },
-    enabled: enabled && query.length >= 2,
-    staleTime: 1000 * 60 * 5, // 5 minutes
-    retry: 1
-  });
-}
-
-export function useGameDetails(gameId: number | null) {
-  return useQuery<Game>({
-    queryKey: ["game", gameId],
-    queryFn: async () => {
-      if (!gameId) throw new Error("Game ID is required");
-      const response = await fetch(`/api/games/${gameId}`);
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to fetch game details");
-      }
-      return response.json();
-    },
-    enabled: !!gameId,
-    staleTime: 1000 * 60 * 30, // 30 minutes
-    retry: 2
+    staleTime: STALE_TIME,
   });
 }
 
