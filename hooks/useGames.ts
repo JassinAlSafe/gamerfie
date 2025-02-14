@@ -5,6 +5,7 @@ import { useSearchStore } from "@/stores/useSearchStore";
 import { useGameDetailsStore } from "@/stores/useGameDetailsStore";
 import { useDebounce } from "@/hooks/useDebounce";
 import { Game } from "@/types/game";
+import { GameService } from "@/services/gameService";
 
 const ITEMS_PER_PAGE = 48;
 const STALE_TIME = 1000 * 60 * 5; // 5 minutes
@@ -67,7 +68,7 @@ export function useGamesInfinite() {
 }
 
 export function useGame(id: string | number) {
-  const { fetchGame, getGame } = useGameDetailsStore(); // Remove unused isLoading and error
+  const { fetchGame } = useGameDetailsStore();
   const numericId = typeof id === 'string' ? parseInt(id, 10) : id;
 
   useEffect(() => {
@@ -76,22 +77,33 @@ export function useGame(id: string | number) {
     }
   }, [numericId, fetchGame]);
 
-  const query = useQuery({
+  return useQuery({
     queryKey: ["game", numericId],
     queryFn: async () => {
-      if (!numericId) throw new Error("Game ID is required");
-      const response = await fetch(`/api/games/${numericId}`);
-      if (!response.ok) throw new Error("Failed to fetch game details");
-      return response.json();
+      if (!numericId || isNaN(numericId)) {
+        throw new Error("Invalid game ID");
+      }
+
+      try {
+        const game = await GameService.fetchGameById(numericId);
+        if (!game) {
+          throw new Error("Game not found");
+        }
+        return game;
+      } catch (error) {
+        console.error("Game fetch error:", error);
+        throw error instanceof Error ? error : new Error("Failed to fetch game");
+      }
     },
     enabled: !isNaN(numericId),
     staleTime: STALE_TIME,
+    retry: (failureCount, error) => {
+      if (error instanceof Error && error.message === "Game not found") {
+        return false;
+      }
+      return failureCount < 3;
+    }
   });
-
-  return {
-    ...query,
-    game: getGame(numericId)
-  };
 }
 
 export function useGamesList(type: 'trending' | 'popular' | 'upcoming', limit: number = 10) {

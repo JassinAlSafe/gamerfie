@@ -70,6 +70,34 @@ export class GameService {
     }
   }
 
+  static async searchGames(searchTerm: string): Promise<Game[]> {
+    try {
+      const query = `
+        fields name,cover.url,cover.id,platforms.name,genres.name,
+        total_rating,first_release_date;
+        search "${searchTerm}";
+        where cover != null;
+        limit 10;
+      `;
+
+      const response = await fetch(`${this.API_BASE}/api/igdb-proxy`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ endpoint: 'games', query })
+      });
+
+      if (!response.ok) throw new Error('Failed to search games');
+      const games = await response.json();
+      
+      return games.map(this.processGameData);
+    } catch (error) {
+      console.error('GameService searchGames error:', error);
+      throw error;
+    }
+  }
+
   private static buildQuery({ 
     page = 1,
     platformId = 'all',
@@ -202,4 +230,4 @@ export class GameService {
       throw new GameServiceError('Failed to fetch platforms', error);
     }
   }
-} 
+}

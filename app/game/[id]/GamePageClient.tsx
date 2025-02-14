@@ -2,7 +2,7 @@
 
 import React, { Suspense } from "react";
 import { GameDetails } from "@/components/game/GameDetails";
-import { useGame } from "@/hooks/useGame";
+import { useGame } from "@/hooks/useGames"; // Updated import path
 import { LoadingSpinner } from "@/components/loadingSpinner";
 import { GamePageProps } from "@/types/game";
 
@@ -18,14 +18,16 @@ function LoadingFallback() {
 }
 
 function GameContent({ id }: { id: string }) {
-  const { game, error } = useGame(id);
+  const { data: game, error, isError } = useGame(id);
 
-  if (error) {
+  if (isError) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen p-8 bg-gray-950">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-white mb-2">Game Not Found</h1>
-          <p className="text-gray-400">{error}</p>
+          <p className="text-gray-400">
+            {error instanceof Error ? error.message : "Failed to load game"}
+          </p>
         </div>
       </div>
     );

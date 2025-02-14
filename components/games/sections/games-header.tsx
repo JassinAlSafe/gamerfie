@@ -11,7 +11,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useGamesStore } from "@/stores/useGamesStore";
-import { useSearchStore } from "@/stores/useSearchStore";
+import { useExploreSearchStore } from "@/stores/useExploreSearchStore"; // Update import
 import { GamesFilterDropdown } from "../filters/games-filter-dropdown";
 import { cn } from "@/lib/utils";
 
@@ -34,7 +34,9 @@ export function GamesHeader() {
     totalGames,
   } = useGamesStore();
 
-  const { query: searchQuery, setQuery: setSearchQuery } = useSearchStore();
+  // Update the store usage
+  const { query: searchQuery, setQuery: setSearchQuery } =
+    useExploreSearchStore();
 
   const handleClearSearch = () => {
     setSearchQuery("");

@@ -2,7 +2,7 @@
 
 import { Inter } from "next/font/google";
 import "./globals.css";
-import FloatingHeader from "@/components/ui/FloatingHeader";
+import FloatingHeader from "@/components/ui/header/FloatingHeader";
 import { Footer } from "@/components/Footer";
 import { ThemeProvider } from "next-themes";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
