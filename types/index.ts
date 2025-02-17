@@ -60,3 +60,22 @@ export const GAME_CATEGORIES = {
 
 export type GameCategory = keyof typeof GAME_CATEGORIES;
 
+export type ActivityType = 
+  | 'achievement' 
+  | 'playtime' 
+  | 'review' 
+  | 'friend' 
+  | 'level_up' 
+  | 'game_started';
+
+export interface Activity {
+  id: string;
+  type: ActivityType;
+  game: string;
+  action: string;
+  detail: string;
+  timestamp: string;
+  imageUrl?: string;
+  rating?: number;
+}
+

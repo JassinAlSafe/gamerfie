@@ -1,6 +1,7 @@
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
-import { Game, FetchGamesResponse, GameQueryParams, SortOption, Platform } from '@/types/game'
-import { GameServiceError } from '@/types/errors';
+import { Game, GameQueryParams, SortOption, Platform } from '@/types/game'
+import {  GameServiceError } from '@/types/errors';
+import { FetchGamesResponse } from '@/types/game';
 
 export class GameService {
   private static readonly GAMES_PER_PAGE = 48;
@@ -15,12 +16,9 @@ export class GameService {
   }: GameQueryParams): Promise<FetchGamesResponse> {
     try {
       const query = this.buildQuery({ page, platformId, searchTerm, sortBy });
-      console.log('Fetching games with query:', query);
       
-      // First get the count
-      const countQuery = query.replace(/fields.*?;/, 'fields id;').replace(/limit.*?;/, '').replace(/offset.*?;/, '');
-      console.log('Count query:', countQuery);
-      
+      const queryForCount = query.replace(/fields\s[^;]+;/i, 'fields id;');
+
       const [gamesResponse, countResponse] = await Promise.all([
         fetch(`${this.API_BASE}/api/igdb-proxy`, {
           method: 'POST',
@@ -34,26 +32,12 @@ export class GameService {
           headers: {
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify({ endpoint: 'games/count', query: countQuery })
+          body: JSON.stringify({ endpoint: 'games/count', query: queryForCount })
         })
       ]);
 
-      if (!gamesResponse.ok || !countResponse.ok) {
-        const gamesError = await gamesResponse.text();
-        const countError = await countResponse.text();
-        console.error('IGDB API Error:', { gamesError, countError });
-        throw new GameServiceError(`IGDB API Error - Games: ${gamesError}, Count: ${countError}`);
-      }
-
       const games = await gamesResponse.json();
       const { count } = await countResponse.json();
-
-      if (!games) {
-        console.error('No data received from IGDB');
-        throw new GameServiceError('No data received from IGDB');
-      }
-
-      console.log('Successfully fetched games:', { count, gamesCount: games.length });
 
       return {
         games: games.map(this.processGameData),
@@ -63,20 +47,31 @@ export class GameService {
       };
     } catch (error) {
       console.error('GameService fetchGames error:', error);
-      if (error instanceof GameServiceError) {
-        throw error;
-      }
       throw new GameServiceError('Failed to fetch games', error);
     }
   }
 
   static async searchGames(searchTerm: string): Promise<Game[]> {
     try {
+      if (!searchTerm || searchTerm.length < 2) {
+        return [];
+      }
+
       const query = `
-        fields name,cover.url,cover.id,platforms.name,genres.name,
-        total_rating,first_release_date;
+        fields 
+          name,
+          cover.url,
+          cover.id,
+          platforms.name,
+          genres.name,
+          total_rating,
+          first_release_date,
+          summary,
+          category;
         search "${searchTerm}";
-        where cover != null;
+        where 
+          cover != null & 
+          version_parent = null;
         limit 10;
       `;
 
@@ -88,13 +83,16 @@ export class GameService {
         body: JSON.stringify({ endpoint: 'games', query })
       });
 
-      if (!response.ok) throw new Error('Failed to search games');
+      if (!response.ok) {
+        console.error('Search failed:', await response.text());
+        throw new GameServiceError('Failed to search games');
+      }
+
       const games = await response.json();
-      
       return games.map(this.processGameData);
     } catch (error) {
       console.error('GameService searchGames error:', error);
-      throw error;
+      throw new GameServiceError('Failed to search games', error);
     }
   }
 
@@ -168,7 +166,7 @@ export class GameService {
       cover: game.cover ? {
         id: game.cover.id,
         url: game.cover.url.replace('t_thumb', 't_cover_big')
-      } : null,
+      } : undefined,
       platforms: game.platforms ?? [],
       genres: game.genres ?? [],
       summary: game.summary,

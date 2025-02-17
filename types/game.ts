@@ -57,6 +57,8 @@ export interface GameActivity {
 export interface Game {
   id: string;
   name: string;
+  title?: string;
+  category?: string;
   description?: string;
   cover_url?: string;
   cover?: {
@@ -132,8 +134,10 @@ export interface ProcessedGame extends Game {
 export interface FetchGamesResponse {
   games: Game[];
   total: number;
-  platforms: Platform[];
-  genres: Genre[];
+  platforms?: Platform[];  // Made optional
+  genres?: Genre[];       // Made optional
+  page: number;
+  pageSize: number;
 }
 
 export interface GameCategories {

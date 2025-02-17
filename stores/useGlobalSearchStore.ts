@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { Game } from '@/types/game';
 import { GameService } from '@/services/gameService';
+import { Game } from '@/types/game';
 
 interface GlobalSearchState {
   query: string;
@@ -38,7 +38,7 @@ export const useGlobalSearchStore = create<GlobalSearchState>()(
           const results = await GameService.searchGames(query);
           set({ results, isLoading: false });
         } catch (error) {
-          console.error('Failed to search:', error);
+          console.error('Search error:', error);
           set({ results: [], isLoading: false });
         }
       },
