@@ -171,7 +171,7 @@ export function RecentActivityBlock({
                         {getActivityText(activity.type)}
                       </span>{" "}
                       <span className="text-purple-400 font-medium">
-                        {activity.game?.name ?? "Unknown Game"}
+                        {String(activity.game?.name ?? "Unknown Game")}
                       </span>
                       {activity.details?.comment && (
                         <span className="text-muted-foreground/60 group-hover:text-muted-foreground/80 transition-colors">

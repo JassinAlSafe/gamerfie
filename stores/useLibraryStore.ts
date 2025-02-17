@@ -152,30 +152,58 @@ export const useLibraryStore = create<LibraryState>((set) => ({
       
       if (!session?.session?.user) throw new Error('Not authenticated');
 
+      // Update the query to join with games table to get full game data
       const { data, error } = await supabase
         .from('user_games')
-        .select('*')
+        .select(`
+          *,
+          game:games(
+            id,
+            name,
+            cover_url,
+            rating,
+            first_release_date,
+            platforms,
+            genres,
+            summary
+          )
+        `)
         .eq('user_id', userId)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
 
-      // Transform the data without attempting to parse
+      // Transform the data to match the Game interface
       const transformedData = data.map(item => ({
-        ...item,
-        // Only parse if the field is a string and starts with '[' or '{'
-        metadata: typeof item.metadata === 'string' 
-          ? JSON.parse(item.metadata) 
-          : item.metadata || {},
-        notes: typeof item.notes === 'string'
-          ? JSON.parse(item.notes)
-          : item.notes || {},
+        id: item.game.id,
+        name: item.game.name,
+        cover_url: item.game.cover_url,
+        cover: item.game.cover_url ? { url: item.game.cover_url } : null,
+        rating: item.game.rating,
+        first_release_date: item.game.first_release_date,
+        platforms: typeof item.game.platforms === 'string' 
+          ? JSON.parse(item.game.platforms) 
+          : item.game.platforms,
+        genres: typeof item.game.genres === 'string' 
+          ? JSON.parse(item.game.genres) 
+          : item.game.genres,
+        summary: item.game.summary,
+        status: item.status,
+        playtime: item.play_time || 0,
+        lastPlayed: item.last_played_at,
+        achievements: item.achievements ? {
+          total: item.achievements.total || 0,
+          completed: item.achievements.completed || 0
+        } : undefined
       }));
 
-      set({ games: transformedData, error: null });
+      set({ games: transformedData, loading: false, error: null });
     } catch (error) {
       console.error('Error fetching library:', error);
-      set({ error: error instanceof Error ? error.message : 'An unknown error occurred' });
+      set({ 
+        error: error instanceof Error ? error.message : 'An unknown error occurred',
+        loading: false 
+      });
       throw error;
     }
   },

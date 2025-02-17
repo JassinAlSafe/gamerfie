@@ -1,7 +1,6 @@
 import { useRef, useEffect } from "react";
-import * as THREE from "three";
 import styles from "./ascii-text.module.css";
-
+import * as THREE from "three";
 const vertexShader = `
 varying vec2 vUv;
 uniform float uTime;

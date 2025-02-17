@@ -1,4 +1,3 @@
-import type { Game } from './game';
 import type { Profile } from './profile';
 import type { GameActivity } from './game';
 
@@ -56,7 +55,10 @@ export interface Activity {
   type: ActivityType;
   details?: ActivityDetails;
   created_at: string;
-  game?: Pick<Game, 'name' | 'coverImage'>;
+  game?: {
+    name: string;
+    coverImage: string | null;
+  };
   user?: Pick<Profile, 'username' | 'avatar_url'>;
 }
 

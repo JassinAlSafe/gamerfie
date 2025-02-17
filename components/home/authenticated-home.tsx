@@ -5,6 +5,7 @@ import { Shell } from "@/app/layout/shell";
 import { TextBlock } from "@/components/BuilderBlocks/Text/TextBlock";
 import { RecentFriendsBlock } from "@/components/BuilderBlocks/Friends/RecentFriendsBlock/RecentFriendsBlock";
 import { RecentActivityBlock } from "@/components/BuilderBlocks/Activity/RecentActivityBlock/RecentActivityBlock";
+import { GameLibraryBlock } from "@/components/BuilderBlocks/Games/GameLibraryBlock/GameLibraryBlock";
 import { useFriends } from "@/hooks/useFriends";
 import { useRecentActivities } from "@/hooks/useRecentActivities";
 import { Block } from "@/components/BuilderBlocks/Block";
@@ -74,13 +75,18 @@ export function AuthenticatedHome({ user }: AuthenticatedHomeProps) {
             <RecentActivityBlock activities={activities} size="sm" />
           </div>
 
+          {/* Game Library Block */}
+          <div className="col-span-3">
+            <GameLibraryBlock size="sm" />
+          </div>
+
           {/* Achievements Block */}
           <div className="col-span-3">
             <Block
               size="sm"
               variant="premium"
               hover={true}
-              className="h-[180px]"
+              className="h-[360px]"
             >
               <div className="flex flex-col h-full">
                 <div className="flex items-center justify-between p-4 border-b border-purple-200/10">
@@ -89,28 +95,6 @@ export function AuthenticatedHome({ user }: AuthenticatedHomeProps) {
                     <h3 className="text-lg font-semibold bg-gradient-to-br from-purple-500 to-indigo-500 bg-clip-text text-transparent">
                       Latest Achievements
                     </h3>
-                  </div>
-                </div>
-                <div className="flex-1 p-4">
-                  <p className="text-muted-foreground">Coming soon...</p>
-                </div>
-              </div>
-            </Block>
-          </div>
-
-          {/* Featured Game Block */}
-          <div className="col-span-3">
-            <Block
-              size="sm"
-              variant="default"
-              hover={true}
-              className="h-[180px]"
-            >
-              <div className="flex flex-col h-full">
-                <div className="flex items-center justify-between p-4 border-b">
-                  <div className="flex items-center gap-2">
-                    <Gamepad2 className="h-4 w-4" />
-                    <h3 className="text-lg font-semibold">Featured Game</h3>
                   </div>
                 </div>
                 <div className="flex-1 p-4">

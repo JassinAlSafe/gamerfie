@@ -56,14 +56,14 @@ export interface GameActivity {
 
 export interface Game {
   id: string;
-  name: string;
-  title?: string;
-  category?: string;
-  description?: string;
-  cover_url?: string;
-  cover?: {
-    id: string;
-    url: string;
+  title: string;
+  coverImage: string;
+  lastPlayed: string;
+  playtime: number; // in minutes
+  platform: GamePlatform;
+  achievements?: {
+    total: number;
+    completed: number;
   };
   rating?: number;
   releaseDate?: string;  // Make optional
@@ -79,6 +79,8 @@ export interface Game {
   hype_count?: number;
   status?: GameStatus;
 }
+
+export type GamePlatform = 'PC' | 'PlayStation' | 'Xbox' | 'Nintendo' | 'Mobile';
 
 export interface UserGame {
   id: string;
@@ -195,11 +197,10 @@ export interface ReviewUpdateData {
 }
 
 export interface GameStats {
-  total_played: number;
-  backlog: number;
-  currentlyPlaying: number;
-  completedGames: number;
-  droppedGames: number;
+  totalGames: number;
+  totalPlaytime: number; // in minutes
+  recentlyPlayed: Game[];
+  mostPlayed: Game[];
 }
 
 export interface SearchGameResult extends Game {
