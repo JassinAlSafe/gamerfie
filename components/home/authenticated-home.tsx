@@ -26,6 +26,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useGameLibraryStore } from "@/stores/useGameLibraryStore";
 import { useEffect } from "react";
 import { formatDistanceToNow } from "date-fns";
+import { JournalBlock } from "@/components/BuilderBlocks/Activity/Journal/JournalBlock";
 
 interface AuthenticatedHomeProps {
   user: User;
@@ -203,32 +204,13 @@ export function AuthenticatedHome({ user }: AuthenticatedHomeProps) {
           </div>
 
           {/* Game Library Block */}
-          <div className="col-span-3">
+          <div className="col-span-2">
             <GameLibraryBlock size="sm" />
           </div>
 
-          {/* Achievements Block */}
-          <div className="col-span-3">
-            <Block
-              size="sm"
-              variant="premium"
-              hover={true}
-              className="h-[360px]"
-            >
-              <div className="flex flex-col h-full">
-                <div className="flex items-center justify-between p-4 border-b border-purple-200/10">
-                  <div className="flex items-center gap-2">
-                    <Trophy className="h-4 w-4 text-purple-500" />
-                    <h3 className="text-lg font-semibold bg-gradient-to-br from-purple-500 to-indigo-500 bg-clip-text text-transparent">
-                      Latest Achievements
-                    </h3>
-                  </div>
-                </div>
-                <div className="flex-1 p-4">
-                  <p className="text-muted-foreground">Coming soon...</p>
-                </div>
-              </div>
-            </Block>
+          {/* Journal Block */}
+          <div className="col-span-2">
+            <JournalBlock size="sm" />
           </div>
         </div>
       </div>
