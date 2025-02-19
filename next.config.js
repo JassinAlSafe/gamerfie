@@ -3,7 +3,7 @@ const { withSentryConfig } = require("@sentry/nextjs");
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
-    domains: ["images.igdb.com", "upload.wikimedia.org"],
+    domains: ["images.igdb.com", "upload.wikimedia.org", "media.rawg.io"],
     remotePatterns: [
       {
         protocol: "https",

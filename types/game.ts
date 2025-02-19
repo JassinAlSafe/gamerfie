@@ -58,7 +58,7 @@ export interface Game {
   id: string;
   title: string;
   coverImage: string;
-  lastPlayed: string;
+  lastPlayed?: string;
   playtime: number; // in minutes
   platform: GamePlatform;
   achievements?: {
@@ -78,6 +78,7 @@ export interface Game {
   follows_count?: number;
   hype_count?: number;
   status?: GameStatus;
+  metacritic?: number;
 }
 
 export type GamePlatform = 'PC' | 'PlayStation' | 'Xbox' | 'Nintendo' | 'Mobile';
@@ -226,4 +227,11 @@ export interface GameCardProps {
   game: ProcessedGame;
   index?: number;
   category?: GameCategory;
+}
+
+export interface GameListResponse {
+  games: Game[];
+  total: number;
+  page: number;
+  pageSize: number;
 }
