@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { Database } from '@/types/supabase'
-import { Game } from '@/types/game'
+import { Game, GamePlatform } from '@/types/game'
 
 interface LibraryState {
   games: Game[];
@@ -85,6 +85,8 @@ export const useLibraryStore = create<LibraryState>((set) => ({
       // Update local state with the processed game data
       const processedGame = {
         ...gameResult,
+        title: gameResult.name,
+        platform: 'PC' as GamePlatform,
         cover: coverUrl ? { url: coverUrl } : null,
       } as Game;
 
@@ -176,11 +178,13 @@ export const useLibraryStore = create<LibraryState>((set) => ({
       // Transform the data to match the Game interface
       const transformedData = data.map(item => ({
         id: item.game.id,
+        title: item.game.name,
         name: item.game.name,
         cover_url: item.game.cover_url,
         cover: item.game.cover_url ? { url: item.game.cover_url } : null,
         rating: item.game.rating,
         first_release_date: item.game.first_release_date,
+        platform: 'PC' as GamePlatform,
         platforms: typeof item.game.platforms === 'string' 
           ? JSON.parse(item.game.platforms) 
           : item.game.platforms,

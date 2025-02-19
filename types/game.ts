@@ -57,7 +57,9 @@ export interface GameActivity {
 export interface Game {
   id: string;
   title: string;
-  coverImage: string;
+  name: string;
+  // coverImage: string;
+  cover_url?: string;
   lastPlayed: string;
   playtime: number; // in minutes
   platform: GamePlatform;

@@ -5,16 +5,7 @@ import { Block } from "../../Block";
 import { useLibraryStore } from "@/stores/useLibraryStore";
 import { Game, GameStatus } from "@/types/game";
 import { formatDistanceToNow } from "date-fns";
-import {
-  Trophy,
-  Clock,
-  GamepadIcon,
-  Star,
-  Calendar,
-  Gamepad2,
-  ImageIcon,
-} from "lucide-react";
-import { Progress } from "@/components/ui/progress";
+import { Trophy, Clock, Star, Gamepad2, ImageIcon } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -22,10 +13,10 @@ import Image from "next/image";
 import { useUser } from "@/hooks/useUser";
 
 const gameStatusColors: Record<GameStatus, string> = {
-  playing: "bg-green-500/10 text-green-500",
-  completed: "bg-blue-500/10 text-blue-500",
-  want_to_play: "bg-yellow-500/10 text-yellow-500",
-  dropped: "bg-red-500/10 text-red-500",
+  playing: "bg-green-500/10 text-green-500 hover:bg-green-500/20",
+  completed: "bg-blue-500/10 text-blue-500 hover:bg-blue-500/20",
+  want_to_play: "bg-yellow-500/10 text-yellow-500 hover:bg-yellow-500/20",
+  dropped: "bg-red-500/10 text-red-500 hover:bg-red-500/20",
 };
 
 export interface GameLibraryBlockProps {
@@ -35,7 +26,7 @@ export interface GameLibraryBlockProps {
 
 function GameCover({ src, alt }: { src: string | null; alt: string }) {
   return (
-    <div className="relative aspect-[2/3] w-24 flex-shrink-0 overflow-hidden rounded-lg border border-border/5">
+    <div className="relative aspect-[2/3] w-24 flex-shrink-0 overflow-hidden rounded-lg">
       <div className="absolute inset-0 bg-accent/20" />
       {src ? (
         <Image
@@ -45,7 +36,7 @@ function GameCover({ src, alt }: { src: string | null; alt: string }) {
           className="object-cover transition-transform duration-300 group-hover:scale-105"
           sizes="96px"
           priority={false}
-          quality={90}
+          quality={100}
         />
       ) : (
         <div className="flex h-full items-center justify-center bg-accent/40">
@@ -58,19 +49,32 @@ function GameCover({ src, alt }: { src: string | null; alt: string }) {
 }
 
 function GameCard({ game }: { game: Game }) {
+  const formatPlaytime = (minutes: number) => {
+    if (minutes < 60) {
+      return `${minutes}m`;
+    }
+    const hours = Math.floor(minutes / 60);
+    const remainingMinutes = minutes % 60;
+    if (remainingMinutes === 0) {
+      return `${hours}h`;
+    }
+    return `${hours}h ${remainingMinutes}m`;
+  };
+
   return (
     <div className="group flex items-start gap-4 p-3 rounded-lg hover:bg-accent/50 transition-colors">
-      <GameCover
-        src={game.cover_url || game.cover?.url}
-        alt={game.name || game.title}
-      />
+      <GameCover src={game.cover_url || game.name} alt={game.title} />
       <div className="flex-1 min-w-0 space-y-2">
         <div className="flex items-center justify-between gap-2">
-          <h4 className="text-base font-medium truncate">
-            {game.name || game.title}
-          </h4>
+          <h4 className="text-base font-medium truncate">{game.name}</h4>
           {game.status && (
-            <Badge variant="outline" className={gameStatusColors[game.status]}>
+            <Badge
+              variant="secondary"
+              className={cn(
+                gameStatusColors[game.status],
+                "rounded-full text-xs font-medium"
+              )}
+            >
               {game.status.replace("_", " ")}
             </Badge>
           )}
@@ -80,7 +84,7 @@ function GameCard({ game }: { game: Game }) {
           {game.playtime > 0 && (
             <div className="flex items-center gap-1.5">
               <Clock className="h-4 w-4" />
-              <span>{Math.round(game.playtime / 60)}h</span>
+              <span>{formatPlaytime(game.playtime)}</span>
             </div>
           )}
           {game.achievements && (
@@ -163,7 +167,7 @@ function GameLibraryContent() {
     .slice(0, 3);
 
   return (
-    <div className="divide-y divide-border/5">
+    <div className="divide-y divide-white/10">
       {sortedGames.map((game) => (
         <GameCard key={game.id} game={game} />
       ))}
