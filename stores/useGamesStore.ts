@@ -11,7 +11,6 @@ interface GamesState {
   totalGames: number;
   totalPages: number;
   currentPage: number;
-  isLoading: boolean;
   error: string | null;
   platforms: Platform[];
   genres: Genre[];
@@ -27,7 +26,6 @@ interface GamesState {
   setTotalGames: (total: number) => void;
   setTotalPages: (total: number) => void;
   setCurrentPage: (page: number) => void;
-  setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
   setPlatforms: (platforms: Platform[]) => void;
   setGenres: (genres: Genre[]) => void;
@@ -72,7 +70,6 @@ export const useGamesStore = create<GamesState>()(
       totalGames: 0,
       totalPages: 1,
       currentPage: 1,
-      isLoading: false,
       error: null,
       platforms: [],
       genres: [],
@@ -89,7 +86,6 @@ export const useGamesStore = create<GamesState>()(
       setTotalGames: (totalGames) => set({ totalGames }),
       setTotalPages: (totalPages) => set({ totalPages }),
       setCurrentPage: (currentPage) => set({ currentPage }),
-      setLoading: (isLoading) => set({ isLoading }),
       setError: (error) => set({ error }),
       setPlatforms: (platforms) => set({ platforms }),
       setGenres: (genres) => set({ genres }),
@@ -215,7 +211,6 @@ export const useGamesStore = create<GamesState>()(
 
       fetchMetadata: async () => {
         try {
-          set({ isLoading: true });
           const response = await fetch('/api/games/metadata');
           if (!response.ok) {
             throw new Error('Failed to fetch metadata');
@@ -223,13 +218,11 @@ export const useGamesStore = create<GamesState>()(
           const data = await response.json();
           set({
             platforms: data.platforms || [],
-            genres: data.genres || [],
-            isLoading: false
+            genres: data.genres || []
           });
         } catch (error) {
           set({
-            error: error instanceof Error ? error.message : 'Failed to fetch metadata',
-            isLoading: false
+            error: error instanceof Error ? error.message : 'Failed to fetch metadata'
           });
         }
       },
@@ -237,8 +230,6 @@ export const useGamesStore = create<GamesState>()(
       fetchGames: async () => {
         const state = get();
         try {
-          set({ isLoading: true });
-          
           const params = new URLSearchParams({
             page: state.currentPage.toString(),
             platform: state.selectedPlatform,
@@ -259,13 +250,11 @@ export const useGamesStore = create<GamesState>()(
             games: data.games,
             totalGames: data.totalGames,
             totalPages: data.totalPages,
-            isLoading: false,
             error: null
           });
         } catch (error) {
           set({
-            error: error instanceof Error ? error.message : 'Failed to fetch games',
-            isLoading: false
+            error: error instanceof Error ? error.message : 'Failed to fetch games'
           });
         }
       },
@@ -297,4 +286,4 @@ export const useGamesStore = create<GamesState>()(
       })
     }
   )
-); 
+);

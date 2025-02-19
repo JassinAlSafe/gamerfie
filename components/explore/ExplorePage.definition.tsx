@@ -1,4 +1,4 @@
-import { Flame, Calendar, Sparkles } from "lucide-react";
+import { Flame, TrendingUp, CalendarDays } from "lucide-react";
 
 export const GAME_CATEGORIES = [
   {
@@ -9,18 +9,18 @@ export const GAME_CATEGORIES = [
     timeRange: "all",
   },
   {
-    id: "upcoming",
-    label: "Upcoming Games",
-    icon: Calendar,
-    color: "text-purple-500",
-    timeRange: "upcoming",
+    id: "trending",
+    label: "Recently Trending",
+    icon: TrendingUp,
+    color: "text-green-500",
+    timeRange: "trending",
   },
   {
-    id: "recent",
-    label: "New Releases",
-    icon: Sparkles,
-    color: "text-yellow-500",
-    timeRange: "new_releases",
+    id: "upcoming",
+    label: "Upcoming Games",
+    icon: CalendarDays,
+    color: "text-purple-500",
+    timeRange: "upcoming",
   },
 ] as const;
 

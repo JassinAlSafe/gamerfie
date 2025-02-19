@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { Database } from '@/types/supabase'
-import { Game } from '@/types/game'
+import { Game, GamePlatform } from '@/types/game'
 
 interface LibraryState {
   games: Game[];
@@ -10,9 +10,10 @@ interface LibraryState {
   addGame: (game: Partial<Game>) => Promise<Game>;
   removeGame: (gameId: string) => Promise<void>;
   fetchUserLibrary: (userId: string) => Promise<void>;
+  updateGamesOrder: (games: Game[]) => void;
 }
 
-export const useLibraryStore = create<LibraryState>((set, get) => ({
+export const useLibraryStore = create<LibraryState>((set) => ({
   games: [],
   loading: false,
   error: null,
@@ -84,6 +85,8 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
       // Update local state with the processed game data
       const processedGame = {
         ...gameResult,
+        title: gameResult.name,
+        platform: 'PC' as GamePlatform,
         cover: coverUrl ? { url: coverUrl } : null,
       } as Game;
 
@@ -144,39 +147,72 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
     }
   },
 
-  fetchUserLibrary: async () => {
+  fetchUserLibrary: async (userId: string) => {
     try {
       const supabase = createClientComponentClient<Database>();
       const { data: session } = await supabase.auth.getSession();
       
       if (!session?.session?.user) throw new Error('Not authenticated');
 
+      // Update the query to join with games table to get full game data
       const { data, error } = await supabase
         .from('user_games')
-        .select('*')
-        .eq('user_id', session.session.user.id)
+        .select(`
+          *,
+          game:games(
+            id,
+            name,
+            cover_url,
+            rating,
+            first_release_date,
+            platforms,
+            genres,
+            summary
+          )
+        `)
+        .eq('user_id', userId)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
 
-      // Transform the data without attempting to parse
+      // Transform the data to match the Game interface
       const transformedData = data.map(item => ({
-        ...item,
-        // Only parse if the field is a string and starts with '[' or '{'
-        metadata: typeof item.metadata === 'string' 
-          ? JSON.parse(item.metadata) 
-          : item.metadata || {},
-        notes: typeof item.notes === 'string'
-          ? JSON.parse(item.notes)
-          : item.notes || {},
+        id: item.game.id,
+        title: item.game.name,
+        name: item.game.name,
+        cover_url: item.game.cover_url,
+        cover: item.game.cover_url ? { url: item.game.cover_url } : null,
+        rating: item.game.rating,
+        first_release_date: item.game.first_release_date,
+        platform: 'PC' as GamePlatform,
+        platforms: typeof item.game.platforms === 'string' 
+          ? JSON.parse(item.game.platforms) 
+          : item.game.platforms,
+        genres: typeof item.game.genres === 'string' 
+          ? JSON.parse(item.game.genres) 
+          : item.game.genres,
+        summary: item.game.summary,
+        status: item.status,
+        playtime: item.play_time || 0,
+        lastPlayed: item.last_played_at,
+        achievements: item.achievements ? {
+          total: item.achievements.total || 0,
+          completed: item.achievements.completed || 0
+        } : undefined
       }));
 
-      set({ library: transformedData, error: null });
-      return transformedData;
+      set({ games: transformedData, loading: false, error: null });
     } catch (error) {
       console.error('Error fetching library:', error);
-      set({ error: error as Error });
+      set({ 
+        error: error instanceof Error ? error.message : 'An unknown error occurred',
+        loading: false 
+      });
       throw error;
     }
+  },
+
+  updateGamesOrder: (games) => {
+    set({ games });
   },
 }))

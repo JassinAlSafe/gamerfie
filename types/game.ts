@@ -1,3 +1,4 @@
+import { LucideIcon } from "lucide-react";
 import { ActivityType } from "./activity";
 
 export interface Achievement {
@@ -55,21 +56,33 @@ export interface GameActivity {
 
 export interface Game {
   id: string;
+  title: string;
   name: string;
-  description: string;
+  // coverImage: string;
   cover_url?: string;
-  cover?: {
-    id: string;
-    url: string;
+  lastPlayed: string;
+  playtime: number; // in minutes
+  platform: GamePlatform;
+  achievements?: {
+    total: number;
+    completed: number;
   };
-  rating: number;
-  releaseDate: string;
+  rating?: number;
+  releaseDate?: string;  // Make optional
   first_release_date?: number;
   platforms: Platform[];
   genres: Genre[];
   summary?: string;
   storyline?: string;
+  total_rating?: number;
+  total_rating_count?: number;
+  rating_count?: number;
+  follows_count?: number;
+  hype_count?: number;
+  status?: GameStatus;
 }
+
+export type GamePlatform = 'PC' | 'PlayStation' | 'Xbox' | 'Nintendo' | 'Mobile';
 
 export interface UserGame {
   id: string;
@@ -107,12 +120,14 @@ export interface GameQueryParams {
 
 export type SortOption = 'rating' | 'popularity' | 'name' | 'release';
 
+export type CategoryOption = "popular" | "trending" | "upcoming";
+
 export interface ProcessedGame extends Game {
-  status?: GameStatus;
   play_time?: number;
   completion_percentage?: number;
   achievements_completed?: number;
   user_rating?: number;
+  total_rating_count?: number;
   completed_at?: string;
   last_played_at?: string;
   notes?: string;
@@ -123,8 +138,10 @@ export interface ProcessedGame extends Game {
 export interface FetchGamesResponse {
   games: Game[];
   total: number;
-  platforms: Platform[];
-  genres: Genre[];
+  platforms?: Platform[];  // Made optional
+  genres?: Genre[];       // Made optional
+  page: number;
+  pageSize: number;
 }
 
 export interface GameCategories {
@@ -134,11 +151,13 @@ export interface GameCategories {
   trending: Game[];
 }
 
+export type GameCategory = "popular" | "upcoming" | "trending";
+
 export interface GameCarouselProps {
-  games: Game[];
-  category?: string;
+  games: ProcessedGame[];
+  category: GameCategory;
   title: string;
-  icon: React.ComponentType<{ className?: string }>;
+  icon: LucideIcon;
   color: string;
 }
 
@@ -180,11 +199,10 @@ export interface ReviewUpdateData {
 }
 
 export interface GameStats {
-  total_played: number;
-  backlog: number;
-  currentlyPlaying: number;
-  completedGames: number;
-  droppedGames: number;
+  totalGames: number;
+  totalPlaytime: number; // in minutes
+  recentlyPlayed: Game[];
+  mostPlayed: Game[];
 }
 
 export interface SearchGameResult extends Game {
@@ -204,4 +222,10 @@ export interface JournalGameData {
   id: string;
   name: string;
   cover_url?: string;
+}
+
+export interface GameCardProps {
+  game: ProcessedGame;
+  index?: number;
+  category?: GameCategory;
 }

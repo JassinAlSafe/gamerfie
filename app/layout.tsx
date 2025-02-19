@@ -2,7 +2,7 @@
 
 import { Inter } from "next/font/google";
 import "./globals.css";
-import FloatingHeader from "@/components/ui/FloatingHeader";
+import FloatingHeader from "@/components/ui/header/FloatingHeader";
 import { Footer } from "@/components/Footer";
 import { ThemeProvider } from "next-themes";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -29,7 +29,9 @@ export default function RootLayout({
         defaultOptions: {
           queries: {
             staleTime: 60 * 1000, // 1 minute
+            gcTime: 5 * 60 * 1000, // 5 minutes
             refetchOnWindowFocus: false,
+            retry: 1,
           },
         },
       })

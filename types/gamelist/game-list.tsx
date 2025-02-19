@@ -18,7 +18,7 @@ export interface GameListStore {
   isLoading: boolean;
   error: string | null;
   createList: (
-    title: string,
+    _title: string,
     description?: string,
     isPublic?: boolean
   ) => Promise<GameList>;

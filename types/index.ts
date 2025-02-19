@@ -1,5 +1,6 @@
 import type { AuthError } from '@supabase/supabase-js';
 
+// Export all type modules
 export * from './game';
 export * from './timeline';
 export * from './about';
@@ -9,16 +10,10 @@ export * from './supabase';
 export * from './badge';
 export * from './activity';
 export * from './friend';
-export type { 
-  IGDBGame,
-  IGDBCover,
-  IGDBPlatform,
-  IGDBGenre,
-  IGDBCompany,
-  IGDBCollection,
-  GameAPIError,
-  GameListResponse
-} from './igdb-types';
+export * from './comments';
+export * from './challenge';
+export * from './errors';
+export * from './igdb-types';  // Make sure this exists if you're importing from it
 
 // Utility function for Supabase error checking
 export function isSupabaseError(error: unknown): error is AuthError {
@@ -64,4 +59,23 @@ export const GAME_CATEGORIES = {
 } as const;
 
 export type GameCategory = keyof typeof GAME_CATEGORIES;
+
+export type ActivityType = 
+  | 'achievement' 
+  | 'playtime' 
+  | 'review' 
+  | 'friend' 
+  | 'level_up' 
+  | 'game_started';
+
+export interface Activity {
+  id: string;
+  type: ActivityType;
+  game: string;
+  action: string;
+  detail: string;
+  timestamp: string;
+  imageUrl?: string;
+  rating?: number;
+}
 
