@@ -17,7 +17,7 @@ export interface Playlist {
   createdBy: string;
   gameIds: string[];
   games?: Game[];
-  order?: number;
+  display_order?: number;
   metadata?: {
     backgroundColor?: string;
     textColor?: string;
@@ -29,7 +29,7 @@ export interface Playlist {
 export interface PlaylistGame {
   playlistId: string;
   gameId: string;
-  order: number;
+  display_order: number;
   addedAt: string;
 }
 

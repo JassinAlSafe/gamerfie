@@ -6,47 +6,92 @@ import { RAWGService } from './rawgService';
 export class PlaylistService {
   private static supabase = createClientComponentClient<Database>();
 
-  static async createPlaylist(input: CreatePlaylistInput, userId: string): Promise<Playlist> {
-    const slug = input.title
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/(^-|-$)/g, '');
+  static async createPlaylist(input: CreatePlaylistInput): Promise<Playlist> {
+    try {
+      const { data: { session } } = await this.supabase.auth.getSession();
+      if (!session) {
+        throw new Error('Not authenticated');
+      }
 
-    const { data: playlist, error } = await this.supabase
-      .from('playlists')
-      .insert({
-        title: input.title,
-        description: input.description,
-        type: input.type,
-        cover_image: input.coverImage,
-        is_published: input.isPublished ?? false,
-        start_date: input.startDate,
-        end_date: input.endDate,
-        created_by: userId,
-        slug,
-        metadata: input.metadata
-      })
-      .select()
-      .single();
+      // Check admin status first
+      const { data: profile, error: profileError } = await this.supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', session.user.id)
+        .single();
 
-    if (error) throw error;
+      if (profileError) {
+        if (profileError.code === 'PGRST116') {
+          // Profile doesn't exist
+          const { error: insertError } = await this.supabase
+            .from('profiles')
+            .insert({
+              id: session.user.id,
+              role: 'admin',
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            });
+          
+          if (insertError) {
+            throw new Error('Failed to create admin profile');
+          }
+        } else {
+          throw new Error('Failed to verify admin status');
+        }
+      } else if (profile?.role !== 'admin') {
+        throw new Error('Unauthorized: Admin access required');
+      }
 
-    if (input.gameIds?.length) {
-      const playlistGames = input.gameIds.map((gameId, index) => ({
-        playlist_id: playlist.id,
-        game_id: gameId,
-        order: index,
-        added_at: new Date().toISOString()
-      }));
+      const slug = input.title
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)/g, '');
 
-      const { error: gameError } = await this.supabase
-        .from('playlist_games')
-        .insert(playlistGames);
+      const { data: playlist, error } = await this.supabase
+        .from('playlists')
+        .insert({
+          title: input.title,
+          description: input.description,
+          type: input.type,
+          cover_image: input.coverImage,
+          is_published: input.isPublished ?? false,
+          start_date: input.startDate,
+          end_date: input.endDate,
+          created_by: session.user.id,
+          slug,
+          metadata: input.metadata
+        })
+        .select()
+        .single();
 
-      if (gameError) throw gameError;
+      if (error) {
+        console.error('Playlist creation error:', error);
+        throw new Error(error.message || 'Failed to create playlist');
+      }
+
+      if (input.gameIds?.length) {
+        const playlistGames = input.gameIds.map((gameId, index) => ({
+          playlist_id: playlist.id,
+          game_id: gameId,
+          display_order: index,
+          added_at: new Date().toISOString()
+        }));
+
+        const { error: gameError } = await this.supabase
+          .from('playlist_games')
+          .insert(playlistGames);
+
+        if (gameError) {
+          console.error('Game association error:', gameError);
+          throw new Error('Failed to associate games with playlist');
+        }
+      }
+
+      return this.mapDatabasePlaylist(playlist);
+    } catch (error) {
+      console.error('CreatePlaylist error:', error);
+      throw error;
     }
-
-    return this.mapDatabasePlaylist(playlist);
   }
 
   static async updatePlaylist(input: UpdatePlaylistInput): Promise<Playlist> {
@@ -88,7 +133,7 @@ export class PlaylistService {
       const playlistGames = input.gameIds.map((gameId, index) => ({
         playlist_id: playlist.id,
         game_id: gameId,
-        order: index,
+        display_order: index,
         added_at: new Date().toISOString()
       }));
 
@@ -109,7 +154,7 @@ export class PlaylistService {
         *,
         playlist_games (
           game_id,
-          order,
+          display_order,
           added_at
         )
       `)
@@ -128,8 +173,8 @@ export class PlaylistService {
     return {
       ...this.mapDatabasePlaylist(playlist),
       games: games.sort((a, b) => {
-        const aOrder = playlist.playlist_games.find(pg => pg.game_id === a.id)?.order ?? 0;
-        const bOrder = playlist.playlist_games.find(pg => pg.game_id === b.id)?.order ?? 0;
+        const aOrder = playlist.playlist_games.find(pg => pg.game_id === a.id)?.display_order ?? 0;
+        const bOrder = playlist.playlist_games.find(pg => pg.game_id === b.id)?.display_order ?? 0;
         return aOrder - bOrder;
       })
     };
@@ -142,12 +187,12 @@ export class PlaylistService {
         *,
         playlist_games (
           game_id,
-          order,
+          display_order,
           added_at
         )
       `)
       .eq('is_published', true)
-      .order('order', { ascending: true });
+      .order('display_order', { ascending: true });
 
     if (type) {
       query = query.eq('type', type);
@@ -167,8 +212,8 @@ export class PlaylistService {
         return {
           ...this.mapDatabasePlaylist(playlist),
           games: games.sort((a, b) => {
-            const aOrder = playlist.playlist_games.find(pg => pg.game_id === a.id)?.order ?? 0;
-            const bOrder = playlist.playlist_games.find(pg => pg.game_id === b.id)?.order ?? 0;
+            const aOrder = playlist.playlist_games.find(pg => pg.game_id === a.id)?.display_order ?? 0;
+            const bOrder = playlist.playlist_games.find(pg => pg.game_id === b.id)?.display_order ?? 0;
             return aOrder - bOrder;
           })
         };
@@ -225,7 +270,7 @@ export class PlaylistService {
       updatedAt: dbPlaylist.updated_at,
       createdBy: dbPlaylist.created_by,
       gameIds: (dbPlaylist.playlist_games || []).map((pg: PlaylistGame) => pg.gameId),
-      order: dbPlaylist.order,
+      order: dbPlaylist.display_order,
       metadata: dbPlaylist.metadata
     };
   }

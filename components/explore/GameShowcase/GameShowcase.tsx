@@ -149,7 +149,9 @@ export function GameShowcase({
                 {game.title}
               </h3>
               <p className="text-sm text-white/60 mb-2">
-                {game.platforms[0]?.name || "Coming Soon"}
+                {game.platforms && game.platforms.length > 0
+                  ? game.platforms[0].name
+                  : "Coming Soon"}
               </p>
               {game.releaseDate && (
                 <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/10 text-white/80 text-xs">
