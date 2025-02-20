@@ -29,14 +29,32 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { ensureHttps } from "@/utils/image-utils";
 
-interface GameWithUserData extends UserGame {
-  game: {
+interface GameWithUserData {
+  id: string;
+  user_id: string;
+  game_id: string;
+  status: GameStatus;
+  play_time: number;
+  created_at: string;
+  updated_at: string;
+  completion_percentage?: number;
+  achievements_completed?: number;
+  user_rating?: number;
+  notes?: string;
+  last_played_at?: string;
+  cover_url?: string;
+  games: {
     id: string;
     name: string;
-    cover_url?: string;
+    cover_url?: string | null;
+    platforms?: string;
+    genres?: string;
+    summary?: string;
+    created_at: string;
+    updated_at: string;
   };
-  completion_percentage?: number;
 }
 
 interface GameResponse {
@@ -64,8 +82,8 @@ const GameListItem = ({
   const router = useRouter();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
-  const coverUrl = game.game.cover_url
-    ? getCoverImageUrl(game.game.cover_url)
+  const coverUrl = game.games.cover_url
+    ? getCoverImageUrl(game.games.cover_url)
     : undefined;
 
   return (
@@ -79,7 +97,7 @@ const GameListItem = ({
         {coverUrl ? (
           <Image
             src={coverUrl}
-            alt={game.game.name}
+            alt={game.games.name}
             fill
             className="object-cover transition-transform duration-300 group-hover:scale-105"
             sizes="80px"
@@ -95,7 +113,7 @@ const GameListItem = ({
       </div>
       <div className="flex-grow min-w-0">
         <h3 className="text-lg font-semibold text-white truncate group-hover:text-purple-400 transition-colors duration-200">
-          {game.game.name}
+          {game.games.name}
         </h3>
         <div className="flex items-center mt-2 space-x-4">
           <div className="flex items-center space-x-2">
@@ -158,7 +176,7 @@ const GameListItem = ({
         >
           <DeleteFromLibraryButton
             gameId={game.game_id}
-            gameName={game.game.name}
+            gameName={game.games.name}
             onSuccess={() => {
               console.log(
                 "Delete success in list view for game:",
@@ -184,10 +202,25 @@ const GameGridItem = ({
 }) => {
   const router = useRouter();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [imageError, setImageError] = useState(false);
 
-  const coverUrl = game.game.cover_url
-    ? getCoverImageUrl(game.game.cover_url)
-    : undefined;
+  const coverUrl = useMemo(() => {
+    console.log("GameGridItem - Raw game data:", game);
+
+    // Get the cover URL from the games table
+    let rawCoverUrl = game.games?.cover_url;
+    console.log("GameGridItem - Raw cover URL:", rawCoverUrl);
+
+    if (!rawCoverUrl) {
+      console.log("GameGridItem - No cover URL found");
+      return undefined;
+    }
+
+    // Process the URL through our utility function
+    const processed = getCoverImageUrl(rawCoverUrl);
+    console.log("GameGridItem - Processed URL:", processed);
+    return processed;
+  }, [game]);
 
   return (
     <motion.div
@@ -229,17 +262,25 @@ const GameGridItem = ({
         </DropdownMenu>
       </div>
       <div className="aspect-[3/4] bg-gray-900/80 relative">
-        {coverUrl ? (
+        {!imageError && coverUrl ? (
           <Image
             src={coverUrl}
-            alt={game.game.name}
+            alt={game.games.name}
             fill
             sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
-            quality={90}
-            priority={true}
+            quality={100}
+            priority={false}
             className="object-cover transition-transform duration-300 group-hover:scale-105"
             onError={(e) => {
-              console.error("Grid image load error:", e);
+              console.error(
+                "Failed to load image:",
+                coverUrl,
+                "for game:",
+                game.games.name,
+                "Error:",
+                e
+              );
+              setImageError(true);
             }}
           />
         ) : (
@@ -250,7 +291,7 @@ const GameGridItem = ({
         <div className="absolute inset-0 bg-gradient-to-t from-gray-950 via-gray-900/80 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300">
           <div className="absolute bottom-0 left-0 right-0 p-6">
             <h3 className="text-white font-bold text-xl mb-3 line-clamp-2">
-              {game.game.name}
+              {game.games.name}
             </h3>
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center space-x-2">
@@ -291,7 +332,7 @@ const GameGridItem = ({
         >
           <DeleteFromLibraryButton
             gameId={game.game_id}
-            gameName={game.game.name}
+            gameName={game.games.name}
             onSuccess={() => {
               console.log(
                 "Delete success in grid view for game:",
@@ -406,16 +447,16 @@ export default function GamesTab({ filters }: GamesTabProps) {
         .from("user_games")
         .select(
           `
-          id,
-          game_id,
-          status,
-          play_time,
-          created_at,
-          completion_percentage,
+          *,
           games (
             id,
             name,
-            cover_url
+            cover_url,
+            platforms,
+            genres,
+            summary,
+            created_at,
+            updated_at
           )
         `
         )
@@ -426,23 +467,48 @@ export default function GamesTab({ filters }: GamesTabProps) {
         throw error;
       }
 
-      // Transform the response to match our interface
-      const transformedData: GameWithUserData[] = data.map((item: any) => ({
-        id: item.id,
-        user_id: userId,
-        game_id: item.game_id,
-        status: item.status as GameStatus,
-        play_time: item.play_time || 0,
-        created_at: item.created_at,
-        completion_percentage: item.completion_percentage || 0,
-        game: {
-          id: item.game_id,
-          name: item.games.name,
-          cover_url: item.games.cover_url,
-        },
-      }));
+      console.log("Raw data from Supabase:", data);
 
-      console.log("Transformed games:", transformedData);
+      // Transform the response to match our interface
+      const transformedData = data.map((item) => {
+        console.log("Profile Games - Database item:", item);
+        console.log(
+          "Profile Games - Raw cover URL from database:",
+          item.games?.cover_url
+        );
+
+        // For RAWG games, the cover_url will contain the background_image
+        const transformed = {
+          id: item.id,
+          user_id: userId,
+          game_id: item.game_id,
+          status: item.status as GameStatus,
+          play_time: item.play_time || 0,
+          created_at: item.created_at,
+          updated_at: item.updated_at,
+          completion_percentage: item.completion_percentage || 0,
+          achievements_completed: item.achievements_completed || 0,
+          user_rating: item.user_rating,
+          notes: item.notes,
+          last_played_at: item.last_played_at,
+          cover_url: item.games?.cover_url || null,
+          games: {
+            id: item.games.id,
+            name: item.games.name,
+            cover_url: item.games.cover_url || null,
+            platforms: item.games.platforms,
+            genres: item.games.genres,
+            summary: item.games.summary,
+            created_at: item.games.created_at,
+            updated_at: item.games.updated_at,
+          },
+        };
+
+        console.log("Profile Games - Transformed item:", transformed);
+        return transformed;
+      });
+
+      console.log("Final transformed data:", transformedData);
       return transformedData;
     },
     enabled: !!userId,
@@ -451,17 +517,20 @@ export default function GamesTab({ filters }: GamesTabProps) {
   // Update local state when query data changes
   useEffect(() => {
     if (games) {
+      console.log("Setting local games state:", games);
       setLocalGames(games);
     }
   }, [games]);
 
   const sortedGames = useMemo(() => {
     if (!localGames.length) return [];
+    console.log("Sorting games from local state:", localGames);
     let sorted = [...localGames];
 
     // Apply status filter
     if (filters.status !== "all") {
       sorted = sorted.filter((game) => game.status === filters.status);
+      console.log("After status filter:", sorted);
     }
 
     // Apply sorting
@@ -469,8 +538,8 @@ export default function GamesTab({ filters }: GamesTabProps) {
       switch (filters.sortBy) {
         case "name":
           return filters.sortOrder === "asc"
-            ? a.game.name.localeCompare(b.game.name)
-            : b.game.name.localeCompare(a.game.name);
+            ? a.games.name.localeCompare(b.games.name)
+            : b.games.name.localeCompare(a.games.name);
         case "recent":
         default:
           const dateA = new Date(a.created_at).getTime();
@@ -479,10 +548,12 @@ export default function GamesTab({ filters }: GamesTabProps) {
       }
     });
 
+    console.log("Final sorted games:", sorted);
     return sorted;
   }, [localGames, filters]);
 
   const renderGameItem = (game: GameWithUserData) => {
+    console.log("Rendering game item:", game);
     if (libraryView === "list") {
       return (
         <GameListItem

@@ -37,8 +37,9 @@ interface AddToLibraryButtonProps {
   cover?: string;
   rating?: number;
   releaseDate?: number;
-  platforms?: { id: number; name: string }[];
-  genres?: { id: number; name: string }[];
+  platforms?: Array<{ id: string | number; name: string }>;
+  genres?: Array<{ id: string | number; name: string }>;
+  summary?: string;
   variant?: "default" | "outline";
   size?: "default" | "sm" | "lg";
   className?: string;
@@ -77,6 +78,7 @@ export function AddToLibraryButton({
   releaseDate,
   platforms,
   genres,
+  summary,
   variant = "default",
   size = "default",
   className,
@@ -225,41 +227,60 @@ export function AddToLibraryButton({
 
   const handleClick = async () => {
     try {
-      // Check authentication first
       if (!user) {
         addError("auth", "Please sign in to add games to your library");
         router.push("/signin");
         return;
       }
 
-      // If game is already in library, show message
-      if (isInLibrary) {
-        toast.info("Game is already in your library", {
-          description: `Current status: ${gameStatus}`,
-        });
-        return;
-      }
-
       setIsLoading(true);
-      console.log("Starting process...");
-      toast.message("Starting process...");
+
+      // Format platforms and genres consistently
+      const formattedPlatforms = Array.isArray(platforms)
+        ? platforms
+        : typeof platforms === "string"
+        ? JSON.parse(platforms)
+        : [];
+
+      const formattedGenres = Array.isArray(genres)
+        ? genres
+        : typeof genres === "string"
+        ? JSON.parse(genres)
+        : [];
+
+      // Format game data consistently
+      const gameData = {
+        id: gameId,
+        name: gameName,
+        title: gameName,
+        coverImage: cover || undefined,
+        cover_url: cover || null,
+        rating,
+        first_release_date: releaseDate,
+        platforms: formattedPlatforms,
+        genres: formattedGenres,
+        summary,
+      };
 
       // Add game to library using LibraryStore
       try {
-        const addedGame = await addGame({
+        // First, store the game data in the games table
+        const gameRecord = {
           id: gameId,
           name: gameName,
-          cover: cover
-            ? {
-                url: cover, // Pass the raw cover URL, let the store handle transformation
-                id: 0,
-              }
-            : null,
-          rating,
+          cover_url: cover,
+          genres: formattedGenres,
+          platforms: formattedPlatforms,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          summary: summary,
           first_release_date: releaseDate,
-          platforms,
-          genres,
-        });
+        };
+
+        console.log("Adding game to library with data:", gameRecord);
+
+        // Add game to library using LibraryStore
+        const addedGame = await addGame(gameRecord);
 
         console.log("Game added to library:", addedGame);
         toast.success("Game added to library");

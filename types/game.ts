@@ -132,6 +132,15 @@ export interface ProcessedGame extends Game {
   notes?: string;
   created_at?: string;
   updated_at?: string;
+  cover_url?: string;
+  name?: string;
+  games?: {
+    id: string;
+    name: string;
+    cover_url: string | null;
+    background_image?: string;  // Add RAWG's background_image field
+    // Add other potential nested properties
+  };
 }
 
 export interface FetchGamesResponse {

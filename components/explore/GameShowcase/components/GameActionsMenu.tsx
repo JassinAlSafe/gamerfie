@@ -27,6 +27,7 @@ import { useLibraryStore } from "@/stores/useLibraryStore";
 import { useFriendsStore } from "@/stores/useFriendsStore";
 import { checkGameInLibrary } from "@/utils/game-utils";
 import { toast } from "sonner";
+import { AddToLibraryButton } from "@/components/add-to-library-button";
 
 interface GameActionsMenuProps {
   game: Game;
@@ -48,7 +49,7 @@ export const GameActionsMenu = memo(
     const updateGameStatus = useProgressStore(
       (state) => state.updateGameStatus
     );
-    const { games, fetchUserLibrary, addGame } = useLibraryStore();
+    const { games, fetchUserLibrary } = useLibraryStore();
     const { createActivity } = useFriendsStore();
 
     useEffect(() => {
@@ -60,71 +61,6 @@ export const GameActionsMenu = memo(
     useEffect(() => {
       setIsInLibrary(games.some((g) => g.id === game.id));
     }, [games, game.id]);
-
-    const handleAddToLibrary = async () => {
-      if (!user?.id) return;
-
-      try {
-        setIsOpen(false);
-
-        // Add game to library using LibraryStore
-        try {
-          const addedGame = await addGame({
-            id: game.id,
-            title: game.title,
-            coverImage: game.coverImage,
-            rating: game.rating,
-            first_release_date: game.releaseDate
-              ? Math.floor(new Date(game.releaseDate).getTime() / 1000)
-              : undefined,
-            platforms: game.platforms,
-            genres: game.genres,
-            summary: game.summary,
-            storyline: game.storyline,
-            playtime: 0,
-            platform: game.platform || "PC",
-          });
-
-          console.log("Game added to library:", addedGame);
-          toast.success("Game added to library");
-
-          // Create activity for adding to library
-          try {
-            await createActivity("want_to_play", game.id);
-          } catch (activityError) {
-            console.error("Error creating activity:", activityError);
-            // Don't fail the whole operation if activity creation fails
-            toast.error("Added to library, but couldn't create activity");
-          }
-
-          setIsInLibrary(true);
-
-          // Refresh the library to update the UI
-          if (user?.id) {
-            fetchUserLibrary(user.id);
-          }
-        } catch (error: any) {
-          console.error("Error adding game:", error);
-
-          // If the error is a duplicate key error, update the UI state
-          if (
-            error.code === "23505" ||
-            (error.message && error.message.includes("duplicate"))
-          ) {
-            setIsInLibrary(true);
-            toast.info("Game is already in your library");
-          } else {
-            toast.error(
-              `Failed to add game: ${error.message || "Unknown error"}`
-            );
-            throw error;
-          }
-        }
-      } catch (error) {
-        console.error("Error:", error);
-        toast.error("An unexpected error occurred. Please try again.");
-      }
-    };
 
     const handleStatusChange = async (
       status: "playing" | "completed" | "want_to_play" | "dropped"
@@ -177,14 +113,23 @@ export const GameActionsMenu = memo(
                   {isInLibrary ? "Update Status" : "Add to Library"}
                 </div>
                 {!isInLibrary ? (
-                  <Button
-                    variant="ghost"
-                    className="w-full justify-start text-white/80 hover:text-white hover:bg-white/10"
-                    onClick={handleAddToLibrary}
-                  >
-                    <Library className="mr-2 h-4 w-4" />
-                    Add to Library
-                  </Button>
+                  <AddToLibraryButton
+                    gameId={game.id}
+                    gameName={game.title}
+                    cover={game.coverImage}
+                    rating={game.rating}
+                    releaseDate={game.first_release_date}
+                    platforms={game.platforms}
+                    genres={game.genres}
+                    summary={game.summary}
+                    onSuccess={(status) => {
+                      setIsInLibrary(true);
+                      setIsOpen(false);
+                      if (user?.id) {
+                        fetchUserLibrary(user.id);
+                      }
+                    }}
+                  />
                 ) : (
                   STATUS_OPTIONS.map(({ value, label, icon: Icon }) => (
                     <Button

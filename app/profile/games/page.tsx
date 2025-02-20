@@ -14,6 +14,30 @@ import { ErrorState } from "@/components/ui/error-state";
 import { Button } from "@/components/ui/button";
 import { LayoutGrid, List } from "lucide-react";
 import { useSettingsStore } from "@/stores/useSettingsStore";
+import { getCoverImageUrl } from "@/utils/image-utils";
+import { GameCoverImage } from "@/components/ui/game-cover-image";
+import type { ProcessedGame } from "@/types/game";
+
+function GameItem({ game }: { game: ProcessedGame }) {
+  // Handle both RAWG and IGDB cover image formats with better fallbacks
+  const coverUrl =
+    game.games?.cover_url || // From games table
+    game.cover_url || // Direct cover_url
+    game.coverImage || // IGDB format
+    game.games?.background_image; // RAWG format
+
+  const processedCoverUrl = getCoverImageUrl(coverUrl);
+
+  return (
+    <div className="relative group">
+      <GameCoverImage
+        src={processedCoverUrl}
+        alt={game.title || game.name || "Game Cover"}
+      />
+      {/* ...rest of the GameItem component... */}
+    </div>
+  );
+}
 
 export default function GamesPage() {
   const { profile, isLoading, error, gameStats } = useProfile();
