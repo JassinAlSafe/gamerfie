@@ -22,6 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 const playlistTypes: { value: PlaylistType; label: string }[] = [
   { value: "featured", label: "Featured" },
@@ -31,20 +32,53 @@ const playlistTypes: { value: PlaylistType; label: string }[] = [
   { value: "custom", label: "Custom" },
 ];
 
-export function PlaylistManager() {
+export interface PlaylistManagerProps {
+  initialPlaylist?: Playlist;
+}
+
+export function PlaylistManager({ initialPlaylist }: PlaylistManagerProps) {
   const { user, isLoading: authLoading } = useAuthStore();
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<Game[]>([]);
-  const [selectedGames, setSelectedGames] = useState<Game[]>([]);
+  const [selectedGames, setSelectedGames] = useState<Game[]>(
+    initialPlaylist?.games || []
+  );
   const [isSearching, setIsSearching] = useState(false);
   const debouncedSearch = useDebounce(searchQuery, 500);
+  const router = useRouter();
 
   const {
     register,
     handleSubmit,
     reset,
+    setValue,
+    watch,
     formState: { errors },
-  } = useForm<CreatePlaylistInput>();
+  } = useForm<CreatePlaylistInput>({
+    defaultValues: initialPlaylist
+      ? {
+          title: initialPlaylist.title,
+          description: initialPlaylist.description,
+          type: initialPlaylist.type,
+          coverImage: initialPlaylist.coverImage,
+          isPublished: initialPlaylist.isPublished,
+          startDate: initialPlaylist.start_date?.toISOString().split("T")[0],
+          endDate: initialPlaylist.end_date?.toISOString().split("T")[0],
+          metadata: initialPlaylist.metadata,
+        }
+      : {
+          isPublished: false,
+          type: "custom",
+        },
+  });
+
+  const selectedType = watch("type");
+
+  useEffect(() => {
+    if (initialPlaylist?.type) {
+      setValue("type", initialPlaylist.type);
+    }
+  }, [initialPlaylist, setValue]);
 
   useEffect(() => {
     const searchGames = async () => {
@@ -105,18 +139,28 @@ export function PlaylistManager() {
 
   const onSubmit = async (data: CreatePlaylistInput) => {
     try {
-      await PlaylistService.createPlaylist({
-        ...data,
-        gameIds: selectedGames.map((game) => game.id),
-      });
-
-      toast.success("Playlist created successfully");
-      reset();
-      setSelectedGames([]);
+      if (initialPlaylist) {
+        await PlaylistService.updatePlaylist({
+          id: initialPlaylist.id,
+          ...data,
+          isPublished: data.isPublished ?? initialPlaylist.isPublished,
+          gameIds: selectedGames.map((game) => game.id),
+        });
+        toast.success("Playlist updated successfully");
+        router.push("/playlists");
+      } else {
+        await PlaylistService.createPlaylist({
+          ...data,
+          isPublished: data.isPublished ?? false,
+          gameIds: selectedGames.map((game) => game.id),
+        });
+        toast.success("Playlist created successfully");
+        router.push("/playlists");
+      }
     } catch (error) {
-      console.error("Error creating playlist:", error);
+      console.error("Error saving playlist:", error);
       toast.error(
-        error instanceof Error ? error.message : "Failed to create playlist"
+        error instanceof Error ? error.message : "Failed to save playlist"
       );
     }
   };
@@ -145,9 +189,8 @@ export function PlaylistManager() {
           )}
 
           <Select
-            onValueChange={(value) =>
-              register("type").onChange({ target: { value } })
-            }
+            value={selectedType}
+            onValueChange={(value) => setValue("type", value as PlaylistType)}
           >
             <SelectTrigger className="bg-white/10 border-white/20 text-white">
               <SelectValue placeholder="Select Type" />
@@ -164,6 +207,17 @@ export function PlaylistManager() {
               ))}
             </SelectContent>
           </Select>
+
+          <div className="flex items-center gap-4 mb-4">
+            <label className="flex items-center gap-2 text-white">
+              <input
+                type="checkbox"
+                {...register("isPublished")}
+                className="rounded border-white/20 bg-white/10"
+              />
+              Published
+            </label>
+          </div>
 
           <div className="flex items-center gap-2">
             <Input
@@ -184,7 +238,7 @@ export function PlaylistManager() {
             type="submit"
             className="w-full bg-purple-600 hover:bg-purple-700"
           >
-            Create Playlist
+            {initialPlaylist ? "Update Playlist" : "Create Playlist"}
           </Button>
         </form>
 

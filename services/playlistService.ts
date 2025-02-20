@@ -6,7 +6,7 @@ import { useAuthStore } from '@/stores/useAuthStore';
 
 interface DatabasePlaylistGame {
   game_id: string;
-  order: number;
+  display_order: number;
   added_at: string;
 }
 
@@ -173,8 +173,8 @@ export class PlaylistService {
     return {
       ...this.mapDatabasePlaylist(playlist as DatabasePlaylist),
       games: games.sort((a, b) => {
-        const aOrder = (playlist as DatabasePlaylist).playlist_games.find((pg: DatabasePlaylistGame) => pg.game_id === a.id)?.order ?? 0;
-        const bOrder = (playlist as DatabasePlaylist).playlist_games.find((pg: DatabasePlaylistGame) => pg.game_id === b.id)?.order ?? 0;
+        const aOrder = (playlist as DatabasePlaylist).playlist_games.find((pg: DatabasePlaylistGame) => pg.game_id === a.id)?.display_order ?? 0;
+        const bOrder = (playlist as DatabasePlaylist).playlist_games.find((pg: DatabasePlaylistGame) => pg.game_id === b.id)?.display_order ?? 0;
         return aOrder - bOrder;
       })
     };
@@ -212,8 +212,8 @@ export class PlaylistService {
         return {
           ...this.mapDatabasePlaylist(playlist),
           games: games.sort((a, b) => {
-            const aOrder = playlist.playlist_games.find((pg: DatabasePlaylistGame) => pg.game_id === a.id)?.order ?? 0;
-            const bOrder = playlist.playlist_games.find((pg: DatabasePlaylistGame) => pg.game_id === b.id)?.order ?? 0;
+            const aOrder = playlist.playlist_games.find((pg: DatabasePlaylistGame) => pg.game_id === a.id)?.display_order ?? 0;
+            const bOrder = playlist.playlist_games.find((pg: DatabasePlaylistGame) => pg.game_id === b.id)?.display_order ?? 0;
             return aOrder - bOrder;
           })
         };

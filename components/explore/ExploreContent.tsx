@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { Suspense } from "react";
+import { Suspense, useState, useEffect } from "react";
 import { TracingBeam } from "@/components/ui/tracing-beam";
 import { ErrorBoundary } from "react-error-boundary";
 import { useExplore } from "@/hooks/useExplore";
@@ -17,7 +17,8 @@ import { Separator } from "@/components/ui/separator";
 import { Trophy, Flame, Star, Users2 } from "lucide-react";
 
 import { GameShowcase } from "./GameShowcase/GameShowcase";
-import type { ShowcaseGame } from "./GameShowcase/GameShowcase";
+import { PlaylistService } from "@/services/playlistService";
+import { Playlist } from "@/types/playlist";
 
 const BackToTopButton = dynamic(() => import("@/components/BackToTopButton"), {
   ssr: false,
@@ -102,50 +103,23 @@ export function ExploreContent() {
     categoryButtons,
   } = useExplore();
 
-  // Example showcase data - this would come from your admin CMS/database
-  const showcaseData = {
-    title: "State of Play February 2025 Games",
-    description:
-      "Every game featured in Sony's PlayStation State of Play on February 12, 2025.",
-    date: "February 12, 2025",
-    games: [
-      {
-        id: "1",
-        title: "Saros",
-        developer: "Housemarque",
-        imageUrl: "/images/games/saros.jpg",
-        releaseDate: "Q4 2025",
-      },
-      {
-        id: "2",
-        title: "Days Gone Remastered",
-        developer: "Bend Studio",
-        imageUrl: "/images/games/days-gone.jpg",
-        releaseDate: "Summer 2025",
-      },
-      {
-        id: "3",
-        title: "Shinobi: Art of Vengeance",
-        developer: "SEGA",
-        imageUrl: "/images/games/shinobi.jpg",
-        releaseDate: "Fall 2025",
-      },
-      {
-        id: "4",
-        title: "Warriors: Abyss",
-        developer: "Omega Force",
-        imageUrl: "/images/games/warriors.jpg",
-        releaseDate: "2025",
-      },
-      {
-        id: "5",
-        title: "Borderlands 4",
-        developer: "Gearbox",
-        imageUrl: "/images/games/borderlands.jpg",
-        releaseDate: "Holiday 2025",
-      },
-    ] as ShowcaseGame[],
-  };
+  const [playlists, setPlaylists] = useState<Playlist[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchPlaylists() {
+      try {
+        const fetchedPlaylists = await PlaylistService.getPlaylists();
+        setPlaylists(fetchedPlaylists);
+      } catch (error) {
+        console.error("Failed to fetch playlists:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    fetchPlaylists();
+  }, []);
 
   return (
     <div className="relative z-10 pt-28 pb-24">
@@ -196,8 +170,37 @@ export function ExploreContent() {
           </section>
 
           {/* Game Showcase Section */}
-          <section>
-            <GameShowcase {...showcaseData} />
+          <section className="space-y-8">
+            <div className="text-center space-y-4">
+              <h2 className="text-3xl font-bold text-white">
+                Featured Collections
+              </h2>
+              <p className="text-white/60 max-w-2xl mx-auto">
+                Discover curated collections of games handpicked by our
+                community
+              </p>
+            </div>
+            {isLoading ? (
+              <div>Loading playlists...</div>
+            ) : (
+              <div className="space-y-8">
+                {playlists.map((playlist) => (
+                  <GameShowcase
+                    key={playlist.id}
+                    playlistId={playlist.id}
+                    title={playlist.title}
+                    description={playlist.description}
+                    date={new Date(playlist.createdAt).toLocaleDateString()}
+                    type={playlist.type}
+                  />
+                ))}
+                {playlists.length === 0 && (
+                  <div className="text-center py-12">
+                    <p className="text-white/60">No playlists available.</p>
+                  </div>
+                )}
+              </div>
+            )}
           </section>
         </div>
       </TracingBeam>

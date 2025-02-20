@@ -1,13 +1,16 @@
 "use client";
 
-import { CalendarDays, ArrowRight } from "lucide-react";
+import { CalendarDays, ArrowRight, Edit } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import { Game } from "@/types/game";
 import { Playlist } from "@/types/playlist";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useRAWG } from "@/hooks/use-rawg";
+import { useAuthStore } from "@/stores/useAuthStore";
+import { Button } from "@/components/ui/button";
 import { PlaylistService } from "@/services/playlistService";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 export interface GameShowcaseProps {
   playlistId?: string;
@@ -15,6 +18,8 @@ export interface GameShowcaseProps {
   description: string;
   date: string;
   games?: Game[];
+  type?: "featured" | "collection" | "event" | "genre" | "custom";
+  className?: string;
 }
 
 function GameShowcaseSkeleton() {
@@ -52,10 +57,15 @@ export function GameShowcase({
   description,
   date,
   games: propGames,
+  type = "featured",
+  className,
 }: GameShowcaseProps) {
   const [games, setGames] = useState<Game[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [playlist, setPlaylist] = useState<Playlist | null>(null);
+  const { user } = useAuthStore();
+  const router = useRouter();
+  const isAdmin = user?.profile?.role === "admin";
 
   useEffect(() => {
     if (playlistId) {
@@ -95,6 +105,12 @@ export function GameShowcase({
     };
   }, [playlistId]);
 
+  const handleEditPlaylist = () => {
+    if (playlistId) {
+      router.push(`/admin/playlists/${playlistId}/edit`);
+    }
+  };
+
   if (isLoading) {
     return <GameShowcaseSkeleton />;
   }
@@ -114,13 +130,27 @@ export function GameShowcase({
             {playlist?.description || description}
           </p>
         </div>
-        <button className="px-4 py-2 rounded-lg bg-white/5 text-white/80 hover:bg-white/10 transition-colors">
-          See all
-        </button>
+        <div className="flex items-center gap-2">
+          {isAdmin && playlistId && (
+            <Button
+              onClick={handleEditPlaylist}
+              variant="ghost"
+              className="text-white/80 hover:bg-white/10"
+            >
+              <Edit className="w-4 h-4 mr-2" />
+              Edit
+            </Button>
+          )}
+          <Link href={`/playlists/${type}`}>
+            <Button className="px-4 py-2 rounded-lg bg-white/5 text-white/80 hover:bg-white/10 transition-colors">
+              See all
+            </Button>
+          </Link>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
-        {games.map((game) => (
+        {games.slice(0, 5).map((game) => (
           <div
             key={game.id}
             className="group relative aspect-[3/4] rounded-lg overflow-hidden border border-white/5"
@@ -134,7 +164,6 @@ export function GameShowcase({
                   className="object-cover transition-transform duration-300 group-hover:scale-105"
                   sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                   onError={(e) => {
-                    // Fallback to skeleton on error
                     e.currentTarget.parentElement?.classList.add("bg-white/5");
                     e.currentTarget.remove();
                   }}
@@ -163,12 +192,14 @@ export function GameShowcase({
                 </div>
               )}
             </div>
-            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/60">
-              <button className="px-4 py-2 rounded-lg bg-white/10 text-white hover:bg-white/20 transition-colors flex items-center gap-2">
-                Learn More
-                <ArrowRight className="w-4 h-4" />
-              </button>
-            </div>
+            <Link href={`/games/${game.id}`}>
+              <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/60">
+                <Button className="px-4 py-2 rounded-lg bg-white/10 text-white hover:bg-white/20 transition-colors flex items-center gap-2">
+                  Learn More
+                  <ArrowRight className="w-4 h-4" />
+                </Button>
+              </div>
+            </Link>
           </div>
         ))}
       </div>
