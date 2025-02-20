@@ -14,6 +14,7 @@ import { CreatePlaylistInput, Playlist, PlaylistType } from "@/types/playlist";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { useAdmin } from "@/hooks/useAdmin";
 import {
   Select,
   SelectContent,
@@ -32,6 +33,7 @@ const playlistTypes: { value: PlaylistType; label: string }[] = [
 ];
 
 export function PlaylistManager() {
+  const { isAdmin, loading: adminLoading } = useAdmin();
   const supabase = createClientComponentClient();
   const [userId, setUserId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -113,13 +115,37 @@ export function PlaylistManager() {
       };
 
       await PlaylistService.createPlaylist(playlistData);
+  if (adminLoading) {
+    return (
+      <div className="flex items-center justify-center h-[400px]">
+        <div className="text-white/60">Loading...</div>
+      </div>
+    );
+  }
+
+  if (!isAdmin) {
+    return (
+      <div className="flex items-center justify-center h-[400px]">
+        <div className="text-white/60">Unauthorized: Admin access required</div>
+      </div>
+    );
+  }
+
+  const onSubmit = async (data: CreatePlaylistInput) => {
+    try {
+      await PlaylistService.createPlaylist({
+        ...data,
+        gameIds: selectedGames.map((game) => game.id),
+      });
 
       toast.success("Playlist created successfully");
       reset();
       setSelectedGames([]);
     } catch (error) {
       console.error("Error creating playlist:", error);
-      toast.error("Failed to create playlist");
+      toast.error(
+        error instanceof Error ? error.message : "Failed to create playlist"
+      );
     }
   };
 

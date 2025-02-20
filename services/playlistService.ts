@@ -31,11 +31,12 @@ interface DatabasePlaylist {
 export class PlaylistService {
   private static supabase = createClientComponentClient<Database>();
 
-  static async createPlaylist(input: CreatePlaylistInput, userId: string): Promise<Playlist> {
-    const slug = input.title
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/(^-|-$)/g, '');
+  static async createPlaylist(input: CreatePlaylistInput): Promise<Playlist> {
+    try {
+      const { data: { session } } = await this.supabase.auth.getSession();
+      if (!session) {
+        throw new Error('Not authenticated');
+      }
 
     try {
       const { data: playlist, error } = await this.supabase
@@ -118,7 +119,7 @@ export class PlaylistService {
       const playlistGames = input.gameIds.map((gameId, index) => ({
         playlist_id: playlist.id,
         game_id: gameId,
-        order: index,
+        display_order: index,
         added_at: new Date().toISOString()
       }));
 
@@ -139,7 +140,7 @@ export class PlaylistService {
         *,
         playlist_games (
           game_id,
-          order,
+          display_order,
           added_at
         )
       `)
@@ -172,12 +173,12 @@ export class PlaylistService {
         *,
         playlist_games (
           game_id,
-          order,
+          display_order,
           added_at
         )
       `)
       .eq('is_published', true)
-      .order('order', { ascending: true });
+      .order('display_order', { ascending: true });
 
     if (type) {
       query = query.eq('type', type);
@@ -255,7 +256,7 @@ export class PlaylistService {
       updatedAt: dbPlaylist.updated_at,
       createdBy: dbPlaylist.created_by,
       gameIds: (dbPlaylist.playlist_games || []).map((pg: PlaylistGame) => pg.gameId),
-      order: dbPlaylist.order,
+      order: dbPlaylist.display_order,
       metadata: dbPlaylist.metadata
     };
   }
