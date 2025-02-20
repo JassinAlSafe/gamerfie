@@ -5,10 +5,28 @@ import { getToken } from "next-auth/jwt";
 
 export async function middleware(req: NextRequest) {
   const res = NextResponse.next();
+  const supabase = createMiddlewareClient({ req, res });
+
+  // Sync sessions
+  const session = await getToken({ req });
+  if (session?.supabaseAccessToken && session?.supabaseRefreshToken) {
+    await supabase.auth.setSession({
+      access_token: session.supabaseAccessToken,
+      refresh_token: session.supabaseRefreshToken
+    });
+  }
+
+  // Refresh session if needed
+  const { data: { session: supabaseSession } } = await supabase.auth.getSession();
+  if (supabaseSession?.user && session?.expires_at) {
+    const expiresAt = new Date(session.expires_at * 1000);
+    if (expiresAt < new Date()) {
+      await supabase.auth.refreshSession();
+    }
+  }
 
   try {
     // Handle Supabase auth
-    const supabase = createMiddlewareClient({ req, res });
     const { data: { session: supabaseSession } } = await supabase.auth.getSession();
 
     // Check NextAuth session

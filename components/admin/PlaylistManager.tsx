@@ -101,19 +101,18 @@ export function PlaylistManager() {
   };
 
   const onSubmit = async (data: CreatePlaylistInput) => {
-    if (!userId) {
-      toast.error("You must be logged in to create a playlist");
-      return;
-    }
-
     try {
-      await PlaylistService.createPlaylist(
-        {
-          ...data,
-          gameIds: selectedGames.map((game) => game.id),
-        },
-        userId
-      );
+      // Convert dates and handle optional endDate
+      const playlistData = {
+        title: data.title,
+        description: data.description,
+        start_date: data.startDate ? new Date(data.startDate) : null,
+        // Only include end_date if column exists and value is provided
+        ...(data.endDate && { end_date: new Date(data.endDate) }),
+        games: selectedGames,
+      };
+
+      await PlaylistService.createPlaylist(playlistData);
 
       toast.success("Playlist created successfully");
       reset();

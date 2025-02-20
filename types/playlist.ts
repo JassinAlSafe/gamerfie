@@ -10,8 +10,8 @@ export interface Playlist {
   type: PlaylistType;
   slug: string;
   isPublished: boolean;
-  startDate?: string;
-  endDate?: string;
+  start_date: Date;
+  end_date?: Date;
   createdAt: string;
   updatedAt: string;
   createdBy: string;
