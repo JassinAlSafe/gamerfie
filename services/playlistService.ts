@@ -1,8 +1,8 @@
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { Database } from '@/types/supabase';
-import { Playlist, CreatePlaylistInput, UpdatePlaylistInput, PlaylistGame } from '@/types/playlist';
+import { Playlist, CreatePlaylistInput, UpdatePlaylistInput, PlaylistGame, PlaylistType } from '@/types/playlist';
 import { RAWGService } from './rawgService';
-import { createClient } from '@supabase/supabase-js';
+import { useAuthStore } from '@/stores/useAuthStore';
 
 interface DatabasePlaylistGame {
   game_id: string;
@@ -18,8 +18,8 @@ interface DatabasePlaylist {
   type: string;
   slug: string;
   is_published: boolean;
-  start_date?: string;
-  end_date?: string;
+  start_date?: string | null;
+  end_date?: string | null;
   created_at: string;
   updated_at: string;
   created_by: string;
@@ -33,12 +33,20 @@ export class PlaylistService {
 
   static async createPlaylist(input: CreatePlaylistInput): Promise<Playlist> {
     try {
-      const { data: { session } } = await this.supabase.auth.getSession();
-      if (!session) {
+      const user = useAuthStore.getState().user;
+      if (!user) {
         throw new Error('Not authenticated');
       }
 
-    try {
+      if (!user.profile?.role || user.profile.role !== 'admin') {
+        throw new Error('Unauthorized: Admin access required');
+      }
+
+      const slug = input.title
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)/g, '');
+
       const { data: playlist, error } = await this.supabase
         .from('playlists')
         .insert({
@@ -49,20 +57,23 @@ export class PlaylistService {
           is_published: input.isPublished ?? false,
           start_date: input.startDate,
           end_date: input.endDate,
-          created_by: userId,
+          created_by: user.id,
           slug,
           metadata: input.metadata
         })
-        .select('*')
+        .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Playlist creation error:', error);
+        throw new Error(error.message || 'Failed to create playlist');
+      }
 
       if (input.gameIds?.length) {
         const playlistGames = input.gameIds.map((gameId, index) => ({
           playlist_id: playlist.id,
           game_id: gameId,
-          order: index,
+          display_order: index,
           added_at: new Date().toISOString()
         }));
 
@@ -70,12 +81,15 @@ export class PlaylistService {
           .from('playlist_games')
           .insert(playlistGames);
 
-        if (gameError) throw gameError;
+        if (gameError) {
+          console.error('Game association error:', gameError);
+          throw new Error('Failed to associate games with playlist');
+        }
       }
 
       return this.mapDatabasePlaylist(playlist);
     } catch (error) {
-      console.error('Error creating playlist:', error);
+      console.error('CreatePlaylist error:', error);
       throw error;
     }
   }
@@ -241,65 +255,23 @@ export class PlaylistService {
     };
   }
 
-  private static mapDatabasePlaylist(dbPlaylist: any): Playlist {
+  private static mapDatabasePlaylist(dbPlaylist: DatabasePlaylist): Playlist {
     return {
       id: dbPlaylist.id,
       title: dbPlaylist.title,
       description: dbPlaylist.description,
       coverImage: dbPlaylist.cover_image,
-      type: dbPlaylist.type,
+      type: dbPlaylist.type as PlaylistType,
       slug: dbPlaylist.slug,
       isPublished: dbPlaylist.is_published,
-      startDate: dbPlaylist.start_date,
-      endDate: dbPlaylist.end_date,
+      start_date: dbPlaylist.start_date ? new Date(dbPlaylist.start_date) : new Date(),
+      end_date: dbPlaylist.end_date ? new Date(dbPlaylist.end_date) : undefined,
       createdAt: dbPlaylist.created_at,
       updatedAt: dbPlaylist.updated_at,
       createdBy: dbPlaylist.created_by,
-      gameIds: (dbPlaylist.playlist_games || []).map((pg: PlaylistGame) => pg.gameId),
-      order: dbPlaylist.display_order,
+      gameIds: (dbPlaylist.playlist_games || []).map((pg: DatabasePlaylistGame) => pg.game_id),
+      display_order: dbPlaylist.order,
       metadata: dbPlaylist.metadata
     };
-  }
-
-  static async createPlaylist(playlistData: PlaylistCreationData) {
-    const supabase = createClientComponentClient({
-      supabaseKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-      supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
-    })
-
-    const { data: { user } } = await supabase.auth.getUser()
-
-    if (!user) {
-      throw new Error('User must be authenticated to create playlists')
-    }
-
-    const { data, error } = await supabase
-      .from('playlists')
-      .insert({
-        title: playlistData.title,
-        description: playlistData.description,
-        start_date: playlistData.startDate,
-        user_id: user.id,
-        games: playlistData.games || []
-      })
-      .select('*')
-      .single()
-
-    if (error) throw error
-
-    // Insert into junction table
-    const { error: junctionError } = await supabase
-      .from('playlist_games')
-      .insert(
-        playlistData.games.map((game, index) => ({
-          playlist_id: data.id,
-          game_id: game.id,
-          position: index + 1
-        }))
-      );
-
-    if (junctionError) throw new Error('Failed to link games to playlist');
-    
-    return data
   }
 } 

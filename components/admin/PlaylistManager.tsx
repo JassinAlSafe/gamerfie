@@ -8,13 +8,12 @@ import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 import { useDebounce } from "@/hooks/useDebounce";
 import { RAWGService } from "@/services/rawgService";
 import { PlaylistService } from "@/services/playlistService";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { Game } from "@/types/game";
 import { CreatePlaylistInput, Playlist, PlaylistType } from "@/types/playlist";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { useAdmin } from "@/hooks/useAdmin";
+import { useAuthStore } from "@/stores/useAuthStore";
 import {
   Select,
   SelectContent,
@@ -33,9 +32,7 @@ const playlistTypes: { value: PlaylistType; label: string }[] = [
 ];
 
 export function PlaylistManager() {
-  const { isAdmin, loading: adminLoading } = useAdmin();
-  const supabase = createClientComponentClient();
-  const [userId, setUserId] = useState<string | null>(null);
+  const { user, isLoading: authLoading } = useAuthStore();
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<Game[]>([]);
   const [selectedGames, setSelectedGames] = useState<Game[]>([]);
@@ -48,18 +45,6 @@ export function PlaylistManager() {
     reset,
     formState: { errors },
   } = useForm<CreatePlaylistInput>();
-
-  useEffect(() => {
-    const getUser = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (user) {
-        setUserId(user.id);
-      }
-    };
-    getUser();
-  }, [supabase]);
 
   useEffect(() => {
     const searchGames = async () => {
@@ -102,20 +87,7 @@ export function PlaylistManager() {
     setSelectedGames(items);
   };
 
-  const onSubmit = async (data: CreatePlaylistInput) => {
-    try {
-      // Convert dates and handle optional endDate
-      const playlistData = {
-        title: data.title,
-        description: data.description,
-        start_date: data.startDate ? new Date(data.startDate) : null,
-        // Only include end_date if column exists and value is provided
-        ...(data.endDate && { end_date: new Date(data.endDate) }),
-        games: selectedGames,
-      };
-
-      await PlaylistService.createPlaylist(playlistData);
-  if (adminLoading) {
+  if (authLoading) {
     return (
       <div className="flex items-center justify-center h-[400px]">
         <div className="text-white/60">Loading...</div>
@@ -123,7 +95,7 @@ export function PlaylistManager() {
     );
   }
 
-  if (!isAdmin) {
+  if (!user?.profile?.role || user.profile.role !== "admin") {
     return (
       <div className="flex items-center justify-center h-[400px]">
         <div className="text-white/60">Unauthorized: Admin access required</div>
