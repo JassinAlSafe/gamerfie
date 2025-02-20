@@ -4,6 +4,8 @@ import { Database } from '@/types/supabase'
 import { Game, GameStatus, Platform, Genre, GameProgress } from '@/types/game'
 import { getCoverImageUrl } from "@/utils/image-utils";
 
+
+
 interface LibraryState {
   games: Game[];
   loading: boolean;
@@ -174,6 +176,7 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
       // Refresh the library after adding a new game
       await get().fetchUserLibrary(session.user.id);
 
+
       const newGame: Game & GameProgress = {
         id: game.id,
         name: game.name,
@@ -224,6 +227,7 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
       // Update local state after removal
       set(state => ({
         games: state.games.filter(game => game.id !== gameId)
+
       }));
     } catch (error) {
       console.error('Error removing game from library:', error);

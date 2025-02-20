@@ -66,6 +66,7 @@ export interface Game extends BaseGame {
   cover?: {
     id: string;
     url: string;
+
   };
   screenshots?: Array<{
     id: string;
