@@ -1,6 +1,6 @@
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { Database } from '@/types/supabase';
-import { Playlist, CreatePlaylistInput, UpdatePlaylistInput, PlaylistGame, PlaylistType } from '@/types/playlist';
+import { Playlist, CreatePlaylistInput, UpdatePlaylistInput, PlaylistType } from '@/types/playlist';
 import { RAWGService } from './rawgService';
 import { useAuthStore } from '@/stores/useAuthStore';
 

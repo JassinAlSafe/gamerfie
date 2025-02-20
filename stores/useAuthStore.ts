@@ -118,8 +118,7 @@ export const useAuthStore = create<AuthState>()(
                     id: response.data.user.id,
                     username: _username,
                     avatar_url: null,
-                    full_name: null,
-                    bio: null,
+                    role: null,
                     created_at: new Date().toISOString(),
                     updated_at: new Date().toISOString()
                   }
