@@ -1,9 +1,12 @@
 import React, { useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { useGamesStore, CategoryOption as CategoryOptionFromStore } from "@/stores/useGamesStore";
+import {
+  useGamesStore,
+  CategoryOption as CategoryOptionFromStore,
+} from "@/stores/useGamesStore";
 import { useSearchStore } from "@/stores/useSearchStore";
-import { useDebounce } from "./useDebounce";
+import { useDebounce } from "../Settings/useDebounce";
 import { GAME_CATEGORIES, CATEGORY_TIME_RANGES } from "@/config/categories";
 import type { CategoryOption } from "@/types/game";
 import { SearchButton } from "@/components/explore/SearchButton";
@@ -19,7 +22,9 @@ interface ExploreHookReturn {
 
 export function useExplore(): ExploreHookReturn {
   const router = useRouter();
-  const setSelectedCategory = useGamesStore((state) => state.setSelectedCategory);
+  const setSelectedCategory = useGamesStore(
+    (state) => state.setSelectedCategory
+  );
   const { query: searchQuery, setQuery: setSearchQuery } = useSearchStore();
   const debouncedSearch = useDebounce<string>(searchQuery);
 

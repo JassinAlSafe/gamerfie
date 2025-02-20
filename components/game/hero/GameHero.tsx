@@ -2,14 +2,11 @@
 
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import Image from "next/image";
-import { Game } from "@/types/game";
+import { Game, GameProgress } from "@/types/game";
 import { Profile } from "@/types/profile";
-import { GameProgress } from "@/types/game";
 import { BackButton } from "@/components/BackButton";
 import { GameCover } from "./GameCover";
 import { GameQuickStats } from "./GameQuickStats";
-import { GameLibraryActions } from "@/components/game/GameLibraryActions";
 import { getHighQualityImageUrl } from "@/utils/image-utils";
 import { AddToLibraryButton } from "@/components/add-to-library-button";
 import { UpdateProgressButton } from "@/components/update-progress-button";
@@ -17,22 +14,30 @@ import { UpdateProgressButton } from "@/components/update-progress-button";
 interface GameHeroProps {
   game: Game;
   profile?: Profile | null;
-  progress?: {
-    playTime?: number | null;
-    completionPercentage?: number | null;
-    achievementsCompleted?: number | null;
-  };
+  progress?: Partial<GameProgress>;
 }
 
 export function GameHero({ game, profile, progress }: GameHeroProps) {
   const [mounted, setMounted] = React.useState(false);
   const [isImageLoaded, setIsImageLoaded] = useState(false);
-  const backgroundImage = game.artworks?.[0]?.url || game.screenshots?.[0]?.url;
+  const [backgroundLoaded, setBackgroundLoaded] = useState(false);
+
+  // Get the background image URL, using cover as fallback if no background image
+  const backgroundImage =
+    game.background_image || game.cover_url || game.coverImage;
 
   React.useEffect(() => {
     setMounted(true);
+
+    // Preload the background image
+    if (backgroundImage) {
+      const img = new Image();
+      img.src = getHighQualityImageUrl(backgroundImage);
+      img.onload = () => setBackgroundLoaded(true);
+    }
+
     return () => setMounted(false);
-  }, []);
+  }, [backgroundImage]);
 
   return (
     <div className="relative h-[80vh] w-full overflow-hidden">
@@ -40,7 +45,7 @@ export function GameHero({ game, profile, progress }: GameHeroProps) {
       {backgroundImage && mounted && (
         <div
           className={`absolute inset-0 bg-cover bg-center bg-fixed transform scale-105 filter blur-[2px] transition-opacity duration-500 ${
-            isImageLoaded ? "opacity-70" : "opacity-0"
+            backgroundLoaded ? "opacity-70" : "opacity-0"
           }`}
           style={{
             backgroundImage: `url(${getHighQualityImageUrl(backgroundImage)})`,
@@ -76,7 +81,7 @@ export function GameHero({ game, profile, progress }: GameHeroProps) {
                 {game.name}
               </motion.h1>
 
-              <GameQuickStats game={game} />
+              <GameQuickStats game={game} progress={progress} />
 
               <motion.p
                 initial={false}
@@ -94,18 +99,20 @@ export function GameHero({ game, profile, progress }: GameHeroProps) {
                 className="flex flex-wrap gap-4"
               >
                 <AddToLibraryButton
-                  gameId={game.id.toString()}
+                  gameId={game.id}
                   gameName={game.name}
-                  cover={game.cover?.url}
-                  rating={game.total_rating || undefined}
-                  releaseDate={game.first_release_date || undefined}
-                  platforms={game.platforms || []}
-                  genres={game.genres || []}
+                  cover={game.cover_url || game.coverImage}
+                  rating={game.rating}
+                  releaseDate={game.first_release_date}
+                  platforms={game.platforms}
+                  genres={game.genres}
+                  summary={game.summary}
                 />
                 <UpdateProgressButton
-                  gameId={game.id.toString()}
+                  gameId={game.id}
                   gameName={game.name}
                   game={game}
+                  progress={progress}
                 />
               </motion.div>
             </div>

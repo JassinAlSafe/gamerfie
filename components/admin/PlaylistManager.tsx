@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { Plus, Search, X, GripVertical } from "lucide-react";
 import type { DropResult } from "react-beautiful-dnd";
 import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
-import { useDebounce } from "@/hooks/useDebounce";
+import { useDebounce } from "@/hooks/Settings/useDebounce";
 import { RAWGService } from "@/services/rawgService";
 import { PlaylistService } from "@/services/playlistService";
 import { Game } from "@/types/game";

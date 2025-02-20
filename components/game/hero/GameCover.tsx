@@ -19,7 +19,9 @@ export function GameCover({ game, onLoad }: GameCoverProps) {
     setMounted(true);
   }, []);
 
-  if (!game.cover) {
+  const coverUrl = game.cover_url || game.coverImage;
+
+  if (!coverUrl) {
     return (
       <motion.div
         initial={false}
@@ -49,7 +51,7 @@ export function GameCover({ game, onLoad }: GameCoverProps) {
         />
         {mounted && (
           <Image
-            src={getCoverImageUrl(game.cover.url)}
+            src={getCoverImageUrl(coverUrl)}
             alt={game.name}
             fill
             priority

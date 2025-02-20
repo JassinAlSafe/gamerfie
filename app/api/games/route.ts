@@ -60,6 +60,9 @@ export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
     
+    // Log request parameters
+    console.log('Games API request params:', Object.fromEntries(searchParams.entries()));
+    
     // Validate parameters
     const validationErrors = validateParams(searchParams);
     if (validationErrors.length > 0) {
@@ -77,6 +80,18 @@ export async function GET(request: NextRequest) {
     const year = searchParams.get('year');
     const sort = (searchParams.get('sort') || 'popularity') as GameSortOption;
     const search = searchParams.get('search') || '';
+
+    // Check IGDB credentials before making requests
+    if (!process.env.NEXT_PUBLIC_TWITCH_CLIENT_ID || !process.env.TWITCH_CLIENT_SECRET) {
+      console.error('Missing IGDB credentials:', {
+        hasClientId: !!process.env.NEXT_PUBLIC_TWITCH_CLIENT_ID,
+        hasClientSecret: !!process.env.TWITCH_CLIENT_SECRET
+      });
+      return NextResponse.json(
+        { error: 'IGDB API credentials are not configured' },
+        { status: 500 }
+      );
+    }
 
     // Build IGDB filters based on parameters
     const filters: GameFilters = {
@@ -130,7 +145,14 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    console.log('Fetching games with filters:', filters);
     const response = await IGDBService.getGames(page, limit, filters);
+    console.log('Games API response:', {
+      totalGames: response.totalCount,
+      gamesReturned: response.games.length,
+      currentPage: response.currentPage,
+      totalPages: response.totalPages
+    });
 
     // Add cache headers (5 minutes for normal requests, 1 hour for search requests)
     const maxAge = search ? 3600 : 300;
@@ -144,6 +166,14 @@ export async function GET(request: NextRequest) {
     console.error('Error in games API:', error);
     
     if (error instanceof Error) {
+      // Handle IGDB authentication errors
+      if (error.message.includes('TWITCH_CLIENT') || error.message.includes('token')) {
+        return NextResponse.json(
+          { error: 'IGDB authentication failed. Please check API credentials.' },
+          { status: 500 }
+        );
+      }
+      
       // Handle rate limiting errors
       if (error.message.includes('rate limit')) {
         return NextResponse.json(
@@ -159,10 +189,16 @@ export async function GET(request: NextRequest) {
           { status: 503 }
         );
       }
+
+      // Return the actual error message for debugging
+      return NextResponse.json(
+        { error: error.message },
+        { status: 500 }
+      );
     }
 
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to fetch games' },
+      { error: 'An unexpected error occurred' },
       { status: 500 }
     );
   }

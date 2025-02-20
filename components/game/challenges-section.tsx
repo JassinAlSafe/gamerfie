@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import { Game } from "@/types/game";
 import { useChallengesStore } from "@/stores/useChallengesStore";
-import { useProfile } from "@/hooks/use-profile";
+import { useProfile } from "@/hooks/Profile/use-profile";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import {

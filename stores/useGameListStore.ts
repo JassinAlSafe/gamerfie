@@ -27,7 +27,7 @@ export const useGameListStore = create<GameListStore>((set, get) => ({
           user_id: session.session.user.id,
           type: 'list',
           title,
-          content: description,
+          content: description || null,
           game_list: [],
           is_public: isPublic,
           date: new Date().toISOString(),
@@ -39,23 +39,22 @@ export const useGameListStore = create<GameListStore>((set, get) => ({
 
       if (error) throw error;
 
-      const newList: GameList = {
+      const newList = {
         id: list.id,
-        type: 'list',
+        type: 'list' as const,
         title: list.title,
-        description: list.content || '',
+        content: list.content,
         games: [],
         date: list.date,
         createdAt: list.created_at,
         updatedAt: list.updated_at,
-        is_public: list.is_public,
+        isPublic: list.is_public,
         user_id: list.user_id,
-        content: list.content,
         user: {
-          username: session?.session?.user?.username || 'Unknown User',
-          avatar_url: session?.session?.user?.user_metadata?.avatar_url || ''
+          username: session.session.user.user_metadata?.username || 'Unknown User',
+          avatar_url: session.session.user.user_metadata?.avatar_url || null
         }
-      };
+      } as GameList;
 
       set(state => ({ lists: [...state.lists, newList] }));
       return newList;
@@ -80,7 +79,7 @@ export const useGameListStore = create<GameListStore>((set, get) => ({
         .from('journal_entries')
         .update({
           title,
-          content: description,
+          content: description || null,
           updated_at: updatedAt
         })
         .eq('id', listId)
@@ -91,21 +90,19 @@ export const useGameListStore = create<GameListStore>((set, get) => ({
       set(state => ({
         lists: state.lists.map(list =>
           list.id === listId
-            ? { 
-                ...list, 
-                title, 
-                description: description ?? '', 
-                content: description ?? '',
+            ? {
+                ...list,
+                title,
+                content: description || list.content,
                 updatedAt
               }
             : list
         ),
         currentList: state.currentList?.id === listId
-          ? { 
-              ...state.currentList, 
-              title, 
-              description: description ?? '',
-              content: description ?? '',
+          ? {
+              ...state.currentList,
+              title,
+              content: description || state.currentList.content,
               updatedAt
             }
           : state.currentList
@@ -172,7 +169,7 @@ export const useGameListStore = create<GameListStore>((set, get) => ({
     }
   },
 
-  removeGameFromList: async (listId: string, gameId: string): Promise<void> => {
+  removeGameFromList: async (listId: string, gameId: string) => {
     set({ isLoading: true, error: null });
     try {
       const supabase = createClientComponentClient();
@@ -265,7 +262,7 @@ export const useGameListStore = create<GameListStore>((set, get) => ({
         date: entry.date,
         createdAt: entry.created_at,
         updatedAt: entry.updated_at,
-        is_public: entry.is_public,
+        isPublic: entry.is_public,
         user_id: entry.user_id,
         content: entry.content
       }));
@@ -310,23 +307,22 @@ export const useGameListStore = create<GameListStore>((set, get) => ({
           }
         }
 
-        const list: GameList = {
+        const list = {
           id: listData.id,
-          type: 'list',
+          type: 'list' as const,
           title: listData.title,
-          description: listData.content && !listData.content.startsWith('[') ? listData.content : '',
+          content: listData.content,
           games: games,
           date: listData.date,
           createdAt: listData.created_at,
           updatedAt: listData.updated_at,
           is_public: listData.is_public,
           user_id: listData.user_id,
-          content: listData.content,
           user: {
             username: profileData?.username || 'Unknown User',
             avatar_url: profileData?.avatar_url
           }
-        };
+        } as unknown as GameList;
 
         set({ currentList: list });
       }
@@ -365,11 +361,11 @@ export const useGameListStore = create<GameListStore>((set, get) => ({
       set(state => ({
         lists: state.lists.map(list =>
           list.id === listId
-            ? { ...list, is_public: isPublic, updated_at: new Date().toISOString() }
+            ? { ...list, isPublic: isPublic, updated_at: new Date().toISOString() }
             : list
         ),
         currentList: state.currentList?.id === listId
-          ? { ...state.currentList, is_public: isPublic, updated_at: new Date().toISOString() }
+          ? { ...state.currentList, isPublic: isPublic, updated_at: new Date().toISOString() }
           : state.currentList
       }));
     } catch (error) {
@@ -404,7 +400,7 @@ export const useGameListStore = create<GameListStore>((set, get) => ({
         content: entry.content,
         createdAt: entry.created_at,
         updatedAt: entry.updated_at,
-        is_public: entry.is_public,
+        isPublic: entry.is_public,
         user_id: entry.user_id,
         user: {
           username: entry.profiles?.username,

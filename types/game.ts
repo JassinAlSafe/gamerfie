@@ -1,6 +1,193 @@
 import { LucideIcon } from "lucide-react";
 import { ActivityType } from "./activity";
 
+// Base Types
+export type GameStatus = 'playing' | 'completed' | 'want_to_play' | 'dropped';
+export type GamePlatform = 'PC' | 'PlayStation' | 'Xbox' | 'Nintendo' | 'Mobile';
+
+// Filter and Sort Types
+export type SortOption = 'popularity' | 'rating' | 'name' | 'release' | 'recent';
+export type CategoryOption = 'all' | 'popular' | 'trending' | 'upcoming' | 'recent' | 'classic';
+export type FilterType = 'platform' | 'genre' | 'category' | 'year' | 'search' | 'sort';
+export type TimeRange = 'recent' | 'upcoming' | 'classic' | 'all';
+
+// Core Interfaces
+export interface Platform {
+  id: string | number;
+  name: string;
+  slug?: string;
+}
+
+export interface Genre {
+  id: string | number;
+  name: string;
+  slug?: string;
+}
+
+// Base Game Interface (common properties across all sources)
+export interface BaseGame {
+  id: string;
+  name: string;
+  title?: string; // Some sources use title instead of name
+  cover_url?: string | null;
+  coverImage?: string; // Legacy support
+  rating?: number;
+  summary?: string;
+  platforms?: Platform[];
+  genres?: Genre[];
+  created_at?: string;
+  updated_at?: string;
+}
+
+// Game Progress Interface
+export interface GameProgress {
+  playTime: number;
+  completionPercentage?: number;
+  achievementsCompleted?: number;
+  lastPlayedAt?: string;
+  userRating?: number;
+  notes?: string;
+}
+
+// User Game Relationship
+export interface UserGame extends GameProgress {
+  id: string;
+  user_id: string;
+  game_id: string;
+  status: GameStatus;
+  created_at: string;
+  updated_at: string;
+  game?: BaseGame;
+}
+
+// Extended Game Interface (includes all possible properties)
+export interface Game extends BaseGame {
+  background_image?: string;
+  cover?: {
+    id: string;
+    url: string;
+  };
+  screenshots?: Array<{
+    id: string;
+    url: string;
+  }>;
+  artworks?: Array<{
+    id: string;
+    url: string;
+  }>;
+  first_release_date?: number;
+  releaseDate?: string;
+  storyline?: string;
+  total_rating?: number;
+  total_rating_count?: number;
+  rating_count?: number;
+  follows_count?: number;
+  hype_count?: number;
+  status?: GameStatus;
+  metacritic?: number;
+  achievements?: {
+    total: number;
+    completed: number;
+  };
+}
+
+// Game with User Data (combined interface for library view)
+export interface GameWithUserData extends UserGame {
+  games: BaseGame; // The base game data from the games table
+}
+
+// Search and Display Interfaces
+export interface SearchGameResult extends Game {
+  cover?: {
+    id: string;
+    url: string;
+  };
+}
+
+export interface GameWithProgress extends Game {
+  progress?: number;
+  hoursPlayed?: number;
+  rating?: number;
+}
+
+export interface ProcessedGame extends Game {
+  games?: {
+    cover_url?: string | null;
+    background_image?: string;
+  };
+  title?: string;
+  coverImage?: string;
+}
+
+export interface JournalGameData {
+  id: string;
+  name: string;
+  cover_url?: string;
+}
+
+export interface GameCarouselProps {
+  games: Game[];
+  category: CategoryOption;
+  title: string;
+  icon: LucideIcon;
+  color: string;
+}
+
+// Filter and Query Interfaces
+export interface GameFilters {
+  status?: GameStatus | 'all';
+  sortBy?: SortOption;
+  sortOrder?: 'asc' | 'desc';
+  platform?: string;
+  genre?: string;
+  category?: CategoryOption;
+  search?: string;
+  page?: number;
+  limit?: number;
+  timeRange?: TimeRange;
+  releaseYear?: {
+    start: number;
+    end: number;
+  };
+}
+
+export interface GameQueryParams {
+  page: number;
+  platformId: string;
+  searchTerm: string;
+  sortBy: SortOption;
+}
+
+// Response Interfaces
+export interface GameListResponse {
+  games: Game[];
+  total: number;
+  page: number;
+  pageSize: number;
+  platforms?: Platform[];
+  genres?: Genre[];
+}
+
+// Component Props Interfaces
+export interface GameCardProps {
+  game: Game;
+  index?: number;
+  category?: CategoryOption;
+}
+
+export interface GamesTabProps {
+  filters: GameFilters;
+}
+
+// Activity Related Interfaces
+export interface GameActivityDetails {
+  achievement?: Achievement;
+  status?: GameStatus;
+  rating?: number;
+  review?: string;
+  playtime?: number;
+}
+
 export interface Achievement {
   id: number;
   name: string;
@@ -9,19 +196,6 @@ export interface Achievement {
   points: number;
   rank: number;
   game_id: number;
-}
-
-export interface Screenshot {
-  id: number;
-  url: string;
-}
-
-export interface GameActivityDetails {
-  achievement?: Achievement;
-  status?: GameStatus;
-  rating?: number;
-  review?: string;
-  playtime?: number;
 }
 
 export interface GameActivity {
@@ -54,193 +228,31 @@ export interface GameActivity {
   };
 }
 
-export interface Game {
-  id: string;
-  title: string;
-  coverImage: string;
-  lastPlayed?: string;
-  playtime: number; // in minutes
-  platform: GamePlatform;
-  achievements?: {
-    total: number;
-    completed: number;
-  };
-  rating?: number;
-  releaseDate?: string;  // Make optional
-  first_release_date?: number;
-  platforms: Platform[];
-  genres: Genre[];
-  summary?: string;
-  storyline?: string;
-  total_rating?: number;
-  total_rating_count?: number;
-  rating_count?: number;
-  follows_count?: number;
-  hype_count?: number;
-  status?: GameStatus;
-  metacritic?: number;
-}
-
-export type GamePlatform = 'PC' | 'PlayStation' | 'Xbox' | 'Nintendo' | 'Mobile';
-
-export interface UserGame {
-  id: string;
-  user_id: string;
-  game_id: string;
-  status: GameStatus;
-  play_time: number;
-  completion_percentage?: number;
-  created_at: string;
-  updated_at: string;
-  last_played_at?: string;
-  achievements_completed?: number;
-  notes?: string;
-  game?: Game;
-}
-
-export type GameStatus = 'playing' | 'completed' | 'want_to_play' | 'dropped';
-
-export interface Platform {
-  id: string;
-  name: string;
-}
-
-export interface Genre {
-  id: string;
-  name: string;
-}
-
-export interface GameQueryParams {
-  page: number;
-  platformId: string;
-  searchTerm: string;
-  sortBy: SortOption;
-}
-
-export type SortOption = 'rating' | 'popularity' | 'name' | 'release';
-
-export type CategoryOption = "popular" | "trending" | "upcoming";
-
-export interface ProcessedGame extends Game {
-  play_time?: number;
-  completion_percentage?: number;
-  achievements_completed?: number;
-  user_rating?: number;
-  total_rating_count?: number;
-  completed_at?: string;
-  last_played_at?: string;
-  notes?: string;
-  created_at?: string;
-  updated_at?: string;
-  cover_url?: string;
-  name?: string;
-  games?: {
-    id: string;
-    name: string;
-    cover_url: string | null;
-    background_image?: string;  // Add RAWG's background_image field
-    // Add other potential nested properties
-  };
-}
-
-export interface FetchGamesResponse {
-  games: Game[];
-  total: number;
-  platforms?: Platform[];  // Made optional
-  genres?: Genre[];       // Made optional
-  page: number;
-  pageSize: number;
-}
-
-export interface GameCategories {
-  topRated: Game[];
-  newReleases: Game[];
-  upcoming: Game[];
-  trending: Game[];
-}
-
-export type GameCategory = "popular" | "upcoming" | "trending";
-
-export interface GameCarouselProps {
-  games: ProcessedGame[];
-  category: GameCategory;
-  title: string;
-  icon: LucideIcon;
-  color: string;
-}
-
-export interface GameFiltersState {
-  platform?: string;
-  genre?: string;
-  category?: string;
-  sort?: SortOption;
-  search?: string;
-}
-
-export interface GameFilters {
-  page?: number;
-  limit?: number;
-  platformId?: number;
-  genreId?: number;
-  timeRange?: 'recent' | 'upcoming' | 'classic';
-  isIndie?: boolean;
-  isAnticipated?: boolean;
-  search?: string;
-  sortBy?: SortOption;
-  releaseYear?: {
-    start: number;
-    end: number;
-  };
-}
-
-export interface GamePageProps {
-  params: {
-    id: string;
-  }
-}
-
-export interface ReviewUpdateData {
-  gameId: string;
-  rating?: number;
-  review?: string;
-  status?: GameStatus;
-}
-
+// Stats Interface
 export interface GameStats {
   totalGames: number;
-  totalPlaytime: number; // in minutes
+  totalPlaytime: number;
   recentlyPlayed: Game[];
   mostPlayed: Game[];
 }
 
-export interface SearchGameResult extends Game {
-  cover?: {
-    id: string;
-    url: string;
-  };
+// Store State Types
+export interface GameFilterState {
+  sortBy: SortOption;
+  selectedPlatform: string;
+  selectedGenre: string;
+  selectedCategory: CategoryOption;
+  selectedYear: string;
+  timeRange: TimeRange;
+  searchQuery: string;
 }
 
-export interface GameWithProgress extends Game {
-  progress?: number;
-  hoursPlayed?: number;
-  rating?: number;
+export interface GamePaginationState {
+  currentPage: number;
+  totalPages: number;
+  totalGames: number;
 }
 
-export interface JournalGameData {
-  id: string;
-  name: string;
-  cover_url?: string;
-}
-
-export interface GameCardProps {
-  game: ProcessedGame;
-  index?: number;
-  category?: GameCategory;
-}
-
-export interface GameListResponse {
-  games: Game[];
-  total: number;
-  page: number;
-  pageSize: number;
+export interface GameFilterUpdate extends Partial<GameFilterState> {
+  currentPage?: number;
 }

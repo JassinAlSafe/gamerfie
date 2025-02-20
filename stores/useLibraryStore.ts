@@ -1,8 +1,8 @@
 import { create } from 'zustand'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { Database } from '@/types/supabase'
-import { Game, GameStatus, GamePlatform } from '@/types/game'
-import { getHighQualityImageUrl } from "@/utils/image-utils";
+import { Game, GameStatus, Platform, Genre, GameProgress } from '@/types/game'
+import { getCoverImageUrl } from "@/utils/image-utils";
 
 interface LibraryState {
   games: Game[];
@@ -31,28 +31,58 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
           games (
             id,
             name,
-            cover_url
+            cover_url,
+            platforms,
+            genres,
+            summary,
+            created_at,
+            updated_at
           )
         `)
         .eq('user_id', userId);
 
       if (error) throw error;
 
-      const formattedData = data?.map(item => ({
-        id: item.games?.id,
-        title: item.games?.name || '',
-        coverImage: item.games?.cover_url || '',
-        status: item.status as GameStatus,
-        rating: item.rating || 0,
-        notes: item.notes || '',
-        created_at: item.created_at,
-        playtime: 0,
-        platform: 'PC' as GamePlatform,
-        achievements_total: 0,
-        achievements_completed: 0,
-        platforms: [],
-        genres: []
-      } as Game)) || [];
+      const formattedData = data?.map(item => {
+        // Parse platforms and genres if they exist and are strings
+        const platforms: Platform[] = item.games?.platforms 
+          ? (typeof item.games.platforms === 'string' 
+              ? JSON.parse(item.games.platforms) 
+              : item.games.platforms)
+          : [];
+        
+        const genres: Genre[] = item.games?.genres
+          ? (typeof item.games.genres === 'string'
+              ? JSON.parse(item.games.genres)
+              : item.games.genres)
+          : [];
+
+        console.log('Parsing game data:', {
+          rawPlatforms: item.games?.platforms,
+          parsedPlatforms: platforms,
+          rawGenres: item.games?.genres,
+          parsedGenres: genres
+        });
+
+        return {
+          id: item.games?.id || '',
+          name: item.games?.name || '',
+          title: item.games?.name || '',
+          cover_url: item.games?.cover_url || null,
+          status: item.status as GameStatus,
+          rating: item.user_rating || 0,
+          summary: item.games?.summary || '',
+          created_at: item.created_at || '',
+          updated_at: item.updated_at || '',
+          play_time: item.play_time || 0,
+          completion_percentage: item.completion_percentage || 0,
+          achievements_completed: item.achievements_completed || 0,
+          platforms,
+          genres,
+          last_played_at: item.last_played_at || null,
+          notes: item.notes || ''
+        } as Game & GameProgress;
+      }) || [];
 
       set({ games: formattedData, loading: false });
       return formattedData;
@@ -90,13 +120,15 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
         const gameData = {
           id: game.id,
           name: game.name,
-          cover_url: game.cover_url || game.coverImage, // Store raw URL as-is
+          cover_url: game.cover_url || null,
           platforms: game.platforms ? JSON.stringify(game.platforms) : null,
           genres: game.genres ? JSON.stringify(game.genres) : null,
-          summary: game.summary
+          summary: game.summary || null,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
         };
 
-        console.log('LibraryStore - Storing raw game data:', gameData);
+        console.log('LibraryStore - Storing game data:', gameData);
 
         const { error: gameError } = await supabase
           .from('games')
@@ -118,7 +150,7 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
 
       if (existingUserGame) {
         set({ loading: false });
-        return game as Game; // Game already exists in library
+        return game as Game;
       }
 
       // Add to user's library
@@ -129,6 +161,8 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
           game_id: game.id,
           status: 'want_to_play',
           play_time: 0,
+          completion_percentage: 0,
+          achievements_completed: 0,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         })
@@ -140,7 +174,26 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
       // Refresh the library after adding a new game
       await get().fetchUserLibrary(session.user.id);
 
-      return userGame as unknown as Game;
+      const newGame: Game & GameProgress = {
+        id: game.id,
+        name: game.name,
+        title: game.name,
+        cover_url: game.cover_url || null,
+        status: 'want_to_play',
+        rating: 0,
+        summary: game.summary || '',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        play_time: 0,
+        completion_percentage: 0,
+        achievements_completed: 0,
+        platforms: game.platforms || [],
+        genres: game.genres || [],
+        last_played_at: undefined,
+        notes: ''
+      };
+
+      return newGame;
     } catch (error) {
       console.error('Error adding game to library:', error);
       set({ 

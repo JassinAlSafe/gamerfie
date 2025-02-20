@@ -3,11 +3,11 @@
 import { Suspense, useEffect } from "react";
 import { useInView } from "react-intersection-observer";
 import dynamic from "next/dynamic";
-import { useGamesInfinite } from "@/hooks/useGames"; // Updated import
+import { useGamesInfinite } from "@/hooks/Games/useGames"; // Updated import
 import { GamesGrid } from "../games/sections/games-grid";
 import { GamesError } from "../games/GamesError";
 import { useGamesStore } from "@/stores/useGamesStore";
-import { useUrlParams } from "@/hooks/useUrlParams";
+import { useUrlParams } from "@/hooks/Settings/useUrlParams";
 
 const GamesHeader = dynamic(
   () => import("../games/sections/games-header").then((mod) => mod.GamesHeader),

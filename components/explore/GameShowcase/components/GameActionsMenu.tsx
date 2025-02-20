@@ -1,6 +1,5 @@
 import { memo, useState, useEffect } from "react";
 import {
-  Library,
   Gamepad2,
   Share2,
   ThumbsUp,
@@ -25,7 +24,6 @@ import { useProgressStore } from "@/stores/useProgressStore";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { useLibraryStore } from "@/stores/useLibraryStore";
 import { useFriendsStore } from "@/stores/useFriendsStore";
-import { checkGameInLibrary } from "@/utils/game-utils";
 import { toast } from "sonner";
 import { AddToLibraryButton } from "@/components/add-to-library-button";
 
@@ -62,9 +60,7 @@ export const GameActionsMenu = memo(
       setIsInLibrary(games.some((g) => g.id === game.id));
     }, [games, game.id]);
 
-    const handleStatusChange = async (
-      status: "playing" | "completed" | "want_to_play" | "dropped"
-    ) => {
+    const handleStatusChange = async (status: GameStatus) => {
       if (!user?.id) return;
 
       try {
@@ -87,6 +83,8 @@ export const GameActionsMenu = memo(
       }
     };
 
+    const title = game.title || game.name || "Untitled Game";
+
     return (
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogTrigger asChild>
@@ -102,9 +100,7 @@ export const GameActionsMenu = memo(
         </DialogTrigger>
         <DialogContent className="sm:max-w-[425px] bg-zinc-900 border-zinc-800 text-white">
           <DialogHeader>
-            <DialogTitle className="text-lg font-semibold">
-              {game.title}
-            </DialogTitle>
+            <DialogTitle className="text-lg font-semibold">{title}</DialogTitle>
           </DialogHeader>
           <div className="grid gap-2 py-4">
             <AuthCheck>
@@ -115,8 +111,8 @@ export const GameActionsMenu = memo(
                 {!isInLibrary ? (
                   <AddToLibraryButton
                     gameId={game.id}
-                    gameName={game.title}
-                    cover={game.coverImage}
+                    gameName={title}
+                    cover={game.cover_url || game.coverImage}
                     rating={game.rating}
                     releaseDate={game.first_release_date}
                     platforms={game.platforms}

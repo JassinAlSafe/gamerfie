@@ -4,7 +4,7 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 import { CommandDialog } from "@/components/ui/search/command-dialog";
 import { SearchCommand, SearchGroup, SearchItem } from "./search-command";
-import { useSearch } from "@/hooks/use-search";
+import { useSearch } from "@/hooks/Activity/use-search";
 
 interface SearchDialogProps {
   open: boolean;

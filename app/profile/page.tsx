@@ -1,6 +1,6 @@
 "use client";
 
-import { useProfile } from "@/hooks/use-profile";
+import { useProfile } from "@/hooks/Profile/use-profile";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { Toaster } from "react-hot-toast";

@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { Game } from '@/types/game'
+import { Game, Platform, Genre } from '@/types/game'
 
 interface GameDetailsState {
   games: Record<number, Game & { timestamp: number }>
@@ -40,36 +40,68 @@ export const useGameDetailsStore = create<GameDetailsState>()(
             return;
           }
 
-          // Use IGDB proxy endpoint
-          const response = await fetch('/api/igdb-proxy', {
+          // Use the games/details endpoint
+          const response = await fetch('/api/games/details', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-              endpoint: 'games',
-              query: `
-                fields name, summary, storyline, rating, total_rating, first_release_date, 
-                       cover.*, screenshots.*, artworks.*, genres.*, platforms.*, 
-                       involved_companies.*, involved_companies.company.*;
-                where id = ${id};
-              `
-            }),
+              ids: [id]
+            })
           });
 
-          if (!response.ok) throw new Error('Failed to fetch game');
+          if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Failed to fetch game');
+          }
           
           const [game] = await response.json();
           if (!game) throw new Error('Game not found');
 
+          console.log('Raw game data:', {
+            platforms: game.platforms,
+            platformsType: typeof game.platforms,
+            isArray: Array.isArray(game.platforms)
+          });
+
+          // Process the game data to match our Game type
+          const processedGame = {
+            ...game,
+            // Ensure all required fields are present
+            id: game.id.toString(),
+            name: game.name,
+            cover_url: game.cover_url || null,
+            rating: game.rating || 0,
+            first_release_date: game.first_release_date || null,
+            platforms: Array.isArray(game.platforms) 
+              ? game.platforms.map((p: string | Platform) => typeof p === 'string' ? { id: p, name: p } : p)
+              : typeof game.platforms === 'object' && game.platforms !== null
+                ? [game.platforms].map((p: string | Platform) => typeof p === 'string' ? { id: p, name: p } : p)
+                : [],
+            genres: Array.isArray(game.genres)
+              ? game.genres.map((g: string | Genre) => typeof g === 'string' ? { id: g, name: g } : g)
+              : [],
+            summary: game.summary || null,
+            storyline: game.storyline || null
+          };
+
+          console.log('Processed game data:', {
+            id: processedGame.id,
+            name: processedGame.name,
+            genresType: typeof processedGame.genres,
+            genres: processedGame.genres
+          });
+
           set((state) => ({ 
             games: { 
               ...state.games, 
-              [id]: { ...game, timestamp: Date.now() } 
+              [id]: { ...processedGame, timestamp: Date.now() } 
             },
             isLoading: false 
           }));
         } catch (error) {
+          console.error('Error fetching game:', error);
           set({ 
             error: error instanceof Error ? error.message : 'Failed to fetch game',
             isLoading: false 

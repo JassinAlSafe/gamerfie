@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { formatDistanceToNow } from "date-fns";
-import { useProfile } from "@/hooks/use-profile";
+import { useProfile } from "@/hooks/Profile/use-profile";
 
 interface ProfileCardProps {
   user: User;
@@ -23,16 +23,18 @@ interface ProfileCardProps {
 }
 
 export function ProfileCard({ user, stats, friends }: ProfileCardProps) {
-  const { profile, isLoading } = useProfile();
+  const { profile, isLoading, gameStats } = useProfile();
 
-  const username = profile?.display_name || profile?.username || "Gamer";
-  const level = Math.floor(stats.totalPlaytime / 600);
-  const nextLevelProgress = ((stats.totalPlaytime % 600) / 600) * 100;
+  const username = profile?.full_name || profile?.username || "Gamer";
+  const level = Math.floor((gameStats?.total_played || 0) / 10) + 1;
+  const nextLevelProgress = (((gameStats?.total_played || 0) % 10) / 10) * 100;
   const joinDateString = profile?.created_at || new Date().toISOString();
   const joinDate = new Date(joinDateString);
   const joinedText = profile?.created_at
     ? `Joined ${formatDistanceToNow(joinDate)} ago`
     : "New Player";
+
+  const hoursPlayed = stats.totalPlaytime;
 
   if (isLoading) {
     return (
@@ -96,7 +98,7 @@ export function ProfileCard({ user, stats, friends }: ProfileCardProps) {
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="px-4 py-2 rounded-full bg-gradient-to-r from-purple-500/10 to-indigo-500/10 text-purple-500 font-medium border border-purple-500/10 shadow-xl hover:from-purple-500/20 hover:to-indigo-500/20 transition-colors">
-                    {Math.round(stats.totalPlaytime / 60)}h played
+                    {hoursPlayed}h played
                   </div>
                 </div>
               </div>
@@ -108,7 +110,7 @@ export function ProfileCard({ user, stats, friends }: ProfileCardProps) {
                     <span>Games</span>
                   </div>
                   <p className="text-2xl font-semibold bg-clip-text text-transparent bg-gradient-to-br from-white to-white/70">
-                    {stats.totalGames}
+                    {gameStats?.total_played || 0}
                   </p>
                 </div>
                 <div className="group space-y-2 bg-indigo-500/5 p-3 rounded-xl border border-indigo-500/10 hover:bg-indigo-500/10 transition-colors">

@@ -7,7 +7,7 @@ import { Trophy, PlayCircle, CheckCircle, MessageCircle } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ActivityType } from "@/types/friend";
 import { motion } from "framer-motion";
-import { useGameActivities } from "@/hooks/use-game-activities";
+import { useGameActivities } from "@/hooks/Games/use-game-activities";
 import { Button } from "@/components/ui/button";
 
 const activityIcons: Record<ActivityType, React.ReactNode> = {

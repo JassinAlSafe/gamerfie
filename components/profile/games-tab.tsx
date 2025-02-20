@@ -16,8 +16,11 @@ import {
   Pencil,
   Trash2,
 } from "lucide-react";
-import { Game, GameStatus, UserGame } from "@/types/game";
-import type { GameFilters } from "@/components/profile/game-filters";
+import {
+  GameStatus,
+  GameWithUserData,
+  GamesTabProps,
+} from "@/types/game";
 import { useSettingsStore } from "@/stores/useSettingsStore";
 import { getCoverImageUrl } from "@/utils/image-utils";
 import { GameStatusDropdown } from "@/components/game/game-status-dropdown";
@@ -30,46 +33,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ensureHttps } from "@/utils/image-utils";
-
-interface GameWithUserData {
-  id: string;
-  user_id: string;
-  game_id: string;
-  status: GameStatus;
-  play_time: number;
-  created_at: string;
-  updated_at: string;
-  completion_percentage?: number;
-  achievements_completed?: number;
-  user_rating?: number;
-  notes?: string;
-  last_played_at?: string;
-  cover_url?: string;
-  games: {
-    id: string;
-    name: string;
-    cover_url?: string | null;
-    platforms?: string;
-    genres?: string;
-    summary?: string;
-    created_at: string;
-    updated_at: string;
-  };
-}
-
-interface GameResponse {
-  id: string;
-  game_id: string;
-  status: GameStatus;
-  play_time: number;
-  created_at: string;
-  completion_percentage?: number;
-  game: Game[];
-}
-
-interface GamesTabProps {
-  filters: GameFilters;
-}
 
 // List View Component
 const GameListItem = ({

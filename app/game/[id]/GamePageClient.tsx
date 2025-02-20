@@ -2,7 +2,7 @@
 
 import React, { Suspense } from "react";
 import { GameDetails } from "@/components/game/GameDetails";
-import { useGame } from "@/hooks/useGames"; // Updated import path
+import { useGame } from "@/hooks/Games/useGames"; // Updated import path
 import { LoadingSpinner } from "@/components/loadingSpinner";
 import { GamePageProps } from "@/types/game";
 

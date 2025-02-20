@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Game, GameStatus } from "@/types/game";
 import { useProgressStore } from "@/stores/useProgressStore";
-import { useProfile } from "@/hooks/use-profile";
+import { useProfile } from "@/hooks/Profile/use-profile";
 import { toast } from "react-hot-toast";
 import { LoadingSpinner } from "@/components/loadingSpinner";
 import {

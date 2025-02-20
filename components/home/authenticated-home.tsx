@@ -6,7 +6,7 @@ import { TextBlock } from "@/components/BuilderBlocks/Text/TextBlock";
 import { RecentFriendsBlock } from "@/components/BuilderBlocks/Friends/RecentFriendsBlock/RecentFriendsBlock";
 import { RecentActivityBlock } from "@/components/BuilderBlocks/Activity/RecentActivityBlock/RecentActivityBlock";
 import { GameLibraryBlock } from "@/components/BuilderBlocks/Games/GameLibraryBlock/GameLibraryBlock";
-import { useFriends } from "@/hooks/useFriends";
+import { useFriends } from "@/hooks/Profile/useFriends";
 import { useRecentActivities } from "@/hooks/useRecentActivities";
 import { Block } from "@/components/BuilderBlocks/Block";
 import { Sparkles } from "lucide-react";

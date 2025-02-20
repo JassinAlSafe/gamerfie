@@ -4,7 +4,7 @@ import dynamic from "next/dynamic";
 import { Suspense, useState, useEffect } from "react";
 import { TracingBeam } from "@/components/ui/tracing-beam";
 import { ErrorBoundary } from "react-error-boundary";
-import { useExplore } from "@/hooks/useExplore";
+import { useExplore } from "@/hooks/Games/useExplore";
 import { GAME_CATEGORIES } from "@/config/categories";
 import { PopularGamesSection } from "../games/sections/popular-games-section";
 import HeroSection from "./HeroSection/HeroSection";

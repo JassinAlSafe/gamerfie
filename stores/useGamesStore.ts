@@ -1,27 +1,26 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { Game, Platform, Genre } from '@/types/game';
+import { 
+  Game, 
+  Platform, 
+  Genre, 
+  FilterType, 
+  SortOption, 
+  CategoryOption,
+  GameFilterState,
+  GamePaginationState,
+  GameFilterUpdate,
+  TimeRange
+} from '@/types/game';
 
-type FilterType = 'platform' | 'genre' | 'category' | 'year' | 'search' | 'sort';
-export type SortOption = 'popularity' | 'rating' | 'name' | 'release';
-export type CategoryOption = 'all' | 'recent' | 'popular' | 'upcoming' | 'classic';
-
-interface GamesState {
+interface GamesState extends GameFilterState, GamePaginationState {
   games: Game[];
-  totalGames: number;
-  totalPages: number;
-  currentPage: number;
   error: string | null;
   platforms: Platform[];
   genres: Genre[];
-  sortBy: SortOption;
-  selectedPlatform: string;
-  selectedGenre: string;
-  selectedCategory: CategoryOption;
-  selectedYear: string;
-  timeRange: string;
   hasActiveFilters: boolean;
-  searchQuery: string;
+  
+  // State setters
   setGames: (games: Game[]) => void;
   setTotalGames: (total: number) => void;
   setTotalPages: (total: number) => void;
@@ -34,24 +33,19 @@ interface GamesState {
   setSelectedGenre: (genre: string) => void;
   setSelectedCategory: (category: CategoryOption) => void;
   setSelectedYear: (year: string) => void;
-  setTimeRange: (range: string) => void;
+  setTimeRange: (range: TimeRange) => void;
   setSearchQuery: (query: string) => void;
+  
+  // Filter management
   removeFilter: (filterType: FilterType) => void;
   resetFilters: () => void;
   handleResetFilters: () => void;
+  updateHasActiveFilters: () => void;
+  
+  // Data fetching
   fetchMetadata: () => Promise<void>;
   fetchGames: () => Promise<void>;
-  updateHasActiveFilters: () => void;
-  batchUpdate: (updates: Partial<{
-    selectedCategory: CategoryOption;
-    selectedPlatform: string;
-    selectedGenre: string;
-    selectedYear: string;
-    sortBy: SortOption;
-    timeRange: string;
-    currentPage: number;
-    searchQuery: string;
-  }>) => void;
+  batchUpdate: (updates: GameFilterUpdate) => void;
 }
 
 const DEFAULT_VALUES = {
@@ -60,7 +54,7 @@ const DEFAULT_VALUES = {
   GENRE: 'all',
   CATEGORY: 'all' as CategoryOption,
   YEAR: 'all',
-  TIME_RANGE: 'all',
+  TIME_RANGE: 'all' as TimeRange,
 };
 
 export const useGamesStore = create<GamesState>()(

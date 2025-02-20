@@ -15,34 +15,39 @@ export async function GET(
     const page = parseInt(url.searchParams.get("page") || "1");
     const offset = (page - 1) * ITEMS_PER_PAGE;
 
+    // Ensure game ID is a string
+    const gameId = params.id.toString();
+
     const { data, error, count } = await supabase
-      .from("game_activities")
+      .from("friend_activities")
       .select(
         `
         id,
         type,
+        details,
         metadata,
         created_at,
-        user:user_id (
+        user:profiles!friend_activities_user_id_fkey (
           id,
           username,
           avatar_url
         ),
-        reactions:game_activity_reactions (
+        reactions:activity_reactions (
           count,
           user_has_reacted:user_id
         ),
-        comments:game_activity_comments (
+        comments:activity_comments (
           count
         )
         `,
         { count: "exact" }
       )
-      .eq("game_id", params.id)
+      .eq("game_id", gameId)
       .order("created_at", { ascending: false })
       .range(offset, offset + ITEMS_PER_PAGE - 1);
 
     if (error) {
+      console.error("Error fetching game activities:", error);
       return new Response(JSON.stringify({ error: error.message }), {
         status: 500,
       });

@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { Search, Gamepad2, Star } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { useSearch } from "@/hooks/use-search";
+import { useSearch } from "@/hooks/Activity/use-search";
 import { SearchCommand, SearchGroup, SearchItem } from "./search-command";
 import { Button } from "../button";
 import { ensureAbsoluteUrl } from "@/lib/utils";
