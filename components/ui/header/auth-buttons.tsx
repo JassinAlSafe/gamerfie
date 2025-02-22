@@ -1,15 +1,27 @@
 "use client";
 
-import { ProfileDropdown } from "../profile-dropdown";
+import { ProfileDropdown } from "../profile/profile-dropdown";
 import { AnimatedButton } from "../animated-button";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
+import { useEffect } from "react";
 
 export function AuthButtons() {
   const router = useRouter();
   const { toast } = useToast();
-  const { user, signOut } = useAuthStore();
+  const { user, signOut, initialize, isInitialized } = useAuthStore();
+
+  useEffect(() => {
+    if (!isInitialized) {
+      initialize();
+    }
+  }, [initialize, isInitialized]);
+
+  // Debug logging
+  useEffect(() => {
+    console.log("Auth state:", { user, isInitialized });
+  }, [user, isInitialized]);
 
   const handleSignOut = async () => {
     try {

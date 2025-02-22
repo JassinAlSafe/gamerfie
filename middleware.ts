@@ -1,76 +1,53 @@
 import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { getToken } from "next-auth/jwt";
+
+// These routes require authentication
+const protectedRoutes = ['/profile', '/settings'];
+// These routes are only for non-authenticated users
+const authRoutes = ['/signin', '/signup'];
 
 export async function middleware(req: NextRequest) {
   const res = NextResponse.next();
   const supabase = createMiddlewareClient({ req, res });
 
-  // Sync sessions
-  const session = await getToken({ req });
-  if (session?.supabaseAccessToken && session?.supabaseRefreshToken) {
-    await supabase.auth.setSession({
-      access_token: session.supabaseAccessToken,
-      refresh_token: session.supabaseRefreshToken
-    });
-  }
+  // Refresh session if expired - required for Server Components
+  const { data: { session } } = await supabase.auth.getSession();
 
-  // Refresh session if needed
-  const { data: { session: supabaseSession } } = await supabase.auth.getSession();
-  if (supabaseSession?.user && session?.expires_at) {
-    const expiresAt = new Date(session.expires_at * 1000);
-    if (expiresAt < new Date()) {
-      await supabase.auth.refreshSession();
-    }
-  }
-
-  try {
-    // Handle Supabase auth
-    const { data: { session: supabaseSession } } = await supabase.auth.getSession();
-
-    // Check NextAuth session
-    const nextAuthToken = await getToken({ req });
-
-    // Add auth info to headers for API routes
-    if (req.nextUrl.pathname.startsWith("/api/")) {
-      if (supabaseSession) {
-        res.headers.set("x-user-id", supabaseSession.user.id);
-      }
-      if (nextAuthToken) {
-        res.headers.set("x-session-token", nextAuthToken.sub || "");
-      }
-
-      // Add CORS headers
-      res.headers.append("Access-Control-Allow-Credentials", "true");
-      res.headers.append("Access-Control-Allow-Origin", "*");
-      res.headers.append(
-        "Access-Control-Allow-Methods",
-        "GET,DELETE,PATCH,POST,PUT"
-      );
-      res.headers.append(
-        "Access-Control-Allow-Headers",
-        "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version"
-      );
-    }
-
-    return res;
-  } catch (e) {
-    console.error("Middleware error:", e);
+  // Skip auth check for auth callback route
+  if (req.nextUrl.pathname.startsWith('/auth/callback')) {
     return res;
   }
+
+  const isProtectedRoute = protectedRoutes.some(route => req.nextUrl.pathname.startsWith(route));
+  const isAuthRoute = authRoutes.some(route => req.nextUrl.pathname.startsWith(route));
+
+  // If user is not signed in and trying to access a protected route
+  if (!session && isProtectedRoute) {
+    const redirectUrl = new URL('/signin', req.url);
+    // Store the original URL to redirect back after login
+    redirectUrl.searchParams.set('redirectTo', req.nextUrl.pathname);
+    return NextResponse.redirect(redirectUrl);
+  }
+
+  // If user is signed in and trying to access auth routes (signin/signup)
+  if (session && isAuthRoute) {
+    return NextResponse.redirect(new URL('/', req.url));
+  }
+
+  return res;
 }
 
 export const config = {
   matcher: [
     /*
      * Match all request paths except for the ones starting with:
+     * - api (API routes)
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
-     * Feel free to modify this pattern to include more paths.
      */
-    "/((?!_next/static|_next/image|favicon.ico).*)",
+    '/((?!api|_next/static|_next/image|favicon.ico).*)',
   ],
 };
 
