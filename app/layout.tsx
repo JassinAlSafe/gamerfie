@@ -10,6 +10,7 @@ import { useState } from "react";
 import SupabaseProvider from "@/components/providers/supabase-provider";
 import { SessionProvider } from "next-auth/react";
 import * as Sentry from "@sentry/nextjs";
+import { usePathname } from "next/navigation";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -18,6 +19,8 @@ Sentry.init({
   tracesSampleRate: 1.0,
   debug: process.env.NODE_ENV === "development",
 });
+
+const authPages = ["/signin", "/signup", "/forgot-password"];
 
 export default function RootLayout({
   children,
@@ -38,6 +41,9 @@ export default function RootLayout({
       })
   );
 
+  const pathname = usePathname();
+  const isAuthPage = authPages.includes(pathname);
+
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
@@ -46,11 +52,15 @@ export default function RootLayout({
             <SessionProvider refetchInterval={300} refetchOnWindowFocus={false}>
               <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
                 <div className="min-h-screen flex flex-col">
-                  <FloatingHeader />
-                  <main className="flex-1 pt-16">{children}</main>
-                  <div className="mt-auto">
-                    <Footer />
-                  </div>
+                  {!isAuthPage && <FloatingHeader />}
+                  <main className={!isAuthPage ? "flex-1 pt-16" : "flex-1"}>
+                    {children}
+                  </main>
+                  {!isAuthPage && (
+                    <div className="mt-auto">
+                      <Footer />
+                    </div>
+                  )}
                 </div>
               </ThemeProvider>
             </SessionProvider>

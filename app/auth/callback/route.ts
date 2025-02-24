@@ -1,72 +1,68 @@
 import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
+import type { Database } from '@/types/supabase'
 
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url);
   const code = requestUrl.searchParams.get("code");
 
   if (code) {
-    const supabase = createRouteHandlerClient({ cookies });
+    const cookieStore = cookies();
+    const supabase = createRouteHandlerClient<Database>({ cookies: () => cookieStore });
 
     try {
-      // Exchange the code for a session
-      const { error: exchangeError } =
-        await supabase.auth.exchangeCodeForSession(code);
-      if (exchangeError) throw exchangeError;
-
-      // Get the user after successful authentication
-      const {
-        data: { user },
-        error: userError,
-      } = await supabase.auth.getUser();
-      if (userError) throw userError;
+      const { data: { session, user }, error: authError } = await supabase.auth.exchangeCodeForSession(code);
+      if (authError) throw authError;
 
       if (user) {
-        // Check if a profile already exists
-        const { data: existingProfile, error: fetchError } = await supabase
-          .from("profiles")
-          .select()
-          .eq("id", user.id)
+        // Check if profile exists
+        const { data: existingProfile, error: profileError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
           .single();
 
-        if (fetchError && fetchError.code !== "PGRST116") {
-          console.error("Error fetching profile:", fetchError);
+        if (profileError && profileError.code !== 'PGRST116') { // PGRST116 means no rows returned
+          throw profileError;
         }
 
+        // If no profile exists, create one
         if (!existingProfile) {
-          // Create a new profile
+          const username = user.email?.split('@')[0] || 'user';
+          const displayName = user.user_metadata?.full_name || username;
+          
           const { error: insertError } = await supabase
-            .from("profiles")
+            .from('profiles')
             .insert({
               id: user.id,
-              username:
-                user.email?.split("@")[0] ||
-                `user_${Math.random().toString(36).substr(2, 9)}`,
-              email: user.email,
-              display_name:
-                user.user_metadata.full_name || user.email?.split("@")[0],
-              avatar_url: user.user_metadata.avatar_url,
-              bio: null,
-              updated_at: new Date().toISOString(),
+              username,
+              display_name: displayName,
+              avatar_url: user.user_metadata?.avatar_url || null,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
             });
 
-          if (insertError) {
-            console.error("Error creating profile:", insertError);
-            // Consider how you want to handle this error (e.g., redirect to an error page)
-          }
+          if (insertError) throw insertError;
         }
 
-        // Redirect to the dashboard or profile page after successful sign-in and profile creation
-        return NextResponse.redirect(new URL("/dashboard", request.url));
+        // Set session cookie
+        if (session) {
+          cookieStore.set('sb-access-token', session.access_token, {
+            path: '/',
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax',
+            maxAge: 60 * 60 * 24 * 7 // 1 week
+          });
+        }
       }
     } catch (error) {
-      console.error("Error in authentication process:", error);
-      // Redirect to an error page or sign-in page
-      return NextResponse.redirect(new URL("/signin", request.url));
+      console.error('Auth callback error:', error);
+      // Redirect to sign-in page with error
+      return NextResponse.redirect(new URL('/signin?error=auth', requestUrl.origin));
     }
   }
 
-  // If there's no code, redirect to the home page
-  return NextResponse.redirect(new URL("/", request.url));
+  // Redirect to home page
+  return NextResponse.redirect(new URL('/', requestUrl.origin));
 }
