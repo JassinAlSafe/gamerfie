@@ -13,13 +13,20 @@ export interface LayoutItem {
   maxH?: number;
 }
 
-interface LayoutStore {
-  layouts: { [key: string]: LayoutItem[] }; // Breakpoint -> Layout mapping
+interface LayoutState {
+  layouts: { [key: string]: LayoutItem[] };
   currentBreakpoint: string;
+  isEditing: boolean;
+}
+
+interface LayoutActions {
   setLayout: (breakpoint: string, layout: LayoutItem[]) => void;
   setCurrentBreakpoint: (breakpoint: string) => void;
+  setIsEditing: (isEditing: boolean) => void;
   resetLayout: () => void;
 }
+
+type LayoutStore = LayoutState & LayoutActions;
 
 // Define default layouts for different breakpoints
 const defaultLayouts = {
@@ -49,8 +56,12 @@ const defaultLayouts = {
 export const useLayoutStore = create<LayoutStore>()(
   persist(
     (set) => ({
+      // State
       layouts: defaultLayouts,
       currentBreakpoint: "lg",
+      isEditing: false,
+
+      // Actions
       setLayout: (breakpoint, layout) =>
         set((state) => ({
           layouts: {
@@ -60,6 +71,7 @@ export const useLayoutStore = create<LayoutStore>()(
         })),
       setCurrentBreakpoint: (breakpoint) =>
         set({ currentBreakpoint: breakpoint }),
+      setIsEditing: (isEditing) => set({ isEditing }),
       resetLayout: () => set({ layouts: defaultLayouts }),
     }),
     {

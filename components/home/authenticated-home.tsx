@@ -7,7 +7,7 @@ import { useRecentActivities } from "@/hooks/useRecentActivities";
 import { useGameLibraryStore } from "@/stores/useGameLibraryStore";
 import { useEffect } from "react";
 import { ProfileCard } from "./ProfileCard";
-import { BentoGrid } from "@/components/BuilderBlocks/BentoGrid";
+import { BentoGrid } from "@/components/BuilderBlocks/BentoGrid/index";
 import { useUser } from "@/hooks/User/useUser";
 import { Activity } from "@/types/activity";
 
