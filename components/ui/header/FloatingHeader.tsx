@@ -67,42 +67,52 @@ export default function FloatingHeader() {
   return (
     <header className="fixed top-0 left-0 right-0 z-50">
       <div className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container flex h-16 items-center">
-          <Link
-            href="/"
-            className="font-bold text-2xl text-white/90 hover:text-white transition-colors duration-200 ml-10"
-          >
-            GAME VAULT
-          </Link>
-
-          <div className="flex items-center gap-6 ml-auto">
-            <Button
-              variant="ghost"
-              className="relative w-full h-10 justify-start text-sm text-muted-foreground sm:pr-12 md:w-40 lg:w-64"
-              onClick={() => setIsSearchOpen(true)}
+        <div className="container mx-auto max-w-[1920px] px-4 sm:px-6 lg:px-8">
+          <div className="flex h-16 items-center justify-between gap-4 md:gap-8">
+            <Link
+              href="/"
+              className="font-bold text-xl sm:text-2xl text-white/90 hover:text-white transition-colors duration-200 shrink-0"
             >
-              <span className="hidden lg:inline-flex">Search games...</span>
-              <span className="inline-flex lg:hidden">Search...</span>
-              <kbd className="pointer-events-none absolute right-1.5 top-2 hidden h-6 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium opacity-100 sm:flex">
-                <span className="text-xs">⌘</span>K
-              </kbd>
-            </Button>
-            <SearchDialog open={isSearchOpen} onOpenChange={setIsSearchOpen} />
+              GAME VAULT
+            </Link>
 
-            <nav className="hidden md:flex items-center gap-6">
-              <AnimatedNav
-                items={[
-                  { href: "/", label: "Home" },
-                  { href: "/explore", label: "Explore" },
-                  { href: "/all-games", label: "All Games" },
-                  { href: "/about", label: "About" },
-                ]}
+            <div className="flex flex-1 items-center justify-end gap-4 md:gap-6 lg:gap-8">
+              <div className="flex-1 max-w-xs sm:max-w-sm md:max-w-md lg:max-w-2xl">
+                <Button
+                  variant="ghost"
+                  className="relative w-full h-10 justify-start text-sm text-muted-foreground sm:pr-12"
+                  onClick={() => setIsSearchOpen(true)}
+                >
+                  <span className="hidden sm:inline-flex">Search games...</span>
+                  <span className="inline-flex sm:hidden">Search...</span>
+                  <kbd className="pointer-events-none absolute right-1.5 top-2 hidden h-6 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium opacity-100 sm:flex">
+                    <span className="text-xs">⌘</span>K
+                  </kbd>
+                </Button>
+              </div>
+              <SearchDialog
+                open={isSearchOpen}
+                onOpenChange={setIsSearchOpen}
               />
-            </nav>
-            <AuthButtons />
-          </div>
 
-          {renderMobileMenuButton()}
+              <nav className="hidden md:flex items-center">
+                <AnimatedNav
+                  items={[
+                    { href: "/", label: "Home" },
+                    { href: "/explore", label: "Explore" },
+                    { href: "/all-games", label: "All Games" },
+                    { href: "/about", label: "About" },
+                  ]}
+                />
+              </nav>
+
+              <div className="flex items-center">
+                <AuthButtons />
+              </div>
+            </div>
+
+            {renderMobileMenuButton()}
+          </div>
         </div>
       </div>
 
