@@ -29,11 +29,24 @@ export function BentoGrid({
     <div className="px-4 sm:px-6 lg:px-8">
       <div
         className={cn(
-          "rounded-xl border border-border/40 bg-card/30 backdrop-blur-sm overflow-hidden",
+          "relative rounded-xl border border-border/40 overflow-hidden",
+          // Background Effects - reduced opacity and pointer-events-none
+          "before:absolute before:inset-0 before:bg-gradient-to-r before:from-purple-500/5 before:via-indigo-500/5 before:to-pink-500/5 before:blur-3xl before:pointer-events-none",
+          "after:absolute after:inset-0 after:bg-[radial-gradient(circle_at_center,rgba(147,51,234,0.03)_0%,transparent_65%)] after:pointer-events-none",
+          // Base background
+          "bg-background/80 backdrop-blur-sm shadow-lg",
           className
         )}
       >
-        <div className="p-3 sm:p-4">
+        {/* Pattern overlay - with pointer-events-none */}
+        <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(45deg,transparent_25%,rgba(147,51,234,0.02)_25%,rgba(147,51,234,0.02)_50%,transparent_50%,transparent_75%,rgba(147,51,234,0.02)_75%)] bg-[length:8px_8px]" />
+
+        {/* Glow Effects - with pointer-events-none */}
+        <div className="absolute -left-32 -top-32 w-64 h-64 bg-purple-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -right-32 -bottom-32 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
+
+        {/* Content container - ensure it's above overlays */}
+        <div className="relative z-10 p-3 sm:p-4">
           <div className="grid auto-rows-[180px] grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 sm:gap-4 auto-flow-dense">
             {/* Welcome Block */}
             <Block

@@ -77,7 +77,7 @@ export default function FloatingHeader() {
             </Link>
 
             <div className="flex flex-1 items-center justify-end gap-4 md:gap-6 lg:gap-8">
-              <div className="flex-1 max-w-xs sm:max-w-sm md:max-w-md lg:max-w-2xl">
+              <div className="flex-1 max-w-[200px] sm:max-w-[240px] md:max-w-[280px] lg:max-w-[320px]">
                 <Button
                   variant="ghost"
                   className="relative w-full h-10 justify-start text-sm text-muted-foreground sm:pr-12"

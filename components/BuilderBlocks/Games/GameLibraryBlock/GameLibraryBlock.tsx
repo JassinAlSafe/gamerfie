@@ -5,12 +5,21 @@ import { Block } from "../../Block";
 import { useLibraryStore } from "@/stores/useLibraryStore";
 import { GameWithProgress, GameStatus } from "@/types/game";
 import { formatDistanceToNow } from "date-fns";
-import { Trophy, Clock, Star, Gamepad2, ImageIcon } from "lucide-react";
+import {
+  Clock,
+  Star,
+  Gamepad2,
+  ImageIcon,
+  LineChart,
+  ChevronRight,
+} from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
+import Link from "next/link";
 import { useUser } from "@/hooks/User/useUser";
+import React from "react";
 
 const gameStatusColors: Record<GameStatus, string> = {
   playing: "bg-green-500/10 text-green-500 hover:bg-green-500/20",
@@ -26,7 +35,7 @@ export interface GameLibraryBlockProps {
 
 function GameCover({ src, alt }: { src: string | null; alt: string }) {
   return (
-    <div className="relative aspect-[2/3] w-24 flex-shrink-0 overflow-hidden rounded-lg">
+    <div className="relative aspect-[3/4] w-16 flex-shrink-0 overflow-hidden rounded-md">
       <div className="absolute inset-0 bg-accent/20" />
       {src ? (
         <Image
@@ -34,13 +43,13 @@ function GameCover({ src, alt }: { src: string | null; alt: string }) {
           alt={alt}
           fill
           className="object-cover transition-transform duration-300 group-hover:scale-105"
-          sizes="96px"
+          sizes="64px"
           priority={false}
           quality={100}
         />
       ) : (
         <div className="flex h-full items-center justify-center bg-accent/40">
-          <ImageIcon className="h-8 w-8 text-muted-foreground/40" />
+          <ImageIcon className="h-6 w-6 text-muted-foreground/40" />
         </div>
       )}
       <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -48,61 +57,76 @@ function GameCover({ src, alt }: { src: string | null; alt: string }) {
   );
 }
 
+function formatGameStatus(status: GameStatus): string {
+  switch (status) {
+    case "want_to_play":
+      return "Want to Play";
+    case "playing":
+      return "Playing";
+    case "completed":
+      return "Completed";
+    case "dropped":
+      return "Dropped";
+    default:
+      return status;
+  }
+}
 
 function GameCard({ game }: { game: GameWithProgress }) {
   return (
-    <div className="group flex items-start gap-4 p-3 rounded-lg hover:bg-accent/50 transition-colors">
+    <div className="group flex items-start gap-3 p-2 rounded-lg hover:bg-accent/50 transition-colors">
       <GameCover
         src={game.cover_url || game.coverImage || null}
         alt={game.name || game.title || ""}
       />
 
-      <div className="flex-1 min-w-0 space-y-2">
+      <div className="flex-1 min-w-0 space-y-1.5">
         <div className="flex items-center justify-between gap-2">
-          <h4 className="text-base font-medium truncate">{game.name}</h4>
+          <h4 className="text-sm font-medium truncate">{game.name}</h4>
           {game.status && (
             <Badge
               variant="secondary"
               className={cn(
                 gameStatusColors[game.status],
-                "rounded-full text-xs font-medium"
+                "text-[10px] px-1.5 py-0.5 font-medium"
               )}
             >
-              {game.status.replace("_", " ")}
+              {formatGameStatus(game.status)}
             </Badge>
           )}
         </div>
 
-        <div className="flex items-center gap-3 text-sm text-muted-foreground">
-          {game.hoursPlayed && game.hoursPlayed > 0 && (
-            <div className="flex items-center gap-1.5">
-              <Clock className="h-4 w-4" />
+        <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+          {game.hoursPlayed !== undefined && game.hoursPlayed > 0 && (
+            <div className="flex items-center gap-1">
+              <Clock className="h-3.5 w-3.5" />
               <span>{Math.round(game.hoursPlayed)}h</span>
-
             </div>
           )}
-          {game.achievements && (
-            <div className="flex items-center gap-1.5">
-              <Trophy className="h-4 w-4" />
-              <span>
-                {game.achievements.completed}/{game.achievements.total}
+          {game.progress !== undefined && (
+            <div className="flex items-center gap-1">
+              <LineChart className="h-3.5 w-3.5 text-blue-400" />
+              <span className="text-blue-400">
+                {Math.round(game.progress)}%
               </span>
             </div>
           )}
-          {game.rating && (
-            <div className="flex items-center gap-1.5">
-              <Star className="h-4 w-4" />
-              <span>{Number(game.rating).toFixed(1)}</span>
+          {game.rating !== undefined && (
+            <div className="flex items-center gap-1">
+              <Star className="h-3.5 w-3.5 text-amber-400" />
+              <span className="text-amber-400">
+                {Number(game.rating).toFixed(1)}
+              </span>
             </div>
           )}
         </div>
 
         {game.genres && game.genres.length > 0 && (
-          <div className="flex flex-wrap gap-1.5">
+          <div className="flex flex-wrap gap-1">
             {game.genres.slice(0, 2).map((genre) => (
               <span
                 key={genre.id}
-                className="px-2 py-0.5 text-xs rounded-md bg-accent/50 text-muted-foreground"
+                className="px-1.5 py-0.5 text-[10px] rounded-md bg-accent/50 text-muted-foreground"
               >
                 {genre.name}
               </span>
@@ -111,9 +135,9 @@ function GameCard({ game }: { game: GameWithProgress }) {
         )}
 
         {game.updated_at && (
-          <div className="text-xs text-muted-foreground">
-            Last updated {formatDistanceToNow(new Date(game.updated_at))} ago
-          </div>
+          <p className="text-[10px] text-muted-foreground/70">
+            Updated {formatDistanceToNow(new Date(game.updated_at))} ago
+          </p>
         )}
       </div>
     </div>
@@ -125,14 +149,14 @@ function GameLibraryContent() {
 
   if (isLoading) {
     return (
-      <div className="space-y-4 p-4">
+      <div className="space-y-3 p-4">
         {[...Array(3)].map((_, i) => (
-          <div key={i} className="flex gap-4 p-3">
-            <Skeleton className="h-36 w-24 rounded-lg" />
+          <div key={i} className="flex gap-3 p-2">
+            <Skeleton className="h-24 w-16 rounded-md" />
             <div className="flex-1 space-y-2">
-              <Skeleton className="h-6 w-3/4" />
-              <Skeleton className="h-4 w-1/2" />
-              <Skeleton className="h-4 w-1/3" />
+              <Skeleton className="h-4 w-3/4" />
+              <Skeleton className="h-3 w-1/2" />
+              <Skeleton className="h-3 w-1/3" />
             </div>
           </div>
         ))}
@@ -145,13 +169,15 @@ function GameLibraryContent() {
       <div className="flex h-full items-center justify-center p-4">
         <div className="text-center space-y-2">
           <Gamepad2 className="h-8 w-8 text-muted-foreground mx-auto" />
-          <p className="text-muted-foreground">No games in your library yet</p>
+          <p className="text-sm text-muted-foreground">
+            No games in your library yet
+          </p>
         </div>
       </div>
     );
   }
 
-  // Sort games by updated_at
+  // Sort games by updated_at and ensure they have the correct type
   const sortedGames = [...games]
     .sort((a, b) => {
       const dateA = a.updated_at ? new Date(a.updated_at) : new Date(0);
@@ -161,7 +187,7 @@ function GameLibraryContent() {
     .slice(0, 3) as GameWithProgress[];
 
   return (
-    <div className="divide-y divide-white/10">
+    <div className="divide-y divide-border/5">
       {sortedGames.map((game) => (
         <GameCard key={game.id} game={game} />
       ))}
@@ -175,12 +201,20 @@ export function GameLibraryBlock({
 }: GameLibraryBlockProps) {
   const { user } = useUser();
   const fetchUserLibrary = useLibraryStore((state) => state.fetchUserLibrary);
+  const [showMore, setShowMore] = React.useState(false);
+  const scrollRef = React.useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (user?.id) {
       fetchUserLibrary(user.id);
     }
   }, [fetchUserLibrary, user?.id]);
+
+  const handleScroll = React.useCallback((e: React.UIEvent<HTMLDivElement>) => {
+    const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
+    const isBottom = Math.abs(scrollHeight - clientHeight - scrollTop) < 10;
+    setShowMore(isBottom);
+  }, []);
 
   return (
     <Block
@@ -198,8 +232,27 @@ export function GameLibraryBlock({
             </h3>
           </div>
         </div>
-        <div className="flex-1 p-4 overflow-y-auto">
+        <div
+          ref={scrollRef}
+          className="relative flex-1 overflow-y-auto"
+          onScroll={handleScroll}
+        >
           <GameLibraryContent />
+          <Link
+            href="/profile/games"
+            className={cn(
+              "sticky bottom-0 left-0 right-0 flex items-center justify-center gap-1 p-2 text-xs",
+              "text-muted-foreground hover:text-purple-500 transition-all duration-300",
+              "bg-gradient-to-t from-background via-background/95 to-transparent",
+              "border-t border-purple-200/10 group",
+              showMore
+                ? "opacity-100 translate-y-0"
+                : "opacity-0 translate-y-4 pointer-events-none"
+            )}
+          >
+            Show More
+            <ChevronRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5" />
+          </Link>
         </div>
       </div>
     </Block>
