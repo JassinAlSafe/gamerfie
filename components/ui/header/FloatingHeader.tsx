@@ -12,21 +12,31 @@ import { MobileMenu } from "./mobile-menu";
 import { Button } from "@/components/ui/button";
 
 export default function FloatingHeader() {
-  const { initialize, isInitialized, user } = useAuthStore();
+  const { initialize, isInitialized, user, checkUser } = useAuthStore();
   const { isMobileMenuOpen, toggleMobileMenu } = useUIStore();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   // Initialize auth state
   useEffect(() => {
-    if (!isInitialized) {
-      initialize();
-    }
-  }, [initialize, isInitialized]);
+    const initAuth = async () => {
+      if (!isInitialized) {
+        await initialize();
+      }
+      // Check user state after initialization
+      await checkUser();
+    };
 
-  // Debug logging
+    initAuth();
+  }, [initialize, isInitialized, checkUser]);
+
+  // Refresh user state periodically
   useEffect(() => {
-    console.log("FloatingHeader auth state:", { user, isInitialized });
-  }, [user, isInitialized]);
+    const interval = setInterval(() => {
+      checkUser();
+    }, 60000); // Check every minute
+
+    return () => clearInterval(interval);
+  }, [checkUser]);
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => {

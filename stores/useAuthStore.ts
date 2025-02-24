@@ -21,6 +21,7 @@ interface AuthState {
   setError: (_error: string | null) => void
   signIn: (_email: string, _password: string) => Promise<AuthResponse>
   signUp: (_email: string, _password: string, _username: string) => Promise<AuthResponse>
+  signInWithGoogle: () => Promise<AuthResponse>
   signOut: () => Promise<void>
   resetPassword: (_email: string) => Promise<void>
   updatePassword: (_newPassword: string) => Promise<void>
@@ -39,6 +40,15 @@ export const useAuthStore = create<AuthState>()(
   persist(
     (set, get) => {
       const supabase = createClientComponentClient<Database>()
+
+      const fetchUserProfile = async (userId: string) => {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', userId)
+          .single();
+        return profile;
+      };
 
       return {
         user: null,
@@ -61,16 +71,32 @@ export const useAuthStore = create<AuthState>()(
             if (sessionError) throw sessionError;
             
             if (session?.user) {
-              const { data: profile } = await supabase
-                .from('profiles')
-                .select('*')
-                .eq('id', session.user.id)
-                .single();
+              const profile = await fetchUserProfile(session.user.id);
+              
+              // If no profile exists, create one
+              if (!profile) {
+                const username = session.user.email?.split('@')[0] || 'user';
+                const { data: newProfile } = await supabase
+                  .from('profiles')
+                  .insert({
+                    id: session.user.id,
+                    username,
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString()
+                  })
+                  .select()
+                  .single();
 
-              set({ 
-                user: { ...session.user, profile: profile || null },
-                error: null 
-              });
+                set({ 
+                  user: { ...session.user, profile: newProfile || null },
+                  error: null 
+                });
+              } else {
+                set({ 
+                  user: { ...session.user, profile },
+                  error: null 
+                });
+              }
             }
           } catch (error) {
             console.warn('Session initialization warning:', error);
@@ -346,6 +372,36 @@ export const useAuthStore = create<AuthState>()(
             throw error
           } finally {
             set({ isLoading: false })
+          }
+        },
+
+        signInWithGoogle: async () => {
+          try {
+            set({ isLoading: true, error: null });
+            const { data, error } = await supabase.auth.signInWithOAuth({
+              provider: 'google',
+              options: {
+                redirectTo: `${window.location.origin}/auth/callback`,
+                queryParams: {
+                  access_type: 'offline',
+                  prompt: 'consent',
+                },
+              },
+            });
+
+            if (error) throw error;
+
+            // Return a response that matches the AuthResponse type
+            return {
+              data: { user: null, session: null },
+              error: null,
+            };
+          } catch (error) {
+            const message = error instanceof Error ? error.message : 'Failed to sign in with Google';
+            set({ error: message });
+            throw error;
+          } finally {
+            set({ isLoading: false });
           }
         }
       }

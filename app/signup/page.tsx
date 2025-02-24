@@ -1,10 +1,24 @@
 import Link from "next/link";
 import { Icons } from "@/components/ui/icons";
 import { SignUpForm } from "../components/auth/SignUpForm";
+import { Button } from "@/components/ui/button";
+import { ArrowLeft } from "lucide-react";
 
 export default function SignUpPage() {
   return (
     <div className="flex min-h-screen">
+      {/* Back Button */}
+      <Button
+        asChild
+        variant="ghost"
+        className="absolute top-6 left-6 md:top-8 md:left-8 p-2 text-muted-foreground hover:text-white transition-colors group"
+      >
+        <Link href="/" className="flex items-center text-lg">
+          <ArrowLeft className="h-6 w-6 mr-2 group-hover:-translate-x-1 transition-transform duration-150" />
+          <span className="hidden sm:inline">Back to home</span>
+        </Link>
+      </Button>
+
       {/* Left side - Hero/Branding */}
       <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500">
         <div className="flex flex-col justify-center items-center w-full p-12 text-white">

@@ -10,13 +10,19 @@ import { useEffect } from "react";
 export function AuthButtons() {
   const router = useRouter();
   const { toast } = useToast();
-  const { user, signOut, initialize, isInitialized } = useAuthStore();
+  const { user, signOut, initialize, isInitialized, checkUser } =
+    useAuthStore();
 
   useEffect(() => {
-    if (!isInitialized) {
-      initialize();
-    }
-  }, [initialize, isInitialized]);
+    const initAuth = async () => {
+      if (!isInitialized) {
+        await initialize();
+      }
+      await checkUser();
+    };
+
+    initAuth();
+  }, [initialize, isInitialized, checkUser]);
 
   // Debug logging
   useEffect(() => {
@@ -41,6 +47,10 @@ export function AuthButtons() {
       });
     }
   };
+
+  if (!isInitialized) {
+    return null; // Don't render anything while initializing
+  }
 
   if (user) {
     return <ProfileDropdown user={user} onSignOut={handleSignOut} />;
