@@ -11,6 +11,8 @@ import {
   ListTodo,
   PenLine,
   Loader2,
+  LineChart,
+  Percent,
 } from "lucide-react";
 import {
   useJournalStore,
@@ -20,7 +22,7 @@ import {
 import { formatDistanceToNow } from "date-fns";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Textarea } from "@/components/ui/textarea";
+import { Textarea } from "@/components/ui/text/textarea";
 import {
   Select,
   SelectContent,
@@ -44,7 +46,7 @@ interface JournalBlockProps {
 }
 
 const journalTypeIcons: Record<JournalEntryType, React.ReactNode> = {
-  progress: <BarChart3 className="h-4 w-4 text-blue-500" />,
+  progress: <LineChart className="h-4 w-4 text-blue-500" />,
   review: <Star className="h-4 w-4 text-amber-500" />,
   daily: <PenLine className="h-4 w-4 text-purple-500" />,
   list: <ListTodo className="h-4 w-4 text-indigo-500" />,
@@ -85,39 +87,39 @@ function JournalEntryCard({ entry }: { entry: JournalEntry }) {
   const shouldShowTitle = entry.title && entry.title !== firstLine;
 
   return (
-    <div className="flex items-start gap-4 p-3">
-      <div className="relative mt-1">
+    <div className="flex items-start gap-3 p-3 min-w-0">
+      <div className="relative mt-1 flex-shrink-0">
         {entry.game?.cover_url ? (
-          <Avatar className="h-10 w-10 ring-2 ring-indigo-500/20">
+          <Avatar className="h-8 w-8 sm:h-10 sm:w-10 ring-2 ring-indigo-500/20">
             <AvatarImage src={entry.game.cover_url} />
             <AvatarFallback className="bg-accent">
               {entry.game.name[0]}
             </AvatarFallback>
           </Avatar>
         ) : (
-          <div className="h-10 w-10 rounded-lg bg-accent/50 flex items-center justify-center">
+          <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-lg bg-accent/50 flex items-center justify-center">
             {journalTypeIcons[entry.type]}
           </div>
         )}
       </div>
 
       <div className="flex-1 min-w-0 space-y-1">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-2">
           <h4 className="text-sm font-medium truncate text-foreground">
             {shouldShowTitle ? entry.title : firstLine}
           </h4>
-          <span className="text-xs text-muted-foreground">
+          <span className="text-xs text-muted-foreground flex-shrink-0">
             {formatDistanceToNow(new Date(entry.createdAt))} ago
           </span>
         </div>
 
         {entry.game && (
-          <p className="text-sm text-muted-foreground truncate">
+          <p className="text-xs sm:text-sm text-muted-foreground truncate">
             {entry.game.name}
           </p>
         )}
 
-        <div className="flex items-center gap-3 text-sm">
+        <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm">
           <span
             className={cn(
               "flex items-center gap-1.5",
@@ -135,14 +137,13 @@ function JournalEntryCard({ entry }: { entry: JournalEntry }) {
           )}
           {entry.progress && (
             <span className="flex items-center gap-1.5 text-blue-500">
-              <BarChart3 className="h-3 w-3" />
               {entry.progress}%
             </span>
           )}
         </div>
 
         {remainingContent && (
-          <p className="text-sm text-muted-foreground line-clamp-2">
+          <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2 break-words">
             {remainingContent}
           </p>
         )}
@@ -200,7 +201,7 @@ function JournalInput() {
   const isOverLimit = charCount > MAX_CHARS;
 
   return (
-    <div className="h-full flex flex-col p-4">
+    <div className="h-full flex flex-col p-3 sm:p-4">
       <div className="flex-1 min-h-0 relative">
         <Textarea
           ref={textareaRef}
@@ -210,23 +211,23 @@ function JournalInput() {
           placeholder="Write your daily journal entry..."
           className={cn(
             "absolute inset-0 resize-none transition-colors",
-            "scrollbar-thin scrollbar-thumb-indigo-500/10 scrollbar-track-transparent",
-            "focus:ring-1 focus:ring-indigo-500/20 focus:border-indigo-500/20",
             isOverLimit &&
               "border-red-500/50 focus:border-red-500/50 focus:ring-red-500/20"
           )}
         />
-        <div className="absolute bottom-2 right-2 flex items-center gap-4 text-xs">
-          <span
-            className={cn(
-              "text-muted-foreground/50",
-              isOverLimit && "text-red-500"
-            )}
-          >
-            {remaining} characters remaining
-          </span>
-          <span className="text-muted-foreground/50">
-            Press ⌘/Ctrl + Enter to submit
+        <div className="absolute bottom-1.5 right-1.5 flex flex-col sm:flex-row items-end sm:items-center gap-1 sm:gap-2">
+          <div className="px-1.5 py-0.5 rounded-md bg-background/80 backdrop-blur-sm border border-border/5">
+            <span
+              className={cn(
+                "text-[10px] tabular-nums",
+                isOverLimit ? "text-red-500" : "text-muted-foreground/40"
+              )}
+            >
+              {remaining}
+            </span>
+          </div>
+          <span className="text-[10px] text-muted-foreground/40 hidden sm:inline-block">
+            ⌘/Ctrl + Enter to submit
           </span>
         </div>
       </div>

@@ -29,14 +29,18 @@ export function BentoGrid({
     <div className="px-4 sm:px-6 lg:px-8">
       <div
         className={cn(
-          "rounded-xl border border-border/40 bg-card/30 backdrop-blur-sm",
+          "rounded-xl border border-border/40 bg-card/30 backdrop-blur-sm overflow-hidden",
           className
         )}
       >
         <div className="p-3 sm:p-4">
-          <div className="grid auto-rows-[180px] grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 sm:gap-4">
+          <div className="grid auto-rows-[180px] grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 sm:gap-4 auto-flow-dense">
             {/* Welcome Block */}
-            <Block variant="premium" hover={true} className="h-full">
+            <Block
+              variant="premium"
+              hover={true}
+              className="h-full overflow-hidden"
+            >
               <div className="flex flex-col h-full">
                 <div className="flex items-center justify-between p-3 border-b border-purple-200/10">
                   <div className="flex items-center gap-2">
@@ -67,12 +71,12 @@ export function BentoGrid({
             <RecentActivityBlock activities={activities} className="h-full" />
 
             {/* Game Library Block - Double Height */}
-            <div className="row-span-2">
+            <div className="row-span-2 sm:col-span-2 lg:col-span-1">
               <GameLibraryBlock className="h-full" />
             </div>
 
             {/* Journal Block - Double Height */}
-            <div className="row-span-2">
+            <div className="row-span-2 sm:col-span-2 lg:col-span-1">
               <JournalBlock className="h-full" />
             </div>
           </div>

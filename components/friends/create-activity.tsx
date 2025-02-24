@@ -13,7 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { Textarea } from "@/components/ui/text/textarea";
 import { useDebounce } from "@/hooks/Settings/use-debounce";
 import { Search } from "lucide-react";
 import Image from "next/image";

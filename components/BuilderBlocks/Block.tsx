@@ -4,13 +4,13 @@ import { cn } from "@/lib/utils";
 import { cva, type VariantProps } from "class-variance-authority";
 
 const blockVariants = cva(
-  "relative overflow-hidden transition-all bg-gradient-to-b from-card/50 to-card/30 backdrop-blur-xl",
+  "relative overflow-hidden transition-all bg-gradient-to-b from-card/50 to-card/30 backdrop-blur-xl min-h-0",
   {
     variants: {
       size: {
         sm: "col-span-1",
-        md: "col-span-1 md:col-span-2",
-        lg: "col-span-1 md:col-span-2 lg:col-span-3",
+        md: "col-span-1 sm:col-span-2",
+        lg: "col-span-1 sm:col-span-2 lg:col-span-3",
         full: "col-span-full",
       },
       variant: {
@@ -40,7 +40,10 @@ const blockVariants = cva(
         ],
       },
       hover: {
-        true: "hover:scale-[1.02] active:scale-[0.98] transition-transform duration-200",
+        true: [
+          "hover:scale-[1.02] active:scale-[0.98] transition-transform duration-200",
+          "hover:shadow-lg hover:shadow-purple-500/5",
+        ],
         false: "",
       },
       glassmorphism: {

@@ -36,7 +36,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
+import { Textarea } from "@/components/ui/text/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Trophy, Medal, Star, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
