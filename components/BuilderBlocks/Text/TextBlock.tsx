@@ -25,15 +25,23 @@ export function TextBlock({
   variant = "ghost",
 }: TextBlockProps) {
   return (
-    <div className={cn("relative h-full w-full overflow-hidden", className)}>
-      <ASCIIText
-        text={text}
-        asciiFontSize={asciiFontSize}
-        textFontSize={textFontSize}
-        textColor={textColor}
-        planeBaseHeight={planeBaseHeight}
-        enableWaves={enableWaves}
-      />
+    <div
+      className={cn(
+        "relative flex-1 min-h-0 w-full",
+        "flex items-center justify-center",
+        className
+      )}
+    >
+      <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
+        <ASCIIText
+          text={text}
+          asciiFontSize={asciiFontSize}
+          textFontSize={textFontSize}
+          textColor={textColor}
+          planeBaseHeight={planeBaseHeight}
+          enableWaves={enableWaves}
+        />
+      </div>
     </div>
   );
 }

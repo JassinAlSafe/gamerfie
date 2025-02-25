@@ -297,13 +297,14 @@ export function JournalBlock({ size = "sm", className }: JournalBlockProps) {
       hover={false}
       glassmorphism={false}
       className={cn(
-        "h-[360px] rounded-xl border shadow-sm border-indigo-200/10",
+        "min-h-0 w-full h-full rounded-xl border shadow-sm border-indigo-200/10",
         "bg-gradient-to-b from-indigo-500/5 via-indigo-500/2 to-background",
+        "flex flex-col",
         className
       )}
     >
-      <div className="flex flex-col h-full">
-        <div className="flex items-center justify-between p-4 border-b border-indigo-200/10">
+      <div className="flex flex-col flex-1 min-h-0">
+        <div className="flex-shrink-0 flex items-center justify-between p-4 border-b border-indigo-200/10">
           <div className="flex items-center gap-2">
             <BookOpen className="h-4 w-4 text-indigo-500" />
             <h3 className="text-lg font-semibold bg-gradient-to-br from-indigo-500 to-purple-500 bg-clip-text text-transparent">
@@ -312,7 +313,7 @@ export function JournalBlock({ size = "sm", className }: JournalBlockProps) {
           </div>
         </div>
         <div className="flex-1 min-h-0 flex flex-col">
-          <div className="flex-[3] min-h-0">
+          <div className="flex-[3] min-h-0 overflow-hidden">
             <JournalInput />
           </div>
           <div className="flex-1 min-h-0 border-t border-indigo-200/10 overflow-y-auto scrollbar-thin scrollbar-thumb-indigo-500/10 scrollbar-track-transparent">

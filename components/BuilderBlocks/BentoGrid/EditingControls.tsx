@@ -1,13 +1,14 @@
 "use client";
 
-import { Lock, Unlock, Save } from "lucide-react";
+import { Lock, Unlock, Save, Pencil, RotateCcw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useLayoutStore } from "@/stores/useLayoutStore";
 import { toast } from "react-hot-toast";
 
 export function EditingControls() {
-  const { isEditing, setIsEditing, resetLayout } = useLayoutStore();
+  const { isEditing, setIsEditing, resetLayout, currentBreakpoint } =
+    useLayoutStore();
 
   const handleSave = () => {
     setIsEditing(false);
@@ -22,59 +23,48 @@ export function EditingControls() {
   };
 
   return (
-    <div
-      className={cn(
-        "fixed bottom-6 left-1/2 -translate-x-1/2 z-50",
-        "flex items-center gap-2 p-2 rounded-full",
-        "bg-background/80 backdrop-blur-sm border border-border/40 shadow-lg",
-        "transition-all duration-200",
-        isEditing
-          ? "translate-y-0 opacity-100 scale-100"
-          : "hover:scale-105 hover:shadow-purple-500/10"
-      )}
-    >
-      {isEditing ? (
-        <>
+    <div className="flex items-center justify-between mb-4 px-4 sm:px-6 lg:px-8">
+      <div className="flex items-center gap-2">
+        <span className="text-sm text-muted-foreground">
+          Current breakpoint:{" "}
+          <span className="font-medium">{currentBreakpoint}</span>
+        </span>
+      </div>
+      <div className="flex items-center gap-2">
+        {isEditing && (
           <Button
-            variant="ghost"
+            variant="outline"
             size="sm"
             onClick={() => resetLayout()}
-            className="rounded-full text-muted-foreground hover:text-foreground"
+            className="text-yellow-500 border-yellow-500/20 hover:bg-yellow-500/10"
           >
-            Reset
+            <RotateCcw className="h-4 w-4 mr-2" />
+            Reset Layout
           </Button>
-          <div className="w-px h-4 bg-border/40" />
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleSave}
-            className="rounded-full text-green-500 hover:text-green-600 hover:bg-green-500/10"
-          >
-            <Save className="h-4 w-4 mr-2" />
-            Save Layout
-          </Button>
-          <div className="w-px h-4 bg-border/40" />
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setIsEditing(false)}
-            className="rounded-full text-purple-500 hover:text-purple-600 hover:bg-purple-500/10"
-          >
-            <Lock className="h-4 w-4 mr-2" />
-            Lock
-          </Button>
-        </>
-      ) : (
+        )}
         <Button
-          variant="ghost"
+          variant="outline"
           size="sm"
-          onClick={() => setIsEditing(true)}
-          className="rounded-full text-purple-500 hover:text-purple-600 hover:bg-purple-500/10"
+          onClick={() => setIsEditing(!isEditing)}
+          className={
+            isEditing
+              ? "text-green-500 border-green-500/20 hover:bg-green-500/10"
+              : "text-purple-500 border-purple-500/20 hover:bg-purple-500/10"
+          }
         >
-          <Unlock className="h-4 w-4 mr-2" />
-          Customize Layout
+          {isEditing ? (
+            <>
+              <Save className="h-4 w-4 mr-2" />
+              Save Layout
+            </>
+          ) : (
+            <>
+              <Pencil className="h-4 w-4 mr-2" />
+              Edit Layout
+            </>
+          )}
         </Button>
-      )}
+      </div>
     </div>
   );
 }

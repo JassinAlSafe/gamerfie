@@ -4,14 +4,47 @@ import { User } from "@supabase/supabase-js";
 import { Friend } from "@/types/friend";
 import { Activity } from "@/types/activity";
 import { cn } from "@/lib/utils";
-import { Responsive, WidthProvider } from "react-grid-layout";
-import { useLayoutStore, LayoutItem } from "@/stores/useLayoutStore";
+import { Responsive, WidthProvider, Layout } from "react-grid-layout";
+import { useLayoutStore } from "@/stores/useLayoutStore";
 import { EditingControls } from "./EditingControls";
 import { useGridItems } from "./useGridItems";
-import { GRID_BREAKPOINTS, GRID_COLS } from "./constants";
+import { GRID_CONFIG } from "./constants";
+import { GridItem } from "./GridItem";
+import { useState, useCallback, useEffect, useRef } from "react";
 import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
 
+// Add custom CSS to fix layout issues
+const customGridStyles = `
+.react-grid-layout {
+  position: relative;
+  width: 100%;
+  display: block;
+}
+.react-grid-item {
+  transition: all 200ms ease;
+  transition-property: left, top, width, height;
+}
+.react-grid-item.react-grid-placeholder {
+  background: rgba(147, 51, 234, 0.15);
+  border: 2px dashed rgba(147, 51, 234, 0.3);
+  border-radius: 0.75rem;
+  opacity: 0.5;
+  z-index: 2;
+  transition-duration: 100ms;
+  user-select: none;
+}
+.react-grid-item.react-draggable-dragging {
+  transition: none;
+  z-index: 3;
+}
+.react-grid-item.react-grid-item.resizing {
+  z-index: 3;
+  transition: none;
+}
+`;
+
+// Use the WidthProvider to automatically set width
 const ResponsiveGridLayout = WidthProvider(Responsive);
 
 interface BentoGridProps {
@@ -33,28 +66,101 @@ export function BentoGrid({
     currentBreakpoint,
     setCurrentBreakpoint,
     isEditing,
+    resetLayout,
   } = useLayoutStore();
 
   const gridItems = useGridItems({ user, friends, activities });
+  const [isDragging, setIsDragging] = useState(false);
+  const [isResizing, setIsResizing] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
 
-  const handleLayoutChange = (layout: LayoutItem[], layouts: any) => {
-    setLayout(currentBreakpoint, layout);
-  };
+  // Force a re-render when editing mode changes
+  useEffect(() => {
+    // Add a small delay to ensure the DOM is updated
+    const timer = setTimeout(() => {
+      if (containerRef.current) {
+        const event = new Event("resize");
+        window.dispatchEvent(event);
+      }
+    }, 100);
 
-  const handleBreakpointChange = (newBreakpoint: string) => {
-    setCurrentBreakpoint(newBreakpoint);
-  };
+    return () => clearTimeout(timer);
+  }, [isEditing]);
+
+  // Ensure the layout is properly initialized
+  useEffect(() => {
+    setMounted(true);
+
+    // Force a resize event to ensure the grid layout is calculated correctly
+    const timer = setTimeout(() => {
+      window.dispatchEvent(new Event("resize"));
+    }, 200);
+
+    return () => {
+      setMounted(false);
+      clearTimeout(timer);
+    };
+  }, []);
+
+  const handleLayoutChange = useCallback(
+    (currentLayout: Layout[], allLayouts: any) => {
+      if (isEditing) {
+        setLayout(currentBreakpoint, currentLayout);
+      }
+    },
+    [isEditing, currentBreakpoint, setLayout]
+  );
+
+  const handleBreakpointChange = useCallback(
+    (newBreakpoint: string) => {
+      setCurrentBreakpoint(newBreakpoint);
+    },
+    [setCurrentBreakpoint]
+  );
+
+  const handleDragStart = useCallback(() => {
+    setIsDragging(true);
+    document.body.style.cursor = "grabbing";
+    document.body.classList.add("select-none");
+  }, []);
+
+  const handleDragStop = useCallback(() => {
+    setIsDragging(false);
+    document.body.style.cursor = "";
+    document.body.classList.remove("select-none");
+
+    // Force a resize event after dragging to ensure layout is correct
+    window.dispatchEvent(new Event("resize"));
+  }, []);
+
+  const handleResizeStart = useCallback(() => {
+    setIsResizing(true);
+    document.body.style.cursor = "se-resize";
+    document.body.classList.add("select-none");
+  }, []);
+
+  const handleResizeStop = useCallback(() => {
+    setIsResizing(false);
+    document.body.style.cursor = "";
+    document.body.classList.remove("select-none");
+
+    // Force a resize event after resizing to ensure layout is correct
+    window.dispatchEvent(new Event("resize"));
+  }, []);
 
   return (
-    <>
+    <div className="w-full">
+      <style dangerouslySetInnerHTML={{ __html: customGridStyles }} />
       <EditingControls />
-      <div className="px-4 sm:px-6 lg:px-8">
+      <div className="w-full px-4 sm:px-6 lg:px-8">
         <div
+          ref={containerRef}
           className={cn(
-            "relative rounded-xl border border-border/40 overflow-hidden",
-            "before:absolute before:inset-0 before:bg-gradient-to-r before:from-purple-500/5 before:via-indigo-500/5 before:to-pink-500/5 before:blur-3xl before:pointer-events-none",
-            "after:absolute after:inset-0 after:bg-[radial-gradient(circle_at_center,rgba(147,51,234,0.03)_0%,transparent_65%)] after:pointer-events-none",
+            "relative w-full rounded-xl border border-border/40",
             "bg-background/80 backdrop-blur-sm shadow-lg",
+            isDragging && "cursor-grabbing",
+            isResizing && "cursor-se-resize",
             isEditing && "ring-2 ring-purple-500/20",
             className
           )}
@@ -67,37 +173,33 @@ export function BentoGrid({
           <div className="absolute -right-32 -bottom-32 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
 
           {/* Content container */}
-          <div className="relative z-10 p-3 sm:p-4">
-            <ResponsiveGridLayout
-              className="layout"
-              layouts={layouts}
-              breakpoints={GRID_BREAKPOINTS}
-              cols={GRID_COLS}
-              rowHeight={180}
-              margin={[16, 16]}
-              containerPadding={[0, 0]}
-              onLayoutChange={handleLayoutChange}
-              onBreakpointChange={handleBreakpointChange}
-              isDraggable={isEditing}
-              isResizable={isEditing}
-              useCSSTransforms
-            >
-              {gridItems.map((item) => (
-                <div
-                  key={item.id}
-                  className={cn(
-                    "transition-all duration-200",
-                    isEditing &&
-                      "ring-1 ring-purple-500/20 hover:ring-purple-500/40"
-                  )}
-                >
-                  {item.component}
-                </div>
-              ))}
-            </ResponsiveGridLayout>
+          <div className="relative z-10 w-full p-3 sm:p-4">
+            {mounted && (
+              <ResponsiveGridLayout
+                {...GRID_CONFIG}
+                layouts={layouts}
+                onLayoutChange={handleLayoutChange}
+                onBreakpointChange={handleBreakpointChange}
+                isDraggable={isEditing}
+                isResizable={isEditing}
+                draggableCancel=".block-content"
+                onDragStart={handleDragStart}
+                onDragStop={handleDragStop}
+                onResizeStart={handleResizeStart}
+                onResizeStop={handleResizeStop}
+                style={{ width: "100%" }}
+                className="w-full"
+              >
+                {gridItems.map((item) => (
+                  <div key={item.id} className="w-full h-full">
+                    <GridItem isEditing={isEditing}>{item.component}</GridItem>
+                  </div>
+                ))}
+              </ResponsiveGridLayout>
+            )}
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 }

@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 import { cva, type VariantProps } from "class-variance-authority";
 
 const blockVariants = cva(
-  "relative overflow-hidden transition-all bg-gradient-to-b from-card/50 to-card/30 backdrop-blur-xl min-h-0",
+  "relative overflow-hidden transition-all bg-gradient-to-b from-card/50 to-card/30 backdrop-blur-xl min-h-0 w-full h-full",
   {
     variants: {
       size: {
@@ -22,14 +22,16 @@ const blockVariants = cva(
           "dark:from-background/20 dark:via-background/25 dark:to-background/30",
           "dark:hover:from-background/25 dark:hover:via-background/30 dark:hover:to-background/40",
           "transition-all duration-200",
+          "flex flex-col",
         ],
-        ghost: "bg-transparent",
+        ghost: "bg-transparent flex flex-col",
         premium: [
           "rounded-xl border shadow-sm border-purple-200/20",
           "bg-gradient-to-b from-purple-500/10 via-purple-500/5 to-background",
           "dark:from-purple-500/20 dark:via-purple-500/10 dark:to-background",
           "hover:shadow-purple-500/5 hover:border-purple-200/30",
           "dark:hover:border-purple-200/30 dark:hover:shadow-purple-500/10",
+          "flex flex-col",
         ],
         success: [
           "rounded-xl border shadow-sm border-green-200/20",
@@ -37,6 +39,7 @@ const blockVariants = cva(
           "dark:from-green-500/20 dark:via-green-500/10 dark:to-background",
           "hover:shadow-green-500/5 hover:border-green-200/30",
           "dark:hover:border-green-200/30 dark:hover:shadow-green-500/10",
+          "flex flex-col",
         ],
       },
       hover: {
