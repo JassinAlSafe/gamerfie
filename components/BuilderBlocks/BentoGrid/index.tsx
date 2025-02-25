@@ -185,9 +185,8 @@ export function BentoGrid({
   }, []);
 
   return (
-    <div className="w-full">
+    <div className="w-full relative">
       <style dangerouslySetInnerHTML={{ __html: customGridStyles }} />
-      <EditingControls />
       <div className="w-full px-4 sm:px-6 lg:px-8">
         <div
           ref={containerRef}
@@ -242,6 +241,7 @@ export function BentoGrid({
           </div>
         </div>
       </div>
+      <EditingControls />
     </div>
   );
 }
