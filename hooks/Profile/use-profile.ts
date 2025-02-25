@@ -1,6 +1,12 @@
 import { useQuery } from '@tanstack/react-query';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
-import { Profile, GameStats } from '@/types/user';
+import type { Profile } from '@/types/profile';
+
+interface ProfileStats {
+  total_played: number;
+  played_this_year: number;
+  backlog: number;
+}
 
 export function useProfile() {
   const supabase = createClientComponentClient();
@@ -30,7 +36,13 @@ export function useProfile() {
     enabled: !!session?.id
   });
 
-  const { data: gameStats = { total_played: 0, played_this_year: 0, backlog: 0 } } = useQuery({
+  const defaultStats: ProfileStats = {
+    total_played: 0,
+    played_this_year: 0,
+    backlog: 0
+  };
+
+  const { data: gameStats = defaultStats } = useQuery<ProfileStats | null>({
     queryKey: ['gameStats', session?.id],
     queryFn: async () => {
       if (!session?.id) return null;
@@ -48,7 +60,7 @@ export function useProfile() {
       if (error) throw error;
 
       // Calculate stats
-      const stats: GameStats = {
+      const stats: ProfileStats = {
         total_played: userGames.filter(game => 
           game.status === 'completed' || game.status === 'playing'
         ).length,

@@ -7,7 +7,7 @@ import { Input } from "../../components/ui/input";
 import { Button } from "../../components/ui/button";
 import { Search, UserPlus } from "lucide-react";
 import { toast } from "react-hot-toast";
-import { useDebounce } from "../../hooks/use-debounce";
+import { useDebounce } from "../../hooks/Settings/use-debounce";
 
 export function FriendSearch() {
   const [query, setQuery] = useState("");

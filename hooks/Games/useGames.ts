@@ -2,8 +2,8 @@ import  {useEffect} from "react";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { useGamesStore } from "@/stores/useGamesStore";
 import { useSearchStore } from "@/stores/useSearchStore";
-import { useGameDetailsStore } from "@/stores/useGameDetailsStore";
-import { useDebounce } from "@/hooks/useDebounce";
+import { useGameDetails } from "@/hooks/Games/use-game-details";
+import { useDebounce } from "@/hooks/Settings/useDebounce";
 import { Game } from "@/types/game";
 import { GameService } from "@/services/gameService";
 
@@ -68,42 +68,14 @@ export function useGamesInfinite() {
 }
 
 export function useGame(id: string | number) {
-  const { fetchGame } = useGameDetailsStore();
-  const numericId = typeof id === 'string' ? parseInt(id, 10) : id;
-
-  useEffect(() => {
-    if (!isNaN(numericId)) {
-      fetchGame(numericId);
-    }
-  }, [numericId, fetchGame]);
-
-  return useQuery({
-    queryKey: ["game", numericId],
-    queryFn: async () => {
-      if (!numericId || isNaN(numericId)) {
-        throw new Error("Invalid game ID");
-      }
-
-      try {
-        const game = await GameService.fetchGameById(numericId);
-        if (!game) {
-          throw new Error("Game not found");
-        }
-        return game;
-      } catch (error) {
-        console.error("Game fetch error:", error);
-        throw error instanceof Error ? error : new Error("Failed to fetch game");
-      }
-    },
-    enabled: !isNaN(numericId),
-    staleTime: STALE_TIME,
-    retry: (failureCount, error) => {
-      if (error instanceof Error && error.message === "Game not found") {
-        return false;
-      }
-      return failureCount < 3;
-    }
-  });
+  const { game, isLoading, error } = useGameDetails(id);
+  
+  return {
+    data: game,
+    isLoading,
+    error,
+    isError: !!error
+  };
 }
 
 export function useGamesList(type: 'trending' | 'popular' | 'upcoming', limit: number = 10) {

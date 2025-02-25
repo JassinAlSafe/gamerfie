@@ -14,6 +14,7 @@ interface UpdateProgressButtonProps {
   gameId: string;
   gameName: string;
   game: Game;
+  progress?: Partial<GameProgress>;
   variant?: "default" | "outline" | "secondary" | "ghost";
   size?: "default" | "sm" | "lg";
   className?: string;
@@ -23,6 +24,7 @@ export function UpdateProgressButton({
   gameId,
   gameName,
   game,
+  progress,
   variant = "secondary",
   size = "default",
   className,

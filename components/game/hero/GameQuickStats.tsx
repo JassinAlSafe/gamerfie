@@ -2,15 +2,16 @@
 
 import React from "react";
 import { motion } from "framer-motion";
-import { Star, Calendar, Gamepad2 } from "lucide-react";
-import { Game } from "@/types/game";
+import { Star, Calendar, Gamepad2, Clock } from "lucide-react";
+import { Game, GameProgress } from "@/types/game";
 import { formatRating, formatDate } from "@/utils/format-utils";
 
 interface GameQuickStatsProps {
   game: Game;
+  progress?: Partial<GameProgress>;
 }
 
-export function GameQuickStats({ game }: GameQuickStatsProps) {
+export function GameQuickStats({ game, progress }: GameQuickStatsProps) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -24,6 +25,13 @@ export function GameQuickStats({ game }: GameQuickStatsProps) {
           <span className="text-lg font-semibold">
             {formatRating(game.total_rating)}
           </span>
+        </div>
+      )}
+
+      {progress?.play_time !== undefined && progress.play_time > 0 && (
+        <div className="flex items-center gap-2 bg-green-400/10 text-green-400 rounded-full px-6 py-2.5 backdrop-blur-sm border border-green-400/20 transition-colors duration-200 hover:bg-green-400/20">
+          <Clock className="w-5 h-5" />
+          <span className="text-lg font-semibold">{progress.play_time}h</span>
         </div>
       )}
 

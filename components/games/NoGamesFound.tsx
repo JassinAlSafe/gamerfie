@@ -1,7 +1,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Gamepad2, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useSearchQuery, useStatusFilter } from "@/hooks/useGameFilters";
+import { useSearchQuery, useStatusFilter } from "@/hooks/Games/useGameFilters";
 
 export function NoGamesFound() {
   const [searchQuery] = useSearchQuery();

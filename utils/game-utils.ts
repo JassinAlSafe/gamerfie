@@ -2,17 +2,38 @@ import type { Game, GameStats } from "@/types/index";
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import type { Database } from '@/types/supabase';
+import { useGameDetailsStore } from '@/stores/useGameDetailsStore';
 
 export const fetchGameDetails = async (gameIds: string[]) => {
   try {
     console.log('Fetching game details for IDs:', gameIds);
+    
+    // Get store instance
+    const store = useGameDetailsStore.getState();
+    
+    // Check cache first
+    const cachedGames = gameIds
+      .map(id => store.getGame(Number(id)))
+      .filter(game => game && Date.now() - game.timestamp < 1000 * 60 * 60); // 1 hour cache
+    
+    // Find IDs that need fetching
+    const idsToFetch = gameIds.filter(id => 
+      !cachedGames.find(game => game?.id === id)
+    );
+    
+    if (idsToFetch.length === 0) {
+      console.log('All games found in cache');
+      return cachedGames.map(game => ({ ...game, timestamp: undefined }));
+    }
+    
+    console.log('Fetching missing games:', idsToFetch);
     
     const response = await fetch('/api/games/details', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ ids: gameIds })
+      body: JSON.stringify({ ids: idsToFetch })
     });
 
     if (!response.ok) {
@@ -21,24 +42,29 @@ export const fetchGameDetails = async (gameIds: string[]) => {
       throw new Error(`Failed to fetch game details: ${error}`);
     }
 
-    const data = await response.json();
+    const fetchedGames = await response.json();
     
-    if (!data || data.length === 0) {
-      console.warn('No game details returned for IDs:', gameIds);
-      return [];
-    }
-
-    // Filter out any undefined/null entries
-    const validGames = data.filter((game: Game) => game && game.id);
+    // Add fetched games to store
+    fetchedGames.forEach((game: Game) => {
+      if (game && game.id) {
+        store.setGame(game);
+      }
+    });
     
-    if (validGames.length !== gameIds.length) {
+    // Return combined results
+    const allGames = gameIds
+      .map(id => store.getGame(Number(id)))
+      .filter(game => game)
+      .map(game => ({ ...game, timestamp: undefined }));
+    
+    if (allGames.length !== gameIds.length) {
       console.warn(
-        `Received ${validGames.length} valid games out of ${gameIds.length} requested:`,
-        validGames.map((g: Game) => g.id)
+        `Received ${allGames.length} valid games out of ${gameIds.length} requested:`,
+        allGames.map(g => g.id)
       );
     }
 
-    return validGames;
+    return allGames;
   } catch (error) {
     console.error('Error in fetchGameDetails:', error);
     throw error;

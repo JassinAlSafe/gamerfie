@@ -14,7 +14,7 @@ import { Challenge } from "@/types/challenge";
 import { Game } from "@/types/game";
 import Image from "next/image";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { useGameSearch } from "@/hooks/use-game-search";
+import { useGameSearch } from "@/hooks/Games/use-game-search";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 

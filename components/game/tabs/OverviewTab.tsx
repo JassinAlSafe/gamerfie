@@ -85,15 +85,21 @@ export function OverviewTab({ game }: OverviewTabProps) {
             <div>
               <h4 className="text-sm font-medium text-gray-400 mb-2">Genres</h4>
               <div className="flex flex-wrap gap-2">
-                {game.genres.map((genre) => (
-                  <Badge
-                    key={genre.id}
-                    variant="secondary"
-                    className="bg-purple-500/20 text-purple-400 hover:bg-purple-500/30 transition-colors duration-200 px-4 py-2 rounded-full text-sm"
-                  >
-                    {genre.name}
+                {Array.isArray(game.genres) && game.genres.length > 0 ? (
+                  game.genres.map((genre) => (
+                    <Badge
+                      key={genre.id || genre.name}
+                      variant="secondary"
+                      className="bg-white/5 hover:bg-white/10"
+                    >
+                      {genre.name}
+                    </Badge>
+                  ))
+                ) : (
+                  <Badge variant="secondary" className="bg-white/5">
+                    No genres available
                   </Badge>
-                ))}
+                )}
               </div>
             </div>
           )}
@@ -103,15 +109,21 @@ export function OverviewTab({ game }: OverviewTabProps) {
                 Platforms
               </h4>
               <div className="flex flex-wrap gap-2">
-                {game.platforms.map((platform) => (
-                  <Badge
-                    key={platform.id}
-                    variant="secondary"
-                    className="bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 transition-colors duration-200 px-4 py-2 rounded-full text-sm"
-                  >
-                    {platform.name}
+                {Array.isArray(game.platforms) && game.platforms.length > 0 ? (
+                  game.platforms.map((platform) => (
+                    <Badge
+                      key={platform.id}
+                      variant="secondary"
+                      className="bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 transition-colors duration-200 px-4 py-2 rounded-full text-sm"
+                    >
+                      {platform.name}
+                    </Badge>
+                  ))
+                ) : (
+                  <Badge variant="secondary" className="bg-white/5">
+                    No platforms available
                   </Badge>
-                ))}
+                )}
               </div>
             </div>
           )}

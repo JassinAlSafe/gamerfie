@@ -1,8 +1,6 @@
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
-import { UserGame } from '@/types'
-
-import { Profile } from '../types/index'
-import { GameStats } from '../types/index'
+import type { UserGame, GameStats } from '@/types/game'
+import type { Profile } from '@/types/profile'
 
 export async function fetchProfile() {
     const supabase = createClientComponentClient()
@@ -20,7 +18,7 @@ export async function fetchProfile() {
 
     const { data, error } = await supabase
         .from('profiles')
-        .select('id, username, display_name, bio, avatar_url, email, updated_at')
+        .select('id, username, display_name, bio, avatar_url, email, created_at, updated_at')
         .eq('id', user.id)
         .single()
 
@@ -29,7 +27,7 @@ export async function fetchProfile() {
         throw error
     }
 
-    return data as Profile
+    return data as unknown as Profile
 }
 
 export async function fetchUserGames(userId: string, page = 1, pageSize = 10) {
@@ -81,37 +79,81 @@ export async function updateProfile(userId: string, updates: Partial<Profile>) {
         throw error
     }
 
-    return data as Profile
+    return data as unknown as Profile
 }
 
 export async function calculateGameStats(userId: string): Promise<GameStats> {
     const supabase = createClientComponentClient()
 
-    const { data: games, error } = await supabase
+    // Fetch user's games with game details
+    const { data: userGames, error: gamesError } = await supabase
         .from('user_games')
-        .select('status, created_at')
+        .select(`
+            *,
+            games (
+                id,
+                name,
+                cover_url,
+                platforms,
+                genres,
+                summary,
+                created_at,
+                updated_at
+            )
+        `)
         .eq('user_id', userId)
+        .order('last_played_at', { ascending: false })
 
-    if (error) {
-        console.error('Error fetching games for stats:', error)
-        throw error
+    if (gamesError) {
+        console.error('Error fetching games for stats:', gamesError)
+        throw gamesError
     }
 
-    const currentYear = new Date().getFullYear()
+    // Process games for stats
+    const totalGames = userGames?.length || 0
+    const totalPlaytime = userGames?.reduce((total, game) => total + (game.play_time || 0), 0) || 0
 
-    return games.reduce(
-        (stats, game) => {
-            if (game.status === 'completed' || game.status === 'playing') {
-                stats.total_played++
-                if (new Date(game.created_at).getFullYear() === currentYear) {
-                    stats.played_this_year++
-                }
-            } else if (game.status === 'want_to_play') {
-                stats.backlog++
-            }
-            return stats
-        },
-        { total_played: 0, played_this_year: 0, backlog: 0 }
-    )
+    // Get recently played games (last 5)
+    const recentlyPlayed = userGames
+        ?.filter(game => game.last_played_at)
+        ?.slice(0, 5)
+        ?.map(game => ({
+            id: game.game_id,
+            name: game.games?.name || '',
+            title: game.games?.name || '',
+            cover_url: game.games?.cover_url || null,
+            platforms: game.games?.platforms ? JSON.parse(game.games.platforms) : [],
+            genres: game.games?.genres ? JSON.parse(game.games.genres) : [],
+            status: game.status,
+            rating: game.user_rating || 0,
+            summary: game.games?.summary || '',
+            created_at: game.created_at,
+            updated_at: game.updated_at
+        })) || []
+
+    // Get most played games (top 5 by playtime)
+    const mostPlayed = [...(userGames || [])]
+        ?.sort((a, b) => (b.play_time || 0) - (a.play_time || 0))
+        ?.slice(0, 5)
+        ?.map(game => ({
+            id: game.game_id,
+            name: game.games?.name || '',
+            title: game.games?.name || '',
+            cover_url: game.games?.cover_url || null,
+            platforms: game.games?.platforms ? JSON.parse(game.games.platforms) : [],
+            genres: game.games?.genres ? JSON.parse(game.games.genres) : [],
+            status: game.status,
+            rating: game.user_rating || 0,
+            summary: game.games?.summary || '',
+            created_at: game.created_at,
+            updated_at: game.updated_at
+        })) || []
+
+    return {
+        totalGames,
+        totalPlaytime,
+        recentlyPlayed,
+        mostPlayed
+    }
 }
 

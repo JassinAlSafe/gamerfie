@@ -54,12 +54,15 @@ export const useProgressStore = create<ProgressStore>((set) => ({
     const supabase = createClientComponentClient<Database>();
 
     try {
+      // Ensure gameId is a string
+      const gameIdString = gameId.toString();
+
       // Fetch current progress
       const { data: currentProgress, error: progressError } = await supabase
         .from("user_games")
         .select("*")
         .eq("user_id", userId)
-        .eq("game_id", gameId)
+        .eq("game_id", gameIdString)
         .single();
 
       if (progressError) throw progressError;
@@ -69,7 +72,7 @@ export const useProgressStore = create<ProgressStore>((set) => ({
         .from("game_progress_history")
         .select("*")
         .eq("user_id", userId)
-        .eq("game_id", gameId)
+        .eq("game_id", gameIdString)
         .order("created_at", { ascending: true });
 
       if (playTimeError) throw playTimeError;
@@ -79,7 +82,7 @@ export const useProgressStore = create<ProgressStore>((set) => ({
         .from("game_achievement_history")
         .select("*")
         .eq("user_id", userId)
-        .eq("game_id", gameId)
+        .eq("game_id", gameIdString)
         .order("created_at", { ascending: true });
 
       if (achievementError) throw achievementError;
@@ -113,12 +116,15 @@ export const useProgressStore = create<ProgressStore>((set) => ({
     const supabase = createClientComponentClient<Database>();
 
     try {
+      // Ensure gameId is a string
+      const gameIdString = gameId.toString();
+
       // First check if the record exists
       const { data: existingRecord } = await supabase
         .from("user_games")
         .select("*")
         .eq("user_id", userId)
-        .eq("game_id", gameId)
+        .eq("game_id", gameIdString)
         .single();
 
       let updateResult;
@@ -135,14 +141,14 @@ export const useProgressStore = create<ProgressStore>((set) => ({
             last_played_at: new Date().toISOString(),
           })
           .eq("user_id", userId)
-          .eq("game_id", gameId);
+          .eq("game_id", gameIdString);
       } else {
         // Insert new record
         updateResult = await supabase
           .from("user_games")
           .insert({
             user_id: userId,
-            game_id: gameId,
+            game_id: gameIdString,
             status,
             play_time: gameData?.play_time,
             completion_percentage: gameData?.completion_percentage,
@@ -173,13 +179,16 @@ export const useProgressStore = create<ProgressStore>((set) => ({
     const supabase = createClientComponentClient<Database>();
 
     try {
+      // Ensure gameId is a string
+      const gameIdString = gameId.toString();
+
       // Update current progress
       const { error: progressError } = await supabase
         .from("user_games")
         .upsert(
           {
             user_id: userId,
-            game_id: gameId,
+            game_id: gameIdString,
             play_time: data.play_time,
             completion_percentage: data.completion_percentage,
             achievements_completed: data.achievements_completed,
@@ -198,7 +207,7 @@ export const useProgressStore = create<ProgressStore>((set) => ({
         .from("game_progress_history")
         .insert({
           user_id: userId,
-          game_id: gameId,
+          game_id: gameIdString,
           play_time: data.play_time,
           completion_percentage: data.completion_percentage,
         });
@@ -211,7 +220,7 @@ export const useProgressStore = create<ProgressStore>((set) => ({
           .from("game_achievement_history")
           .insert({
             user_id: userId,
-            game_id: gameId,
+            game_id: gameIdString,
             achievements_completed: data.achievements_completed,
           });
 
@@ -279,9 +288,9 @@ export const useProgressStore = create<ProgressStore>((set) => ({
 
       // Create activities for significant progress updates
       if (data.completion_percentage === 100) {
-        await useFriendsStore.getState().createActivity("completed", gameId);
+        await useFriendsStore.getState().createActivity("completed", gameIdString);
       } else if (data.completion_percentage) {
-        await useFriendsStore.getState().createActivity("progress", gameId, {
+        await useFriendsStore.getState().createActivity("progress", gameIdString, {
           progress: data.completion_percentage
         });
       }

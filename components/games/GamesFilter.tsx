@@ -1,8 +1,14 @@
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Search, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useSearchQuery, useStatusFilter } from "@/hooks/useGameFilters";
+import { useSearchQuery, useStatusFilter } from "@/hooks/Games/useGameFilters";
 
 export function GamesFilter() {
   const [searchQuery, setSearchQuery] = useSearchQuery();

@@ -1,6 +1,6 @@
 "use client";
 
-import { useProfile } from "@/hooks/use-profile";
+import { useProfile } from "@/hooks/Profile/use-profile";
 import { ProfileHeader } from "@/components/profile/profile-header";
 import { ProfileNav } from "@/components/profile/profile-nav";
 import ReviewsClient from "@/components/profile/reviews/reviews-client";

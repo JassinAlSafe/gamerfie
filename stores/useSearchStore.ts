@@ -1,14 +1,14 @@
 import { create } from 'zustand';
 import { GameService } from '@/services/gameService';
-import { ProcessedGame } from '@/types/game';
+import { Game } from '@/types/game';
 
 interface SearchState {
   query: string;
-  results: ProcessedGame[];
+  results: Game[];
   isLoading: boolean;
   isOpen: boolean;
   setQuery: (query: string) => void;
-  setResults: (results: ProcessedGame[]) => void;
+  setResults: (results: Game[]) => void;
   setIsLoading: (isLoading: boolean) => void;
   setIsOpen: (isOpen: boolean) => void;
   search: (query: string) => Promise<void>;

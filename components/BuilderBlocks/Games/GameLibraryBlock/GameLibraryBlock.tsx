@@ -3,14 +3,14 @@
 import { useEffect } from "react";
 import { Block } from "../../Block";
 import { useLibraryStore } from "@/stores/useLibraryStore";
-import { Game, GameStatus } from "@/types/game";
+import { GameWithProgress, GameStatus } from "@/types/game";
 import { formatDistanceToNow } from "date-fns";
 import { Trophy, Clock, Star, Gamepad2, ImageIcon } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
-import { useUser } from "@/hooks/useUser";
+import { useUser } from "@/hooks/User/useUser";
 
 const gameStatusColors: Record<GameStatus, string> = {
   playing: "bg-green-500/10 text-green-500 hover:bg-green-500/20",
@@ -48,22 +48,15 @@ function GameCover({ src, alt }: { src: string | null; alt: string }) {
   );
 }
 
-function GameCard({ game }: { game: Game }) {
-  const formatPlaytime = (minutes: number) => {
-    if (minutes < 60) {
-      return `${minutes}m`;
-    }
-    const hours = Math.floor(minutes / 60);
-    const remainingMinutes = minutes % 60;
-    if (remainingMinutes === 0) {
-      return `${hours}h`;
-    }
-    return `${hours}h ${remainingMinutes}m`;
-  };
 
+function GameCard({ game }: { game: GameWithProgress }) {
   return (
     <div className="group flex items-start gap-4 p-3 rounded-lg hover:bg-accent/50 transition-colors">
-      <GameCover src={game.cover_url || game.name} alt={game.title} />
+      <GameCover
+        src={game.cover_url || game.coverImage || null}
+        alt={game.name || game.title || ""}
+      />
+
       <div className="flex-1 min-w-0 space-y-2">
         <div className="flex items-center justify-between gap-2">
           <h4 className="text-base font-medium truncate">{game.name}</h4>
@@ -81,10 +74,11 @@ function GameCard({ game }: { game: Game }) {
         </div>
 
         <div className="flex items-center gap-3 text-sm text-muted-foreground">
-          {game.playtime > 0 && (
+          {game.hoursPlayed && game.hoursPlayed > 0 && (
             <div className="flex items-center gap-1.5">
               <Clock className="h-4 w-4" />
-              <span>{formatPlaytime(game.playtime)}</span>
+              <span>{Math.round(game.hoursPlayed)}h</span>
+
             </div>
           )}
           {game.achievements && (
@@ -116,9 +110,9 @@ function GameCard({ game }: { game: Game }) {
           </div>
         )}
 
-        {game.lastPlayed && (
+        {game.updated_at && (
           <div className="text-xs text-muted-foreground">
-            Last played {formatDistanceToNow(new Date(game.lastPlayed))} ago
+            Last updated {formatDistanceToNow(new Date(game.updated_at))} ago
           </div>
         )}
       </div>
@@ -157,14 +151,14 @@ function GameLibraryContent() {
     );
   }
 
-  // Sort games by lastPlayed
+  // Sort games by updated_at
   const sortedGames = [...games]
     .sort((a, b) => {
-      const dateA = a.lastPlayed ? new Date(a.lastPlayed) : new Date(0);
-      const dateB = b.lastPlayed ? new Date(b.lastPlayed) : new Date(0);
+      const dateA = a.updated_at ? new Date(a.updated_at) : new Date(0);
+      const dateB = b.updated_at ? new Date(b.updated_at) : new Date(0);
       return dateB.getTime() - dateA.getTime();
     })
-    .slice(0, 3);
+    .slice(0, 3) as GameWithProgress[];
 
   return (
     <div className="divide-y divide-white/10">

@@ -1,7 +1,7 @@
 import React from "react";
 import { Users, Clock, Trophy, Target, BarChart2 } from "lucide-react";
 import { LoadingSpinner } from "@/components/loadingSpinner";
-import { useCommunityStats } from "@/hooks/use-community-stats";
+import { useCommunityStats } from "@/hooks/Activity/use-community-stats";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 

@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Game } from '@/types/game';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
-import { useDebounce } from '@/hooks/use-debounce';
+import { useDebounce } from '@/hooks/Settings/use-debounce';
 import { useGamesStore } from '@/stores/useGamesStore';
 import { useSearchStore } from '@/stores/useSearchStore';
 

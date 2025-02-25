@@ -1,16 +1,16 @@
 "use client";
 
-import React, { Suspense } from "react";
+import React from "react";
 import { Game } from "@/types/game";
-import { useProfile } from "@/hooks/use-profile";
+import { useProfile } from "@/hooks/Profile/use-profile";
 import { useProgressStore } from "@/stores/useProgressStore";
-import { useGameActivities } from "@/hooks/use-game-activities";
+import { useGameActivities } from "@/hooks/Games/use-game-activities";
 import { useErrorStore } from "@/stores/useErrorStore";
 import { GameHero } from "./hero/GameHero";
 import { GameTabs } from "./tabs/GameTabs";
 import { LoadingSpinner } from "@/components/loadingSpinner";
 import { ErrorBoundary } from "react-error-boundary";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 
 function ErrorFallback({
   error,
@@ -106,7 +106,10 @@ function GameContent({ game }: { game: Game }) {
 
   const processedGame = {
     ...game,
-    achievements: [],
+    achievements: {
+      total: 0,
+      completed: 0,
+    },
   };
 
   return (
@@ -115,21 +118,21 @@ function GameContent({ game }: { game: Game }) {
         game={processedGame}
         profile={profile}
         progress={{
-          playTime,
-          completionPercentage,
-          achievementsCompleted,
+          playTime: playTime ?? undefined,
+          completionPercentage: completionPercentage ?? undefined,
+          achievementsCompleted: achievementsCompleted ?? undefined,
         }}
       />
 
       <GameTabs
         game={processedGame}
-        profile={profile}
+        profile={profile ?? null}
         activeTab={activeTab}
         onTabChange={setActiveTab}
         progress={{
-          playTime,
-          completionPercentage,
-          achievementsCompleted,
+          playTime: playTime ?? null,
+          completionPercentage: completionPercentage ?? null,
+          achievementsCompleted: achievementsCompleted ?? null,
           loading: progressLoading,
           playTimeHistory,
           achievementHistory,

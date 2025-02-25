@@ -12,7 +12,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Platform, Genre } from "@/types/game";
 import { useGamesStore } from "@/stores/useGamesStore";
-import { useDebounce } from "@/hooks/useDebounce";
+import { useDebounce } from "@/hooks/Settings/useDebounce";
 
 interface GameFiltersProps {
   platforms?: Platform[];

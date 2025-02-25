@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { Game } from "@/types/game";
 import { useProgressStore } from "@/stores/useProgressStore";
 import { useChallengesStore } from "@/stores/useChallengesStore";
-import { useProfile } from "@/hooks/use-profile";
+import { useProfile } from "@/hooks/Profile/use-profile";
 import { toast } from "react-hot-toast";
 import { LoadingSpinner } from "@/components/loadingSpinner";
 import {

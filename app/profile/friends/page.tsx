@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation";
 import LoadingSpinner from "@/components/loadingSpinner";
 import { ProfileHeader } from "@/components/profile/profile-header";
 import { ProfileNav } from "@/components/profile/profile-nav";
-import { useProfile } from "@/hooks/use-profile";
+import { useProfile } from "@/hooks/Profile/use-profile";
 import { Input } from "@/components/ui/input";
 import {
   Search,
