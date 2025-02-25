@@ -12,6 +12,8 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { formatDistanceToNow } from "date-fns";
 import { useProfile } from "@/hooks/Profile/use-profile";
+import { useLibraryStore } from "@/stores/useLibraryStore";
+import { GameWithProgress } from "@/types/game";
 
 interface ProfileCardProps {
   user: User;
@@ -24,6 +26,7 @@ interface ProfileCardProps {
 
 export function ProfileCard({ user, stats, friends }: ProfileCardProps) {
   const { profile, isLoading, gameStats } = useProfile();
+  const { games } = useLibraryStore();
 
   const username = profile?.full_name || profile?.username || "Gamer";
   const level = Math.floor((gameStats?.total_played || 0) / 10) + 1;
@@ -34,7 +37,11 @@ export function ProfileCard({ user, stats, friends }: ProfileCardProps) {
     ? `Joined ${formatDistanceToNow(joinDate)} ago`
     : "New Player";
 
-  const hoursPlayed = stats.totalPlaytime;
+  // Calculate total hours played from all games
+  const hoursPlayed = (games as GameWithProgress[]).reduce(
+    (total, game) => total + (game.hoursPlayed || 0),
+    0
+  );
 
   if (isLoading) {
     return (
@@ -114,7 +121,7 @@ export function ProfileCard({ user, stats, friends }: ProfileCardProps) {
                     <span className="text-sm">Games</span>
                   </div>
                   <p className="text-lg sm:text-xl font-semibold bg-clip-text text-transparent bg-gradient-to-br from-white to-white/70">
-                    {gameStats?.total_played || 0}
+                    {games.length}
                   </p>
                 </div>
                 <div className="group space-y-1.5 bg-indigo-500/5 p-2 rounded-xl border border-indigo-500/10 hover:bg-indigo-500/10 transition-colors">
@@ -132,7 +139,11 @@ export function ProfileCard({ user, stats, friends }: ProfileCardProps) {
                     <span className="text-sm">Achievements</span>
                   </div>
                   <p className="text-lg sm:text-xl font-semibold bg-clip-text text-transparent bg-gradient-to-br from-white to-white/70">
-                    142
+                    {(games as GameWithProgress[]).reduce(
+                      (total, game) =>
+                        total + (game.achievements?.completed || 0),
+                      0
+                    )}
                   </p>
                 </div>
                 <div className="group space-y-1.5 bg-rose-500/5 p-2 rounded-xl border border-rose-500/10 hover:bg-rose-500/10 transition-colors">
@@ -141,7 +152,13 @@ export function ProfileCard({ user, stats, friends }: ProfileCardProps) {
                     <span className="text-sm">Completion</span>
                   </div>
                   <p className="text-lg sm:text-xl font-semibold bg-clip-text text-transparent bg-gradient-to-br from-white to-white/70">
-                    78%
+                    {Math.round(
+                      (games as GameWithProgress[]).reduce(
+                        (total, game) => total + (game.progress || 0),
+                        0
+                      ) / (games.length || 1)
+                    )}
+                    %
                   </p>
                 </div>
               </div>

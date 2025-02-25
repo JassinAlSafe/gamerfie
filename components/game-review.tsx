@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "./ui/textarea";
+import { Textarea } from "./ui/text/textarea";
 import { Star, Edit2, Trash2 } from "lucide-react";
 import toast from "react-hot-toast";
 import { Icons } from "./ui/icons";

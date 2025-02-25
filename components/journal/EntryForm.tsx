@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { Textarea } from "@/components/ui/text/textarea";
 import { Label } from "@/components/ui/label";
 import { useLibraryStore } from "@/stores/useLibraryStore";
 import { useSearchStore } from "@/stores/useSearchStore";

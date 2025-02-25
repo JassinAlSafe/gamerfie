@@ -12,7 +12,7 @@ import { Game } from "@/types/game";
 import { CreatePlaylistInput, Playlist, PlaylistType } from "@/types/playlist";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { Textarea } from "@/components/ui/text/textarea";
 import { useAuthStore } from "@/stores/useAuthStore";
 import {
   Select,
