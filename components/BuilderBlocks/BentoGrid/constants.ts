@@ -13,12 +13,10 @@ export const GRID_CONFIG = {
   useCSSTransforms: true,
   // Allow collisions for more flexible layouts
   preventCollision: false,
-  // Use horizontal compacting to better utilize width
-  compactType: "horizontal" as const,
+  // Use vertical compacting to fill empty spaces
+  compactType: "vertical" as const,
   // Faster transitions for smoother feel
-  transitionDuration: 100,
-  // Dragging configuration
-  draggableHandle: ".block-drag-handle",
+  transitionDuration: 200,
   // Responsive configuration
   breakpoints: GRID_BREAKPOINTS,
   cols: GRID_COLS,

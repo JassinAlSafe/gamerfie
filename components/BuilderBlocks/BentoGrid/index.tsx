@@ -37,10 +37,29 @@ const customGridStyles = `
 .react-grid-item.react-draggable-dragging {
   transition: none;
   z-index: 3;
+  box-shadow: 0 10px 25px -5px rgba(147, 51, 234, 0.3);
+  opacity: 0.8;
+  cursor: grabbing !important;
 }
 .react-grid-item.react-grid-item.resizing {
   z-index: 3;
   transition: none;
+}
+.react-grid-item.cssTransforms {
+  transition-property: transform;
+}
+.react-grid-item.dropping {
+  visibility: hidden;
+}
+.react-grid-item.dropping-over {
+  background-color: rgba(147, 51, 234, 0.2);
+  border-radius: 0.75rem;
+}
+.react-draggable-handle {
+  cursor: grab !important;
+}
+.react-draggable-handle:active {
+  cursor: grabbing !important;
 }
 `;
 
@@ -103,13 +122,38 @@ export function BentoGrid({
     };
   }, []);
 
+  const handleDragStop = useCallback(() => {
+    setIsDragging(false);
+    document.body.style.cursor = "";
+    document.body.classList.remove("select-none");
+
+    // Force a resize event after dragging to ensure layout is correct
+    window.dispatchEvent(new Event("resize"));
+
+    // Add a small delay to ensure the layout is properly updated
+    setTimeout(() => {
+      window.dispatchEvent(new Event("resize"));
+    }, 100);
+  }, []);
+
+  // Helper function to ensure the layout is compact and has no gaps
+  const ensureCompactLayout = useCallback((layout: Layout[]) => {
+    // Sort by y position first, then x position
+    return [...layout].sort((a, b) => {
+      if (a.y === b.y) return a.x - b.x;
+      return a.y - b.y;
+    });
+  }, []);
+
   const handleLayoutChange = useCallback(
     (currentLayout: Layout[], allLayouts: any) => {
       if (isEditing) {
-        setLayout(currentBreakpoint, currentLayout);
+        // Ensure the layout is compact before saving
+        const compactLayout = ensureCompactLayout(currentLayout);
+        setLayout(currentBreakpoint, compactLayout);
       }
     },
-    [isEditing, currentBreakpoint, setLayout]
+    [isEditing, currentBreakpoint, setLayout, ensureCompactLayout]
   );
 
   const handleBreakpointChange = useCallback(
@@ -123,15 +167,6 @@ export function BentoGrid({
     setIsDragging(true);
     document.body.style.cursor = "grabbing";
     document.body.classList.add("select-none");
-  }, []);
-
-  const handleDragStop = useCallback(() => {
-    setIsDragging(false);
-    document.body.style.cursor = "";
-    document.body.classList.remove("select-none");
-
-    // Force a resize event after dragging to ensure layout is correct
-    window.dispatchEvent(new Event("resize"));
   }, []);
 
   const handleResizeStart = useCallback(() => {
@@ -176,19 +211,26 @@ export function BentoGrid({
           <div className="relative z-10 w-full p-3 sm:p-4">
             {mounted && (
               <ResponsiveGridLayout
-                {...GRID_CONFIG}
+                className="layout"
                 layouts={layouts}
+                breakpoints={GRID_CONFIG.breakpoints}
+                cols={GRID_CONFIG.cols}
+                rowHeight={GRID_CONFIG.rowHeight}
+                margin={GRID_CONFIG.margin}
+                containerPadding={GRID_CONFIG.containerPadding}
                 onLayoutChange={handleLayoutChange}
                 onBreakpointChange={handleBreakpointChange}
                 isDraggable={isEditing}
                 isResizable={isEditing}
-                draggableCancel=".block-content"
                 onDragStart={handleDragStart}
                 onDragStop={handleDragStop}
                 onResizeStart={handleResizeStart}
                 onResizeStop={handleResizeStop}
+                compactType="vertical"
+                preventCollision={false}
+                useCSSTransforms={true}
+                draggableHandle=".react-draggable-handle"
                 style={{ width: "100%" }}
-                className="w-full"
               >
                 {gridItems.map((item) => (
                   <div key={item.id} className="w-full h-full">
