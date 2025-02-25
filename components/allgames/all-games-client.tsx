@@ -8,18 +8,32 @@ import { GamesGrid } from "../games/sections/games-grid";
 import { GamesError } from "../games/GamesError";
 import { useGamesStore } from "@/stores/useGamesStore";
 import { useUrlParams } from "@/hooks/Settings/useUrlParams";
+import { useViewModeStore } from "@/stores/useViewModeStore";
 
+// Dynamically import the GamesHeader component with loading state
 const GamesHeader = dynamic(
   () => import("../games/sections/games-header").then((mod) => mod.GamesHeader),
   {
-    loading: () => <div className="h-20 bg-gray-800 animate-pulse" />,
+    loading: () => (
+      <div
+        className="h-24 bg-gray-900/80 animate-pulse rounded-xl mx-4 sm:mx-6 lg:mx-8 my-4"
+        aria-label="Loading games header"
+        role="status"
+      />
+    ),
     ssr: false,
   }
 );
 
 export default function AllGamesClient() {
-  const { ref: loadMoreRef, inView } = useInView();
+  const { ref: loadMoreRef, inView } = useInView({
+    threshold: 0.1, // Trigger earlier for smoother loading
+    rootMargin: "200px", // Load more content before user reaches the end
+  });
+
   const { handleResetFilters } = useGamesStore();
+  const { viewMode } = useViewModeStore();
+
   const {
     error,
     isLoading,
@@ -33,41 +47,78 @@ export default function AllGamesClient() {
 
   // Load more when scrolling near bottom
   useEffect(() => {
-    if (inView && hasNextPage) {
+    if (inView && hasNextPage && !isFetchingNextPage) {
       fetchNextPage();
     }
-  }, [inView, fetchNextPage, hasNextPage]);
+  }, [inView, fetchNextPage, hasNextPage, isFetchingNextPage]);
 
   if (error) {
     return <GamesError error={error as Error} onReset={handleResetFilters} />;
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-900/50 via-gray-950 to-gray-950">
+    <div
+      className="min-h-screen bg-gradient-to-b from-gray-900/50 via-gray-950 to-gray-950"
+      role="region"
+      aria-label="All Games"
+    >
+      {/* Header with backdrop blur */}
       <div className="sticky top-0 z-10">
         <div className="absolute inset-0 bg-gradient-to-b from-gray-900 to-gray-950/80 backdrop-blur-sm" />
         <Suspense
           fallback={
-            <div className="h-[140px] animate-pulse bg-gradient-to-b from-gray-900/80 to-transparent" />
+            <div
+              className="h-[140px] animate-pulse bg-gradient-to-b from-gray-900/80 to-transparent"
+              aria-label="Loading games header"
+              role="status"
+            />
           }
         >
           <GamesHeader />
         </Suspense>
       </div>
 
-      <main className="relative pb-4">
-        <div className="absolute inset-0 bg-grid-white/[0.02] bg-[size:32px_32px]" />
+      {/* Main content */}
+      <main className="relative pb-4 pt-2">
+        {/* Background pattern */}
+        <div
+          className="absolute inset-0 bg-grid-white/[0.02] bg-[size:32px_32px]"
+          aria-hidden="true"
+        />
+
+        {/* Games grid */}
         <div className="relative">
-          <div className="max-w-[2400px] mx-auto">
+          <div className="max-w-[2400px] mx-auto px-4 sm:px-6 lg:px-8">
             <GamesGrid isLoading={isLoading} games={allGames} />
 
-            <div ref={loadMoreRef} className="flex justify-center py-4">
+            {/* Load more indicator */}
+            <div
+              ref={loadMoreRef}
+              className="flex justify-center py-6"
+              aria-live="polite"
+            >
               {isFetchingNextPage && (
-                <div className="flex items-center gap-3 text-gray-400">
-                  <div className="h-5 w-5 border-2 border-current border-t-purple-500 rounded-full animate-spin" />
+                <div
+                  className="flex items-center gap-3 text-gray-200"
+                  role="status"
+                >
+                  <div
+                    className="h-5 w-5 border-2 border-current border-t-purple-500 rounded-full animate-spin"
+                    aria-hidden="true"
+                  />
                   <span className="text-sm font-medium">
                     Loading more games...
                   </span>
+                </div>
+              )}
+              {!isFetchingNextPage && !hasNextPage && allGames.length > 0 && (
+                <div className="text-center">
+                  <p className="text-sm text-gray-300 mb-1">
+                    You've reached the end of the list
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    {allGames.length} games found
+                  </p>
                 </div>
               )}
             </div>
