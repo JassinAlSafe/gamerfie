@@ -40,6 +40,11 @@ export const useFriendsStore = create<FriendsStore>((set, get) => ({
 
   fetchFriends: async () => {
     try {
+      // Check if we already have friends data and not currently loading
+      if (get().friends.length > 0 && !get().isLoading) {
+        return; // Use cached data
+      }
+      
       set({ isLoading: true, error: null });
       const supabase = createClientComponentClient();
       
@@ -51,26 +56,33 @@ export const useFriendsStore = create<FriendsStore>((set, get) => ({
       const { data: friendsData, error: friendsError } = await supabase
         .from('friends')
         .select('*')
-        .or(`user_id.eq.${session.user.id},friend_id.eq.${session.user.id}`);
+        .or(`user_id.eq.${session.user.id},friend_id.eq.${session.user.id}`)
+        .order('updated_at', { ascending: false });
 
       if (friendsError) throw friendsError;
-      if (!friendsData) return;
+      if (!friendsData || friendsData.length === 0) {
+        set({ friends: [], isLoading: false });
+        return;
+      }
 
       // Get all unique user IDs (both friend_id and user_id)
       const userIds = friendsData.map(friend => 
         friend.user_id === session.user.id ? friend.friend_id : friend.user_id
       );
 
-      // Fetch profiles for all users
+      // Fetch profiles for all users in a single query
       const { data: profilesData, error: profilesError } = await supabase
         .from('profiles')
         .select('*')
         .in('id', userIds);
 
       if (profilesError) throw profilesError;
-      if (!profilesData) return;
+      if (!profilesData) {
+        set({ friends: [], isLoading: false });
+        return;
+      }
 
-      // Create a map of user profiles for easy lookup
+      // Create a map of user profiles for efficient lookup
       const profileMap = new Map(profilesData.map(profile => [profile.id, profile]));
 
       // Transform the data to match our Friend type
@@ -239,13 +251,40 @@ export const useFriendsStore = create<FriendsStore>((set, get) => ({
 
   fetchActivities: async () => {
     try {
+      // Check if we already have activities data and not currently loading
+      if (get().activities.length > 0 && !get().isLoadingActivities) {
+        return; // Use cached data
+      }
+      
       set({ isLoadingActivities: true, error: null });
-      const response = await fetch('/api/friends/activities?offset=0&include=reactions,comments');
-      if (!response.ok) throw new Error('Failed to fetch activities');
-      const activities = await response.json();
-      set({ activities, isLoadingActivities: false, activitiesPage: 1 });
+      
+      // Use AbortController to handle timeouts and cancellations
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+      
+      try {
+        const response = await fetch('/api/friends/activities?offset=0&include=reactions,comments', {
+          signal: controller.signal,
+          headers: {
+            'Cache-Control': 'max-age=300', // Cache for 5 minutes
+          }
+        });
+        
+        clearTimeout(timeoutId);
+        
+        if (!response.ok) throw new Error('Failed to fetch activities');
+        const activities = await response.json();
+        
+        set({ activities, isLoadingActivities: false, activitiesPage: 1 });
+      } catch (fetchError: unknown) {
+        clearTimeout(timeoutId);
+        if (fetchError instanceof Error && fetchError.name === 'AbortError') {
+          throw new Error('Request timed out');
+        }
+        throw fetchError;
+      }
     } catch (error) {
-      set({ error: (error as Error).message, isLoading: false });
+      set({ error: (error as Error).message, isLoadingActivities: false });
       throw error;
     }
   },

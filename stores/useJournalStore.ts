@@ -480,21 +480,35 @@ export const useJournalStore = create<JournalState>((set, get) => {
 
     fetchEntries: async () => {
       try {
-        set({ loading: true, error: null })
-        const supabase = createClientComponentClient()
-        const { data: { session } } = await supabase.auth.getSession()
-        if (!session?.user) throw new Error('No authenticated user')
+        // Check if we already have entries data and not currently loading
+        if (get().entries.length > 0 && !get().loading) {
+          return; // Use cached data
+        }
+        
+        set({ loading: true, error: null, isLoading: true });
+        const supabase = createClientComponentClient();
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (!session?.user) {
+          set({ loading: false, error: 'No authenticated user', isLoading: false });
+          return;
+        }
 
-        const { data: entries, error } = await supabase
+        // Use a more efficient query with pagination and ordering
+        const { data, error } = await supabase
           .from('journal_entries')
           .select('*')
           .eq('user_id', session.user.id)
           .order('created_at', { ascending: false })
+          .limit(50); // Limit to most recent 50 entries for initial load
 
-        if (error) throw error
+        if (error) {
+          set({ loading: false, error: error.message, isLoading: false });
+          return;
+        }
 
-        // Transform entries to match our interface
-        const transformedEntries: JournalEntry[] = entries.map(entry => ({
+        // Transform the data to match our JournalEntry interface
+        const transformedEntries = data.map(entry => ({
           id: entry.id,
           type: entry.type,
           date: entry.date,
@@ -510,14 +524,16 @@ export const useJournalStore = create<JournalState>((set, get) => {
           rating: entry.rating,
           createdAt: entry.created_at,
           updatedAt: entry.updated_at,
-        }))
+        }));
 
-        set({ entries: transformedEntries, loading: false })
+        set({ entries: transformedEntries, loading: false, isLoading: false });
       } catch (error) {
-        console.error('Error fetching journal entries:', error)
-        set({ error: (error as Error).message, loading: false })
-        toast.error('Failed to load journal entries')
-        throw error
+        console.error('Error fetching journal entries:', error);
+        set({ 
+          loading: false, 
+          error: error instanceof Error ? error.message : 'Unknown error', 
+          isLoading: false 
+        });
       }
     },
     setIsLoading: (isLoading: boolean) => set({ isLoading }),
