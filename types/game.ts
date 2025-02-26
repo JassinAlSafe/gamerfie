@@ -24,6 +24,16 @@ export interface Genre {
   slug?: string;
 }
 
+// Video interface for game trailers
+export interface GameVideo {
+  id: string | number;
+  name?: string;
+  url: string;
+  thumbnail_url?: string;
+  video_id?: string;
+  provider?: 'youtube' | 'vimeo' | 'other';
+}
+
 // Base Game Interface (common properties across all sources)
 export interface BaseGame {
   id: string;
@@ -76,6 +86,7 @@ export interface Game extends BaseGame {
     id: string;
     url: string;
   }>;
+  videos?: GameVideo[];
   first_release_date?: number;
   releaseDate?: string;
   storyline?: string;
@@ -90,6 +101,16 @@ export interface Game extends BaseGame {
     total: number;
     completed: number;
   };
+  relatedGames?: Game[];
+  involved_companies?: Array<{
+    id: string | number;
+    company?: {
+      id: string | number;
+      name: string;
+    };
+    developer?: boolean;
+    publisher?: boolean;
+  }>;
 }
 
 // Game with User Data (combined interface for library view)
@@ -178,6 +199,13 @@ export interface GameCardProps {
 
 export interface GamesTabProps {
   filters: GameFilters;
+}
+
+// Page Props
+export interface GamePageProps {
+  params: {
+    id: string;
+  };
 }
 
 // Activity Related Interfaces

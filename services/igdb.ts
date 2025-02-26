@@ -42,6 +42,11 @@ interface IGDBGameResponse {
     id: number;
     url: string;
   }>;
+  videos?: Array<{
+    id: number;
+    name: string;
+    video_id: string;
+  }>;
   artworks?: Array<{
     id: number;
     url: string;
@@ -155,6 +160,14 @@ export class IGDBService {
           : screenshot.url.startsWith('https:') 
             ? screenshot.url.replace(/t_[a-zA-Z_]+/, IGDB_IMAGE_SIZES.SCREENSHOT.ULTRA)
             : `https://${screenshot.url.replace(/t_[a-zA-Z_]+/, IGDB_IMAGE_SIZES.SCREENSHOT.ULTRA)}`
+      })),
+      videos: game.videos?.map(video => ({
+        id: video.id.toString(),
+        name: video.name || 'Game Trailer',
+        url: `https://www.youtube.com/watch?v=${video.video_id}`,
+        thumbnail_url: `https://img.youtube.com/vi/${video.video_id}/maxresdefault.jpg`,
+        video_id: video.video_id,
+        provider: 'youtube'
       })),
       artworks: game.artworks?.map(artwork => ({
         id: artwork.id.toString(),
@@ -270,6 +283,7 @@ export class IGDBService {
                summary, 
                total_rating,
                screenshots.*,
+               videos.*,
                artworks.*;
         where ${conditions.join(' & ')};
         sort ${sortBy};
@@ -312,7 +326,7 @@ export class IGDBService {
         method: 'POST',
         headers,
         body: `
-          fields name, cover.*, cover.url, cover.image_id, first_release_date, rating, genres.*, platforms.*, summary, screenshots.*, artworks.*;
+          fields name, cover.*, cover.url, cover.image_id, first_release_date, rating, genres.*, platforms.*, summary, screenshots.*, videos.*, artworks.*;
           where rating != null & rating > 75 & cover != null;
           sort total_rating_count desc;
           limit ${limit};
@@ -338,7 +352,7 @@ export class IGDBService {
         method: 'POST',
         headers,
         body: `
-          fields name, cover.*, cover.url, cover.image_id, first_release_date, rating, genres.*, platforms.*, summary, screenshots.*, artworks.*;
+          fields name, cover.*, cover.url, cover.image_id, first_release_date, rating, genres.*, platforms.*, summary, screenshots.*, videos.*, artworks.*;
           where first_release_date >= ${threeMonthsAgo} & first_release_date <= ${now} & cover != null;
           sort total_rating_count desc;
           limit ${limit};
@@ -361,7 +375,7 @@ export class IGDBService {
       const threeMonthsAhead = now + (90 * 24 * 60 * 60);
 
       const query = `
-        fields name, cover.*, cover.url, cover.image_id, rating, total_rating_count, genres.*, platforms.*, first_release_date, summary, screenshots.*, artworks.*;
+        fields name, cover.*, cover.url, cover.image_id, rating, total_rating_count, genres.*, platforms.*, first_release_date, summary, screenshots.*, videos.*, artworks.*;
         where cover != null 
         & first_release_date > ${now}
         & first_release_date <= ${threeMonthsAhead}
@@ -398,8 +412,9 @@ export class IGDBService {
         method: 'POST',
         headers,
         body: `
-          fields name, cover.*, screenshots.*, artworks.*, summary, storyline, rating,
-                 total_rating, first_release_date, genres.*, platforms.*;
+          fields name, cover.*, first_release_date, rating, total_rating, total_rating_count, 
+          genres.*, platforms.*, summary, storyline, involved_companies.company.name, 
+          involved_companies.developer, involved_companies.publisher, screenshots.*, videos.*, artworks.*;
           where id = ${gameId};
         `,
       });

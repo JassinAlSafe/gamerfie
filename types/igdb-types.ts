@@ -27,6 +27,18 @@ export interface IGDBCollection {
     games: number[];
 }
 
+export interface IGDBScreenshot {
+    id: number;
+    url: string;
+    image_id: string;
+}
+
+export interface IGDBVideo {
+    id: number;
+    name: string;
+    video_id: string;
+}
+
 /** Base interface for game data from IGDB API */
 export interface IGDBGame {
     id: number;
@@ -46,6 +58,8 @@ export interface IGDBGame {
     expanded_games?: number[];
     expansions?: number[];
     standalone_expansions?: number[];
+    screenshots?: IGDBScreenshot[];
+    videos?: IGDBVideo[];
 }
 
 export interface FetchedGame extends IGDBGame {
@@ -62,6 +76,8 @@ export interface IGDBProcessedGame {
     summary?: string;
     first_release_date?: number;
     total_rating?: number;
+    screenshots?: IGDBScreenshot[];
+    videos?: IGDBVideo[];
 }
 
 export interface GameListResponse {

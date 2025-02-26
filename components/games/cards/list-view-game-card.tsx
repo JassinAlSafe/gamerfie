@@ -6,8 +6,19 @@ import Image from "next/image";
 import { Game } from "@/types/game";
 import { useState } from "react";
 
+// Add interface for RAWG API game properties that aren't in our Game type
+interface RAWGGameProperties {
+  released?: string;
+  parent_platforms?: Array<{
+    platform: {
+      id: number;
+      name: string;
+    };
+  }>;
+}
+
 interface ListViewGameCardProps {
-  game: Game;
+  game: Game & Partial<RAWGGameProperties>;
   priority?: boolean;
 }
 
@@ -59,16 +70,16 @@ export function ListViewGameCard({
         </h3>
 
         <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1 text-xs text-gray-400">
-          {/* Release date */}
-          {game.released && (
+          {/* Release date - RAWG format */}
+          {"released" in game && game.released && (
             <div className="flex items-center gap-1">
               <Calendar className="h-3 w-3" aria-hidden="true" />
               <span>{new Date(game.released).getFullYear()}</span>
             </div>
           )}
 
-          {/* First release date (alternative format) */}
-          {!game.released && game.first_release_date && (
+          {/* First release date - IGDB format */}
+          {game.first_release_date && (
             <div className="flex items-center gap-1">
               <Calendar className="h-3 w-3" aria-hidden="true" />
               <span>
@@ -78,34 +89,34 @@ export function ListViewGameCard({
           )}
 
           {/* Rating */}
-          {game.rating > 0 && (
+          {game.rating && game.rating > 0 && (
             <div className="flex items-center gap-1">
               <Star className="h-3 w-3 text-yellow-500" aria-hidden="true" />
               <span>{game.rating.toFixed(1)}</span>
             </div>
           )}
 
-          {/* Platforms */}
-          {game.parent_platforms && game.parent_platforms.length > 0 && (
-            <div className="flex items-center gap-1">
-              <Users className="h-3 w-3" aria-hidden="true" />
-              <span className="truncate max-w-[150px]">
-                {game.parent_platforms.map((p) => p.platform.name).join(", ")}
-              </span>
-            </div>
-          )}
-
-          {/* Alternative platforms format */}
-          {!game.parent_platforms &&
-            game.platforms &&
-            game.platforms.length > 0 && (
+          {/* Platforms - RAWG format */}
+          {"parent_platforms" in game &&
+            game.parent_platforms &&
+            game.parent_platforms.length > 0 && (
               <div className="flex items-center gap-1">
                 <Users className="h-3 w-3" aria-hidden="true" />
                 <span className="truncate max-w-[150px]">
-                  {game.platforms.map((p) => p.name).join(", ")}
+                  {game.parent_platforms.map((p) => p.platform.name).join(", ")}
                 </span>
               </div>
             )}
+
+          {/* Platforms - Our standard format */}
+          {game.platforms && game.platforms.length > 0 && (
+            <div className="flex items-center gap-1">
+              <Users className="h-3 w-3" aria-hidden="true" />
+              <span className="truncate max-w-[150px]">
+                {game.platforms.map((p) => p.name).join(", ")}
+              </span>
+            </div>
+          )}
         </div>
       </div>
     </Link>
