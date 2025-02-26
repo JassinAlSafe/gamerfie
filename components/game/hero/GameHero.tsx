@@ -4,7 +4,6 @@ import React, { useState, useCallback, useMemo } from "react";
 import { motion } from "framer-motion";
 import { Game, GameProgress } from "@/types/game";
 import { Profile } from "@/types/profile";
-import { BackButton } from "@/components/BackButton";
 import { GameCover } from "./GameCover";
 import { GameQuickStats } from "./GameQuickStats";
 import { getHighQualityImageUrl } from "@/utils/image-utils";
@@ -18,10 +17,8 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogHeader,
   DialogTitle,
   DialogTrigger,
-  DialogClose,
 } from "@/components/ui/dialog";
 
 interface GameHeroProps {
