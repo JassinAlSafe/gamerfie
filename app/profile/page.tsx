@@ -20,15 +20,7 @@ import { useFriendsStore } from "@/stores/useFriendsStore";
 import { useJournalStore } from "@/stores/useJournalStore";
 import { LoadingState } from "@/components/ui/loading-state";
 import { ErrorState } from "@/components/ui/error-state";
-import {
-  Gamepad2,
-  BookText,
-  Users,
-  Star,
-  AlertTriangle,
-  Search,
-  X,
-} from "lucide-react";
+import { Gamepad2, BookText, Users, Star, AlertTriangle } from "lucide-react";
 import Link from "next/link";
 import type { GameStats } from "@/types/user";
 import type { Profile } from "@/types/profile";
@@ -71,22 +63,57 @@ function isValidGameStats(stats: unknown): stats is GameStats {
 }
 
 // Type guard for checking if activity has required properties
-function isValidActivity(activity: FriendActivity): boolean {
-  return (
-    activity !== null &&
-    typeof activity === "object" &&
-    "id" in activity &&
-    "type" in activity &&
-    "created_at" in activity &&
-    "user" in activity &&
-    activity.user !== null &&
-    typeof activity.user === "object" &&
-    "username" in activity.user &&
-    "game" in activity &&
-    activity.game !== null &&
-    typeof activity.game === "object" &&
-    "name" in activity.game
-  );
+function isValidActivity(activity: FriendActivity | any): boolean {
+  if (!activity) return false;
+
+  try {
+    // Check if the activity object has the basic required properties
+    const hasBasicProps =
+      typeof activity === "object" && "id" in activity && "type" in activity;
+
+    if (!hasBasicProps) {
+      console.log("Activity missing basic properties:", activity);
+      return false;
+    }
+
+    // Check for user property
+    const hasValidUser =
+      "user" in activity &&
+      activity.user !== null &&
+      typeof activity.user === "object" &&
+      "username" in activity.user;
+
+    if (!hasValidUser) {
+      console.log("Activity has invalid user:", activity.user);
+      return false;
+    }
+
+    // Check for game property
+    const hasValidGame =
+      "game" in activity &&
+      activity.game !== null &&
+      typeof activity.game === "object" &&
+      "name" in activity.game;
+
+    if (!hasValidGame) {
+      console.log("Activity has invalid game:", activity.game);
+      return false;
+    }
+
+    // Check for timestamp/created_at
+    const hasValidTimestamp =
+      "created_at" in activity || "timestamp" in activity;
+
+    if (!hasValidTimestamp) {
+      console.log("Activity missing timestamp:", activity);
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error("Error validating activity:", error);
+    return false;
+  }
 }
 
 // Error fallback component for section errors
@@ -180,89 +207,6 @@ const debounce = <T extends (...args: any[]) => any>(
   };
 };
 
-// Search input component
-interface SearchInputProps {
-  onSearch: (query: string) => void;
-  onClear: () => void;
-  onFocusChange: (focus: "all" | "journal" | "activities") => void;
-  searchFocus: "all" | "journal" | "activities";
-  value: string;
-}
-
-const SearchInput: React.FC<SearchInputProps> = ({
-  onSearch,
-  onClear,
-  onFocusChange,
-  searchFocus,
-  value,
-}) => {
-  const [inputValue, setInputValue] = useState(value);
-
-  useEffect(() => {
-    setInputValue(value);
-  }, [value]);
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newValue = e.target.value;
-    setInputValue(newValue);
-    onSearch(newValue);
-  };
-
-  const handleClear = () => {
-    setInputValue("");
-    onClear();
-  };
-
-  return (
-    <div className="mb-6 space-y-2">
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-        <Input
-          type="text"
-          placeholder="Search your content..."
-          value={inputValue}
-          onChange={handleChange}
-          className="pl-10 pr-10 bg-gray-900/50 border-gray-800 text-white placeholder:text-gray-500"
-        />
-        {inputValue && (
-          <button
-            onClick={handleClear}
-            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-300"
-            aria-label="Clear search"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        )}
-      </div>
-      <Tabs
-        value={searchFocus}
-        onValueChange={(value) =>
-          onFocusChange(value as "all" | "journal" | "activities")
-        }
-        className="w-full"
-      >
-        <TabsList className="bg-gray-900/50 border border-gray-800">
-          <TabsTrigger value="all" className="data-[state=active]:bg-gray-800">
-            All
-          </TabsTrigger>
-          <TabsTrigger
-            value="journal"
-            className="data-[state=active]:bg-gray-800"
-          >
-            Journal
-          </TabsTrigger>
-          <TabsTrigger
-            value="activities"
-            className="data-[state=active]:bg-gray-800"
-          >
-            Activities
-          </TabsTrigger>
-        </TabsList>
-      </Tabs>
-    </div>
-  );
-};
-
 export default function ProfilePage(): JSX.Element {
   const { profile, isLoading, error, gameStats, updateProfile } = useProfile();
   const {
@@ -283,10 +227,6 @@ export default function ProfilePage(): JSX.Element {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<string>("overview");
   const [isDataLoaded, setIsDataLoaded] = useState<boolean>(false);
-  const [searchQuery, setSearchQuery] = useState<string>("");
-  const [searchFocus, setSearchFocus] = useState<
-    "all" | "journal" | "activities"
-  >("all");
 
   // Memoize tabs to prevent recreation on each render - MOVED UP before any conditional returns
   const tabs = useMemo(
@@ -302,49 +242,45 @@ export default function ProfilePage(): JSX.Element {
 
   // Optimize data fetching with sequential loading and debounce
   useEffect(() => {
-    // Skip if data is already loaded or loading is in progress
-    if (
-      isDataLoaded ||
-      isLoading ||
-      friendsLoading ||
-      activitiesLoading ||
-      journalLoading
-    ) {
-      return;
+    // Optimize data fetching with sequential loading and debounce
+    if (isDataLoaded || friendsLoading || activitiesLoading || journalLoading) {
+      return; // Skip if already loaded or loading in progress
     }
 
-    // Sequential data loading with debounce to prevent multiple API calls
-    const loadData = async () => {
-      try {
-        // Step 1: Load friends data first (most important)
-        if (!friends.length) {
-          await fetchFriends();
-        }
+    console.log("Starting data fetch sequence");
 
-        // Step 2: Load activities after a small delay
-        setTimeout(async () => {
-          if (!activities.length) {
-            await fetchActivities();
-          }
+    // Load friends first
+    const friendsTimeout = setTimeout(() => {
+      console.log("Fetching friends...");
+      fetchFriends().catch((err) =>
+        console.error("Error fetching friends:", err)
+      );
 
-          // Step 3: Load journal entries last
-          setTimeout(async () => {
-            if (!entries.length) {
-              await fetchEntries();
-            }
-            setIsDataLoaded(true);
-          }, 300);
+      // Then load activities
+      const activitiesTimeout = setTimeout(() => {
+        console.log("Fetching activities...");
+        fetchActivities().catch((err) =>
+          console.error("Error fetching activities:", err)
+        );
+
+        // Finally load journal entries
+        const journalTimeout = setTimeout(() => {
+          console.log("Fetching journal entries...");
+          fetchEntries().catch((err) =>
+            console.error("Error fetching journal entries:", err)
+          );
+          setIsDataLoaded(true);
         }, 300);
-      } catch (error) {
-        console.error("Error loading profile data:", error);
-        setIsDataLoaded(true); // Mark as loaded even on error to prevent infinite retries
-      }
-    };
 
-    loadData();
+        return () => clearTimeout(journalTimeout);
+      }, 300);
+
+      return () => clearTimeout(activitiesTimeout);
+    }, 0);
+
+    return () => clearTimeout(friendsTimeout);
   }, [
     isDataLoaded,
-    isLoading,
     friendsLoading,
     activitiesLoading,
     journalLoading,
@@ -355,6 +291,22 @@ export default function ProfilePage(): JSX.Element {
     fetchActivities,
     fetchEntries,
   ]);
+
+  // Add debug logging for activities
+  useEffect(() => {
+    console.log("Activities state:", {
+      count: activities.length,
+      loading: activitiesLoading,
+      isDataLoaded,
+    });
+
+    if (activities.length === 0 && !activitiesLoading && isDataLoaded) {
+      console.log("Attempting to refetch activities...");
+      fetchActivities().catch((err) =>
+        console.error("Error refetching activities:", err)
+      );
+    }
+  }, [activities.length, activitiesLoading, isDataLoaded, fetchActivities]);
 
   // Throttled event handlers to prevent rapid clicks
   const handleEditProfile = useCallback(
@@ -378,42 +330,16 @@ export default function ProfilePage(): JSX.Element {
     []
   );
 
-  // Debounced search handler
-  const handleSearch = useCallback(
-    debounce((query: string) => {
-      setSearchQuery(query);
-    }, 300),
-    []
+  // Update the filtered data logic to not depend on search
+  const filteredJournalEntries = useMemo<JournalEntry[]>(
+    () => entries,
+    [entries]
   );
 
-  // Filtered data based on search query
-  const filteredJournalEntries = useMemo<JournalEntry[]>(() => {
-    if (!searchQuery || searchFocus === "activities") return entries;
-
-    return entries.filter(
-      (entry) =>
-        entry.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        entry.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        entry.game?.name.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-  }, [entries, searchQuery, searchFocus]);
-
-  const filteredActivities = useMemo<FriendActivity[]>(() => {
-    if (!searchQuery || searchFocus === "journal") return activities;
-
-    return activities.filter(
-      (activity) =>
-        isValidActivity(activity) &&
-        (activity.game.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          activity.user.username
-            .toLowerCase()
-            .includes(searchQuery.toLowerCase()) ||
-          (activity.details?.comment &&
-            activity.details.comment
-              .toLowerCase()
-              .includes(searchQuery.toLowerCase())))
-    );
-  }, [activities, searchQuery, searchFocus]);
+  const filteredActivities = useMemo<FriendActivity[]>(
+    () => activities,
+    [activities]
+  );
 
   // Memoize calculated stats to prevent recalculation on each render
   const totalGames = useMemo<number>(
@@ -494,16 +420,6 @@ export default function ProfilePage(): JSX.Element {
             />
           </div>
 
-          {activeTab === "overview" && (
-            <SearchInput
-              onSearch={handleSearch}
-              onClear={() => setSearchQuery("")}
-              onFocusChange={setSearchFocus}
-              searchFocus={searchFocus}
-              value={searchQuery}
-            />
-          )}
-
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* Left Column - About */}
             <div className="md:col-span-2 space-y-6">
@@ -539,8 +455,9 @@ export default function ProfilePage(): JSX.Element {
                   <CardContent>
                     {recentActivities.length > 0 ? (
                       <div className="space-y-4">
-                        {recentActivities.map(
-                          (activity) =>
+                        {recentActivities.map((activity) => {
+                          console.log("Rendering activity:", activity);
+                          return (
                             isValidActivity(activity) && (
                               <div
                                 key={activity.id}
@@ -548,24 +465,29 @@ export default function ProfilePage(): JSX.Element {
                               >
                                 <div className="flex items-start gap-3">
                                   <div className="w-10 h-10 rounded bg-gray-800 overflow-hidden flex-shrink-0">
-                                    {activity.game.cover_url ? (
+                                    {activity.game &&
+                                    activity.game.cover_url ? (
                                       <img
                                         src={activity.game.cover_url}
-                                        alt={activity.game.name}
+                                        alt={activity.game.name || "Game"}
                                         className="w-full h-full object-cover"
                                       />
                                     ) : (
                                       <div className="w-full h-full flex items-center justify-center text-gray-400">
-                                        {activity.game.name
-                                          .charAt(0)
-                                          .toUpperCase()}
+                                        {activity.game && activity.game.name
+                                          ? activity.game.name
+                                              .charAt(0)
+                                              .toUpperCase()
+                                          : "G"}
                                       </div>
                                     )}
                                   </div>
                                   <div>
                                     <p className="text-white">
                                       <span className="font-medium">
-                                        {activity.user.username}
+                                        {activity.user
+                                          ? activity.user.username
+                                          : "User"}
                                       </span>{" "}
                                       {activity.type === "started_playing" &&
                                         "started playing"}
@@ -577,25 +499,33 @@ export default function ProfilePage(): JSX.Element {
                                       {activity.type === "achievement" &&
                                         "unlocked an achievement in"}{" "}
                                       <span className="font-medium">
-                                        {activity.game.name}
+                                        {activity.game
+                                          ? activity.game.name
+                                          : "a game"}
                                       </span>
                                     </p>
                                     <p className="text-xs text-gray-400">
-                                      {new Date(
-                                        activity.created_at
-                                      ).toLocaleDateString()}
+                                      {activity.created_at
+                                        ? new Date(
+                                            activity.created_at
+                                          ).toLocaleDateString()
+                                        : activity.timestamp
+                                        ? new Date(
+                                            activity.timestamp
+                                          ).toLocaleDateString()
+                                        : "Recently"}
                                     </p>
                                   </div>
                                 </div>
                               </div>
                             )
-                        )}
+                          );
+                        })}
                       </div>
                     ) : (
                       <p className="text-gray-400">
-                        {searchQuery
-                          ? "No activities match your search."
-                          : "No recent activity. Start playing games to see activity here!"}
+                        No recent activity. Start playing games to see activity
+                        here!
                       </p>
                     )}
                   </CardContent>
@@ -727,137 +657,136 @@ export default function ProfilePage(): JSX.Element {
                   </CardContent>
                 </Card>
               </ProfileSection>
+            </div>
+          </div>
 
-              {/* Reviews */}
-              <ProfileSection isLoading={journalLoading} section="Reviews">
-                <Card className="bg-gray-900/50 border-gray-800 backdrop-blur-sm">
-                  <CardHeader className="flex flex-row items-center justify-between">
-                    <CardTitle className="text-xl text-white flex items-center gap-2">
-                      <Star className="h-5 w-5 text-yellow-400" />
-                      Recent Reviews
-                    </CardTitle>
-                    <Link
-                      href="/profile/journal"
-                      className="text-sm text-yellow-400 hover:underline"
-                    >
-                      View All
-                    </Link>
-                  </CardHeader>
-                  <CardContent>
-                    {recentReviews.length > 0 ? (
-                      <div className="space-y-4">
-                        {recentReviews.map((review) => (
-                          <div
-                            key={review.id}
-                            className="border-b border-gray-800 pb-3 last:border-0"
-                          >
-                            <div className="flex items-start gap-3">
-                              <div className="w-10 h-10 rounded bg-gray-800 overflow-hidden flex-shrink-0">
-                                {review.game?.cover_url ? (
-                                  <img
-                                    src={review.game.cover_url}
-                                    alt={review.game.name}
-                                    className="w-full h-full object-cover"
-                                  />
-                                ) : (
-                                  <div className="w-full h-full flex items-center justify-center text-gray-400">
-                                    {review.game?.name
-                                      .charAt(0)
-                                      .toUpperCase() || "?"}
-                                  </div>
+          {/* New row for Reviews and Journal - spread out horizontally */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+            {/* Reviews */}
+            <ProfileSection isLoading={journalLoading} section="Reviews">
+              <Card className="bg-gray-900/50 border-gray-800 backdrop-blur-sm">
+                <CardHeader className="flex flex-row items-center justify-between">
+                  <CardTitle className="text-xl text-white flex items-center gap-2">
+                    <Star className="h-5 w-5 text-yellow-400" />
+                    Recent Reviews
+                  </CardTitle>
+                  <Link
+                    href="/profile/journal"
+                    className="text-sm text-yellow-400 hover:underline"
+                  >
+                    View All
+                  </Link>
+                </CardHeader>
+                <CardContent>
+                  {recentReviews.length > 0 ? (
+                    <div className="space-y-4">
+                      {recentReviews.map((review) => (
+                        <div
+                          key={review.id}
+                          className="border-b border-gray-800 pb-3 last:border-0"
+                        >
+                          <div className="flex items-start gap-3">
+                            <div className="w-10 h-10 rounded bg-gray-800 overflow-hidden flex-shrink-0">
+                              {review.game?.cover_url ? (
+                                <img
+                                  src={review.game.cover_url}
+                                  alt={review.game.name}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center text-gray-400">
+                                  {review.game?.name.charAt(0).toUpperCase() ||
+                                    "?"}
+                                </div>
+                              )}
+                            </div>
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <p className="font-medium text-white">
+                                  {review.game?.name || "Unknown Game"}
+                                </p>
+                                {review.rating && (
+                                  <span className="text-sm bg-yellow-900/30 text-yellow-400 px-2 py-0.5 rounded">
+                                    {review.rating}/10
+                                  </span>
                                 )}
                               </div>
-                              <div>
-                                <div className="flex items-center gap-2">
-                                  <p className="font-medium text-white">
-                                    {review.game?.name || "Unknown Game"}
-                                  </p>
-                                  {review.rating && (
-                                    <span className="text-sm bg-yellow-900/30 text-yellow-400 px-2 py-0.5 rounded">
-                                      {review.rating}/10
-                                    </span>
-                                  )}
-                                </div>
-                                <p className="text-sm text-gray-300 line-clamp-2 mt-1">
-                                  {review.content}
-                                </p>
-                                <p className="text-xs text-gray-400 mt-1">
-                                  {new Date(
-                                    review.createdAt
-                                  ).toLocaleDateString()}
-                                </p>
-                              </div>
+                              <p className="text-sm text-gray-300 line-clamp-2 mt-1">
+                                {review.content}
+                              </p>
+                              <p className="text-xs text-gray-400 mt-1">
+                                {new Date(
+                                  review.createdAt
+                                ).toLocaleDateString()}
+                              </p>
                             </div>
                           </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-gray-400">
-                        {searchQuery
-                          ? "No reviews match your search."
-                          : "No reviews yet. Write a review to see it here!"}
-                      </p>
-                    )}
-                  </CardContent>
-                </Card>
-              </ProfileSection>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-gray-400">
+                      No reviews yet. Write a review to see it here!
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+            </ProfileSection>
 
-              {/* Journal */}
-              <ProfileSection isLoading={journalLoading} section="Journal">
-                <Card className="bg-gray-900/50 border-gray-800 backdrop-blur-sm">
-                  <CardHeader className="flex flex-row items-center justify-between">
-                    <CardTitle className="text-xl text-white flex items-center gap-2">
-                      <BookText className="h-5 w-5 text-green-400" />
-                      Journal
-                    </CardTitle>
-                    <Link
-                      href="/profile/journal"
-                      className="text-sm text-green-400 hover:underline"
-                    >
-                      View All
-                    </Link>
-                  </CardHeader>
-                  <CardContent>
-                    {recentJournalEntries.length > 0 ? (
-                      <div className="space-y-4">
-                        {recentJournalEntries.map((entry) => (
-                          <div
-                            key={entry.id}
-                            className="border-b border-gray-800 pb-3 last:border-0"
-                          >
-                            <p className="font-medium text-white">
-                              {entry.title}
-                            </p>
-                            <p className="text-sm text-gray-300 line-clamp-2 mt-1">
-                              {entry.content}
-                            </p>
-                            <div className="flex items-center justify-between mt-2">
-                              <span className="text-xs text-gray-400">
-                                {new Date(entry.createdAt).toLocaleDateString()}
-                              </span>
-                              <span className="text-xs px-2 py-0.5 rounded bg-gray-800 text-gray-300">
-                                {entry.type === "progress" && "Progress"}
-                                {entry.type === "review" && "Review"}
-                                {entry.type === "daily" && "Daily"}
-                                {entry.type === "list" && "List"}
-                                {entry.type === "note" && "Note"}
-                                {entry.type === "achievement" && "Achievement"}
-                              </span>
-                            </div>
+            {/* Journal */}
+            <ProfileSection isLoading={journalLoading} section="Journal">
+              <Card className="bg-gray-900/50 border-gray-800 backdrop-blur-sm">
+                <CardHeader className="flex flex-row items-center justify-between">
+                  <CardTitle className="text-xl text-white flex items-center gap-2">
+                    <BookText className="h-5 w-5 text-green-400" />
+                    Journal
+                  </CardTitle>
+                  <Link
+                    href="/profile/journal"
+                    className="text-sm text-green-400 hover:underline"
+                  >
+                    View All
+                  </Link>
+                </CardHeader>
+                <CardContent>
+                  {recentJournalEntries.length > 0 ? (
+                    <div className="space-y-4">
+                      {recentJournalEntries.map((entry) => (
+                        <div
+                          key={entry.id}
+                          className="border-b border-gray-800 pb-3 last:border-0"
+                        >
+                          <p className="font-medium text-white">
+                            {entry.title}
+                          </p>
+                          <p className="text-sm text-gray-300 line-clamp-2 mt-1">
+                            {entry.content}
+                          </p>
+                          <div className="flex items-center justify-between mt-2">
+                            <span className="text-xs text-gray-400">
+                              {new Date(entry.createdAt).toLocaleDateString()}
+                            </span>
+                            <span className="text-xs px-2 py-0.5 rounded bg-gray-800 text-gray-300">
+                              {entry.type === "progress" && "Progress"}
+                              {entry.type === "review" && "Review"}
+                              {entry.type === "daily" && "Daily"}
+                              {entry.type === "list" && "List"}
+                              {entry.type === "note" && "Note"}
+                              {entry.type === "achievement" && "Achievement"}
+                            </span>
                           </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-gray-400">
-                        {searchQuery
-                          ? "No journal entries match your search."
-                          : "No journal entries yet. Start journaling to see entries here!"}
-                      </p>
-                    )}
-                  </CardContent>
-                </Card>
-              </ProfileSection>
-            </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-gray-400">
+                      No journal entries yet. Start journaling to see entries
+                      here!
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+            </ProfileSection>
           </div>
         </div>
       </div>

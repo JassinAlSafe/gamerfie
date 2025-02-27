@@ -253,9 +253,11 @@ export const useFriendsStore = create<FriendsStore>((set, get) => ({
     try {
       // Check if we already have activities data and not currently loading
       if (get().activities.length > 0 && !get().isLoadingActivities) {
+        console.log('Using cached activities data:', get().activities.length);
         return; // Use cached data
       }
       
+      console.log('Setting loading state for activities');
       set({ isLoadingActivities: true, error: null });
       
       // Use AbortController to handle timeouts and cancellations
@@ -263,6 +265,7 @@ export const useFriendsStore = create<FriendsStore>((set, get) => ({
       const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
       
       try {
+        console.log('Fetching activities from API');
         const response = await fetch('/api/friends/activities?offset=0&include=reactions,comments', {
           signal: controller.signal,
           headers: {
@@ -272,18 +275,25 @@ export const useFriendsStore = create<FriendsStore>((set, get) => ({
         
         clearTimeout(timeoutId);
         
-        if (!response.ok) throw new Error('Failed to fetch activities');
+        if (!response.ok) {
+          console.error('Activities API response not OK:', response.status, response.statusText);
+          throw new Error('Failed to fetch activities');
+        }
+        
         const activities = await response.json();
+        console.log('Activities fetched successfully:', activities.length);
         
         set({ activities, isLoadingActivities: false, activitiesPage: 1 });
       } catch (fetchError: unknown) {
         clearTimeout(timeoutId);
+        console.error('Error in activities fetch:', fetchError);
         if (fetchError instanceof Error && fetchError.name === 'AbortError') {
           throw new Error('Request timed out');
         }
         throw fetchError;
       }
     } catch (error) {
+      console.error('Activities fetch error:', error);
       set({ error: (error as Error).message, isLoadingActivities: false });
       throw error;
     }
