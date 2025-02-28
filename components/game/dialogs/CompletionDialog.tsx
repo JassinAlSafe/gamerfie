@@ -11,7 +11,17 @@ import {
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Input } from "@/components/ui/input";
-import { Game, GameProgress } from "@/types/game";
+import { Game } from "@/types/game";
+
+// Define GameProgress interface locally
+interface GameProgress {
+  playTime: number;
+  completionPercentage?: number;
+  achievementsCompleted?: number;
+  lastPlayedAt?: string;
+  userRating?: number;
+  notes?: string;
+}
 
 interface CompletionDialogProps {
   open: boolean;

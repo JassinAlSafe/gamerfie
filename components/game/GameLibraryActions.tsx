@@ -18,7 +18,7 @@ import {
 import { Slider } from "@/components/ui/slider";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { Database } from "@/types/supabase";
-import { GameStatus } from "@/types/game";
+import { GameStatus } from "../../types/game";
 import { LoadingSpinner } from "@/components/loadingSpinner";
 import { useFriendsStore } from "@/stores/useFriendsStore";
 import { useChallengesStore } from "@/stores/useChallengesStore";
@@ -50,7 +50,7 @@ export function GameLibraryActions({
   const [showProgressDialog, setShowProgressDialog] = useState(false);
   const [matchingChallenges, setMatchingChallenges] = useState<any[]>([]);
   const { createActivity } = useFriendsStore();
-  const { userChallenges } = useChallengesStore();
+  const { getActiveChallenges } = useChallengesStore();
 
   const supabase = createClientComponentClient<Database>();
 
@@ -79,8 +79,8 @@ export function GameLibraryActions({
 
   useEffect(() => {
     // Find matching active challenges based on game genres
-    const activeMatches = userChallenges.filter((challenge) => {
-      if (challenge.status !== "active") return false;
+    const activeChallenges = getActiveChallenges();
+    const activeMatches = activeChallenges.filter((challenge: any) => {
       if (!challenge.requirements?.genre) return true;
 
       const requiredGenre = challenge.requirements.genre.toLowerCase();
@@ -88,7 +88,7 @@ export function GameLibraryActions({
     });
 
     setMatchingChallenges(activeMatches);
-  }, [genres, userChallenges]);
+  }, [genres, getActiveChallenges]);
 
   const handleStatusUpdate = async (newStatus: GameStatus) => {
     try {

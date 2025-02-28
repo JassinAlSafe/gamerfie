@@ -9,8 +9,11 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Game, GameStatus } from "@/types/game";
+import { Game } from "@/types/game";
 import { PlayCircle, Trophy, BookmarkPlus, Ban } from "lucide-react";
+
+// Define GameStatus type locally
+type GameStatus = "playing" | "completed" | "want_to_play" | "dropped";
 
 interface StatusDialogProps {
   open: boolean;

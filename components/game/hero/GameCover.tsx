@@ -19,7 +19,7 @@ export function GameCover({ game, onLoad }: GameCoverProps) {
     setMounted(true);
   }, []);
 
-  const coverUrl = game.cover_url || game.coverImage;
+  const coverUrl = game.cover_url || (game as any).coverImage;
 
   if (!coverUrl) {
     return (

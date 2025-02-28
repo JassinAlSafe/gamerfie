@@ -24,9 +24,9 @@ import { cn } from "@/lib/utils";
 
 // Define interface for the challenges store
 // interface ChallengesStore {
-  userChallenges: any[];
-  updateProgress: (challengeId: string, progress: number) => Promise<void>;
-  fetchUserChallenges: () => Promise<void>;
+//   userChallenges: any[];
+//   updateProgress: (challengeId: string, progress: number) => Promise<void>;
+//   fetchUserChallenges: () => Promise<void>;
 // }
 
 interface CompletionDialogProps {
@@ -61,16 +61,16 @@ export function CompletionDialog({
 
   // Stub for paused challenges feature
   const userChallenges: any[] = [];
-  const updateChallengeProgress = async () => {};
-  const fetchUserChallenges = async () => {};
+  // const updateChallengeProgress = async () => {};
+  // const fetchUserChallenges = async () => {};
 
   // Always use completion step when challenges are paused
-  const [step, setStep] = useState<"completion">("completion");
+  const [_step, _setStep] = useState<"completion">("completion");
   const [localPlayTime, setLocalPlayTime] = useState(0);
   const [localCompletion, setLocalCompletion] = useState(0);
   const [localAchievementsCompleted, setLocalAchievementsCompleted] =
     useState(0);
-  const [selectedChallenges, setSelectedChallenges] = useState<string[]>([]);
+  const [_selectedChallenges, setSelectedChallenges] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Reset state when dialog opens
@@ -296,16 +296,16 @@ export function CompletionDialog({
       // CHALLENGES FEATURE PAUSED
       // The following code is disabled until challenges feature is ready
       /*
-      if (step === "completion") {
+      if (_step === "completion") {
         // If there are eligible challenges, move to challenges step
         if (eligibleChallenges.length > 0) {
-          setStep("challenges");
+          _setStep("challenges");
           setIsSubmitting(false);
           return;
         }
       } else {
         // Update selected challenges
-        for (const challengeId of selectedChallenges) {
+        for (const challengeId of _selectedChallenges) {
           const challenge = eligibleChallenges.find(
             (c: any) => c.id === challengeId
           );

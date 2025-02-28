@@ -17,6 +17,10 @@ const activityIcons: Record<ActivityType, React.ReactNode> = {
   review: <MessageCircle className="w-5 h-5 text-purple-400" />,
   want_to_play: <PlayCircle className="w-5 h-5 text-purple-400" />,
   progress: <PlayCircle className="w-5 h-5 text-blue-400" />,
+  game_status_updated: <PlayCircle className="w-5 h-5 text-blue-400" />,
+  achievement_unlocked: <Trophy className="w-5 h-5 text-yellow-400" />,
+  game_completed: <CheckCircle className="w-5 h-5 text-green-400" />,
+  review_added: <MessageCircle className="w-5 h-5 text-purple-400" />,
 };
 
 const activityText: Record<ActivityType, string> = {
@@ -26,6 +30,10 @@ const activityText: Record<ActivityType, string> = {
   review: "reviewed",
   want_to_play: "wants to play",
   progress: "made progress in",
+  game_status_updated: "updated status for",
+  achievement_unlocked: "unlocked an achievement in",
+  game_completed: "completed",
+  review_added: "added a review for",
 };
 
 interface GameActivitiesProps {
@@ -82,9 +90,9 @@ export function GameActivities({ gameId }: GameActivitiesProps) {
               >
                 {activity.user.username}
               </Link>
-              {activityIcons[activity.type]}
+              {activityIcons[activity.type as ActivityType]}
               <span className="text-gray-400">
-                {activityText[activity.type]}
+                {activityText[activity.type as ActivityType]}
               </span>
             </div>
 
@@ -102,9 +110,11 @@ export function GameActivities({ gameId }: GameActivitiesProps) {
                   <>
                     <p>🏆 {activity.details.name}</p>
                     <ul className="mt-1 ml-6 list-disc text-gray-400">
-                      {activity.details.achievements?.map((achievement, i) => (
-                        <li key={i}>{achievement.name}</li>
-                      ))}
+                      {activity.details.achievements?.map(
+                        (achievement: { name: string }, i: number) => (
+                          <li key={i}>{achievement.name}</li>
+                        )
+                      )}
                     </ul>
                   </>
                 ) : (

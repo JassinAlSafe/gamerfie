@@ -11,7 +11,7 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { ChevronDown } from "lucide-react";
-import { GameStatus } from "@/types/game";
+import { GameStatus } from "../../types/game";
 import { GameNotes } from "./game-notes";
 
 interface GameStatusDropdownProps {

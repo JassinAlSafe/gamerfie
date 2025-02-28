@@ -8,7 +8,6 @@ import { useGameActivities } from "@/hooks/Games/use-game-activities";
 import { useErrorStore } from "@/stores/useErrorStore";
 import { GameHero } from "./hero/GameHero";
 import { GameTabs } from "./tabs/GameTabs";
-import { LoadingSpinner } from "@/components/loadingSpinner";
 import { ErrorBoundary } from "react-error-boundary";
 import { motion, AnimatePresence } from "framer-motion";
 import { AlertCircle, RefreshCw, ArrowUp } from "lucide-react";
@@ -42,17 +41,6 @@ function ErrorFallback({
         </button>
       </div>
     </motion.div>
-  );
-}
-
-function LoadingFallback() {
-  return (
-    <div className="flex flex-col items-center justify-center min-h-screen p-8 bg-gray-950">
-      <LoadingSpinner size="lg" />
-      <p className="mt-4 text-gray-400 animate-pulse font-medium">
-        Loading game details...
-      </p>
-    </div>
   );
 }
 
