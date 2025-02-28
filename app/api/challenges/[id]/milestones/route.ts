@@ -82,7 +82,7 @@ export async function POST(
 
 // Get all milestones for a challenge
 export async function GET(
-  request: Request,
+  _request: Request,
   { params }: { params: { id: string } }
 ) {
   try {

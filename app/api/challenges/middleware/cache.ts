@@ -63,7 +63,9 @@ export const withCache = (handler: Function, config: CacheConfig = defaultConfig
       // Try to get from cache
       const cached = await redis.get(key);
       if (cached) {
-        return NextResponse.json(JSON.parse(cached));
+        // Ensure cached is a string before parsing
+        const cachedData = typeof cached === 'string' ? JSON.parse(cached) : cached;
+        return NextResponse.json(cachedData);
       }
 
       // If not in cache, call handler

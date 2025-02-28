@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { withAuth } from "../../middleware";
 import { withRateLimit } from "../../middleware/rateLimit";
 import { withCache, cacheConfigs } from "../../middleware/cache";
-import { type Profile } from "../../types";
 
 interface RouteParams {
   params: {
@@ -34,7 +33,7 @@ interface LeaderboardResponse {
 }
 
 const handler = withAuth(async (
-  request: Request,
+  _request: Request,
   { params }: RouteParams,
   { supabase }: HandlerContext
 ) => {
@@ -89,6 +88,14 @@ const handler = withAuth(async (
 
 // Apply rate limiting and caching middleware
 export const GET = withRateLimit(
-  withCache(handler, cacheConfigs.leaderboard),
+  async (request: Request, ...args: any[]) => {
+    const handlerFn = await handler;
+    // Create a mutable copy of the cache config
+    const cacheConfig = {
+      ...cacheConfigs.leaderboard,
+      invalidateOn: [...cacheConfigs.leaderboard.invalidateOn]
+    };
+    return withCache(handlerFn, cacheConfig)(request, ...args);
+  },
   { maxRequests: 50, windowMs: 60 * 1000 } // 50 requests per minute
 ); 

@@ -172,28 +172,31 @@ export const createChallengeSchema = z.object({
   description: descriptionSchema,
   type: z.enum(["competitive", "collaborative"]),
   start_date: dateSchema,
-  end_date: dateSchema.refine(
-    (date, ctx) => {
-      const startDate = new Date(ctx.parent.start_date);
-      const endDate = new Date(date);
-      return endDate > startDate;
-    },
-    "End date must be after start date"
-  ),
+  end_date: dateSchema,
   goals: z.array(goalSchema)
     .min(1, "At least one goal is required")
     .max(5, "Maximum of 5 goals allowed"),
-  max_participants: z.number()
-    .positive("Maximum participants must be a positive number")
-    .max(100, "Maximum of 100 participants allowed")
-    .optional(),
   rewards: z.array(rewardSchema)
     .min(1, "At least one reward is required")
     .max(5, "Maximum of 5 rewards allowed"),
-  rules: z.array(ruleSchema)
+  rules: z.array(z.union([
+    z.string().min(5, "Rule must be at least 5 characters"),
+    ruleSchema
+  ]))
     .min(1, "At least one rule is required")
     .max(10, "Maximum of 10 rules allowed"),
+  max_participants: z.number().int().positive().optional(),
 }).refine(
+  (data) => {
+    const startDate = new Date(data.start_date);
+    const endDate = new Date(data.end_date);
+    return endDate > startDate;
+  },
+  {
+    message: "End date must be after start date",
+    path: ["end_date"],
+  }
+).refine(
   (data) => {
     if (data.type === "competitive" && !data.max_participants) {
       return false;

@@ -31,7 +31,7 @@ interface ProgressHistoryResponse {
 }
 
 const handler = withAuth(async (
-  request: Request,
+  _request: Request,
   { params }: RouteParams,
   { supabase, session }: HandlerContext
 ) => {
@@ -74,9 +74,15 @@ const handler = withAuth(async (
 
 // Apply rate limiting and caching middleware
 export const GET = withRateLimit(
-  withCache(handler, {
-    ...cacheConfigs.userProgress,
-    prefix: "progress-history",
-  }),
-  { maxRequests: 30, windowMs: 60 * 1000 } // 30 requests per minute
+  async (request: Request, ...args: any[]) => {
+    const handlerFn = await handler;
+    // Create a mutable copy of the cache config
+    const cacheConfig = {
+      ...cacheConfigs.userProgress,
+      prefix: "progress-history",
+      invalidateOn: [...cacheConfigs.userProgress.invalidateOn]
+    };
+    return withCache(handlerFn, cacheConfig)(request, ...args);
+  },
+  { maxRequests: 50, windowMs: 60 * 1000 } // 50 requests per minute
 ); 

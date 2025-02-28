@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { withAuth } from "../../middleware";
+import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
+import { cookies } from "next/headers";
 
 interface RouteParams {
   params: {
@@ -7,21 +8,22 @@ interface RouteParams {
   };
 }
 
-type HandlerContext = {
-  supabase: any;
-  session: {
-    user: {
-      id: string;
-    };
-  };
-};
-
-export const POST = withAuth(async (
-  request: Request,
-  { params }: RouteParams,
-  { supabase, session }: HandlerContext
-) => {
+// Direct implementation instead of using withAuth middleware
+export async function POST(_request: Request, { params }: RouteParams) {
   try {
+    const cookieStore = cookies();
+    const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
+    
+    // Get user session
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+
+    if (sessionError || !session) {
+      return NextResponse.json(
+        { error: "Not authenticated" },
+        { status: 401 }
+      );
+    }
+
     // Check if user is already a participant
     const { data: existingParticipant, error: participantError } = await supabase
       .from("challenge_participants")
@@ -107,4 +109,4 @@ export const POST = withAuth(async (
       { status: 500 }
     );
   }
-}); 
+} 

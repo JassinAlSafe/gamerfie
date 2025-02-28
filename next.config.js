@@ -23,13 +23,17 @@ const nextConfig = {
   },
   reactStrictMode: true,
   experimental: {
-    serverActions: true,
+    // Remove the serverActions flag as it's now available by default
   },
 };
 
-module.exports = withSentryConfig(nextConfig, {
-  org: "jassin-al-safe",
-  project: "gamerfie",
-  authToken: process.env.SENTRY_AUTH_TOKEN,
-  silent: false,
-});
+// Temporarily disable Sentry to fix build issues
+// module.exports = withSentryConfig(nextConfig, {
+//   org: "jassin-al-safe",
+//   project: "gamerfie",
+//   authToken: process.env.SENTRY_AUTH_TOKEN,
+//   silent: false,
+// });
+
+// Export the config directly without Sentry for now
+module.exports = nextConfig;

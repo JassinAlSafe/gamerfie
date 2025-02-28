@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { withParticipantAuth } from "../../middleware";
+import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
+import { cookies } from "next/headers";
 
 interface RouteParams {
   params: {
@@ -7,22 +8,44 @@ interface RouteParams {
   };
 }
 
-type HandlerContext = {
-  supabase: any;
-  session: {
-    user: {
-      id: string;
-    };
-  };
-  participant: any;
-};
-
-export const POST = withParticipantAuth(async (
-  request: Request,
-  { params }: RouteParams,
-  { supabase, session }: HandlerContext
-) => {
+// Direct implementation instead of using withParticipantAuth middleware
+export async function POST(_request: Request, { params }: RouteParams) {
   try {
+    const cookieStore = cookies();
+    const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
+    
+    // Get user session
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+
+    if (sessionError || !session) {
+      return NextResponse.json(
+        { error: "Not authenticated" },
+        { status: 401 }
+      );
+    }
+
+    // Check if user is a participant
+    const { data: participant, error: participantError } = await supabase
+      .from("challenge_participants")
+      .select("*")
+      .eq("challenge_id", params.id)
+      .eq("user_id", session.user.id)
+      .maybeSingle();
+
+    if (participantError) {
+      return NextResponse.json(
+        { error: "Failed to check participant status" },
+        { status: 500 }
+      );
+    }
+
+    if (!participant) {
+      return NextResponse.json(
+        { error: "Not a participant in this challenge" },
+        { status: 403 }
+      );
+    }
+
     // Leave the challenge
     const { error: leaveError } = await supabase
       .from("challenge_participants")
@@ -46,4 +69,4 @@ export const POST = withParticipantAuth(async (
       { status: 500 }
     );
   }
-}); 
+} 

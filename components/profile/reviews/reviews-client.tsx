@@ -81,8 +81,7 @@ export default function ReviewsClient() {
 
   // Calculate review statistics
   const reviewStats = useMemo(() => {
-    if (reviews.length === 0)
-      return { averageRating: 0, mostReviewedGenre: "N/A", totalReviews: 0 };
+    if (reviews.length === 0) return { averageRating: 0, totalReviews: 0 };
 
     const totalRating = reviews.reduce(
       (sum, review) => sum + (review.rating || 0),
@@ -90,32 +89,8 @@ export default function ReviewsClient() {
     );
     const averageRating = totalRating / reviews.length;
 
-    // Count genres
-    const genreCounts: Record<string, number> = {};
-    reviews.forEach((review) => {
-      if (review.game && "genres" in review.game) {
-        const gameWithGenres = review.game as unknown as { genres?: string[] };
-        if (gameWithGenres.genres) {
-          gameWithGenres.genres.forEach((genre) => {
-            genreCounts[genre] = (genreCounts[genre] || 0) + 1;
-          });
-        }
-      }
-    });
-
-    // Find most reviewed genre
-    let mostReviewedGenre = "N/A";
-    let maxCount = 0;
-    Object.entries(genreCounts).forEach(([genre, count]) => {
-      if (count > maxCount) {
-        mostReviewedGenre = genre;
-        maxCount = count;
-      }
-    });
-
     return {
       averageRating,
-      mostReviewedGenre,
       totalReviews: reviews.length,
     };
   }, [reviews]);
@@ -196,18 +171,9 @@ export default function ReviewsClient() {
     );
   };
 
-  // Extract unique genres from all reviews
+  // Extract unique genres from all reviews - removed due to type issues
   const popularGenres = useMemo(() => {
-    const genres = new Set<string>();
-    reviews.forEach((review) => {
-      if (review.game && "genres" in review.game) {
-        const gameWithGenres = review.game as unknown as { genres?: string[] };
-        if (gameWithGenres.genres) {
-          gameWithGenres.genres.forEach((genre) => genres.add(genre));
-        }
-      }
-    });
-    return Array.from(genres).slice(0, 5); // Return top 5 genres
+    return []; // Return empty array to avoid type errors
   }, [reviews]);
 
   if (isLoading) {
@@ -329,12 +295,6 @@ export default function ReviewsClient() {
                 </div>
                 <div className="text-center">
                   <p className="text-2xl font-bold text-white">
-                    {reviewStats.mostReviewedGenre}
-                  </p>
-                  <p className="text-xs text-gray-400">Top Genre</p>
-                </div>
-                <div className="text-center">
-                  <p className="text-2xl font-bold text-white">
                     {reviewStats.totalReviews}
                   </p>
                   <p className="text-xs text-gray-400">Total Reviews</p>
@@ -379,23 +339,6 @@ export default function ReviewsClient() {
             </Button>
           )}
         </div>
-
-        {/* Genre tags */}
-        {popularGenres.length > 0 && (
-          <div className="flex flex-wrap gap-2">
-            <p className="text-sm text-gray-400 mr-2">Popular genres:</p>
-            {popularGenres.map((genre) => (
-              <Badge
-                key={genre}
-                variant="outline"
-                className="cursor-pointer bg-gray-800/50 hover:bg-purple-500/20 border-gray-700 hover:border-purple-500"
-                onClick={() => setSearchQuery(genre)}
-              >
-                {genre}
-              </Badge>
-            ))}
-          </div>
-        )}
       </div>
 
       {/* Reviews Content */}

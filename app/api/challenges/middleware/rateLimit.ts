@@ -12,12 +12,7 @@ interface RateLimitConfig {
 }
 
 const defaultConfig: RateLimitConfig = {
-  maxRequests: 100,     // 100 requests
-  windowMs: 60 * 1000,  // per minute
-};
-
-const progressConfig: RateLimitConfig = {
-  maxRequests: 30,      // 30 requests
+  maxRequests: 20,      // 20 requests
   windowMs: 60 * 1000,  // per minute
 };
 

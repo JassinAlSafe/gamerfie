@@ -63,7 +63,6 @@ export default function BadgeManagementPage() {
     rarity: "common",
   });
   const [isCreating, setIsCreating] = useState(false);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   useEffect(() => {
     checkAdminStatus();
