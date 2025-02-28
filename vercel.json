@@ -1,0 +1,25 @@
+{
+  "version": 2,
+  "buildCommand": "npm run build",
+  "devCommand": "npm run dev",
+  "installCommand": "npm install",
+  "framework": "nextjs",
+  "outputDirectory": ".next",
+  "regions": ["sfo1"],
+  "images": {
+    "domains": ["images.igdb.com", "media.rawg.io"],
+    "sizes": [16, 32, 48, 64, 96, 128, 256, 384, 512, 1024, 2048],
+    "remotePatterns": [
+      {
+        "protocol": "https",
+        "hostname": "images.igdb.com",
+        "pathname": "/igdb/image/upload/**"
+      },
+      {
+        "protocol": "https",
+        "hostname": "media.rawg.io",
+        "pathname": "/media/**"
+      }
+    ]
+  }
+}

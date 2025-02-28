@@ -31,7 +31,47 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 
 ## Deploy on Vercel
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### Recommended: Deploy via Vercel Dashboard
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+The most reliable way to deploy this application is through the Vercel dashboard:
 
+1. Push your code to a Git repository (GitHub, GitLab, or Bitbucket)
+2. Go to [Vercel Dashboard](https://vercel.com/dashboard)
+3. Click "Add New" > "Project"
+4. Import your repository
+5. Configure the project:
+   - Framework Preset: Next.js
+   - Root Directory: ./
+   - Build Command: npm run build
+   - Output Directory: .next
+6. Add the environment variables from `.env.local` to the Environment Variables section
+7. Click "Deploy"
+
+### Alternative: Manual Deployment with Vercel CLI
+
+We've included a deployment script to make the process easier:
+
+1. Run the deployment script:
+
+   ```bash
+   ./deploy.sh
+   ```
+
+2. The script will automatically install the Vercel CLI locally and guide you through the deployment process
+
+3. Follow the prompts to log in and deploy your application
+
+### Environment Variables
+
+Make sure to set up the following environment variables in your Vercel project:
+
+- `NEXT_PUBLIC_TWITCH_CLIENT_ID`
+- `TWITCH_CLIENT_SECRET`
+- `NEXT_PUBLIC_API_BASE` (set to your production URL)
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `NEXT_PUBLIC_SENTRY_DSN`
+- `NEXT_PUBLIC_RAWG_API_KEY`
+
+You can set these in the Vercel dashboard under Project Settings > Environment Variables.

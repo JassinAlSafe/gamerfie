@@ -22,8 +22,20 @@ const nextConfig = {
     unoptimized: process.env.NODE_ENV === "development",
   },
   reactStrictMode: true,
-  experimental: {
-    // Remove the serverActions flag as it's now available by default
+  // Add environment variables with default values for deployment
+  env: {
+    NEXT_PUBLIC_TWITCH_CLIENT_ID:
+      process.env.NEXT_PUBLIC_TWITCH_CLIENT_ID || "placeholder",
+    NEXT_PUBLIC_API_BASE:
+      process.env.NEXT_PUBLIC_API_BASE || "https://gamerfie.vercel.app",
+    NEXT_PUBLIC_SUPABASE_URL:
+      process.env.NEXT_PUBLIC_SUPABASE_URL ||
+      "https://aliybmsckpqrvkecumhp.supabase.co",
+    NEXT_PUBLIC_SUPABASE_ANON_KEY:
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "placeholder",
+    NEXT_PUBLIC_SENTRY_DSN: process.env.NEXT_PUBLIC_SENTRY_DSN || "placeholder",
+    NEXT_PUBLIC_RAWG_API_KEY:
+      process.env.NEXT_PUBLIC_RAWG_API_KEY || "placeholder",
   },
 };
 

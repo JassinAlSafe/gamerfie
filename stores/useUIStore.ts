@@ -12,7 +12,7 @@ interface UIState {
   toggleProfileMenu: () => void
   closeAllMenus: () => void
   computedTheme: 'light' | 'dark'
-  initTheme: () => void
+  initTheme: () => () => void
 }
 
 export const useUIStore = create<UIState>()(
@@ -20,7 +20,7 @@ export const useUIStore = create<UIState>()(
     (set, get) => ({
       isMobileMenuOpen: false,
       isProfileMenuOpen: false,
-      theme: 'system',
+      theme: 'dark',
       computedTheme: 'dark',
       setMobileMenu: (isOpen) => set({ isMobileMenuOpen: isOpen }),
       setProfileMenu: (isOpen) => set({ isProfileMenuOpen: isOpen }),
@@ -47,6 +47,9 @@ export const useUIStore = create<UIState>()(
         isProfileMenuOpen: false 
       }),
       initTheme: () => {
+        // Force dark theme initially
+        set({ computedTheme: 'dark' });
+        
         const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
         const handleChange = (e: MediaQueryListEvent) => {
           if (get().theme === 'system') {

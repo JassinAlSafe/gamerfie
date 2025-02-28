@@ -50,7 +50,12 @@ export default function RootLayout({
         <QueryClientProvider client={queryClient}>
           <SupabaseProvider initialSession={null}>
             <SessionProvider refetchInterval={300} refetchOnWindowFocus={false}>
-              <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
+              <ThemeProvider
+                attribute="class"
+                defaultTheme="dark"
+                enableSystem={false}
+                forcedTheme="dark"
+              >
                 <div className="min-h-screen flex flex-col">
                   {!isAuthPage && <FloatingHeader />}
                   <main className={!isAuthPage ? "flex-1 pt-16" : "flex-1"}>

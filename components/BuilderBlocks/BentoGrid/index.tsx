@@ -192,7 +192,7 @@ export function BentoGrid({
           ref={containerRef}
           className={cn(
             "relative w-full rounded-xl border border-border/40",
-            "bg-background/80 backdrop-blur-sm shadow-lg",
+            "bg-gray-950/80 backdrop-blur-sm shadow-lg",
             isDragging && "cursor-grabbing",
             isResizing && "cursor-se-resize",
             isEditing && "ring-2 ring-purple-500/20",
@@ -200,7 +200,7 @@ export function BentoGrid({
           )}
         >
           {/* Pattern overlay */}
-          <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(45deg,transparent_25%,rgba(147,51,234,0.02)_25%,rgba(147,51,234,0.02)_50%,transparent_50%,transparent_75%,rgba(147,51,234,0.02)_75%)] bg-[length:8px_8px]" />
+          <div className="absolute inset-0 pointer-events-none bg-grid-pattern opacity-5" />
 
           {/* Glow Effects */}
           <div className="absolute -left-32 -top-32 w-64 h-64 bg-purple-500/10 rounded-full blur-3xl pointer-events-none" />

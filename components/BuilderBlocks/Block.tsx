@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 import { cva, type VariantProps } from "class-variance-authority";
 
 const blockVariants = cva(
-  "relative overflow-hidden transition-all bg-gradient-to-b from-card/50 to-card/30 backdrop-blur-xl min-h-0 w-full h-full",
+  "relative overflow-hidden transition-all bg-gradient-to-b from-gray-900/50 to-gray-950/30 backdrop-blur-xl min-h-0 w-full h-full",
   {
     variants: {
       size: {
@@ -16,27 +16,27 @@ const blockVariants = cva(
       variant: {
         default: [
           "rounded-xl border shadow-sm",
-          "bg-gradient-to-b from-background/10 via-background/50 to-background/80",
+          "bg-gradient-to-b from-gray-900/10 via-gray-900/50 to-gray-950/80",
           "backdrop-blur-xl backdrop-saturate-200",
-          "hover:shadow-md hover:from-background/20 hover:via-background/60 hover:to-background/90",
-          "dark:from-background/20 dark:via-background/25 dark:to-background/30",
-          "dark:hover:from-background/25 dark:hover:via-background/30 dark:hover:to-background/40",
+          "hover:shadow-md hover:from-gray-900/20 hover:via-gray-900/60 hover:to-gray-950/90",
+          "dark:from-gray-900/20 dark:via-gray-900/25 dark:to-gray-950/30",
+          "dark:hover:from-gray-900/25 dark:hover:via-gray-900/30 dark:hover:to-gray-950/40",
           "transition-all duration-200",
           "flex flex-col",
         ],
         ghost: "bg-transparent flex flex-col",
         premium: [
           "rounded-xl border shadow-sm border-purple-200/20",
-          "bg-gradient-to-b from-purple-500/10 via-purple-500/5 to-background",
-          "dark:from-purple-500/20 dark:via-purple-500/10 dark:to-background",
+          "bg-gradient-to-b from-purple-500/10 via-purple-500/5 to-gray-950",
+          "dark:from-purple-500/20 dark:via-purple-500/10 dark:to-gray-950",
           "hover:shadow-purple-500/5 hover:border-purple-200/30",
           "dark:hover:border-purple-200/30 dark:hover:shadow-purple-500/10",
           "flex flex-col",
         ],
         success: [
           "rounded-xl border shadow-sm border-green-200/20",
-          "bg-gradient-to-b from-green-500/10 via-green-500/5 to-background",
-          "dark:from-green-500/20 dark:via-green-500/10 dark:to-background",
+          "bg-gradient-to-b from-green-500/10 via-green-500/5 to-gray-950",
+          "dark:from-green-500/20 dark:via-green-500/10 dark:to-gray-950",
           "hover:shadow-green-500/5 hover:border-green-200/30",
           "dark:hover:border-green-200/30 dark:hover:shadow-green-500/10",
           "flex flex-col",
