@@ -4,8 +4,15 @@ import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Star, Users, Flame } from "lucide-react";
-import { type GameCardProps } from "@/types/game";
+import { Game, CategoryOption } from "@/types/game";
 import { getCoverImageUrl } from "@/utils/image-utils";
+
+// Define the interface locally instead of importing it
+interface GameCardProps {
+  game: Game;
+  index?: number;
+  category?: CategoryOption;
+}
 
 export function GameCard({
   game,

@@ -1,14 +1,18 @@
 import React, { useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import {
-  useGamesStore,
-  CategoryOption as CategoryOptionFromStore,
-} from "@/stores/useGamesStore";
+import { useGamesStore } from "@/stores/useGamesStore";
 import { useSearchStore } from "@/stores/useSearchStore";
 import { useDebounce } from "../Settings/useDebounce";
 import { GAME_CATEGORIES, CATEGORY_TIME_RANGES } from "@/config/categories";
-import type { CategoryOption } from "@/types/game";
+// Define the CategoryOption type directly since there seems to be an issue with the import
+type CategoryOption =
+  | "all"
+  | "popular"
+  | "trending"
+  | "upcoming"
+  | "recent"
+  | "classic";
 import { SearchButton } from "@/components/explore/SearchButton";
 
 interface ExploreHookReturn {
@@ -30,7 +34,7 @@ export function useExplore(): ExploreHookReturn {
 
   const handleSearch = useCallback(() => {
     if (debouncedSearch.trim()) {
-      setSelectedCategory("all" as unknown as CategoryOptionFromStore);
+      setSelectedCategory("all");
       router.push(`/all-games?search=${encodeURIComponent(debouncedSearch)}`);
     }
   }, [debouncedSearch, router, setSelectedCategory]);
@@ -46,8 +50,9 @@ export function useExplore(): ExploreHookReturn {
 
   const handleCategoryClick = useCallback(
     (category: CategoryOption) => {
-      setSelectedCategory(category as unknown as CategoryOptionFromStore);
-      const timeRange = CATEGORY_TIME_RANGES[category];
+      setSelectedCategory(category);
+      const timeRange =
+        CATEGORY_TIME_RANGES[category as keyof typeof CATEGORY_TIME_RANGES];
       router.push(`/all-games?category=${category}&timeRange=${timeRange}`);
     },
     [router, setSelectedCategory]

@@ -93,6 +93,30 @@ function ScrollToTopButton() {
   );
 }
 
+// Type assertion function to ensure the game object conforms to the Game interface
+function ensureGameType(game: any): Game {
+  // Handle the cover property
+  let coverObj = game.cover;
+  if (typeof game.cover === "string") {
+    coverObj = { id: "placeholder", url: game.cover };
+  }
+
+  // Create a new object with the correct structure
+  const processedGame = {
+    ...game,
+    // Override the cover property
+    cover: coverObj,
+    // Add achievements if not present
+    achievements: {
+      total: 0,
+      completed: 0,
+    },
+  };
+
+  // Use a type assertion to tell TypeScript this is a Game
+  return processedGame as unknown as Game;
+}
+
 export function GameDetails({ game }: { game: Game }) {
   return (
     <ErrorBoundary
@@ -145,13 +169,8 @@ function GameContent({ game }: { game: Game }) {
     }
   }, [progressError, activitiesError, addError]);
 
-  const processedGame = {
-    ...game,
-    achievements: {
-      total: 0,
-      completed: 0,
-    },
-  };
+  // Process the game data
+  const gameData = ensureGameType(game);
 
   return (
     <motion.div
@@ -164,7 +183,7 @@ function GameContent({ game }: { game: Game }) {
       <div className="absolute inset-0 bg-[url('/assets/noise.png')] opacity-[0.03] pointer-events-none" />
 
       <GameHero
-        game={processedGame}
+        game={gameData}
         profile={profile}
         progress={{
           playTime: playTime ?? undefined,
@@ -174,7 +193,7 @@ function GameContent({ game }: { game: Game }) {
       />
 
       <GameTabs
-        game={processedGame}
+        game={gameData}
         profile={profile ?? null}
         activeTab={activeTab}
         onTabChange={setActiveTab}

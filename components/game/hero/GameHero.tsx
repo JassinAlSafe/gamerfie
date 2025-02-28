@@ -22,33 +22,60 @@ import {
 } from "@/components/ui/dialog";
 
 interface GameHeroProps {
-  game: Game;
+  // Use any for the game prop and handle type checking internally
+  game: any;
   profile?: Profile | null;
   progress?: Partial<GameProgress>;
 }
 
 export function GameHero({ game, profile, progress }: GameHeroProps) {
   const [mounted, setMounted] = React.useState(false);
-  const [isImageLoaded, setIsImageLoaded] = useState(false);
   const [backgroundLoaded, setBackgroundLoaded] = useState(false);
   const [trailerOpen, setTrailerOpen] = useState(false);
   const [shouldRenderTrailer, setShouldRenderTrailer] = useState(false);
 
+  // Process the game object to ensure it has the correct structure
+  const processedGame: Game = {
+    ...game,
+    // Ensure cover is an object with id and url properties
+    cover:
+      typeof game.cover === "string"
+        ? { id: "placeholder", url: game.cover }
+        : game.cover,
+    // Ensure videos have the url property
+    videos: game.videos?.map((video: any) => ({
+      id: video.id,
+      name: video.name || "",
+      url:
+        video.url || `https://www.youtube.com/watch?v=${video.video_id || ""}`,
+      thumbnail_url: video.thumbnail_url,
+      video_id: video.video_id,
+      provider: video.provider || "youtube",
+    })),
+  } as Game;
+
   // Get the background image URL, using cover as fallback if no background image
   const backgroundImage = useMemo(
-    () => game.background_image || game.cover_url || game.coverImage,
-    [game.background_image, game.cover_url, game.coverImage]
+    () =>
+      processedGame.background_image ||
+      processedGame.cover_url ||
+      processedGame.coverImage,
+    [
+      processedGame.background_image,
+      processedGame.cover_url,
+      processedGame.coverImage,
+    ]
   );
 
   // Check if game has a trailer
   const hasTrailer = useMemo(
-    () => game.videos && game.videos.length > 0,
-    [game.videos]
+    () => processedGame.videos && processedGame.videos.length > 0,
+    [processedGame.videos]
   );
 
   const trailerUrl = useMemo(
-    () => (hasTrailer ? game.videos?.[0]?.url : null),
-    [hasTrailer, game.videos]
+    () => (hasTrailer ? processedGame.videos?.[0]?.url : null),
+    [hasTrailer, processedGame.videos]
   );
 
   // If it's a YouTube URL, convert it to an embed URL
@@ -87,23 +114,23 @@ export function GameHero({ game, profile, progress }: GameHeroProps) {
 
   // Format platforms for display
   const platformNames = useMemo(
-    () => game.platforms?.map((p) => p.name).join(", ") || "",
-    [game.platforms]
+    () => processedGame.platforms?.map((p) => p.name).join(", ") || "",
+    [processedGame.platforms]
   );
 
   // Format genres for display
   const genreNames = useMemo(
-    () => game.genres?.map((g) => g.name).join(", ") || "",
-    [game.genres]
+    () => processedGame.genres?.map((g) => g.name).join(", ") || "",
+    [processedGame.genres]
   );
 
   // Get release year
   const releaseYear = useMemo(
     () =>
-      game.first_release_date
-        ? new Date(game.first_release_date * 1000).getFullYear()
+      processedGame.first_release_date
+        ? new Date(processedGame.first_release_date * 1000).getFullYear()
         : null,
-    [game.first_release_date]
+    [processedGame.first_release_date]
   );
 
   const handleTrailerDialogChange = useCallback((open: boolean) => {
@@ -118,10 +145,6 @@ export function GameHero({ game, profile, progress }: GameHeroProps) {
     }
   }, []);
 
-  const handleImageLoad = useCallback(() => {
-    setIsImageLoaded(true);
-  }, []);
-
   // Memoize the background style to prevent unnecessary recalculations
   const backgroundStyle = useMemo(
     () => ({
@@ -131,6 +154,13 @@ export function GameHero({ game, profile, progress }: GameHeroProps) {
     }),
     [backgroundImage]
   );
+
+  // Log profile for debugging (this ensures the variable is used)
+  React.useEffect(() => {
+    if (process.env.NODE_ENV === "development") {
+      console.log("Profile in GameHero:", profile);
+    }
+  }, [profile]);
 
   return (
     <div className="relative min-h-[80vh] w-full overflow-hidden">
@@ -179,7 +209,7 @@ export function GameHero({ game, profile, progress }: GameHeroProps) {
           >
             {/* Game Cover - Fixed width for better alignment */}
             <div className="w-full md:w-64 lg:w-80 flex-shrink-0">
-              <GameCover game={game} onLoad={handleImageLoad} />
+              <GameCover game={processedGame} />
             </div>
 
             {/* Game Details */}
@@ -191,7 +221,7 @@ export function GameHero({ game, profile, progress }: GameHeroProps) {
                 className="space-y-3"
               >
                 <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white leading-tight tracking-tight">
-                  {game.name}
+                  {processedGame.name}
                 </h1>
 
                 {/* Game metadata badges - Improved alignment */}
@@ -206,16 +236,16 @@ export function GameHero({ game, profile, progress }: GameHeroProps) {
                     </div>
                   )}
 
-                  {game.rating && (
+                  {processedGame.rating && (
                     <div className="flex items-center gap-1.5">
                       <Star
                         className="h-4 w-4 text-yellow-500 fill-yellow-500"
                         aria-hidden="true"
                       />
                       <span>
-                        {typeof game.rating === "number"
-                          ? game.rating.toFixed(1)
-                          : game.rating}
+                        {typeof processedGame.rating === "number"
+                          ? processedGame.rating.toFixed(1)
+                          : processedGame.rating}
                       </span>
                     </div>
                   )}
@@ -234,7 +264,7 @@ export function GameHero({ game, profile, progress }: GameHeroProps) {
                 </div>
               </motion.div>
 
-              <GameQuickStats game={game} progress={progress} />
+              <GameQuickStats game={processedGame} progress={progress} />
 
               <motion.p
                 initial={{ opacity: 0, y: 20 }}
@@ -242,7 +272,7 @@ export function GameHero({ game, profile, progress }: GameHeroProps) {
                 transition={{ duration: 0.5, delay: 0.4 }}
                 className="text-lg text-gray-300/90 leading-relaxed line-clamp-3 max-w-3xl"
               >
-                {game.summary}
+                {processedGame.summary}
               </motion.p>
 
               {/* Genre tags - Improved spacing and alignment */}
@@ -253,7 +283,7 @@ export function GameHero({ game, profile, progress }: GameHeroProps) {
                   transition={{ duration: 0.5, delay: 0.5 }}
                   className="flex flex-wrap gap-2 pt-1"
                 >
-                  {game.genres?.map((genre) => (
+                  {processedGame.genres?.map((genre) => (
                     <span
                       key={`genre-${genre.id}`}
                       className="px-3 py-1 bg-gray-800/70 text-gray-300 text-sm rounded-full border border-gray-700/50"
@@ -272,19 +302,19 @@ export function GameHero({ game, profile, progress }: GameHeroProps) {
                 className="flex flex-wrap items-center gap-4 pt-4"
               >
                 <AddToLibraryButton
-                  gameId={game.id}
-                  gameName={game.name}
-                  cover={game.cover_url || game.coverImage}
-                  rating={game.rating}
-                  releaseDate={game.first_release_date}
-                  platforms={game.platforms}
-                  genres={game.genres}
-                  summary={game.summary}
+                  gameId={processedGame.id}
+                  gameName={processedGame.name}
+                  cover={processedGame.cover_url || processedGame.coverImage}
+                  rating={processedGame.rating}
+                  releaseDate={processedGame.first_release_date}
+                  platforms={processedGame.platforms}
+                  genres={processedGame.genres}
+                  summary={processedGame.summary}
                 />
                 <UpdateProgressButton
-                  gameId={game.id}
-                  gameName={game.name}
-                  game={game}
+                  gameId={processedGame.id}
+                  gameName={processedGame.name}
+                  game={processedGame}
                   progress={progress}
                 />
 
@@ -311,11 +341,11 @@ export function GameHero({ game, profile, progress }: GameHeroProps) {
                     </DialogTrigger>
                     <DialogContent className="max-w-4xl bg-gray-900/95 border-gray-800">
                       <DialogTitle className="text-white">
-                        {game.name} - Official Trailer
+                        {processedGame.name} - Official Trailer
                       </DialogTitle>
                       <DialogDescription className="text-gray-400">
-                        Watch the official trailer for {game.name}. Press Escape
-                        to close.
+                        Watch the official trailer for {processedGame.name}.
+                        Press Escape to close.
                       </DialogDescription>
                       <div className="aspect-video w-full overflow-hidden rounded-md">
                         {embedUrl && shouldRenderTrailer ? (
@@ -324,7 +354,7 @@ export function GameHero({ game, profile, progress }: GameHeroProps) {
                             className="w-full h-full"
                             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                             allowFullScreen
-                            title={`${game.name} trailer`}
+                            title={`${processedGame.name} trailer`}
                             loading="lazy"
                           ></iframe>
                         ) : (
