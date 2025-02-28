@@ -1,6 +1,7 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import type { Profile } from '@/types/profile';
+import { useCallback } from 'react';
 
 interface ProfileStats {
   total_played: number;
@@ -10,16 +11,22 @@ interface ProfileStats {
 
 export function useProfile() {
   const supabase = createClientComponentClient();
+  const queryClient = useQueryClient();
 
+  // Get user session with optimized caching
   const { data: session, error: sessionError } = useQuery({
     queryKey: ['session'],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('No authenticated user');
       return user;
-    }
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    cacheTime: 10 * 60 * 1000, // 10 minutes
+    retry: 1
   });
 
+  // Get user profile with optimized caching
   const { data: profile, error: profileError } = useQuery({
     queryKey: ['profile', session?.id],
     queryFn: async () => {
@@ -33,7 +40,9 @@ export function useProfile() {
       if (error) throw error;
       return data as Profile;
     },
-    enabled: !!session?.id
+    enabled: !!session?.id,
+    staleTime: 2 * 60 * 1000, // 2 minutes
+    cacheTime: 10 * 60 * 1000, // 10 minutes
   });
 
   const defaultStats: ProfileStats = {
@@ -42,7 +51,8 @@ export function useProfile() {
     backlog: 0
   };
 
-  const { data: gameStats = defaultStats } = useQuery<ProfileStats | null>({
+  // Get game stats with optimized caching
+  const { data: gameStats = defaultStats, isLoading: isStatsLoading } = useQuery<ProfileStats | null>({
     queryKey: ['gameStats', session?.id],
     queryFn: async () => {
       if (!session?.id) return null;
@@ -75,27 +85,46 @@ export function useProfile() {
 
       return stats;
     },
-    enabled: !!session?.id
+    enabled: !!session?.id,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    cacheTime: 15 * 60 * 1000, // 15 minutes
   });
 
   const error = sessionError || profileError;
-  const isLoading = !session || !profile;
+  const isLoading = !session || (!profile && !profileError);
 
-  const updateProfile = async (updates: Partial<Profile>) => {
+  // Optimized update function with cache invalidation
+  const updateProfile = useCallback(async (updates: Partial<Profile>) => {
     if (!session?.id) throw new Error('No authenticated user');
-    const { error } = await supabase
-      .from('profiles')
-      .update(updates)
-      .eq('id', session.id);
     
-    if (error) throw error;
-  };
+    // Optimistic update
+    queryClient.setQueryData(['profile', session.id], (oldData: Profile | undefined) => {
+      return oldData ? { ...oldData, ...updates } : oldData;
+    });
+    
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update(updates)
+        .eq('id', session.id);
+      
+      if (error) throw error;
+      
+      // Invalidate and refetch on success
+      queryClient.invalidateQueries(['profile', session.id]);
+    } catch (error) {
+      // Revert optimistic update on error
+      queryClient.invalidateQueries(['profile', session.id]);
+      throw error;
+    }
+  }, [session?.id, supabase, queryClient]);
 
   return {
     profile,
     isLoading,
     error,
     gameStats,
+    isStatsLoading,
     updateProfile
   };
 }

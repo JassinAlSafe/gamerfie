@@ -181,92 +181,127 @@ export function EntryForm({
             </Button>
 
             {isSearchOpen && (
-              <div className="absolute z-50 w-full mt-1 bg-gray-900 rounded-md border border-gray-800 shadow-lg">
-                <div className="p-2">
-                  <Input
-                    placeholder="Search games..."
-                    value={searchQuery}
-                    onChange={(e) => handleGameSearch(e.target.value)}
-                    className="h-9 bg-gray-800 border-gray-700 text-white"
-                  />
-                </div>
-                <div className="max-h-[300px] overflow-y-auto p-1">
-                  {searchLoading ? (
-                    <div className="py-6 text-center text-sm text-gray-400">
-                      <div className="flex items-center justify-center gap-2">
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        Searching...
+              <>
+                <div
+                  className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40"
+                  onClick={() => setIsSearchOpen(false)}
+                />
+                <div className="absolute z-50 w-full mt-1 bg-gray-900 rounded-md border border-gray-800 shadow-xl">
+                  <div className="p-3 sticky top-0 bg-gray-900 border-b border-gray-800">
+                    <div className="relative">
+                      <Input
+                        placeholder="Search games..."
+                        value={searchQuery}
+                        onChange={(e) => handleGameSearch(e.target.value)}
+                        className="h-9 bg-gray-800 border-gray-700 text-white pr-8"
+                        autoFocus
+                      />
+                      {searchQuery && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSearchQuery("");
+                            reset();
+                          }}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
+                          aria-label="Clear search"
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="16"
+                            height="16"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                          </svg>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  <div className="max-h-[300px] overflow-y-auto p-2">
+                    {searchLoading ? (
+                      <div className="py-6 text-center text-sm text-gray-400">
+                        <div className="flex items-center justify-center gap-2">
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          Searching...
+                        </div>
                       </div>
-                    </div>
-                  ) : results.length === 0 && searchQuery ? (
-                    <div className="py-6 text-center text-sm text-gray-400">
-                      No games found.
-                    </div>
-                  ) : (
-                    <>
-                      {libraryGames.length > 0 && !searchQuery && (
-                        <>
-                          <div className="px-2 py-1.5 text-xs font-medium text-gray-400">
-                            Your Library
-                          </div>
-                          {libraryGames.map((game) => (
-                            <button
-                              key={game.id}
-                              type="button"
-                              onClick={() => handleGameSelect(game)}
-                              className="w-full flex items-center gap-2 px-2 py-1.5 text-left text-sm text-white hover:bg-gray-800 rounded"
-                            >
-                              {game.cover && (
-                                <div className="relative w-8 h-8 rounded overflow-hidden flex-shrink-0">
-                                  <Image
-                                    src={getCoverImageUrl(game.cover.url)}
-                                    alt={`Cover for ${game.name}`}
-                                    fill
-                                    className="object-cover"
-                                    sizes="32px"
-                                    unoptimized
-                                  />
-                                </div>
-                              )}
-                              <span className="truncate">{game.name}</span>
-                            </button>
-                          ))}
-                          <Separator className="my-1" />
-                        </>
-                      )}
-                      {results.length > 0 && (
-                        <>
-                          <div className="px-2 py-1.5 text-xs font-medium text-gray-400">
-                            {searchQuery ? "Search Results" : "Popular Games"}
-                          </div>
-                          {results.map((game) => (
-                            <button
-                              key={game.id}
-                              type="button"
-                              onClick={() => handleGameSelect(game)}
-                              className="w-full flex items-center gap-2 px-2 py-1.5 text-left text-sm text-white hover:bg-gray-800 rounded"
-                            >
-                              {game.cover && (
-                                <div className="relative w-8 h-8 rounded overflow-hidden flex-shrink-0">
-                                  <Image
-                                    src={getCoverImageUrl(game.cover.url)}
-                                    alt={`Cover for ${game.name}`}
-                                    fill
-                                    className="object-cover"
-                                    sizes="32px"
-                                    unoptimized
-                                  />
-                                </div>
-                              )}
-                              <span className="truncate">{game.name}</span>
-                            </button>
-                          ))}
-                        </>
-                      )}
-                    </>
-                  )}
+                    ) : results.length === 0 && searchQuery ? (
+                      <div className="py-6 text-center text-sm text-gray-400">
+                        No games found.
+                      </div>
+                    ) : (
+                      <>
+                        {libraryGames.length > 0 && !searchQuery && (
+                          <>
+                            <div className="px-2 py-1.5 text-xs font-medium text-gray-400">
+                              Your Library
+                            </div>
+                            {libraryGames.map((game) => (
+                              <button
+                                key={game.id}
+                                type="button"
+                                onClick={() => handleGameSelect(game)}
+                                className="w-full flex items-center gap-2 px-2 py-1.5 text-left text-sm text-white hover:bg-gray-800 rounded"
+                              >
+                                {game.cover && (
+                                  <div className="relative w-8 h-8 rounded overflow-hidden flex-shrink-0">
+                                    <Image
+                                      src={getCoverImageUrl(game.cover.url)}
+                                      alt={`Cover for ${game.name}`}
+                                      fill
+                                      className="object-cover"
+                                      sizes="32px"
+                                      unoptimized
+                                    />
+                                  </div>
+                                )}
+                                <span className="truncate">{game.name}</span>
+                              </button>
+                            ))}
+                            <Separator className="my-1" />
+                          </>
+                        )}
+                        {results.length > 0 && (
+                          <>
+                            <div className="px-2 py-1.5 text-xs font-medium text-gray-400">
+                              {searchQuery ? "Search Results" : "Popular Games"}
+                            </div>
+                            {results.map((game) => (
+                              <button
+                                key={game.id}
+                                type="button"
+                                onClick={() => handleGameSelect(game)}
+                                className="w-full flex items-center gap-2 px-2 py-1.5 text-left text-sm text-white hover:bg-gray-800 rounded"
+                              >
+                                {game.cover && (
+                                  <div className="relative w-8 h-8 rounded overflow-hidden flex-shrink-0">
+                                    <Image
+                                      src={getCoverImageUrl(game.cover.url)}
+                                      alt={`Cover for ${game.name}`}
+                                      fill
+                                      className="object-cover"
+                                      sizes="32px"
+                                      unoptimized
+                                    />
+                                  </div>
+                                )}
+                                <span className="truncate">{game.name}</span>
+                              </button>
+                            ))}
+                          </>
+                        )}
+                      </>
+                    )}
+                  </div>
                 </div>
-              </div>
+              </>
             )}
           </div>
         </div>
@@ -280,7 +315,9 @@ export function EntryForm({
             </Label>
             <div className="space-y-2">
               <Slider
-                value={[parseInt(formData.progress?.toString() || "0")]}
+                value={[
+                  formData.progress !== undefined ? formData.progress : 0,
+                ]}
                 onValueChange={handleProgressChange}
                 max={100}
                 step={1}
@@ -359,7 +396,7 @@ export function EntryForm({
             </Label>
             <div className="space-y-2">
               <Slider
-                value={[parseInt(formData.rating || "0")]}
+                value={[formData.rating !== undefined ? formData.rating : 1]}
                 onValueChange={(value) =>
                   setFormData({ ...formData, rating: value[0] })
                 }
@@ -470,94 +507,134 @@ export function EntryForm({
               </div>
             )}
 
-            {isSearchOpen && (
-              <div className="absolute z-50 w-full mt-1 bg-gray-900 rounded-md border border-gray-800 shadow-lg">
-                <div className="p-2">
-                  <Input
-                    placeholder="Search games..."
-                    value={searchQuery}
-                    onChange={(e) => handleGameSearch(e.target.value)}
-                    className="h-9 bg-gray-800 border-gray-700 text-white"
+            {/* Game search dropdown with improved positioning */}
+            <div className="relative">
+              {isSearchOpen && (
+                <>
+                  <div
+                    className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40"
+                    onClick={() => setIsSearchOpen(false)}
                   />
-                </div>
-                <div className="max-h-[300px] overflow-y-auto p-1">
-                  {searchLoading ? (
-                    <div className="py-6 text-center text-sm text-gray-400">
-                      <div className="flex items-center justify-center gap-2">
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        Searching...
+                  <div className="absolute z-50 left-0 right-0 mt-1 bg-gray-900 rounded-md border border-gray-800 shadow-xl">
+                    <div className="p-3 sticky top-0 bg-gray-900 border-b border-gray-800">
+                      <div className="relative">
+                        <Input
+                          placeholder="Search games..."
+                          value={searchQuery}
+                          onChange={(e) => handleGameSearch(e.target.value)}
+                          className="h-9 bg-gray-800 border-gray-700 text-white pr-8"
+                          autoFocus
+                        />
+                        {searchQuery && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSearchQuery("");
+                              reset();
+                            }}
+                            className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
+                            aria-label="Clear search"
+                          >
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              width="16"
+                              height="16"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            >
+                              <line x1="18" y1="6" x2="6" y2="18"></line>
+                              <line x1="6" y1="6" x2="18" y2="18"></line>
+                            </svg>
+                          </button>
+                        )}
                       </div>
                     </div>
-                  ) : results.length === 0 && searchQuery ? (
-                    <div className="py-6 text-center text-sm text-gray-400">
-                      No games found.
+                    <div className="max-h-[300px] overflow-y-auto p-2">
+                      {searchLoading ? (
+                        <div className="py-6 text-center text-sm text-gray-400">
+                          <div className="flex items-center justify-center gap-2">
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            Searching...
+                          </div>
+                        </div>
+                      ) : results.length === 0 && searchQuery ? (
+                        <div className="py-6 text-center text-sm text-gray-400">
+                          No games found.
+                        </div>
+                      ) : (
+                        <>
+                          {libraryGames.length > 0 && !searchQuery && (
+                            <>
+                              <div className="px-2 py-1.5 text-xs font-medium text-gray-400">
+                                Your Library
+                              </div>
+                              {libraryGames.map((game) => (
+                                <button
+                                  key={game.id}
+                                  type="button"
+                                  onClick={() => handleGameSelect(game)}
+                                  className="w-full flex items-center gap-2 px-2 py-1.5 text-left text-sm text-white hover:bg-gray-800 rounded"
+                                >
+                                  {game.cover && (
+                                    <div className="relative w-8 h-8 rounded overflow-hidden flex-shrink-0">
+                                      <Image
+                                        src={getCoverImageUrl(game.cover.url)}
+                                        alt={`Cover for ${game.name}`}
+                                        fill
+                                        className="object-cover"
+                                        sizes="32px"
+                                        unoptimized
+                                      />
+                                    </div>
+                                  )}
+                                  <span className="truncate">{game.name}</span>
+                                </button>
+                              ))}
+                              <Separator className="my-1" />
+                            </>
+                          )}
+                          {results.length > 0 && (
+                            <>
+                              <div className="px-2 py-1.5 text-xs font-medium text-gray-400">
+                                {searchQuery
+                                  ? "Search Results"
+                                  : "Popular Games"}
+                              </div>
+                              {results.map((game) => (
+                                <button
+                                  key={game.id}
+                                  type="button"
+                                  onClick={() => handleGameSelect(game)}
+                                  className="w-full flex items-center gap-2 px-2 py-1.5 text-left text-sm text-white hover:bg-gray-800 rounded"
+                                >
+                                  {game.cover && (
+                                    <div className="relative w-8 h-8 rounded overflow-hidden flex-shrink-0">
+                                      <Image
+                                        src={getCoverImageUrl(game.cover.url)}
+                                        alt={`Cover for ${game.name}`}
+                                        fill
+                                        className="object-cover"
+                                        sizes="32px"
+                                        unoptimized
+                                      />
+                                    </div>
+                                  )}
+                                  <span className="truncate">{game.name}</span>
+                                </button>
+                              ))}
+                            </>
+                          )}
+                        </>
+                      )}
                     </div>
-                  ) : (
-                    <>
-                      {libraryGames.length > 0 && !searchQuery && (
-                        <>
-                          <div className="px-2 py-1.5 text-xs font-medium text-gray-400">
-                            Your Library
-                          </div>
-                          {libraryGames.map((game) => (
-                            <button
-                              key={game.id}
-                              type="button"
-                              onClick={() => handleGameSelect(game)}
-                              className="w-full flex items-center gap-2 px-2 py-1.5 text-left text-sm text-white hover:bg-gray-800 rounded"
-                            >
-                              {game.cover && (
-                                <div className="relative w-8 h-8 rounded overflow-hidden flex-shrink-0">
-                                  <Image
-                                    src={getCoverImageUrl(game.cover.url)}
-                                    alt={`Cover for ${game.name}`}
-                                    fill
-                                    className="object-cover"
-                                    sizes="32px"
-                                    unoptimized
-                                  />
-                                </div>
-                              )}
-                              <span className="truncate">{game.name}</span>
-                            </button>
-                          ))}
-                          <Separator className="my-1" />
-                        </>
-                      )}
-                      {results.length > 0 && (
-                        <>
-                          <div className="px-2 py-1.5 text-xs font-medium text-gray-400">
-                            {searchQuery ? "Search Results" : "Popular Games"}
-                          </div>
-                          {results.map((game) => (
-                            <button
-                              key={game.id}
-                              type="button"
-                              onClick={() => handleGameSelect(game)}
-                              className="w-full flex items-center gap-2 px-2 py-1.5 text-left text-sm text-white hover:bg-gray-800 rounded"
-                            >
-                              {game.cover && (
-                                <div className="relative w-8 h-8 rounded overflow-hidden flex-shrink-0">
-                                  <Image
-                                    src={getCoverImageUrl(game.cover.url)}
-                                    alt={`Cover for ${game.name}`}
-                                    fill
-                                    className="object-cover"
-                                    sizes="32px"
-                                    unoptimized
-                                  />
-                                </div>
-                              )}
-                              <span className="truncate">{game.name}</span>
-                            </button>
-                          ))}
-                        </>
-                      )}
-                    </>
-                  )}
-                </div>
-              </div>
-            )}
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         </>
       )}

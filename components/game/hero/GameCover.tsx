@@ -24,48 +24,54 @@ export function GameCover({ game, onLoad }: GameCoverProps) {
   if (!coverUrl) {
     return (
       <motion.div
-        initial={false}
-        animate={mounted ? { opacity: 1 } : { opacity: 0 }}
-        whileHover={{ scale: 1.05 }}
-        transition={{ duration: 0.2 }}
-        className="w-48 md:w-1/5 flex-shrink-0 -ml-8 md:-ml-16"
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        whileHover={{ scale: 1.03 }}
+        transition={{ duration: 0.3 }}
+        className="w-48 md:w-64 lg:w-72 flex-shrink-0"
       >
-        <div className="relative w-48 h-64 md:w-64 md:h-80 rounded-lg overflow-hidden shadow-lg bg-gray-800" />
+        <div className="relative w-full aspect-[3/4] rounded-xl overflow-hidden shadow-xl bg-gray-800/80 border border-gray-700/30" />
       </motion.div>
     );
   }
 
   return (
     <motion.div
-      initial={false}
-      animate={mounted ? { opacity: 1 } : { opacity: 0 }}
-      whileHover={{ scale: 1.05 }}
-      transition={{ duration: 0.2 }}
-      className="w-48 md:w-1/5 flex-shrink-0 -ml-8 md:-ml-16"
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      whileHover={{ scale: 1.03 }}
+      transition={{ duration: 0.3 }}
+      className="w-48 md:w-64 lg:w-72 flex-shrink-0"
     >
-      <div className="relative w-48 h-64 md:w-64 md:h-80 rounded-lg overflow-hidden shadow-lg">
+      <div className="relative w-full aspect-[3/4] rounded-xl overflow-hidden shadow-xl ring-1 ring-gray-700/30">
+        {/* Shimmer effect while loading */}
         <div
-          className={`absolute inset-0 bg-gray-800 transition-opacity duration-300 ${
+          className={`absolute inset-0 bg-gradient-to-r from-gray-800/80 via-gray-700/80 to-gray-800/80 bg-[length:200%_100%] animate-shimmer transition-opacity duration-300 ${
             isLoading || !mounted ? "opacity-100" : "opacity-0"
           }`}
         />
+
         {mounted && (
           <Image
             src={getCoverImageUrl(coverUrl)}
             alt={game.name}
             fill
             priority
-            quality={100}
-            className={`object-cover transition-opacity duration-300 ${
-              isLoading ? "opacity-0" : "opacity-100"
+            sizes="(max-width: 768px) 192px, (max-width: 1024px) 256px, 288px"
+            className={`object-cover transition-all duration-500 ${
+              isLoading
+                ? "scale-110 blur-sm opacity-0"
+                : "scale-100 blur-0 opacity-100"
             }`}
-            unoptimized
             onLoad={() => {
               setIsLoading(false);
               onLoad?.();
             }}
           />
         )}
+
+        {/* Subtle gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
       </div>
     </motion.div>
   );

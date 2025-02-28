@@ -5,7 +5,7 @@ import { useJournalStore } from "@/stores/useJournalStore";
 import { Button } from "../ui/button";
 import { Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { NewEntryModal } from "../journal/NewEntryModal";
+import { JournalEntryDialog } from "../journal/JournalEntryDialog";
 import { formatDistanceToNow } from "date-fns";
 import Image from "next/image";
 import { getCoverImageUrl } from "@/utils/image-utils";
@@ -151,10 +151,10 @@ export default function GameListsClient() {
         </div>
       )}
 
-      <NewEntryModal
+      <JournalEntryDialog
         isOpen={isNewEntryModalOpen}
         onClose={() => setIsNewEntryModalOpen(false)}
-        type="list"
+        initialType="list"
       />
     </div>
   );

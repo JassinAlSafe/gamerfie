@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -101,6 +101,7 @@ export function AddToLibraryButton({
   const { updateGameStatus, updateProgress } = useProgressStore();
   const { addError } = useErrorStore();
 
+  // Check if game is in library on mount or when user/gameId changes
   useEffect(() => {
     const checkLibrary = async () => {
       if (!user) return;
@@ -118,7 +119,8 @@ export function AddToLibraryButton({
     checkLibrary();
   }, [gameId, user]);
 
-  const handleProgressSubmit = async () => {
+  // Handle progress submission
+  const handleProgressSubmit = useCallback(async () => {
     try {
       if (!user || !pendingStatus) return;
 
@@ -167,65 +169,91 @@ export function AddToLibraryButton({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [
+    user,
+    pendingStatus,
+    updateProgress,
+    gameId,
+    playTime,
+    completionPercentage,
+    updateGameStatus,
+    createActivity,
+    onSuccess,
+    router,
+    addError,
+  ]);
 
-  const handleStatusChange = async (newStatus: GameStatus) => {
-    if (!user) {
-      addError("auth", "Please sign in to update game status");
-      router.push("/signin");
-      return;
-    }
-
-    // Don't update if status hasn't changed
-    if (gameStatus === newStatus) {
-      toast.info(`Game is already marked as ${STATUS_LABELS[newStatus]}`);
-      return;
-    }
-
-    // For completed status, show progress dialog
-    if (newStatus === "completed") {
-      setPendingStatus(newStatus);
-      setShowProgressDialog(true);
-      return;
-    }
-
-    // For other statuses, proceed as before
-    try {
-      setIsLoading(true);
-      await updateGameStatus(user.id, gameId, newStatus);
-      setGameStatus(newStatus);
-
-      if (newStatus === "playing") {
-        try {
-          await createActivity("started_playing", gameId);
-        } catch (activityError: any) {
-          if (activityError.message?.includes("Please wait")) {
-            const minutes = activityError.message.match(/\d+/)?.[0] || "some";
-            toast.error(
-              `Status updated, but we couldn't post the activity yet. Please wait ${minutes} minutes before sharing another update for this game.`
-            );
-          } else {
-            console.error("Error creating activity:", activityError);
-            toast.error(
-              "Status updated, but we couldn't share the activity with your friends."
-            );
-          }
-        }
+  // Handle status change
+  const handleStatusChange = useCallback(
+    async (newStatus: GameStatus) => {
+      if (!user) {
+        addError("auth", "Please sign in to update game status");
+        router.push("/signin");
+        return;
       }
 
-      toast.success(`Game status updated to ${STATUS_LABELS[newStatus]}`);
-      onSuccess?.(newStatus);
-      router.refresh();
-    } catch (error) {
-      console.error("Error updating status:", error);
-      addError("api", "Failed to update game status");
-      setGameStatus(gameStatus); // Revert the status on error
-    } finally {
-      setIsLoading(false);
-    }
-  };
+      // Don't update if status hasn't changed
+      if (gameStatus === newStatus) {
+        toast.info(`Game is already marked as ${STATUS_LABELS[newStatus]}`);
+        return;
+      }
 
-  const handleClick = async () => {
+      // For completed status, show progress dialog
+      if (newStatus === "completed") {
+        setPendingStatus(newStatus);
+        setShowProgressDialog(true);
+        return;
+      }
+
+      // For other statuses, proceed as before
+      try {
+        setIsLoading(true);
+        await updateGameStatus(user.id, gameId, newStatus);
+        setGameStatus(newStatus);
+
+        if (newStatus === "playing") {
+          try {
+            await createActivity("started_playing", gameId);
+          } catch (activityError: any) {
+            if (activityError.message?.includes("Please wait")) {
+              const minutes = activityError.message.match(/\d+/)?.[0] || "some";
+              toast.error(
+                `Status updated, but we couldn't post the activity yet. Please wait ${minutes} minutes before sharing another update for this game.`
+              );
+            } else {
+              console.error("Error creating activity:", activityError);
+              toast.error(
+                "Status updated, but we couldn't share the activity with your friends."
+              );
+            }
+          }
+        }
+
+        toast.success(`Game status updated to ${STATUS_LABELS[newStatus]}`);
+        onSuccess?.(newStatus);
+        router.refresh();
+      } catch (error) {
+        console.error("Error updating status:", error);
+        addError("api", "Failed to update game status");
+        setGameStatus(gameStatus); // Revert the status on error
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [
+      user,
+      gameStatus,
+      updateGameStatus,
+      gameId,
+      createActivity,
+      onSuccess,
+      router,
+      addError,
+    ]
+  );
+
+  // Handle add to library click
+  const handleClick = useCallback(async () => {
     try {
       if (!user) {
         addError("auth", "Please sign in to add games to your library");
@@ -328,214 +356,199 @@ export function AddToLibraryButton({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [
+    user,
+    addError,
+    router,
+    platforms,
+    genres,
+    gameId,
+    gameName,
+    cover,
+    rating,
+    releaseDate,
+    summary,
+    addGame,
+    createActivity,
+    onSuccess,
+  ]);
 
-  if (isInLibrary) {
-    return (
-      <>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant={STATUS_VARIANTS[gameStatus || "want_to_play"]}
-              size={size}
-              className={cn(
-                "min-w-[140px] transition-all duration-200",
-                className
-              )}
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <LoadingSpinner className="mr-2" />
-              ) : (
-                STATUS_ICONS[gameStatus || "want_to_play"]
-              )}
-              {STATUS_LABELS[gameStatus || "want_to_play"]}
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent
-            align="end"
-            className="w-[200px] bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-md shadow-lg animate-in fade-in-0 zoom-in-95"
-          >
-            {Object.entries(STATUS_LABELS).map(([status, label]) => (
-              <DropdownMenuItem
-                key={status}
-                onClick={() => handleStatusChange(status as GameStatus)}
-                className={cn(
-                  "flex items-center px-3 py-2 text-sm cursor-pointer",
-                  "hover:bg-zinc-100 dark:hover:bg-zinc-800",
-                  "focus:bg-zinc-100 dark:focus:bg-zinc-800",
-                  "transition-colors duration-150",
-                  status === gameStatus &&
-                    "bg-zinc-100 dark:bg-zinc-800 font-medium",
-                  {
-                    "text-blue-600 dark:text-blue-400":
-                      status === "want_to_play",
-                    "text-purple-600 dark:text-purple-400":
-                      status === "playing",
-                    "text-green-600 dark:text-green-400":
-                      status === "completed",
-                    "text-red-600 dark:text-red-400": status === "dropped",
-                  }
-                )}
-                disabled={status === gameStatus}
-              >
-                {STATUS_ICONS[status as GameStatus]}
-                {label}
-                {status === gameStatus && (
-                  <div className="ml-auto">
-                    <CheckCircle className="w-4 h-4" />
-                  </div>
-                )}
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
+  // Handle dialog close
+  const handleDialogOpenChange = useCallback((open: boolean) => {
+    setShowProgressDialog(open);
+    if (!open) {
+      // Reset pending status when dialog is closed
+      setPendingStatus(null);
+    }
+  }, []);
 
-        <Dialog open={showProgressDialog} onOpenChange={setShowProgressDialog}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Update Game Progress</DialogTitle>
-              <DialogDescription>
-                Enter your progress details for {gameName}
-              </DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="play-time" className="text-right">
-                  Play Time (hours)
-                </Label>
-                <Input
-                  id="play-time"
-                  type="number"
-                  className="col-span-3"
-                  value={playTime || ""}
-                  onChange={(e) => setPlayTime(Number(e.target.value))}
-                />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="completion" className="text-right">
-                  Completion %
-                </Label>
-                <Input
-                  id="completion"
-                  type="number"
-                  min="0"
-                  max="100"
-                  className="col-span-3"
-                  value={completionPercentage || ""}
-                  onChange={(e) =>
-                    setCompletionPercentage(Number(e.target.value))
-                  }
-                />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setShowProgressDialog(false);
-                  setPendingStatus(null);
-                }}
-              >
-                Cancel
-              </Button>
-              <Button onClick={handleProgressSubmit} disabled={isLoading}>
-                {isLoading ? (
-                  <>
-                    <LoadingSpinner size="sm" />
-                    <span className="ml-2">Updating...</span>
-                  </>
-                ) : (
-                  "Update Progress"
-                )}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </>
-    );
-  }
+  // Memoize input handlers to prevent unnecessary re-renders
+  const handlePlayTimeChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      setPlayTime(e.target.value ? parseInt(e.target.value, 10) : undefined);
+    },
+    []
+  );
+
+  const handleCompletionChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      setCompletionPercentage(
+        e.target.value ? parseInt(e.target.value, 10) : undefined
+      );
+    },
+    []
+  );
+
+  // Determine button appearance based on status
+  const buttonText = useMemo(
+    () =>
+      isInLibrary ? STATUS_LABELS[gameStatus as GameStatus] : "Add to Library",
+    [isInLibrary, gameStatus]
+  );
+
+  const buttonIcon = useMemo(
+    () =>
+      isInLibrary ? (
+        STATUS_ICONS[gameStatus as GameStatus]
+      ) : (
+        <Library className="w-4 h-4 mr-2" />
+      ),
+    [isInLibrary, gameStatus]
+  );
+
+  const buttonVariant = useMemo(
+    () => (isInLibrary ? STATUS_VARIANTS[gameStatus as GameStatus] : variant),
+    [isInLibrary, gameStatus, variant]
+  );
 
   return (
     <>
-      {!isInLibrary ? (
-        <Button
-          variant="default"
-          size={size}
-          className={cn(
-            "bg-blue-600 hover:bg-blue-700 text-white",
-            "transition-all duration-200",
-            className
-          )}
-          onClick={handleClick}
-          disabled={isLoading}
-        >
-          {isLoading ? (
-            <LoadingSpinner className="mr-2" />
-          ) : (
-            <Library className="w-4 h-4 mr-2" />
-          )}
-          Add to Library
-        </Button>
-      ) : (
+      {isInLibrary ? (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
-              variant={STATUS_VARIANTS[gameStatus || "want_to_play"]}
+              variant={buttonVariant}
               size={size}
+              disabled={isLoading}
               className={cn(
-                "min-w-[140px] transition-all duration-200",
+                "min-w-[140px] h-10 transition-all duration-200 font-medium",
+                "bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700",
+                "border-none text-white shadow-md hover:shadow-lg",
+                "relative overflow-hidden group",
                 className
               )}
-              disabled={isLoading}
             >
               {isLoading ? (
-                <LoadingSpinner className="mr-2" />
+                <LoadingSpinner size="sm" className="mr-2" />
               ) : (
-                STATUS_ICONS[gameStatus || "want_to_play"]
+                buttonIcon
               )}
-              {STATUS_LABELS[gameStatus || "want_to_play"]}
+              <span className="relative z-10">{buttonText}</span>
+              <span className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent
             align="end"
-            className="w-[200px] bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-md shadow-lg animate-in fade-in-0 zoom-in-95"
+            className="w-48 bg-gray-900 border-gray-800 text-white"
           >
             {Object.entries(STATUS_LABELS).map(([status, label]) => (
               <DropdownMenuItem
                 key={status}
                 onClick={() => handleStatusChange(status as GameStatus)}
+                disabled={isLoading || gameStatus === status}
                 className={cn(
-                  "flex items-center px-3 py-2 text-sm cursor-pointer",
-                  "hover:bg-zinc-100 dark:hover:bg-zinc-800",
-                  "focus:bg-zinc-100 dark:focus:bg-zinc-800",
-                  "transition-colors duration-150",
-                  status === gameStatus &&
-                    "bg-zinc-100 dark:bg-zinc-800 font-medium",
-                  {
-                    "text-blue-600 dark:text-blue-400":
-                      status === "want_to_play",
-                    "text-purple-600 dark:text-purple-400":
-                      status === "playing",
-                    "text-green-600 dark:text-green-400":
-                      status === "completed",
-                    "text-red-600 dark:text-red-400": status === "dropped",
-                  }
+                  "flex items-center cursor-pointer py-2.5",
+                  "hover:bg-gray-800 focus:bg-gray-800",
+                  gameStatus === status && "bg-purple-500/20 text-purple-300"
                 )}
-                disabled={status === gameStatus}
               >
                 {STATUS_ICONS[status as GameStatus]}
                 {label}
-                {status === gameStatus && (
-                  <div className="ml-auto">
-                    <CheckCircle className="w-4 h-4" />
-                  </div>
-                )}
               </DropdownMenuItem>
             ))}
           </DropdownMenuContent>
         </DropdownMenu>
+      ) : (
+        <Button
+          variant={buttonVariant}
+          size={size}
+          onClick={handleClick}
+          disabled={isLoading}
+          className={cn(
+            "min-w-[140px] h-10 transition-all duration-200 font-medium",
+            "bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700",
+            "border-none text-white shadow-md hover:shadow-lg",
+            "relative overflow-hidden group",
+            className
+          )}
+        >
+          {isLoading ? (
+            <LoadingSpinner size="sm" className="mr-2" />
+          ) : (
+            buttonIcon
+          )}
+          <span className="relative z-10">{buttonText}</span>
+          <span className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+        </Button>
       )}
+
+      {/* Progress Dialog */}
+      <Dialog open={showProgressDialog} onOpenChange={handleDialogOpenChange}>
+        <DialogContent className="bg-gray-900 border-gray-800 text-white">
+          <DialogHeader>
+            <DialogTitle>Update Game Progress</DialogTitle>
+            <DialogDescription className="text-gray-400">
+              Enter your progress for {gameName}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="playTime" className="text-right">
+                Play Time (hours)
+              </Label>
+              <Input
+                id="playTime"
+                type="number"
+                min="0"
+                value={playTime || ""}
+                onChange={handlePlayTimeChange}
+                className="col-span-3 bg-gray-800 border-gray-700 text-white"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="completion" className="text-right">
+                Completion %
+              </Label>
+              <Input
+                id="completion"
+                type="number"
+                min="0"
+                max="100"
+                value={completionPercentage || ""}
+                onChange={handleCompletionChange}
+                className="col-span-3 bg-gray-800 border-gray-700 text-white"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              type="submit"
+              onClick={handleProgressSubmit}
+              disabled={isLoading}
+              className="bg-purple-600 hover:bg-purple-700 text-white"
+            >
+              {isLoading ? (
+                <>
+                  <LoadingSpinner size="sm" className="mr-2" />
+                  Saving...
+                </>
+              ) : (
+                "Save Progress"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

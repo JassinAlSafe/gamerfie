@@ -65,6 +65,12 @@ export function getHighQualityImageUrl(url: string): string {
     return processedUrl;
   }
   
+  // Handle YouTube thumbnail URLs - get highest quality version
+  if (url.includes('youtube.com/vi/') || url.includes('img.youtube.com')) {
+    // Try to get the maxresdefault version if possible
+    return url.replace(/\/[^\/]+\.jpg$/, '/maxresdefault.jpg');
+  }
+  
   return url;
 }
 
@@ -130,6 +136,46 @@ export function getBackgroundImageUrl(game: {
       return !url.includes('ui') && !url.includes('menu');
     });
     return getHighQualityImageUrl(cleanScreenshot?.url || game.screenshots[0].url);
+  }
+  
+  return null;
+}
+
+/**
+ * Gets a YouTube video thumbnail from a video URL or ID
+ */
+export function getYouTubeThumbnail(videoUrl: string | undefined, quality: 'default' | 'hq' | 'mq' | 'sd' | 'maxres' = 'maxres'): string {
+  if (!videoUrl) return "/placeholder.png";
+  
+  // Extract video ID from URL
+  const youtubeRegex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
+  const match = videoUrl.match(youtubeRegex);
+  
+  if (match && match[1]) {
+    const videoId = match[1];
+    return `https://img.youtube.com/vi/${videoId}/${quality}default.jpg`;
+  }
+  
+  // If the input is just a video ID
+  if (/^[a-zA-Z0-9_-]{11}$/.test(videoUrl)) {
+    return `https://img.youtube.com/vi/${videoUrl}/${quality}default.jpg`;
+  }
+  
+  return "/placeholder.png";
+}
+
+/**
+ * Converts a YouTube URL to an embed URL
+ */
+export function getYouTubeEmbedUrl(url: string | undefined): string | null {
+  if (!url) return null;
+  
+  // YouTube URL pattern
+  const youtubeRegex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
+  const match = url.match(youtubeRegex);
+  
+  if (match && match[1]) {
+    return `https://www.youtube.com/embed/${match[1]}?autoplay=1&rel=0`;
   }
   
   return null;

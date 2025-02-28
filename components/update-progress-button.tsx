@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useCallback, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { useProgressStore } from "@/stores/useProgressStore";
 import { useAuthStore } from "@/stores/useAuthStore";
@@ -46,37 +46,59 @@ export function UpdateProgressButton({
     }
   }, [user, gameId, fetchProgress]);
 
-  const handleProgressUpdate = async (progress: Partial<GameProgress>) => {
-    if (!user) {
-      toast.error("Please sign in to update progress");
-      return;
-    }
+  const handleDialogOpenChange = useCallback((open: boolean) => {
+    setDialogOpen(open);
+  }, []);
 
-    const updateData: Partial<GameProgress> = {
-      play_time: progress.play_time ?? play_time,
-      completion_percentage:
-        progress.completion_percentage ?? completion_percentage,
-    };
+  const handleProgressUpdate = useCallback(
+    async (progress: Partial<GameProgress>) => {
+      if (!user) {
+        toast.error("Please sign in to update progress");
+        return;
+      }
 
-    if (typeof progress.achievements_completed === "number") {
-      updateData.achievements_completed = progress.achievements_completed;
-    }
+      const updateData: Partial<GameProgress> = {
+        play_time: progress.play_time ?? play_time,
+        completion_percentage:
+          progress.completion_percentage ?? completion_percentage,
+      };
 
-    try {
-      await updateProgress(user.id, gameId, updateData);
-      toast.success("Progress updated successfully!");
-      setDialogOpen(false);
-    } catch (error) {
-      console.error(error);
-      toast.error(
-        error instanceof Error ? error.message : "Failed to update progress"
-      );
-    }
-  };
+      if (typeof progress.achievements_completed === "number") {
+        updateData.achievements_completed = progress.achievements_completed;
+      }
 
-  const progressText = completion_percentage
-    ? `${completion_percentage}% Complete`
-    : "Update Progress";
+      try {
+        await updateProgress(user.id, gameId, updateData);
+        toast.success("Progress updated successfully!");
+        setDialogOpen(false);
+      } catch (error) {
+        console.error(error);
+        toast.error(
+          error instanceof Error ? error.message : "Failed to update progress"
+        );
+      }
+    },
+    [
+      user,
+      play_time,
+      completion_percentage,
+      updateProgress,
+      gameId,
+    ]
+  );
+
+  const progressText = useMemo(() => 
+    completion_percentage
+      ? `${completion_percentage}% Complete`
+      : "Update Progress",
+    [completion_percentage]
+  );
+
+  const currentProgress = useMemo(() => ({
+    play_time: play_time ?? 0,
+    completion_percentage: completion_percentage ?? 0,
+    achievements_completed: achievements_completed ?? 0,
+  }), [play_time, completion_percentage, achievements_completed]);
 
   return (
     <>
@@ -86,8 +108,10 @@ export function UpdateProgressButton({
         onClick={() => setDialogOpen(true)}
         disabled={loading}
         className={cn(
-          "min-w-[140px] transition-all duration-200",
-          "bg-purple-600 hover:bg-purple-700 text-white",
+          "min-w-[140px] h-10 transition-all duration-200 font-medium",
+          "bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700",
+          "border-none text-white shadow-md hover:shadow-lg",
+          "relative overflow-hidden group",
           className
         )}
       >
@@ -96,19 +120,16 @@ export function UpdateProgressButton({
         ) : (
           <BarChart2 className="w-4 h-4 mr-2" />
         )}
-        {progressText}
+        <span className="relative z-10">{progressText}</span>
+        <span className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
       </Button>
 
       <CompletionDialog
         open={dialogOpen}
-        onOpenChange={setDialogOpen}
+        onOpenChange={handleDialogOpenChange}
         onProgressUpdate={handleProgressUpdate}
         game={game}
-        progress={{
-          play_time: play_time ?? 0,
-          completion_percentage: completion_percentage ?? 0,
-          achievements_completed: achievements_completed ?? 0,
-        }}
+        progress={currentProgress}
       />
     </>
   );

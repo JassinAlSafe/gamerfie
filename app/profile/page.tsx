@@ -1,5 +1,13 @@
 "use client";
 
+import React, {
+  useEffect,
+  useState,
+  useMemo,
+  useCallback,
+  Suspense,
+  lazy,
+} from "react";
 import { useProfile } from "@/hooks/Profile/use-profile";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
@@ -7,334 +15,778 @@ import { Toaster } from "react-hot-toast";
 import LoadingSpinner from "@/components/loadingSpinner";
 import { ProfileHeader } from "@/components/profile/profile-header";
 import { ProfileNav } from "@/components/profile/profile-nav";
+import { ProfileTabs } from "@/components/profile/ProfileTabs";
 import { useFriendsStore } from "@/stores/useFriendsStore";
-import { useEffect } from "react";
-import { Users } from "lucide-react";
-import { formatDistanceToNow } from "date-fns";
-import { activityIcons, activityText } from "@/lib/activity-constants";
-import Image from "next/image";
-import { getCoverImageUrl } from "@/utils/image-utils";
 import { useJournalStore } from "@/stores/useJournalStore";
+import { LoadingState } from "@/components/ui/loading-state";
+import { ErrorState } from "@/components/ui/error-state";
+import { Gamepad2, BookText, Users, Star, AlertTriangle } from "lucide-react";
+import Link from "next/link";
+import type { GameStats } from "@/types/user";
+import type { Profile } from "@/types/profile";
+import type { FriendActivity } from "@/types/activity";
+import type { JournalEntry } from "@/types/journal";
+import type { Friend } from "@/types/friend";
+// Import Card components directly to avoid linter errors
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ProfileActions } from "@/components/profile/profile-actions";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-export default function ProfilePage() {
-  const { profile, isLoading, error, gameStats, updateProfile } = useProfile();
-  const { friends, activities, fetchFriends, fetchActivities } =
-    useFriendsStore();
-  const { entries, fetchEntries } = useJournalStore();
-  const router = useRouter();
+// Lazy load the ProfileActions component
+const ProfileActionsComponent = lazy(() =>
+  import("@/components/profile/profile-actions").then((mod) => ({
+    default: mod.ProfileActions,
+  }))
+);
+
+// Define proper interfaces for component props
+interface ProfileSectionProps {
+  children: React.ReactNode;
+  isLoading: boolean;
+  section: string;
+}
+
+interface SectionErrorFallbackProps {
+  section: string;
+}
+
+// Type guard for checking if gameStats is valid
+function isValidGameStats(stats: unknown): stats is GameStats {
+  return (
+    stats !== null &&
+    typeof stats === "object" &&
+    "total_played" in stats &&
+    typeof stats.total_played === "number"
+  );
+}
+
+// Type guard for checking if activity has required properties
+function isValidActivity(activity: FriendActivity | any): boolean {
+  if (!activity) return false;
+
+  try {
+    // Check if the activity object has the basic required properties
+    const hasBasicProps =
+      typeof activity === "object" && "id" in activity && "type" in activity;
+
+    if (!hasBasicProps) {
+      console.log("Activity missing basic properties:", activity);
+      return false;
+    }
+
+    // Check for user property
+    const hasValidUser =
+      "user" in activity &&
+      activity.user !== null &&
+      typeof activity.user === "object" &&
+      "username" in activity.user;
+
+    if (!hasValidUser) {
+      console.log("Activity has invalid user:", activity.user);
+      return false;
+    }
+
+    // Check for game property
+    const hasValidGame =
+      "game" in activity &&
+      activity.game !== null &&
+      typeof activity.game === "object" &&
+      "name" in activity.game;
+
+    if (!hasValidGame) {
+      console.log("Activity has invalid game:", activity.game);
+      return false;
+    }
+
+    // Check for timestamp/created_at
+    const hasValidTimestamp =
+      "created_at" in activity || "timestamp" in activity;
+
+    if (!hasValidTimestamp) {
+      console.log("Activity missing timestamp:", activity);
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error("Error validating activity:", error);
+    return false;
+  }
+}
+
+// Error fallback component for section errors
+const SectionErrorFallback: React.FC<SectionErrorFallbackProps> = ({
+  section,
+}) => (
+  <Card className="bg-gray-900/50 border-red-800/30 backdrop-blur-sm">
+    <CardHeader>
+      <CardTitle className="text-xl text-white flex items-center gap-2">
+        <AlertTriangle className="h-5 w-5 text-red-400" />
+        {section} Error
+      </CardTitle>
+    </CardHeader>
+    <CardContent>
+      <p className="text-gray-300">
+        There was an error loading this section. Please try refreshing the page.
+      </p>
+    </CardContent>
+  </Card>
+);
+
+// Fallback component for content loading
+const CardSkeleton: React.FC = () => (
+  <div className="rounded-lg bg-gray-900/50 border border-gray-800 animate-pulse">
+    <div className="h-12 border-b border-gray-800"></div>
+    <div className="p-4 space-y-3">
+      <div className="h-4 bg-gray-800 rounded w-3/4"></div>
+      <div className="h-4 bg-gray-800 rounded w-1/2"></div>
+    </div>
+  </div>
+);
+
+// Wrapper component with error handling
+const ProfileSection: React.FC<ProfileSectionProps> = ({
+  children,
+  isLoading,
+  section,
+}) => {
+  const [hasError, setHasError] = useState<boolean>(false);
 
   useEffect(() => {
-    if (profile) {
-      fetchFriends();
-      fetchActivities();
-      fetchEntries();
+    // Reset error state when loading state changes
+    if (isLoading) {
+      setHasError(false);
     }
-  }, [profile, fetchFriends, fetchActivities, fetchEntries]);
+  }, [isLoading]);
 
+  if (isLoading) {
+    return <CardSkeleton />;
+  }
+
+  if (hasError) {
+    return <SectionErrorFallback section={section} />;
+  }
+
+  try {
+    return <>{children}</>;
+  } catch (error) {
+    setHasError(true);
+    console.error(`Error in ${section} section:`, error);
+    return <SectionErrorFallback section={section} />;
+  }
+};
+
+// Utility function for throttling
+const throttle = <T extends (...args: any[]) => any>(
+  func: T,
+  delay: number
+): ((...args: Parameters<T>) => void) => {
+  let lastCall = 0;
+  return (...args: Parameters<T>) => {
+    const now = Date.now();
+    if (now - lastCall >= delay) {
+      lastCall = now;
+      func(...args);
+    }
+  };
+};
+
+// Utility function for debouncing
+const debounce = <T extends (...args: any[]) => any>(
+  func: T,
+  delay: number
+): ((...args: Parameters<T>) => void) => {
+  let timeoutId: NodeJS.Timeout;
+  return (...args: Parameters<T>) => {
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => {
+      func(...args);
+    }, delay);
+  };
+};
+
+export default function ProfilePage(): JSX.Element {
+  const { profile, isLoading, error, gameStats, updateProfile } = useProfile();
+  const {
+    friends,
+    fetchFriends,
+    isLoading: friendsLoading,
+  } = useFriendsStore();
+  const {
+    activities,
+    fetchActivities,
+    isLoading: activitiesLoading,
+  } = useFriendsStore();
+  const {
+    entries,
+    fetchEntries,
+    isLoading: journalLoading,
+  } = useJournalStore();
+  const router = useRouter();
+  const [activeTab, setActiveTab] = useState<string>("overview");
+  const [isDataLoaded, setIsDataLoaded] = useState<boolean>(false);
+
+  // Memoize tabs to prevent recreation on each render - MOVED UP before any conditional returns
+  const tabs = useMemo(
+    () => [
+      { value: "overview", label: "Overview" },
+      { value: "games", label: "Games", href: "/profile/games" },
+      { value: "journal", label: "Journal", href: "/profile/journal" },
+      { value: "friends", label: "Friends", href: "/profile/friends" },
+      { value: "reviews", label: "Reviews", href: "/profile/reviews" },
+    ],
+    []
+  );
+
+  // Optimize data fetching with sequential loading and debounce
+  useEffect(() => {
+    // Optimize data fetching with sequential loading and debounce
+    if (isDataLoaded || friendsLoading || activitiesLoading || journalLoading) {
+      return; // Skip if already loaded or loading in progress
+    }
+
+    console.log("Starting data fetch sequence");
+
+    // Load friends first
+    const friendsTimeout = setTimeout(() => {
+      console.log("Fetching friends...");
+      fetchFriends().catch((err) =>
+        console.error("Error fetching friends:", err)
+      );
+
+      // Then load activities
+      const activitiesTimeout = setTimeout(() => {
+        console.log("Fetching activities...");
+        fetchActivities().catch((err) =>
+          console.error("Error fetching activities:", err)
+        );
+
+        // Finally load journal entries
+        const journalTimeout = setTimeout(() => {
+          console.log("Fetching journal entries...");
+          fetchEntries().catch((err) =>
+            console.error("Error fetching journal entries:", err)
+          );
+          setIsDataLoaded(true);
+        }, 300);
+
+        return () => clearTimeout(journalTimeout);
+      }, 300);
+
+      return () => clearTimeout(activitiesTimeout);
+    }, 0);
+
+    return () => clearTimeout(friendsTimeout);
+  }, [
+    isDataLoaded,
+    friendsLoading,
+    activitiesLoading,
+    journalLoading,
+    friends.length,
+    activities.length,
+    entries.length,
+    fetchFriends,
+    fetchActivities,
+    fetchEntries,
+  ]);
+
+  // Add debug logging for activities
+  useEffect(() => {
+    console.log("Activities state:", {
+      count: activities.length,
+      loading: activitiesLoading,
+      isDataLoaded,
+    });
+
+    if (activities.length === 0 && !activitiesLoading && isDataLoaded) {
+      console.log("Attempting to refetch activities...");
+      fetchActivities().catch((err) =>
+        console.error("Error refetching activities:", err)
+      );
+    }
+  }, [activities.length, activitiesLoading, isDataLoaded, fetchActivities]);
+
+  // Throttled event handlers to prevent rapid clicks
+  const handleEditProfile = useCallback(
+    throttle(() => {
+      router.push("/profile/edit");
+    }, 300),
+    [router]
+  );
+
+  const handleSettings = useCallback(
+    throttle(() => {
+      router.push("/settings");
+    }, 300),
+    [router]
+  );
+
+  const handleTabChange = useCallback(
+    throttle((tab: string) => {
+      setActiveTab(tab);
+    }, 200),
+    []
+  );
+
+  // Update the filtered data logic to not depend on search
+  const filteredJournalEntries = useMemo<JournalEntry[]>(
+    () => entries,
+    [entries]
+  );
+
+  const filteredActivities = useMemo<FriendActivity[]>(
+    () => activities,
+    [activities]
+  );
+
+  // Memoize calculated stats to prevent recalculation on each render
+  const totalGames = useMemo<number>(
+    () => (isValidGameStats(gameStats) ? gameStats.total_played : 0),
+    [gameStats]
+  );
+
+  const acceptedFriends = useMemo<Friend[]>(
+    () => friends.filter((friend) => friend.status === "accepted"),
+    [friends]
+  );
+
+  const recentReviews = useMemo<JournalEntry[]>(
+    () =>
+      filteredJournalEntries
+        .filter((entry) => entry.type === "review")
+        .slice(0, 3),
+    [filteredJournalEntries]
+  );
+
+  const recentActivities = useMemo<FriendActivity[]>(
+    () => filteredActivities.slice(0, 5),
+    [filteredActivities]
+  );
+
+  const recentJournalEntries = useMemo<JournalEntry[]>(
+    () => filteredJournalEntries.slice(0, 3),
+    [filteredJournalEntries]
+  );
+
+  // Render loading state
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <LoadingSpinner />
+        <LoadingState />
       </div>
     );
   }
 
-  if (error) {
-    if (error.message === "No authenticated user") {
-      return (
-        <div className="flex flex-col items-center justify-center min-h-screen">
-          <h1 className="text-3xl font-bold mb-6 text-white">
-            Please sign in to view your profile
-          </h1>
-          <Button
-            onClick={() => router.push("/signin")}
-            variant="default"
-            size="lg"
-          >
-            Sign In
-          </Button>
-        </div>
-      );
-    }
+  // Render error state
+  if (error || !profile || !gameStats) {
     return (
-      <div className="flex items-center justify-center min-h-screen text-red-500">
-        <p className="text-xl font-semibold">Error: {error.message}</p>
+      <div className="flex items-center justify-center min-h-screen">
+        <ErrorState error={error?.message || "Profile not found"} />
       </div>
     );
   }
-
-  if (!profile) {
-    return (
-      <div className="flex items-center justify-center min-h-screen text-white">
-        <p className="text-xl font-semibold">Profile not found</p>
-      </div>
-    );
-  }
-
-  const acceptedFriends = friends.filter(
-    (friend) => friend.status === "accepted"
-  );
-  const pendingFriends = friends.filter(
-    (friend) => friend.status === "pending"
-  );
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-950">
-      {/* Hero Section with Gradient */}
-      <div className="absolute inset-x-0 top-16 h-[300px] bg-gradient-to-b from-purple-900 via-indigo-900 to-gray-950" />
+    <div className="flex flex-col min-h-screen">
+      <div className="relative">
+        {/* Background Gradient */}
+        <div className="absolute inset-0 h-[300px] bg-gradient-to-b from-purple-900/50 via-gray-900/50 to-gray-950" />
 
-      {/* Main Content Container */}
-      <div className="relative flex flex-col flex-grow">
-        {/* Profile Header Section */}
-        <div className="pt-8">
-          <Toaster position="top-center" />
-          <div className="max-w-7xl mx-auto px-4">
-            <ProfileHeader
-              profile={profile}
-              stats={
-                gameStats ?? {
-                  total_played: 0,
-                  played_this_year: 0,
-                  backlog: 0,
-                }
-              }
-              onProfileUpdate={updateProfile}
+        {/* Profile Header */}
+        <div className="relative">
+          <ProfileHeader
+            profile={profile}
+            stats={gameStats as GameStats}
+            onProfileUpdate={updateProfile}
+          />
+        </div>
+      </div>
+
+      {/* Profile Navigation */}
+      <div className="sticky top-16 z-40 bg-gray-950/90 backdrop-blur-md border-b border-white/10">
+        <ProfileNav />
+      </div>
+
+      {/* Profile Content */}
+      <div className="flex-grow bg-gradient-to-b from-gray-950 to-gray-900 py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-2xl font-bold text-white">Profile Overview</h2>
+            <ProfileActions
+              onEdit={handleEditProfile}
+              onSettings={handleSettings}
             />
           </div>
-        </div>
 
-        {/* Sticky Navigation */}
-        <div className="sticky top-16 z-40 bg-gray-950/80 backdrop-blur-md border-b border-white/5 mt-8">
-          <div className="max-w-7xl mx-auto px-4">
-            <ProfileNav />
-          </div>
-        </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Left Column - About */}
+            <div className="md:col-span-2 space-y-6">
+              <ProfileSection isLoading={isLoading} section="About">
+                <Card className="bg-gray-900/50 border-gray-800 backdrop-blur-sm">
+                  <CardHeader>
+                    <CardTitle className="text-xl text-white">About</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-gray-300">
+                      {profile.bio ||
+                        "No bio provided yet. Click 'Edit Profile' to add one!"}
+                    </p>
+                  </CardContent>
+                </Card>
+              </ProfileSection>
 
-        {/* Content Grid */}
-        <div className="flex-grow">
-          <div className="max-w-7xl mx-auto px-4 py-8">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              {/* Left Column - About & Friends */}
-              <div className="lg:col-span-1 space-y-8">
-                {/* About Card */}
-                <div className="bg-gray-900/50 rounded-xl p-6 backdrop-blur-sm border border-white/5">
-                  <h2 className="text-xl font-bold text-white mb-4">About</h2>
-                  <p className="text-gray-300">
-                    {profile.bio || "No bio provided yet"}
-                  </p>
-                  <div className="mt-6 space-y-4">
-                    <div>
-                      <h3 className="text-sm font-medium text-gray-400">
-                        Member since
-                      </h3>
-                      <p className="text-white">
-                        {new Date(profile.created_at).toLocaleDateString()}
-                      </p>
-                    </div>
-                    <div>
-                      <h3 className="text-sm font-medium text-gray-400">
-                        Last active
-                      </h3>
-                      <p className="text-white">
-                        {new Date(profile.updated_at).toLocaleDateString()}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Friends Card */}
-                <div className="bg-gray-900/50 rounded-xl p-6 backdrop-blur-sm border border-white/5">
-                  <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-xl font-bold text-white">Friends</h2>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => router.push("/profile/friends")}
-                      className="text-purple-400 hover:text-purple-300"
+              {/* Recent Activity */}
+              <ProfileSection isLoading={activitiesLoading} section="Activity">
+                <Card className="bg-gray-900/50 border-gray-800 backdrop-blur-sm">
+                  <CardHeader className="flex flex-row items-center justify-between">
+                    <CardTitle className="text-xl text-white flex items-center gap-2">
+                      <Gamepad2 className="h-5 w-5 text-purple-400" />
+                      Recent Activity
+                    </CardTitle>
+                    <Link
+                      href="/activity"
+                      className="text-sm text-purple-400 hover:underline"
                     >
                       View All
-                    </Button>
-                  </div>
-                  <div className="flex items-center gap-4 mb-4">
-                    <div className="flex items-center gap-2">
-                      <Users className="w-5 h-5 text-purple-400" />
-                      <span className="text-white font-medium">
-                        {acceptedFriends.length}
+                    </Link>
+                  </CardHeader>
+                  <CardContent>
+                    {recentActivities.length > 0 ? (
+                      <div className="space-y-4">
+                        {recentActivities.map((activity) => {
+                          console.log("Rendering activity:", activity);
+                          return (
+                            isValidActivity(activity) && (
+                              <div
+                                key={activity.id}
+                                className="border-b border-gray-800 pb-3 last:border-0"
+                              >
+                                <div className="flex items-start gap-3">
+                                  <div className="w-10 h-10 rounded bg-gray-800 overflow-hidden flex-shrink-0">
+                                    {activity.game &&
+                                    activity.game.cover_url ? (
+                                      <img
+                                        src={activity.game.cover_url}
+                                        alt={activity.game.name || "Game"}
+                                        className="w-full h-full object-cover"
+                                      />
+                                    ) : (
+                                      <div className="w-full h-full flex items-center justify-center text-gray-400">
+                                        {activity.game && activity.game.name
+                                          ? activity.game.name
+                                              .charAt(0)
+                                              .toUpperCase()
+                                          : "G"}
+                                      </div>
+                                    )}
+                                  </div>
+                                  <div>
+                                    <p className="text-white">
+                                      <span className="font-medium">
+                                        {activity.user
+                                          ? activity.user.username
+                                          : "User"}
+                                      </span>{" "}
+                                      {activity.type === "started_playing" &&
+                                        "started playing"}
+                                      {activity.type === "completed" &&
+                                        "completed"}
+                                      {activity.type === "review" && "reviewed"}
+                                      {activity.type === "progress" &&
+                                        "made progress in"}
+                                      {activity.type === "achievement" &&
+                                        "unlocked an achievement in"}{" "}
+                                      <span className="font-medium">
+                                        {activity.game
+                                          ? activity.game.name
+                                          : "a game"}
+                                      </span>
+                                    </p>
+                                    <p className="text-xs text-gray-400">
+                                      {activity.created_at
+                                        ? new Date(
+                                            activity.created_at
+                                          ).toLocaleDateString()
+                                        : activity.timestamp
+                                        ? new Date(
+                                            activity.timestamp
+                                          ).toLocaleDateString()
+                                        : "Recently"}
+                                    </p>
+                                  </div>
+                                </div>
+                              </div>
+                            )
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <p className="text-gray-400">
+                        No recent activity. Start playing games to see activity
+                        here!
+                      </p>
+                    )}
+                  </CardContent>
+                </Card>
+              </ProfileSection>
+            </div>
+
+            {/* Right Column - Stats */}
+            <div className="space-y-6">
+              {/* Games */}
+              <ProfileSection isLoading={isLoading} section="Games">
+                <Card className="bg-gray-900/50 border-gray-800 backdrop-blur-sm">
+                  <CardHeader className="flex flex-row items-center justify-between">
+                    <CardTitle className="text-xl text-white">Games</CardTitle>
+                    <Link href="/profile/games">
+                      <Button
+                        variant="link"
+                        className="text-purple-400 hover:text-purple-300"
+                      >
+                        View All
+                      </Button>
+                    </Link>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center justify-between p-3 rounded-lg bg-gray-800/30">
+                      <div className="flex items-center gap-3">
+                        <div className="bg-purple-500/20 p-2 rounded-full">
+                          <Gamepad2 className="h-5 w-5 text-purple-400" />
+                        </div>
+                        <span className="text-gray-300">Total Games</span>
+                      </div>
+                      <span className="text-xl font-bold text-white">
+                        {totalGames}
                       </span>
                     </div>
-                    {pendingFriends.length > 0 && (
-                      <div className="text-sm text-yellow-400">
-                        {pendingFriends.length} pending request
-                        {pendingFriends.length !== 1 ? "s" : ""}
-                      </div>
-                    )}
-                  </div>
-                  <div className="space-y-3">
-                    {acceptedFriends.slice(0, 3).map((friend) => (
-                      <div
-                        key={friend.id}
-                        className="flex items-center gap-3 p-2 rounded-lg bg-gray-800/50"
-                      >
-                        <div className="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center">
-                          {friend.username?.[0]?.toUpperCase()}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium truncate text-white">
-                            {friend.username}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                    {acceptedFriends.length === 0 && (
-                      <p className="text-gray-400 text-sm">No friends yet</p>
-                    )}
-                  </div>
-                </div>
-              </div>
+                  </CardContent>
+                </Card>
+              </ProfileSection>
 
-              {/* Right Column - Recent Activity */}
-              <div className="lg:col-span-2 space-y-8">
-                {/* Recent Reviews */}
-                <div className="bg-gray-900/50 rounded-xl p-6 backdrop-blur-sm border border-white/5">
-                  <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-xl font-bold text-white">
-                      Recent Reviews
-                    </h2>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => router.push("/profile/reviews")}
-                      className="text-purple-400 hover:text-purple-300"
+              {/* Friends */}
+              <ProfileSection isLoading={friendsLoading} section="Friends">
+                <Card className="bg-gray-900/50 border-gray-800 backdrop-blur-sm">
+                  <CardHeader className="flex flex-row items-center justify-between">
+                    <CardTitle className="text-xl text-white flex items-center gap-2">
+                      <Users className="h-5 w-5 text-blue-400" />
+                      Friends
+                    </CardTitle>
+                    <Link
+                      href="/friends"
+                      className="text-sm text-blue-400 hover:underline"
                     >
                       View All
-                    </Button>
-                  </div>
-                  <div className="space-y-4">
-                    {entries
-                      .filter((entry) => entry.type === "review")
-                      .slice(0, 3)
-                      .map((review) => (
+                    </Link>
+                  </CardHeader>
+                  <CardContent>
+                    {acceptedFriends.length > 0 ? (
+                      <div className="space-y-4">
+                        {acceptedFriends.slice(0, 3).map((friend) => (
+                          <div
+                            key={friend.id}
+                            className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-800/30 transition-colors"
+                          >
+                            <div className="w-10 h-10 rounded-full bg-gray-800 overflow-hidden">
+                              {friend.avatar_url ? (
+                                <img
+                                  src={friend.avatar_url}
+                                  alt={friend.username}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center text-gray-400">
+                                  {friend.username.charAt(0).toUpperCase()}
+                                </div>
+                              )}
+                            </div>
+                            <div className="flex-1">
+                              <p className="font-medium text-white">
+                                {friend.username}
+                              </p>
+                              <p className="text-sm text-gray-400">
+                                {friend.online_status === "online" ? (
+                                  <span className="flex items-center gap-1">
+                                    <span className="w-2 h-2 rounded-full bg-green-500"></span>
+                                    <span className="text-green-400">
+                                      Online
+                                    </span>
+                                  </span>
+                                ) : (
+                                  <span className="flex items-center gap-1">
+                                    <span className="w-2 h-2 rounded-full bg-gray-500"></span>
+                                    <span>Offline</span>
+                                  </span>
+                                )}
+                              </p>
+                            </div>
+                            <Link
+                              href={`/profile/${friend.id}`}
+                              className="text-xs px-2 py-1 rounded bg-blue-900/30 text-blue-400 hover:bg-blue-900/50 transition-colors"
+                            >
+                              View
+                            </Link>
+                          </div>
+                        ))}
+                        {acceptedFriends.length > 3 && (
+                          <div className="text-center pt-2">
+                            <Link
+                              href="/friends"
+                              className="text-sm text-blue-400 hover:underline"
+                            >
+                              +{acceptedFriends.length - 3} more friends
+                            </Link>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="text-center py-4">
+                        <p className="text-gray-400 mb-3">No friends yet.</p>
+                        <Link href="/friends/find">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="bg-blue-900/30 text-blue-400 border-blue-800 hover:bg-blue-900/50"
+                          >
+                            Find Friends
+                          </Button>
+                        </Link>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </ProfileSection>
+            </div>
+          </div>
+
+          {/* New row for Reviews and Journal - spread out horizontally */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+            {/* Reviews */}
+            <ProfileSection isLoading={journalLoading} section="Reviews">
+              <Card className="bg-gray-900/50 border-gray-800 backdrop-blur-sm">
+                <CardHeader className="flex flex-row items-center justify-between">
+                  <CardTitle className="text-xl text-white flex items-center gap-2">
+                    <Star className="h-5 w-5 text-yellow-400" />
+                    Recent Reviews
+                  </CardTitle>
+                  <Link
+                    href="/profile/journal"
+                    className="text-sm text-yellow-400 hover:underline"
+                  >
+                    View All
+                  </Link>
+                </CardHeader>
+                <CardContent>
+                  {recentReviews.length > 0 ? (
+                    <div className="space-y-4">
+                      {recentReviews.map((review) => (
                         <div
                           key={review.id}
-                          className="flex items-start gap-4 p-4 bg-gray-800/50 rounded-lg"
+                          className="border-b border-gray-800 pb-3 last:border-0"
                         >
-                          {review.game && (
-                            <div className="relative w-12 h-16 rounded overflow-hidden flex-shrink-0">
-                              <Image
-                                src={
-                                  review.game.cover_url
-                                    ? getCoverImageUrl(review.game.cover_url)
-                                    : "/images/placeholders/game-cover.jpg"
-                                }
-                                alt={`Cover for ${review.game.name}`}
-                                fill
-                                className="object-cover"
-                                sizes="48px"
-                                quality={90}
-                              />
+                          <div className="flex items-start gap-3">
+                            <div className="w-10 h-10 rounded bg-gray-800 overflow-hidden flex-shrink-0">
+                              {review.game?.cover_url ? (
+                                <img
+                                  src={review.game.cover_url}
+                                  alt={review.game.name}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center text-gray-400">
+                                  {review.game?.name.charAt(0).toUpperCase() ||
+                                    "?"}
+                                </div>
+                              )}
                             </div>
-                          )}
-                          <div className="flex-1 min-w-0">
-                            <h3 className="font-medium text-white line-clamp-1">
-                              {review.game?.name}
-                            </h3>
-                            <div className="flex items-center gap-2 mt-1">
-                              <div className="flex gap-1">
-                                {[...Array(10)].map((_, i) => (
-                                  <div
-                                    key={i}
-                                    className={`w-1 h-4 rounded-sm ${
-                                      i < (review.rating || 0)
-                                        ? "bg-white"
-                                        : "bg-gray-700"
-                                    }`}
-                                  />
-                                ))}
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <p className="font-medium text-white">
+                                  {review.game?.name || "Unknown Game"}
+                                </p>
+                                {review.rating && (
+                                  <span className="text-sm bg-yellow-900/30 text-yellow-400 px-2 py-0.5 rounded">
+                                    {review.rating}/10
+                                  </span>
+                                )}
                               </div>
-                              <span className="text-sm font-medium text-white">
-                                {review.rating}/10
-                              </span>
+                              <p className="text-sm text-gray-300 line-clamp-2 mt-1">
+                                {review.content}
+                              </p>
+                              <p className="text-xs text-gray-400 mt-1">
+                                {new Date(
+                                  review.createdAt
+                                ).toLocaleDateString()}
+                              </p>
                             </div>
-                            <p className="text-sm text-gray-400 mt-2 line-clamp-2">
-                              {review.content}
-                            </p>
                           </div>
                         </div>
                       ))}
-                    {entries.filter((entry) => entry.type === "review")
-                      .length === 0 && (
-                      <p className="text-gray-400">No reviews yet.</p>
-                    )}
-                  </div>
-                </div>
+                    </div>
+                  ) : (
+                    <p className="text-gray-400">
+                      No reviews yet. Write a review to see it here!
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+            </ProfileSection>
 
-                {/* Recent Activity */}
-                <div className="bg-gray-900/50 rounded-xl p-6 backdrop-blur-sm border border-white/5">
-                  <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-xl font-bold text-white">
-                      Recent Activity
-                    </h2>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => router.push("/profile/activity")}
-                      className="text-purple-400 hover:text-purple-300"
-                    >
-                      View All
-                    </Button>
-                  </div>
-                  <div className="space-y-6">
-                    {activities.slice(0, 5).map((activity) => (
-                      <div key={activity.id} className="flex items-start gap-4">
-                        <div className="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center text-white">
-                          {activity.user.username[0].toUpperCase()}
-                        </div>
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <span className="font-medium text-white">
-                              {activity.user.username}
+            {/* Journal */}
+            <ProfileSection isLoading={journalLoading} section="Journal">
+              <Card className="bg-gray-900/50 border-gray-800 backdrop-blur-sm">
+                <CardHeader className="flex flex-row items-center justify-between">
+                  <CardTitle className="text-xl text-white flex items-center gap-2">
+                    <BookText className="h-5 w-5 text-green-400" />
+                    Journal
+                  </CardTitle>
+                  <Link
+                    href="/profile/journal"
+                    className="text-sm text-green-400 hover:underline"
+                  >
+                    View All
+                  </Link>
+                </CardHeader>
+                <CardContent>
+                  {recentJournalEntries.length > 0 ? (
+                    <div className="space-y-4">
+                      {recentJournalEntries.map((entry) => (
+                        <div
+                          key={entry.id}
+                          className="border-b border-gray-800 pb-3 last:border-0"
+                        >
+                          <p className="font-medium text-white">
+                            {entry.title}
+                          </p>
+                          <p className="text-sm text-gray-300 line-clamp-2 mt-1">
+                            {entry.content}
+                          </p>
+                          <div className="flex items-center justify-between mt-2">
+                            <span className="text-xs text-gray-400">
+                              {new Date(entry.createdAt).toLocaleDateString()}
                             </span>
-                            {activityIcons[activity.type]}
-                            <span className="text-gray-400">
-                              {activityText[activity.type]}
-                            </span>
-                            <span className="text-purple-400">
-                              {activity.game.name}
+                            <span className="text-xs px-2 py-0.5 rounded bg-gray-800 text-gray-300">
+                              {entry.type === "progress" && "Progress"}
+                              {entry.type === "review" && "Review"}
+                              {entry.type === "daily" && "Daily"}
+                              {entry.type === "list" && "List"}
+                              {entry.type === "note" && "Note"}
+                              {entry.type === "achievement" && "Achievement"}
                             </span>
                           </div>
-                          <p className="text-sm text-gray-400 mt-1">
-                            {activity.timestamp
-                              ? formatDistanceToNow(
-                                  new Date(activity.timestamp),
-                                  {
-                                    addSuffix: true,
-                                  }
-                                )
-                              : "Just now"}
-                          </p>
-                          {activity.details &&
-                            activity.type === "achievement" && (
-                              <p className="mt-2 text-sm text-white">
-                                🏆 Unlocked: {activity.details.name}
-                              </p>
-                            )}
-                          {activity.details && activity.type === "review" && (
-                            <p className="mt-2 text-sm text-white">
-                              &ldquo;{activity.details.comment}&rdquo;
-                            </p>
-                          )}
                         </div>
-                      </div>
-                    ))}
-                    {activities.length === 0 && (
-                      <p className="text-gray-400">
-                        No recent activity to show.
-                      </p>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-gray-400">
+                      No journal entries yet. Start journaling to see entries
+                      here!
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+            </ProfileSection>
           </div>
         </div>
       </div>

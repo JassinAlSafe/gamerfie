@@ -10,7 +10,8 @@ import { getCoverImageUrl } from "@/utils/image-utils";
 export function GameCard({
   game,
   category = "popular",
-}: Omit<GameCardProps, "inView">) {
+  priority = false,
+}: Omit<GameCardProps, "inView"> & { priority?: boolean }) {
   const [isLoading, setLoading] = useState(true);
   const [imageError, setImageError] = useState(false);
 
@@ -30,8 +31,8 @@ export function GameCard({
     if (category === "upcoming") {
       const hypeCount = game.follows_count || game.hype_count || 0;
       return (
-        <div className="flex items-center gap-2 text-sm text-gray-300">
-          <Flame className="w-4 h-4 text-purple-400" />
+        <div className="flex items-center gap-2 text-sm text-gray-200">
+          <Flame className="w-4 h-4 text-purple-400" aria-hidden="true" />
           <span>
             {hypeCount > 1000
               ? `${(hypeCount / 1000).toFixed(1)}k Anticipated`
@@ -48,14 +49,17 @@ export function GameCard({
     const ratingCount = game.total_rating_count || game.rating_count;
 
     return (
-      <div className="flex items-center gap-2 text-sm text-gray-300">
+      <div className="flex items-center gap-2 text-sm text-gray-200">
         {rating ? (
           <>
-            <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
+            <Star
+              className="w-4 h-4 text-yellow-500 fill-yellow-500"
+              aria-hidden="true"
+            />
             <span>{Math.round(rating)}</span>
             {ratingCount && (
               <div className="flex items-center gap-1 ml-2">
-                <Users className="w-4 h-4 text-blue-500" />
+                <Users className="w-4 h-4 text-blue-500" aria-hidden="true" />
                 <span>
                   {ratingCount > 1000
                     ? `${(ratingCount / 1000).toFixed(1)}k`
@@ -72,15 +76,16 @@ export function GameCard({
   return (
     <Link
       href={`/game/${game.id}`}
-      className="group isolate block w-full overflow-hidden rounded-xl bg-gradient-to-b from-gray-900/90 to-gray-950 shadow-lg ring-1 ring-gray-800/10 transition-all duration-300 hover:ring-purple-500/20 hover:ring-2 hover:shadow-purple-500/10"
+      className="group isolate block w-full overflow-hidden rounded-xl bg-gradient-to-b from-gray-900/90 to-gray-950 shadow-lg ring-1 ring-gray-800/10 transition-all duration-300 hover:ring-purple-500/20 hover:ring-2 hover:shadow-purple-500/10 focus:outline-none focus:ring-2 focus:ring-purple-500/50"
+      aria-label={`View details for ${game.name}`}
     >
       <div className="relative flex flex-col h-full">
         <div className="relative aspect-[3/4] w-full overflow-hidden">
           <Image
             src={coverUrl}
-            alt={game.name}
+            alt={`Cover image for ${game.name}`}
             fill
-            priority={false}
+            priority={priority}
             sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
             className={`
               object-cover w-full h-full transition-all duration-500
@@ -101,7 +106,7 @@ export function GameCard({
           </h3>
           <div className="flex items-center justify-between">
             {"first_release_date" in game && game.first_release_date && (
-              <p className="text-sm text-gray-400 group-hover:text-gray-300 transition-colors duration-300">
+              <p className="text-sm text-gray-200 group-hover:text-white transition-colors duration-300">
                 {new Date(game.first_release_date * 1000).getFullYear()}
               </p>
             )}

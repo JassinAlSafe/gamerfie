@@ -15,6 +15,16 @@ interface IGDBGame {
   genres?: Array<{ name: string }>;
   summary?: string;
   storyline?: string;
+  screenshots?: Array<{
+    id: number;
+    url: string;
+    image_id: string;
+  }>;
+  videos?: Array<{
+    id: number;
+    name: string;
+    video_id: string;
+  }>;
 }
 
 const validateIds = (ids: unknown): string[] => {
@@ -51,7 +61,7 @@ export async function POST(request: Request) {
     
     // Log the actual request body for debugging
     const requestBody = `
-      fields name, cover.*, cover.url, cover.image_id, first_release_date, rating, genres.name, platforms.name, summary, storyline;
+      fields name, cover.*, cover.url, cover.image_id, first_release_date, rating, genres.name, platforms.name, summary, storyline, screenshots.*, videos.*;
       where id = (${ids.join(',')});
     `;
     console.log('IGDB request body:', requestBody);
@@ -116,7 +126,23 @@ export async function POST(request: Request) {
         name: g.name
       })) || [],
       summary: game.summary || undefined,
-      storyline: game.storyline || undefined
+      storyline: game.storyline || undefined,
+      screenshots: game.screenshots?.map(screenshot => ({
+        id: screenshot.id.toString(),
+        url: screenshot.url?.startsWith('//') 
+          ? `https:${screenshot.url}`
+          : screenshot.url?.startsWith('https:') 
+            ? screenshot.url
+            : `https://${screenshot.url}`
+      })) || [],
+      videos: game.videos?.map(video => ({
+        id: video.id.toString(),
+        name: video.name || 'Game Trailer',
+        url: `https://www.youtube.com/watch?v=${video.video_id}`,
+        thumbnail_url: `https://img.youtube.com/vi/${video.video_id}/maxresdefault.jpg`,
+        video_id: video.video_id,
+        provider: 'youtube'
+      })) || []
     }));
 
     // Add cache headers (1 hour for game details)
