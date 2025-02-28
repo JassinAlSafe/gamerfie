@@ -85,7 +85,6 @@ export function BentoGrid({
     currentBreakpoint,
     setCurrentBreakpoint,
     isEditing,
-    resetLayout,
   } = useLayoutStore();
 
   const gridItems = useGridItems({ user, friends, activities });
@@ -146,7 +145,7 @@ export function BentoGrid({
   }, []);
 
   const handleLayoutChange = useCallback(
-    (currentLayout: Layout[], allLayouts: any) => {
+    (currentLayout: Layout[]) => {
       if (isEditing) {
         // Ensure the layout is compact before saving
         const compactLayout = ensureCompactLayout(currentLayout);

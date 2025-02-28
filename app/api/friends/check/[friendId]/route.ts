@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
 export async function GET(
-  request: Request,
+  _request: Request,
   { params }: { params: { friendId: string } }
 ) {
   const supabase = createRouteHandlerClient({ cookies });

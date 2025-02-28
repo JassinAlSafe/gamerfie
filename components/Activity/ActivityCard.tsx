@@ -3,7 +3,6 @@
 import React from "react";
 import { format } from "date-fns";
 import Link from "next/link";
-import { motion } from "framer-motion";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { FriendActivity } from "@/types/activity";
 
@@ -14,10 +13,9 @@ import { activityIcons, activityText } from "@/lib/activity-constants";
 
 interface ActivityCardProps {
   activity: FriendActivity;
-  index?: number;
 }
 
-export function ActivityCard({ activity, index }: ActivityCardProps) {
+export function ActivityCard({ activity }: ActivityCardProps) {
   const username = activity.user?.username || "Unknown User";
   const avatarUrl = activity.user?.avatar_url;
   const userInitial = username[0].toUpperCase();

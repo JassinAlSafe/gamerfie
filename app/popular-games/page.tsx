@@ -5,7 +5,14 @@ import { useQuery } from "@tanstack/react-query";
 import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Star, Users, Gamepad2, ArrowLeft, Loader2, Filter } from "lucide-react";
+import {
+  Star,
+  Users,
+  Gamepad2,
+  ArrowLeft,
+  Loader2,
+  Filter,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -47,15 +54,6 @@ interface Game {
 
 const ITEMS_PER_PAGE = 24;
 
-const platformCategories = {
-  1: "Console",
-  2: "Arcade",
-  3: "Platform",
-  4: "Operating System",
-  5: "Portable Console",
-  6: "Computer",
-};
-
 export default function PopularGamesPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [sortBy, setSortBy] = useState("rating");
@@ -75,25 +73,25 @@ export default function PopularGamesPage() {
       return data;
     },
     staleTime: 1000 * 60 * 5,
-    cacheTime: 1000 * 60 * 30,
+    gcTime: 1000 * 60 * 30,
   });
 
   // Extract unique platforms and genres
   const { platforms, genres } = useMemo(() => {
     if (!data?.all) return { platforms: [], genres: [] };
-    
+
     const platformsSet = new Set<string>();
     const genresSet = new Set<string>();
-    
+
     data.all.forEach((game: Game) => {
-      game.platforms?.forEach(platform => {
+      game.platforms?.forEach((platform) => {
         platformsSet.add(platform.name);
       });
-      game.genres?.forEach(genre => {
+      game.genres?.forEach((genre) => {
         genresSet.add(genre.name);
       });
     });
-    
+
     return {
       platforms: Array.from(platformsSet).sort(),
       genres: Array.from(genresSet).sort(),
@@ -109,42 +107,59 @@ export default function PopularGamesPage() {
     newReleases: "New Releases",
     upcoming: "Upcoming",
     trending: "Trending Now",
-    mostAnticipated: "Most Anticipated"
+    mostAnticipated: "Most Anticipated",
   };
 
   const getGamesForCategory = (category: string) => {
     if (!data) return [];
-    return category === 'all' ? data.all : data[category as keyof typeof data] || [];
+    return category === "all"
+      ? data.all
+      : data[category as keyof typeof data] || [];
   };
 
   const filteredGames = useMemo(() => {
     if (!data) return [];
-    
+
     const categoryGames = getGamesForCategory(selectedCategory);
-    
-    return categoryGames.filter((game: Game) => {
-      const matchesSearch = game.name.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesPlatform = selectedPlatform === "all" || 
-        game.platforms?.some(platform => platform.name === selectedPlatform);
-      const matchesGenre = selectedGenre === "all" ||
-        game.genres?.some(genre => genre.name === selectedGenre);
-      
-      return matchesSearch && matchesPlatform && matchesGenre;
-    }).sort((a: Game, b: Game) => {
-      switch (sortBy) {
-        case "rating":
-          return (b.rating || 0) - (a.rating || 0);
-        case "popularity":
-          return (b.total_rating_count || 0) - (a.total_rating_count || 0);
-        case "name":
-          return a.name.localeCompare(b.name);
-        case "release":
-          return (b.first_release_date || 0) - (a.first_release_date || 0);
-        default:
-          return 0;
-      }
-    });
-  }, [data, searchQuery, selectedPlatform, selectedGenre, selectedCategory, sortBy]);
+
+    return categoryGames
+      .filter((game: Game) => {
+        const matchesSearch = game.name
+          .toLowerCase()
+          .includes(searchQuery.toLowerCase());
+        const matchesPlatform =
+          selectedPlatform === "all" ||
+          game.platforms?.some(
+            (platform) => platform.name === selectedPlatform
+          );
+        const matchesGenre =
+          selectedGenre === "all" ||
+          game.genres?.some((genre) => genre.name === selectedGenre);
+
+        return matchesSearch && matchesPlatform && matchesGenre;
+      })
+      .sort((a: Game, b: Game) => {
+        switch (sortBy) {
+          case "rating":
+            return (b.rating || 0) - (a.rating || 0);
+          case "popularity":
+            return (b.total_rating_count || 0) - (a.total_rating_count || 0);
+          case "name":
+            return a.name.localeCompare(b.name);
+          case "release":
+            return (b.first_release_date || 0) - (a.first_release_date || 0);
+          default:
+            return 0;
+        }
+      });
+  }, [
+    data,
+    searchQuery,
+    selectedPlatform,
+    selectedGenre,
+    selectedCategory,
+    sortBy,
+  ]);
 
   const totalPages = Math.ceil((filteredGames?.length || 0) / ITEMS_PER_PAGE);
   const currentGames = filteredGames.slice(
@@ -176,7 +191,11 @@ export default function PopularGamesPage() {
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-4">
             <Link href="/explore">
-              <Button variant="ghost" size="icon" className="text-gray-400 hover:text-white">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-gray-400 hover:text-white"
+              >
                 <ArrowLeft className="h-5 w-5" />
               </Button>
             </Link>
@@ -193,18 +212,20 @@ export default function PopularGamesPage() {
             onChange={(e) => setSearchQuery(e.target.value)}
             className="bg-gray-900/50 border-gray-800"
           />
-          
+
           <Select value={selectedCategory} onValueChange={setSelectedCategory}>
             <SelectTrigger className="w-full sm:w-[200px] bg-gray-900/50 border-gray-800">
               <SelectValue placeholder="Category" />
             </SelectTrigger>
             <SelectContent>
               {Object.entries(gameCategories).map(([value, label]) => (
-                <SelectItem key={value} value={value}>{label}</SelectItem>
+                <SelectItem key={value} value={value}>
+                  {label}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
-          
+
           <Select value={sortBy} onValueChange={setSortBy}>
             <SelectTrigger className="w-full sm:w-[200px] bg-gray-900/50 border-gray-800">
               <SelectValue placeholder="Sort by" />
@@ -219,7 +240,10 @@ export default function PopularGamesPage() {
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="bg-gray-900/50 border-gray-800">
+              <Button
+                variant="outline"
+                className="bg-gray-900/50 border-gray-800"
+              >
                 <Filter className="w-4 h-4 mr-2" />
                 Filters
               </Button>
@@ -281,7 +305,9 @@ export default function PopularGamesPage() {
         </div>
 
         {/* Active Filters */}
-        {(selectedPlatform !== "all" || selectedGenre !== "all" || selectedCategory !== "all") && (
+        {(selectedPlatform !== "all" ||
+          selectedGenre !== "all" ||
+          selectedCategory !== "all") && (
           <div className="flex flex-wrap gap-2 mb-4">
             {selectedCategory !== "all" && (
               <Badge
@@ -289,7 +315,12 @@ export default function PopularGamesPage() {
                 className="bg-green-500/20 text-green-300 hover:bg-green-500/30"
                 onClick={() => setSelectedCategory("all")}
               >
-                {gameCategories[selectedCategory as keyof typeof gameCategories]} ×
+                {
+                  gameCategories[
+                    selectedCategory as keyof typeof gameCategories
+                  ]
+                }{" "}
+                ×
               </Badge>
             )}
             {selectedPlatform !== "all" && (
@@ -359,7 +390,9 @@ export default function PopularGamesPage() {
                           {game.rating && (
                             <div className="flex items-center text-yellow-400">
                               <Star className="h-3 w-3 mr-1 fill-current" />
-                              <span className="text-xs">{Math.round(game.rating)}</span>
+                              <span className="text-xs">
+                                {Math.round(game.rating)}
+                              </span>
                             </div>
                           )}
                           {game.total_rating_count && (
@@ -367,7 +400,9 @@ export default function PopularGamesPage() {
                               <Users className="h-3 w-3 mr-1" />
                               <span className="text-xs">
                                 {game.total_rating_count > 1000
-                                  ? `${(game.total_rating_count / 1000).toFixed(1)}k`
+                                  ? `${(game.total_rating_count / 1000).toFixed(
+                                      1
+                                    )}k`
                                   : game.total_rating_count}
                               </span>
                             </div>
@@ -411,4 +446,4 @@ export default function PopularGamesPage() {
       </div>
     </div>
   );
-} 
+}

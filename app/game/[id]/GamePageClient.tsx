@@ -30,7 +30,7 @@ function GameContent({ id }: { id: string }) {
 
   if (isError) {
     return (
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
@@ -42,10 +42,12 @@ function GameContent({ id }: { id: string }) {
           </div>
           <h1 className="text-3xl font-bold text-white mb-2">Game Not Found</h1>
           <p className="text-gray-400 mb-6">
-            {error instanceof Error ? error.message : "Failed to load game"}
+            {error && typeof error === "object" && "message" in error
+              ? (error as { message: string }).message
+              : "Failed to load game"}
           </p>
-          <Link 
-            href="/games" 
+          <Link
+            href="/games"
             className="inline-flex items-center px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
           >
             <Gamepad2 size={18} className="mr-2" />

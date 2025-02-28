@@ -2,9 +2,13 @@ import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 
+// Define the UserData interface directly
 interface UserData {
   id: string;
   username: string;
+  display_name?: string;
+  avatar_url?: string;
+  bio?: string;
 }
 
 export async function GET(request: Request) {
@@ -13,7 +17,7 @@ export async function GET(request: Request) {
   const query = searchParams.get('q');
 
   if (!query) {
-    return NextResponse.json([]);
+    return NextResponse.json({ users: [] });
   }
 
   try {
@@ -26,27 +30,22 @@ export async function GET(request: Request) {
     console.log('Current user ID:', session.user.id);
 
     // Query the profiles table
-    const { data: users, error } = await supabase
+    const { data, error } = await supabase
       .from('profiles')
-      .select('id, username')
-      .neq('id', session.user.id)
+      .select('id, username, display_name, avatar_url, bio')
       .ilike('username', `%${query}%`)
-      .limit(5);
+      .limit(10);
 
-    console.log('Search results:', users);
+    console.log('Search results:', data);
     if (error) {
       console.error('Search error details:', error);
       throw error;
     }
-    if (!users) return NextResponse.json([]);
+    if (!data) return NextResponse.json({ users: [] });
 
-    const transformedUsers = users.map(user => ({
-      id: user.id,
-      username: user.username
-    }));
-
-    console.log('Transformed results:', transformedUsers);
-    return NextResponse.json(transformedUsers);
+    // Use the UserData interface for the response
+    const users: UserData[] = data || [];
+    return NextResponse.json({ users });
   } catch (error) {
     console.error('User search error:', error);
     return NextResponse.json(

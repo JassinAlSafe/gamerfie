@@ -1,21 +1,11 @@
 "use client";
 
-import React, {
-  useEffect,
-  useState,
-  useMemo,
-  useCallback,
-  Suspense,
-  lazy,
-} from "react";
+import React, { useEffect, useState, useMemo, useCallback } from "react";
 import { useProfile } from "@/hooks/Profile/use-profile";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
-import { Toaster } from "react-hot-toast";
-import LoadingSpinner from "@/components/loadingSpinner";
 import { ProfileHeader } from "@/components/profile/profile-header";
 import { ProfileNav } from "@/components/profile/profile-nav";
-import { ProfileTabs } from "@/components/profile/ProfileTabs";
 import { useFriendsStore } from "@/stores/useFriendsStore";
 import { useJournalStore } from "@/stores/useJournalStore";
 import { LoadingState } from "@/components/ui/loading-state";
@@ -23,23 +13,19 @@ import { ErrorState } from "@/components/ui/error-state";
 import { Gamepad2, BookText, Users, Star, AlertTriangle } from "lucide-react";
 import Link from "next/link";
 import type { GameStats } from "@/types/user";
-import type { Profile } from "@/types/profile";
 import type { FriendActivity } from "@/types/activity";
 import type { JournalEntry } from "@/types/journal";
 import type { Friend } from "@/types/friend";
 // Import Card components directly to avoid linter errors
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ProfileActions } from "@/components/profile/profile-actions";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 // Lazy load the ProfileActions component
-const ProfileActionsComponent = lazy(() =>
-  import("@/components/profile/profile-actions").then((mod) => ({
-    default: mod.ProfileActions,
-  }))
-);
+// const _ProfileActionsComponent = lazy(() =>
+//   import("@/components/profile/profile-actions").then((mod) => ({
+//     default: mod.ProfileActions,
+//   }))
+// );
 
 // Define proper interfaces for component props
 interface ProfileSectionProps {
@@ -194,18 +180,16 @@ const throttle = <T extends (...args: any[]) => any>(
 };
 
 // Utility function for debouncing
-const debounce = <T extends (...args: any[]) => any>(
-  func: T,
-  delay: number
-): ((...args: Parameters<T>) => void) => {
-  let timeoutId: NodeJS.Timeout;
-  return (...args: Parameters<T>) => {
-    clearTimeout(timeoutId);
-    timeoutId = setTimeout(() => {
-      func(...args);
-    }, delay);
-  };
-};
+// const _debounce = <T extends (...args: any[]) => any>(
+//   func: T,
+//   delay: number
+// ): ((...args: Parameters<T>) => void) => {
+//   let timeoutId: NodeJS.Timeout;
+//   return (...args: Parameters<T>) => {
+//     clearTimeout(timeoutId);
+//     timeoutId = setTimeout(() => func(...args), delay);
+//   };
+// };
 
 export default function ProfilePage(): JSX.Element {
   const { profile, isLoading, error, gameStats, updateProfile } = useProfile();
@@ -225,20 +209,7 @@ export default function ProfilePage(): JSX.Element {
     isLoading: journalLoading,
   } = useJournalStore();
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<string>("overview");
   const [isDataLoaded, setIsDataLoaded] = useState<boolean>(false);
-
-  // Memoize tabs to prevent recreation on each render - MOVED UP before any conditional returns
-  const tabs = useMemo(
-    () => [
-      { value: "overview", label: "Overview" },
-      { value: "games", label: "Games", href: "/profile/games" },
-      { value: "journal", label: "Journal", href: "/profile/journal" },
-      { value: "friends", label: "Friends", href: "/profile/friends" },
-      { value: "reviews", label: "Reviews", href: "/profile/reviews" },
-    ],
-    []
-  );
 
   // Optimize data fetching with sequential loading and debounce
   useEffect(() => {
@@ -316,18 +287,11 @@ export default function ProfilePage(): JSX.Element {
     [router]
   );
 
-  const handleSettings = useCallback(
+  const handleSettingsClick = useCallback(
     throttle(() => {
       router.push("/settings");
     }, 300),
     [router]
-  );
-
-  const handleTabChange = useCallback(
-    throttle((tab: string) => {
-      setActiveTab(tab);
-    }, 200),
-    []
   );
 
   // Update the filtered data logic to not depend on search
@@ -416,7 +380,7 @@ export default function ProfilePage(): JSX.Element {
             <h2 className="text-2xl font-bold text-white">Profile Overview</h2>
             <ProfileActions
               onEdit={handleEditProfile}
-              onSettings={handleSettings}
+              onSettings={handleSettingsClick}
             />
           </div>
 

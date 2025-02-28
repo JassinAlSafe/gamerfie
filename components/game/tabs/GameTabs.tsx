@@ -5,14 +5,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Game } from "@/types/game";
 import { Profile } from "@/types/profile";
 import { OverviewTab } from "./OverviewTab";
-import { StatsTab } from "./StatsTab";
 import { MediaTab } from "./MediaTab";
 import { AchievementsTab } from "./AchievementsTab";
-import { ChallengesTab } from "./ChallengesTab";
 import { ActivityTab } from "./ActivityTab";
 import { RelatedTab } from "./RelatedTab";
-import { motion, AnimatePresence } from "framer-motion";
-import { cn } from "@/lib/utils";
 
 interface GameTabsProps {
   game: Game;

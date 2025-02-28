@@ -2,7 +2,6 @@ import { create } from 'zustand'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { Database } from '@/types/supabase'
 import { Game, GameStatus, Platform, Genre, GameProgress } from '@/types/game'
-import { getCoverImageUrl } from "@/utils/image-utils";
 
 
 

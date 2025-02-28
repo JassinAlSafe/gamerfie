@@ -2,13 +2,12 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { EditIcon, Trash2Icon } from "lucide-react";
+import { Trash2Icon } from "lucide-react";
 import type { JournalEntry } from "@/stores/useJournalStore";
 import { useJournalStore } from "@/stores/useJournalStore";
 import { JournalEntryDialog } from "./JournalEntryDialog";
 import { DeleteEntryDialog } from "./DeleteEntryDialog";
 import Image from "next/image";
-import { getCoverImageUrl } from "@/utils/image-utils";
 import { format } from "date-fns";
 import {
   BarChart2,
@@ -26,16 +25,9 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+
+
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
 import { motion } from "framer-motion";
 
 interface TimelineViewProps {

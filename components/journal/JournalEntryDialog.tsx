@@ -1,25 +1,22 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogDescription,
-  DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useJournalStore } from "@/stores/useJournalStore";
 import type { JournalEntryType, JournalEntry } from "@/stores/useJournalStore";
 import { motion, AnimatePresence } from "framer-motion";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   BarChart2,
   Star,
   Calendar,
   BookOpen,
-  Loader2,
   ArrowLeft,
 } from "lucide-react";
 import { EntryForm } from "./EntryForm";

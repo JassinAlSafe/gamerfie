@@ -1,6 +1,33 @@
-import type { NextAuthConfig } from "next-auth"
 import Google from "next-auth/providers/google"
 import { supabase } from './utils/supabaseClient'
+
+// Define the NextAuthConfig type locally since it's causing issues
+interface NextAuthConfig {
+  providers: any[];
+  pages?: {
+    signIn?: string;
+  };
+  callbacks?: {
+    authorized?: (params: { auth: any; request: { nextUrl: URL } }) => boolean | Promise<boolean>;
+    session?: (params: { session: any; token: any }) => Promise<any>;
+    jwt?: (params: { token: any; account: any; trigger?: string; session?: any }) => Promise<any>;
+  };
+}
+
+// Extend the Session type to include our custom properties
+declare module "next-auth" {
+  interface Session {
+    supabaseAccessToken?: string;
+    supabaseRefreshToken?: string;
+    user: {
+      id: string;
+      name?: string | null;
+      email?: string | null;
+      image?: string | null;
+      metadata?: any;
+    }
+  }
+}
 
 export const authConfig = {
   providers: [
@@ -39,7 +66,7 @@ export const authConfig = {
     },
     async jwt({ token, account, trigger, session }) {
       if (account?.provider === 'google' && account.id_token) {
-        const { data, error } = await supabase.auth.signInWithIdToken({
+        const { data } = await supabase.auth.signInWithIdToken({
           provider: 'google',
           token: account.id_token,
         })

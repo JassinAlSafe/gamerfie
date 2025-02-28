@@ -6,7 +6,7 @@ import { useWindowSize } from "@/hooks/Settings/useWindowSize";
 import { Game } from "@/types/game";
 import { GameCard } from "@/components/GameCard"; // Update import path
 import { useGamesStore } from "@/stores/useGamesStore";
-import { Gamepad2, Calendar, Star, Users } from "lucide-react";
+import { Gamepad2 } from "lucide-react";
 import { useViewModeStore } from "@/stores/useViewModeStore";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";

@@ -8,8 +8,6 @@ import TeamLeaderboard from "./TeamLeaderboard";
 import ProgressHistory from "./ProgressHistory";
 import {
   type Challenge,
-  type ChallengeGoal,
-  type ChallengeTeam,
 } from "@/types/challenges";
 
 interface ChallengeViewProps {

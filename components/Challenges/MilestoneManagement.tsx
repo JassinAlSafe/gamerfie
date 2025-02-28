@@ -37,8 +37,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/text/textarea";
-import { Badge } from "@/components/ui/badge";
-import { Trophy, Medal, Star, Pencil, Trash2 } from "lucide-react";
+import { Trophy, Medal, Star } from "lucide-react";
 import { toast } from "sonner";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -48,7 +47,7 @@ import type {
   RewardType,
   ChallengeGoal,
 } from "@/types/challenge";
-import { useChallengesStore } from "@/store/challenges";
+import { useChallengesStore } from "@/stores/challenges";
 import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
 

@@ -78,10 +78,12 @@ export async function GET(_request: Request) {
       // Calculate progress for each team
       const teamsWithProgress = challenge.teams.map((team: ChallengeTeam) => ({
         ...team,
-        progress: team.progress.reduce(
-          (avg: number, p: { progress: number }) => avg + (p.progress || 0),
-          0
-        ) / (team.progress.length || 1),
+        progress: Array.isArray(team.progress) 
+          ? team.progress.reduce(
+              (avg: number, p: { progress: number }) => avg + (p.progress || 0),
+              0
+            ) / (team.progress.length || 1)
+          : team.progress, // If it's already a number, use it directly
       }));
 
       // Find user's team

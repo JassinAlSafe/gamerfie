@@ -686,4 +686,14 @@ export class IGDBService {
       slug: genre.slug
     }));
   }
+
+  static async testConnection(): Promise<boolean> {
+    try {
+      const token = await this.getIGDBToken();
+      return !!token;
+    } catch (error) {
+      console.error('IGDB connection test failed:', error);
+      return false;
+    }
+  }
 }

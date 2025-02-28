@@ -22,7 +22,6 @@ export function useProfile() {
       return user;
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
-    cacheTime: 10 * 60 * 1000, // 10 minutes
     retry: 1
   });
 
@@ -41,8 +40,7 @@ export function useProfile() {
       return data as Profile;
     },
     enabled: !!session?.id,
-    staleTime: 2 * 60 * 1000, // 2 minutes
-    cacheTime: 10 * 60 * 1000, // 10 minutes
+    staleTime: 10 * 60 * 1000, // 10 minutes
   });
 
   const defaultStats: ProfileStats = {
@@ -86,8 +84,7 @@ export function useProfile() {
       return stats;
     },
     enabled: !!session?.id,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    cacheTime: 15 * 60 * 1000, // 15 minutes
+    staleTime: 15 * 60 * 1000, // 15 minutes
   });
 
   const error = sessionError || profileError;
@@ -111,10 +108,10 @@ export function useProfile() {
       if (error) throw error;
       
       // Invalidate and refetch on success
-      queryClient.invalidateQueries(['profile', session.id]);
+      queryClient.invalidateQueries({ queryKey: ['profile', session.id] });
     } catch (error) {
       // Revert optimistic update on error
-      queryClient.invalidateQueries(['profile', session.id]);
+      queryClient.invalidateQueries({ queryKey: ['profile', session.id] });
       throw error;
     }
   }, [session?.id, supabase, queryClient]);

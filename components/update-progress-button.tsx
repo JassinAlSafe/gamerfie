@@ -58,17 +58,17 @@ export function UpdateProgressButton({
       }
 
       const updateData: Partial<GameProgress> = {
-        play_time: progress.play_time ?? play_time,
-        completion_percentage:
-          progress.completion_percentage ?? completion_percentage,
+        playTime: progress.playTime ?? (play_time || 0),
+        completionPercentage:
+          progress.completionPercentage ?? (completion_percentage || 0),
       };
 
-      if (typeof progress.achievements_completed === "number") {
-        updateData.achievements_completed = progress.achievements_completed;
+      if (typeof progress.achievementsCompleted === "number") {
+        updateData.achievementsCompleted = progress.achievementsCompleted;
       }
 
       try {
-        await updateProgress(user.id, gameId, updateData);
+        await updateProgress(user.id, gameId, updateData as any);
         toast.success("Progress updated successfully!");
         setDialogOpen(false);
       } catch (error) {
@@ -78,27 +78,25 @@ export function UpdateProgressButton({
         );
       }
     },
-    [
-      user,
-      play_time,
-      completion_percentage,
-      updateProgress,
-      gameId,
-    ]
+    [user, play_time, completion_percentage, updateProgress, gameId]
   );
 
-  const progressText = useMemo(() => 
-    completion_percentage
-      ? `${completion_percentage}% Complete`
-      : "Update Progress",
+  const progressText = useMemo(
+    () =>
+      completion_percentage
+        ? `${completion_percentage}% Complete`
+        : "Update Progress",
     [completion_percentage]
   );
 
-  const currentProgress = useMemo(() => ({
-    play_time: play_time ?? 0,
-    completion_percentage: completion_percentage ?? 0,
-    achievements_completed: achievements_completed ?? 0,
-  }), [play_time, completion_percentage, achievements_completed]);
+  const currentProgress = useMemo(
+    () => ({
+      play_time: play_time ?? 0,
+      completion_percentage: completion_percentage ?? 0,
+      achievements_completed: achievements_completed ?? 0,
+    }),
+    [play_time, completion_percentage, achievements_completed]
+  );
 
   return (
     <>
@@ -126,10 +124,19 @@ export function UpdateProgressButton({
 
       <CompletionDialog
         open={dialogOpen}
-        onOpenChange={handleDialogOpenChange}
+        onOpenChange={setDialogOpen}
+        game={
+          {
+            id: gameId,
+            name: gameName || "",
+          } as Game
+        }
+        progress={{
+          completionPercentage: completion_percentage || 0,
+          playTime: play_time || 0,
+          achievementsCompleted: achievements_completed || 0,
+        }}
         onProgressUpdate={handleProgressUpdate}
-        game={game}
-        progress={currentProgress}
       />
     </>
   );

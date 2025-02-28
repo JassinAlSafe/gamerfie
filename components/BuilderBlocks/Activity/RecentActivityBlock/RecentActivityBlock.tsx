@@ -7,10 +7,8 @@ import {
   Trophy,
   Gamepad2,
   LineChart,
-  MessageSquare,
   Bookmark,
   Star,
-  Clock,
   Medal,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -25,7 +23,6 @@ import {
   ActivityType as ActivityTypeEnum,
   ActivityDetails,
 } from "@/types/activity";
-import { GameActivity } from "@/types/game";
 
 interface RecentActivityBlockProps {
   activities?: ActivityType[];

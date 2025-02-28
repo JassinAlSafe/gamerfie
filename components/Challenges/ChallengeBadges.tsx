@@ -234,23 +234,23 @@ export function ChallengeBadges({
     }
   };
 
-  const getBadgeIconUrl = async (iconPath: string | null): Promise<string> => {
-    if (!iconPath) return DEFAULT_BADGE_ICON;
+  // const getBadgeIconUrl = async (iconPath: string | null): Promise<string> => {
+  //   if (!iconPath) return DEFAULT_BADGE_ICON;
 
-    if (iconPath.startsWith("http")) {
-      return iconPath;
-    }
+  //   if (iconPath.startsWith("http")) {
+  //     return iconPath;
+  //   }
 
-    try {
-      const { data } = await supabase.storage
-        .from("badges")
-        .getPublicUrl(iconPath);
-      return data?.publicUrl || DEFAULT_BADGE_ICON;
-    } catch (error) {
-      console.error("Error processing badge icon URL:", error);
-      return DEFAULT_BADGE_ICON;
-    }
-  };
+  //   try {
+  //     const { data } = await supabase.storage
+  //       .from("badges")
+  //       .getPublicUrl(iconPath);
+  //     return data?.publicUrl || DEFAULT_BADGE_ICON;
+  //   } catch (error) {
+  //     console.error("Error processing badge icon URL:", error);
+  //     return DEFAULT_BADGE_ICON;
+  //   }
+  // };
 
   const getBadgeImageUrl = (badge: BadgeType): string => {
     if (!badge.icon_url) return DEFAULT_BADGE_ICON;

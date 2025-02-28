@@ -9,7 +9,7 @@ import { AlertTriangle } from "lucide-react";
 import { ClaimedReward } from "@/types/challenge";
 
 export default function RewardsPage() {
-  const { user } = useUser();
+  const {} = useUser();
   const [rewards, setRewards] = useState<ClaimedReward[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

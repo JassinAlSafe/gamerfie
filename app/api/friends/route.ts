@@ -1,8 +1,25 @@
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
+import { getSession } from '@/lib/session';
 
+interface FriendData {
+  id: string;
+  username: string;
+  status?: string;
+  bio?: string;
+  avatar_url?: string;
+  sender_id?: string;
+  display_name?: string;
+}
 
+interface UserProfile {
+  id: string;
+  username: string;
+  bio?: string;
+  avatar_url?: string;
+  display_name?: string;
+}
 
 export async function GET(request: Request) {
   const supabase = createRouteHandlerClient({ cookies });
@@ -29,35 +46,33 @@ export async function GET(request: Request) {
     if (error) throw error;
     if (!friends) return NextResponse.json([]);
 
-    // Get all unique user IDs from both user_id and friend_id fields
-    const userIds = [...new Set(friends.map(f => 
-      f.user_id === session.user.id ? f.friend_id : f.user_id
-    ))];
-
-    // Fetch user details from profiles
+    // Create a map of user IDs to user data for quick lookup
+    const userIds = friends.flatMap(f => [f.user_id, f.friend_id]);
     const { data: users } = await supabase
       .from('profiles')
-      .select('id, username')
+      .select('id, username, bio, avatar_url, display_name')
       .in('id', userIds);
 
-    if (!users) return NextResponse.json([]);
-
-    // Create a map of user details
-    const userMap = new Map(users.map(user => [user.id, user]));
+    const userMap = new Map<string, UserProfile>();
+    users?.forEach(user => userMap.set(user.id, user));
 
     // Transform the data
     const transformedFriends = friends.map(f => {
       const friendId = f.user_id === session.user.id ? f.friend_id : f.user_id;
       const friendData = userMap.get(friendId);
-      return {
+      
+      const friend: FriendData = {
         id: friendId,
         username: friendData?.username || '',
         status: f.status,
-        bio: friendData?.bio || '',
-        avatar_url: friendData?.avatar_url,
-        sender_id: f.user_id,
-        display_name: friendData?.display_name
       };
+      
+      if (friendData?.bio) friend.bio = friendData.bio;
+      if (friendData?.avatar_url) friend.avatar_url = friendData.avatar_url;
+      if (f.user_id) friend.sender_id = f.user_id;
+      if (friendData?.display_name) friend.display_name = friendData.display_name;
+      
+      return friend;
     });
 
     return NextResponse.json(transformedFriends);
@@ -82,7 +97,7 @@ export async function POST(request: Request) {
     }
 
     // Check if friendship already exists in either direction
-    const { data: existingFriendship, error: checkError } = await supabase
+    const { data: existingFriendship, error: _checkError } = await supabase
       .from('friends')
       .select('*')
       .or(
@@ -135,6 +150,33 @@ export async function POST(request: Request) {
     console.error('Error in POST /api/friends:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(
+  _request: Request,
+  { params }: { params: { friendId: string } }
+) {
+  const supabase = createRouteHandlerClient({ cookies });
+  try {
+    const session = await getSession();
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { error: _checkError } = await supabase
+      .from("friends")
+      .delete()
+      .eq("id", params.friendId)
+      .eq("user_id", session.user.id);
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("Error removing friend:", error);
+    return NextResponse.json(
+      { error: "Failed to remove friend" },
       { status: 500 }
     );
   }

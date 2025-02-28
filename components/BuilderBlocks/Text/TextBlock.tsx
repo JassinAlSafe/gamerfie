@@ -22,7 +22,6 @@ export function TextBlock({
   textColor = "#9333ea",
   planeBaseHeight = 10,
   enableWaves = true,
-  variant = "ghost",
 }: TextBlockProps) {
   return (
     <div

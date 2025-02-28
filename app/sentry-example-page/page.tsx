@@ -7,8 +7,8 @@ import * as Sentry from "@sentry/nextjs";
 function SentryTestPage() {
   const throwError = () => {
     try {
-      const undefinedFunction = undefined;
-      undefinedFunction();
+      // Intentionally create an error for testing
+      throw new Error("Intentional error for Sentry testing");
     } catch (error) {
       Sentry.captureException(error);
       throw error;

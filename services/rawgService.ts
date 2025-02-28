@@ -1,5 +1,5 @@
 import { Game } from "@/types/game";
-import { RAWGGame, RAWGResponse, RAWGGameQueryParams } from "@/types/rawg";
+import { RAWGGame, RAWGResponse } from "@/types/rawg";
 
 const RAWG_API_KEY = process.env.NEXT_PUBLIC_RAWG_API_KEY || "";
 const RAWG_BASE_URL = "https://api.rawg.io/api";

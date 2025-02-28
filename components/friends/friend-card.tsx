@@ -1,5 +1,5 @@
 import React from "react";
-import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
+import { Avatar, AvatarFallback } from "../ui/avatar";
 import { Button } from "../ui/button";
 import { UserPlus, UserMinus, Clock } from "lucide-react";
 import { FriendCardProps } from "../../types/friend";

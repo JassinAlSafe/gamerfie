@@ -19,7 +19,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useRouter } from "next/navigation";
-import { GameStatus } from "@/types/game";
+// import { GameStatus } from "@/types/game";
 import { LoadingSpinner } from "./loadingSpinner";
 import { useFriendsStore } from "@/stores/useFriendsStore";
 import { useLibraryStore } from "@/stores/useLibraryStore";
@@ -30,6 +30,9 @@ import { toast } from "sonner";
 import { checkGameInLibrary } from "@/utils/game-utils";
 import { Plus, PlayCircle, CheckCircle, XCircle, Library } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+// Define GameStatus locally
+type GameStatus = "playing" | "completed" | "want_to_play" | "dropped";
 
 interface AddToLibraryButtonProps {
   gameId: string;
@@ -74,11 +77,9 @@ export function AddToLibraryButton({
   gameId,
   gameName,
   cover,
-  rating,
   releaseDate,
   platforms,
   genres,
-  summary,
   variant = "default",
   size = "default",
   className,
@@ -276,41 +277,18 @@ export function AddToLibraryButton({
         ? JSON.parse(genres)
         : [];
 
-      // Format game data consistently
-      const gameData = {
-        id: gameId,
-        name: gameName,
-        title: gameName,
-        coverImage: cover || undefined,
-        cover_url: cover || null,
-        rating,
-        first_release_date: releaseDate,
-        platforms: formattedPlatforms,
-        genres: formattedGenres,
-        summary,
-      };
-
-      // Add game to library using LibraryStore
+      // Add game to library with status
       try {
-        // First, store the game data in the games table
-        const gameRecord = {
+        // Add game to library using LibraryStore
+        await addGame({
           id: gameId,
           name: gameName,
           cover_url: cover,
           genres: formattedGenres,
           platforms: formattedPlatforms,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          summary: summary,
           first_release_date: releaseDate,
-        };
+        });
 
-        console.log("Adding game to library with data:", gameRecord);
-
-        // Add game to library using LibraryStore
-        const addedGame = await addGame(gameRecord);
-
-        console.log("Game added to library:", addedGame);
         toast.success("Game added to library");
 
         // Create activity for adding to library
@@ -365,9 +343,7 @@ export function AddToLibraryButton({
     gameId,
     gameName,
     cover,
-    rating,
     releaseDate,
-    summary,
     addGame,
     createActivity,
     onSuccess,

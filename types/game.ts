@@ -114,8 +114,21 @@ export interface Game extends BaseGame {
 }
 
 // Game with User Data (combined interface for library view)
-export interface GameWithUserData extends UserGame {
-  games: BaseGame; // The base game data from the games table
+export interface GameWithUserData {
+  id: string;
+  user_id: string;
+  game_id: string;
+  status: GameStatus;
+  playTime: number;
+  created_at: string;
+  updated_at: string;
+  completionPercentage: number;
+  achievementsCompleted: number;
+  userRating?: number;
+  notes?: string;
+  lastPlayedAt?: string;
+  coverUrl?: string;
+  games?: any; // This should be properly typed based on your data structure
 }
 
 // Search and Display Interfaces
@@ -190,6 +203,13 @@ export interface GameListResponse {
   genres?: Genre[];
 }
 
+export interface FetchGamesResponse {
+  games: Game[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
 // Component Props Interfaces
 export interface GameCardProps {
   game: Game;
@@ -198,7 +218,11 @@ export interface GameCardProps {
 }
 
 export interface GamesTabProps {
-  filters: GameFilters;
+  filters: {
+    status?: string;
+    sortBy?: string;
+    sortOrder?: string;
+  };
 }
 
 // Page Props

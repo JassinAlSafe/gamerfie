@@ -1,15 +1,19 @@
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
-import { FriendActivity } from '../../../../types/friend';
+import { FriendActivity, ActivityType } from '../../../../../types/activity';
 
-const COOLDOWN_PERIODS = {
+const COOLDOWN_PERIODS: Record<ActivityType, number> = {
   started_playing: 24 * 60 * 60, // 24 hours in seconds
   completed: 0, // No cooldown for completing games
   achievement: 5 * 60, // 5 minutes in seconds
   review: 0, // No cooldown for reviews
   want_to_play: 60 * 60, // 1 hour in seconds
-  progress: 30 * 60 // 30 minutes in seconds
+  progress: 30 * 60, // 30 minutes in seconds
+  game_status_updated: 0, // No cooldown
+  achievement_unlocked: 5 * 60, // 5 minutes in seconds
+  game_completed: 0, // No cooldown
+  review_added: 0 // No cooldown
 };
 
 export async function POST(request: Request) {
@@ -27,7 +31,11 @@ export async function POST(request: Request) {
     }
 
     // Parse the request body
-    const { activity_type, game_id, details } = await request.json();
+    const { activity_type, game_id, details } = await request.json() as { 
+      activity_type: ActivityType; 
+      game_id: string; 
+      details?: any 
+    };
     console.log('Creating activity:', { activity_type, game_id, details, user_id: session.user.id });
 
     if (!activity_type) {
@@ -130,8 +138,11 @@ export async function POST(request: Request) {
     const transformedActivity: FriendActivity = {
       id: activity.id,
       type: activity.activity_type,
-      details: activity.details,
+      user_id: activity.user_id,
+      game_id: activity.game_id,
       timestamp: activity.created_at,
+      created_at: activity.created_at,
+      details: activity.details,
       user: userProfile ? {
         id: userProfile.id,
         username: userProfile.username,

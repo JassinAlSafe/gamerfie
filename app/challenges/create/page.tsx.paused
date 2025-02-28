@@ -2,7 +2,7 @@
 
 import { BackgroundBeams } from "@/components/ui/background-beams";
 import { CreateChallenge } from "@/components/Challenges/CreateChallenge";
-import { useChallengesStore } from "@/store/challenges";
+import { useChallengesStore } from "@/stores/challenges";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/components/ui/use-toast";
 

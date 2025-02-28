@@ -2,6 +2,7 @@
 
 import { useState, useMemo, Suspense, lazy } from "react";
 import { useProfile } from "@/hooks/Profile/use-profile";
+import { Button } from "@/components/ui/button";
 import { ProfileHeader } from "@/components/profile/profile-header";
 import { ProfileNav } from "@/components/profile/profile-nav";
 import {
@@ -10,55 +11,39 @@ import {
 } from "@/components/profile/game-filters";
 import { LoadingState } from "@/components/ui/loading-state";
 import { ErrorState } from "@/components/ui/error-state";
-import { Button } from "@/components/ui/button";
 import { LayoutGrid, List } from "lucide-react";
 import { useSettingsStore } from "@/stores/useSettingsStore";
-import { getCoverImageUrl } from "@/utils/image-utils";
-import { GameCoverImage } from "@/components/ui/game-cover-image";
-import type { ProcessedGame } from "@/types/game";
+// Commented out unused imports
+// import { getCoverImageUrl } from "@/utils/image-utils";
+// import { GameCoverImage } from "@/components/ui/game-cover-image";
+// import type { ProcessedGame } from "@/types/game";
 import type { GameStats } from "@/types/user";
 
 // Lazy load the GamesTab component
 const GamesTab = lazy(() => import("@/components/profile/games-tab"));
 
-// Skeleton loader for the games tab
+// Skeleton component for loading state
 const GamesTabSkeleton = () => (
   <div className="space-y-4">
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-      {Array(8)
+    <div className="flex items-center justify-between">
+      <div className="h-8 w-48 bg-gray-800 rounded animate-pulse"></div>
+      <div className="h-8 w-24 bg-gray-800 rounded animate-pulse"></div>
+    </div>
+    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+      {Array(15)
         .fill(0)
         .map((_, i) => (
           <div
             key={i}
-            className="rounded-xl bg-gray-800/50 animate-pulse h-[300px]"
-          />
+            className="aspect-[3/4] bg-gray-800 rounded-lg animate-pulse"
+          ></div>
         ))}
     </div>
   </div>
 );
 
-function GameItem({ game }: { game: ProcessedGame }) {
-  // Handle both RAWG and IGDB cover image formats with better fallbacks
-  const coverUrl = useMemo(() => {
-    const url =
-      game.games?.cover_url || // From games table
-      game.cover_url || // Direct cover_url
-      game.coverImage || // IGDB format
-      game.games?.background_image; // RAWG format
-
-    return getCoverImageUrl(url);
-  }, [game]);
-
-  return (
-    <div className="relative group">
-      <GameCoverImage
-        src={coverUrl}
-        alt={game.title || game.name || "Game Cover"}
-      />
-      {/* ...rest of the GameItem component... */}
-    </div>
-  );
-}
+// Game cover image component
+// const _GameCoverImage = ({ src, alt }: { src: string; alt: string }) => {
 
 export default function GamesPage() {
   const { profile, isLoading, error, gameStats } = useProfile();

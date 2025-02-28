@@ -2,10 +2,7 @@ import { create } from 'zustand';
 import { 
   FriendsState, 
   FriendStatus, 
-  Friend, 
-  OnlineStatus,
-  SupabaseFriendData,
-  SupabaseFriendRecord 
+  Friend 
 } from '../types/friend';
 import { ActivityType, ActivityDetails, ActivityReaction, ActivityComment } from '../types/activity';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';

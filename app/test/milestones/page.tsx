@@ -2,8 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
-import { MilestoneManagement } from "@/components/challenges/MilestoneManagement";
-import { Button } from "@/components/ui/button";
+import { MilestoneManagement } from "@/components/Challenges/MilestoneManagement";
 import { toast } from "sonner";
 
 // Using valid UUID format for test challenge IDs
@@ -149,6 +148,7 @@ export default function TestMilestonesPage() {
           <MilestoneManagement
             challengeId={TEST_CHALLENGE_ID}
             isCreator={true}
+            goals={[]}
           />
         </section>
 
@@ -162,6 +162,7 @@ export default function TestMilestonesPage() {
           <MilestoneManagement
             challengeId={TEST_CHALLENGE_ID}
             isCreator={false}
+            goals={[]}
           />
         </section>
 
@@ -175,6 +176,7 @@ export default function TestMilestonesPage() {
           <MilestoneManagement
             challengeId={EMPTY_CHALLENGE_ID}
             isCreator={true}
+            goals={[]}
           />
         </section>
       </div>

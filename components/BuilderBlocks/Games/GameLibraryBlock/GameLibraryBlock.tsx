@@ -3,7 +3,6 @@
 import { useEffect } from "react";
 import { Block } from "../../Block";
 import { useLibraryStore } from "@/stores/useLibraryStore";
-import { GameWithProgress, GameStatus } from "@/types/game";
 import { formatDistanceToNow } from "date-fns";
 import {
   Clock,
@@ -20,6 +19,24 @@ import Image from "next/image";
 import Link from "next/link";
 import { useUser } from "@/hooks/User/useUser";
 import React from "react";
+
+// Define the types locally to avoid import issues
+type GameStatus = "playing" | "completed" | "want_to_play" | "dropped";
+
+// Define a custom Game type to avoid import issues
+interface GameWithProgress {
+  id: string;
+  name?: string;
+  title?: string;
+  progress?: number;
+  hoursPlayed?: number;
+  rating?: number;
+  status?: GameStatus;
+  cover_url?: string | null;
+  coverImage?: string;
+  genres?: Array<{ id: string; name: string }>;
+  updated_at?: string;
+}
 
 const gameStatusColors: Record<GameStatus, string> = {
   playing: "bg-green-500/10 text-green-500 hover:bg-green-500/20",

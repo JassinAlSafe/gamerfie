@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, useCallback } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useJournalStore, type JournalEntry } from "@/stores/useJournalStore";
 import { Button } from "@/components/ui/button";
 import {
@@ -9,7 +9,6 @@ import {
   Trash2Icon,
   StarIcon,
   SearchIcon,
-  ChevronDownIcon,
   GridIcon,
   ListIcon,
   ChevronLeftIcon,
@@ -31,7 +30,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
 import {
   Tooltip,
   TooltipContent,

@@ -16,11 +16,7 @@ import {
   Pencil,
   Trash2,
 } from "lucide-react";
-import {
-  GameStatus,
-  GameWithUserData,
-  GamesTabProps,
-} from "@/types/game";
+import { GameStatus, GameWithUserData, GamesTabProps } from "@/types/game";
 import { useSettingsStore } from "@/stores/useSettingsStore";
 import { getCoverImageUrl } from "@/utils/image-utils";
 import { GameStatusDropdown } from "@/components/game/game-status-dropdown";
@@ -32,7 +28,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ensureHttps } from "@/utils/image-utils";
 
 // List View Component
 const GameListItem = ({
@@ -89,11 +84,11 @@ const GameListItem = ({
           </div>
           <div className="flex items-center text-sm text-gray-400 group-hover:text-gray-300 transition-colors duration-200">
             <Clock className="w-4 h-4 mr-1" />
-            {game.play_time}h
+            {game.playTime}h
           </div>
           <div className="flex items-center text-sm text-gray-400 group-hover:text-gray-300 transition-colors duration-200">
             <BarChart3 className="w-4 h-4 mr-1" />
-            {game.completion_percentage || 0}%
+            {game.completionPercentage || 0}%
           </div>
         </div>
       </div>
@@ -171,7 +166,7 @@ const GameGridItem = ({
     console.log("GameGridItem - Raw game data:", game);
 
     // Get the cover URL from the games table
-    let rawCoverUrl = game.games?.cover_url;
+    const rawCoverUrl = game.games?.cover_url;
     console.log("GameGridItem - Raw cover URL:", rawCoverUrl);
 
     if (!rawCoverUrl) {
@@ -278,11 +273,11 @@ const GameGridItem = ({
             <div className="flex items-center space-x-4">
               <div className="flex items-center text-gray-300 text-sm font-medium">
                 <Clock className="w-4 h-4 mr-1.5" />
-                {game.play_time}h
+                {game.playTime}h
               </div>
               <div className="flex items-center text-gray-300 text-sm font-medium">
                 <BarChart3 className="w-4 h-4 mr-1.5" />
-                {game.completion_percentage}%
+                {game.completionPercentage}%
               </div>
             </div>
           </div>
@@ -433,46 +428,25 @@ export default function GamesTab({ filters }: GamesTabProps) {
       console.log("Raw data from Supabase:", data);
 
       // Transform the response to match our interface
-      const transformedData = data.map((item) => {
-        console.log("Profile Games - Database item:", item);
-        console.log(
-          "Profile Games - Raw cover URL from database:",
-          item.games?.cover_url
-        );
+      const mappedGames = data.map((item) => ({
+        id: item.id,
+        user_id: item.user_id,
+        game_id: item.game_id,
+        status: item.status as GameStatus,
+        playTime: item.play_time || 0,
+        created_at: item.created_at,
+        updated_at: item.updated_at,
+        completionPercentage: item.completion_percentage || 0,
+        achievementsCompleted: item.achievements_completed || 0,
+        userRating: item.user_rating,
+        notes: item.notes,
+        lastPlayedAt: item.last_played_at,
+        coverUrl: item.cover_url,
+        games: item.games,
+      }));
 
-        // For RAWG games, the cover_url will contain the background_image
-        const transformed = {
-          id: item.id,
-          user_id: userId,
-          game_id: item.game_id,
-          status: item.status as GameStatus,
-          play_time: item.play_time || 0,
-          created_at: item.created_at,
-          updated_at: item.updated_at,
-          completion_percentage: item.completion_percentage || 0,
-          achievements_completed: item.achievements_completed || 0,
-          user_rating: item.user_rating,
-          notes: item.notes,
-          last_played_at: item.last_played_at,
-          cover_url: item.games?.cover_url || null,
-          games: {
-            id: item.games.id,
-            name: item.games.name,
-            cover_url: item.games.cover_url || null,
-            platforms: item.games.platforms,
-            genres: item.games.genres,
-            summary: item.games.summary,
-            created_at: item.games.created_at,
-            updated_at: item.games.updated_at,
-          },
-        };
-
-        console.log("Profile Games - Transformed item:", transformed);
-        return transformed;
-      });
-
-      console.log("Final transformed data:", transformedData);
-      return transformedData;
+      console.log("Final transformed data:", mappedGames);
+      return mappedGames;
     },
     enabled: !!userId,
   });
@@ -553,7 +527,7 @@ export default function GamesTab({ filters }: GamesTabProps) {
 }
 
 function getStatusColor(gameStatus: GameStatus): string {
-  const colors = {
+  const colors: Record<GameStatus, string> = {
     playing: "bg-green-500",
     completed: "bg-blue-500",
     want_to_play: "bg-yellow-500",
@@ -565,7 +539,7 @@ function getStatusColor(gameStatus: GameStatus): string {
 function formatStatus(gameStatus: GameStatus): string {
   return gameStatus
     .split("_")
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
     .join(" ");
 }
 

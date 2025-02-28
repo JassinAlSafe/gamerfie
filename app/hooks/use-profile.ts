@@ -3,28 +3,52 @@ import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { fetchProfile, updateProfile, fetchUserGames } from '@/lib/api';
 import { Game } from '@/types';
 import { Profile } from '@/types/index';
-import { GameStats } from '@/types/index';
 import { toast } from 'react-hot-toast';
+
+// Combined GameStats interface from both types/game.ts and types/user.ts
+interface GameStats {
+  totalGames: number;
+  totalPlaytime: number;
+  recentlyPlayed: Game[];
+  mostPlayed: Game[];
+  total_played: number;
+  played_this_year: number;
+  backlog: number;
+}
 
 export function useProfile() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const [gameStats, setGameStats] = useState<GameStats>({
+    totalGames: 0,
+    totalPlaytime: 0,
+    recentlyPlayed: [],
+    mostPlayed: [],
     total_played: 0,
     played_this_year: 0,
-    backlog: 0,
+    backlog: 0
   });
 
   const supabase = createClientComponentClient();
 
   const calculateGameStats = useCallback((games: Game[]): GameStats => {
     const currentYear = new Date().getFullYear();
-    return games.reduce(
+    const initialStats = {
+      totalGames: 0,
+      totalPlaytime: 0,
+      recentlyPlayed: [],
+      mostPlayed: [],
+      total_played: 0,
+      played_this_year: 0,
+      backlog: 0
+    };
+    
+    const stats = games.reduce(
       (stats, game) => {
         if (game.status === "completed" || game.status === "playing") {
           stats.total_played++;
-          if (new Date(game.updated_at).getFullYear() === currentYear) {
+          if (game.updated_at && new Date(game.updated_at).getFullYear() === currentYear) {
             stats.played_this_year++;
           }
         } else if (game.status === "want_to_play") {
@@ -32,8 +56,13 @@ export function useProfile() {
         }
         return stats;
       },
-      { total_played: 0, played_this_year: 0, backlog: 0 }
+      initialStats
     );
+    
+    // Update additional stats
+    stats.totalGames = games.length;
+    
+    return stats;
   }, []);
 
   const updateGameStats = useCallback(async (userId: string) => {

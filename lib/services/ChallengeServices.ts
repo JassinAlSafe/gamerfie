@@ -5,7 +5,6 @@ import {
   UpdateChallengeInput,
   ChallengeLeaderboard,
   ChallengeTeam,
-  ChallengeGoal,
 } from "@/types/challenge";
 
 export class ChallengeServices {

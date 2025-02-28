@@ -1,6 +1,5 @@
 import { useEffect } from 'react';
 import { useFriendsStore } from '@/stores/useFriendsStore';
-import type { ActivityType } from '@/types/activity';
 
 export function useRecentActivities(limit: number = 5) {
   const { activities, isLoadingActivities, error, fetchActivities } = useFriendsStore();

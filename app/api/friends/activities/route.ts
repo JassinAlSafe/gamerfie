@@ -1,7 +1,7 @@
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
-import { FriendActivity } from '@/types/friend';
+import { FriendActivity } from '@/types/activity';
 
 export async function GET(request: Request) {
   const supabase = createRouteHandlerClient({ cookies });
@@ -110,6 +110,7 @@ export async function GET(request: Request) {
       user_id: activity.user_id,
       game_id: activity.game_id,
       timestamp: activity.created_at,
+      created_at: activity.created_at,
       details: activity.details,
       reactions: activity.reactions || [],
       comments: activity.comments || [],

@@ -1,4 +1,4 @@
-import { PlusIcon, BookOpen } from "lucide-react";
+import { BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface NewEntryButtonProps {

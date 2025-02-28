@@ -7,12 +7,10 @@ import {
   BookOpen,
   Star,
   Trophy,
-  BarChart3,
   ListTodo,
   PenLine,
   Loader2,
   LineChart,
-  Percent,
 } from "lucide-react";
 import {
   useJournalStore,
@@ -23,22 +21,9 @@ import { formatDistanceToNow } from "date-fns";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/text/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+
 import { Button } from "@/components/ui/button";
 import { toast } from "react-hot-toast";
-import { Progress } from "@/components/ui/progress";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 
 interface JournalBlockProps {
   size?: "sm" | "md" | "lg";
@@ -64,22 +49,6 @@ const journalTypeColors: Record<JournalEntryType, string> = {
 };
 
 const MAX_CHARS = 500;
-const ENTRY_TYPES = [
-  { value: "daily", label: "Daily Log", icon: <PenLine className="h-4 w-4" /> },
-  {
-    value: "progress",
-    label: "Progress Update",
-    icon: <BarChart3 className="h-4 w-4" />,
-  },
-  { value: "review", label: "Game Review", icon: <Star className="h-4 w-4" /> },
-  {
-    value: "achievement",
-    label: "Achievement",
-    icon: <Trophy className="h-4 w-4" />,
-  },
-  { value: "list", label: "List", icon: <ListTodo className="h-4 w-4" /> },
-  { value: "note", label: "Quick Note", icon: <PenLine className="h-4 w-4" /> },
-];
 
 function JournalEntryCard({ entry }: { entry: JournalEntry }) {
   const firstLine = entry.content?.split("\n")[0];

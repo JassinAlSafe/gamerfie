@@ -28,7 +28,7 @@ const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
 );
 
 export function SignUpForm() {
-  const [isLoading, setIsLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -40,7 +40,7 @@ export function SignUpForm() {
 
   const router = useRouter();
   const { toast } = useToast();
-  const { signUp, signOut, error } = useAuthStore();
+  const { signUp, isLoading: _authLoading } = useAuthStore();
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -51,7 +51,7 @@ export function SignUpForm() {
 
   async function onSubmit(event: React.FormEvent) {
     event.preventDefault();
-    setIsLoading(true);
+    setIsSubmitting(true);
 
     try {
       const response = await signUp(
@@ -76,12 +76,12 @@ export function SignUpForm() {
         variant: "destructive",
       });
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   }
 
   async function signUpWithGoogle() {
-    setIsLoading(true);
+    setIsSubmitting(true);
     try {
       // TODO: Implement Google sign-in using the auth store
       toast({
@@ -98,7 +98,7 @@ export function SignUpForm() {
         variant: "destructive",
       });
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   }
 
@@ -108,11 +108,11 @@ export function SignUpForm() {
         <Button
           variant="outline"
           type="button"
-          disabled={isLoading}
+          disabled={isSubmitting}
           onClick={signUpWithGoogle}
           className="w-full"
         >
-          {isLoading ? (
+          {isSubmitting ? (
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
           ) : (
             <GoogleIcon className="mr-2 h-4 w-4" />
@@ -145,7 +145,7 @@ export function SignUpForm() {
             autoCapitalize="none"
             autoComplete="email"
             autoCorrect="off"
-            disabled={isLoading}
+            disabled={isSubmitting}
             value={formData.email}
             onChange={handleInputChange}
             required
@@ -165,7 +165,7 @@ export function SignUpForm() {
             autoCapitalize="none"
             autoComplete="username"
             autoCorrect="off"
-            disabled={isLoading}
+            disabled={isSubmitting}
             value={formData.username}
             onChange={handleInputChange}
             required
@@ -184,7 +184,7 @@ export function SignUpForm() {
             type="text"
             autoCapitalize="words"
             autoComplete="name"
-            disabled={isLoading}
+            disabled={isSubmitting}
             value={formData.displayName}
             onChange={handleInputChange}
             required
@@ -204,7 +204,7 @@ export function SignUpForm() {
             autoCapitalize="none"
             autoComplete="new-password"
             autoCorrect="off"
-            disabled={isLoading}
+            disabled={isSubmitting}
             value={formData.password}
             onChange={handleInputChange}
             required
@@ -223,7 +223,7 @@ export function SignUpForm() {
             id="dateOfBirth"
             name="dateOfBirth"
             type="date"
-            disabled={isLoading}
+            disabled={isSubmitting}
             value={formData.dateOfBirth}
             onChange={handleInputChange}
             required
@@ -237,7 +237,7 @@ export function SignUpForm() {
           </Label>
           <Select
             name="preferredPlatform"
-            disabled={isLoading}
+            disabled={isSubmitting}
             onValueChange={(value) =>
               handleInputChange({
                 target: { name: "preferredPlatform", value },
@@ -283,8 +283,8 @@ export function SignUpForm() {
           </Select>
         </div>
 
-        <Button className="w-full mt-6" type="submit" disabled={isLoading}>
-          {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+        <Button className="w-full mt-6" type="submit" disabled={isSubmitting}>
+          {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           Create Account
         </Button>
       </form>

@@ -1,4 +1,4 @@
-import { Friend, FriendStatus, FriendRequest, FriendActivity, ActivityType, ActivityReaction, ActivityComment } from "../types/friend";
+import { Friend, FriendStatus, FriendRequest, FriendActivity, ActivityType } from "../types/friend";
 
 interface CreateActivityRequest {
   activity_type: ActivityType;

@@ -21,7 +21,7 @@ export function ChallengeLeaderboard({
       </div>
 
       <div className="space-y-2">
-        {leaderboard.rankings.map((entry) => (
+        {leaderboard.entries.map((entry) => (
           <div
             key={entry.user_id}
             className="flex items-center justify-between p-4 bg-card rounded-lg border"
@@ -31,7 +31,10 @@ export function ChallengeLeaderboard({
                 #{entry.rank}
               </span>
               <Avatar>
-                <AvatarImage src={entry.avatar_url} alt={entry.username} />
+                <AvatarImage
+                  src={entry.avatar_url || undefined}
+                  alt={entry.username}
+                />
                 <AvatarFallback>
                   {entry.username.slice(0, 2).toUpperCase()}
                 </AvatarFallback>
@@ -42,7 +45,7 @@ export function ChallengeLeaderboard({
               <span className="text-sm text-muted-foreground">
                 {entry.progress}%
               </span>
-              {entry.completed && (
+              {entry.progress >= 100 && (
                 <Trophy className="w-4 h-4 text-yellow-400" />
               )}
             </div>

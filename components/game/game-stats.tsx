@@ -14,17 +14,11 @@ import {
   Pie,
   Cell,
 } from "recharts";
-import { motion } from "framer-motion";
 import { Trophy, Clock, Target, BarChart2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { Button } from "@/components/ui/button";
-import {
-  Tooltip as UITooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+
+
 
 interface GameStatsProps {
   playTime: number;

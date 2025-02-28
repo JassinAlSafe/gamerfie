@@ -208,4 +208,16 @@ export interface ChallengeRule {
   challenge_id: string;
   rule: string;
   created_at: string;
+}
+
+export interface ClaimedReward {
+  id: string;
+  user_id: string;
+  challenge_id: string;
+  challenge_title: string;
+  type: RewardType;
+  name: string;
+  description: string;
+  claimed_at: string;
+  badge_id?: string;
 } 

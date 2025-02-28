@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState, useId } from "react";
-import { Filter, SlidersHorizontal } from "lucide-react";
+import { SlidersHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,

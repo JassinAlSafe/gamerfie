@@ -2,8 +2,6 @@
 
 import * as React from "react";
 import { useEffect } from "react";
-import { Search, Loader2 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils"; // Add this import
 import {
   Command,

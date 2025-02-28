@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { Plus, Search, X, GripVertical } from "lucide-react";
 import type { DropResult } from "react-beautiful-dnd";
@@ -8,7 +8,7 @@ import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 import { useDebounce } from "@/hooks/Settings/useDebounce";
 import { RAWGService } from "@/services/rawgService";
 import { PlaylistService } from "@/services/playlistService";
-import { Game } from "@/types/game";
+import { Game as GameType } from "@/types/game";
 import { CreatePlaylistInput, Playlist, PlaylistType } from "@/types/playlist";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 
 const playlistTypes: { value: PlaylistType; label: string }[] = [
   { value: "featured", label: "Featured" },
@@ -31,6 +32,11 @@ const playlistTypes: { value: PlaylistType; label: string }[] = [
   { value: "genre", label: "Genre" },
   { value: "custom", label: "Custom" },
 ];
+
+// Define a custom Game type for the PlaylistManager
+interface Game extends GameType {
+  coverImage?: string;
+}
 
 export interface PlaylistManagerProps {
   initialPlaylist?: Playlist;
@@ -41,7 +47,7 @@ export function PlaylistManager({ initialPlaylist }: PlaylistManagerProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<Game[]>([]);
   const [selectedGames, setSelectedGames] = useState<Game[]>(
-    initialPlaylist?.games || []
+    (initialPlaylist?.games as Game[]) || []
   );
   const [isSearching, setIsSearching] = useState(false);
   const debouncedSearch = useDebounce(searchQuery, 500);
@@ -50,7 +56,6 @@ export function PlaylistManager({ initialPlaylist }: PlaylistManagerProps) {
   const {
     register,
     handleSubmit,
-    reset,
     setValue,
     watch,
     formState: { errors },
@@ -264,13 +269,15 @@ export function PlaylistManager({ initialPlaylist }: PlaylistManagerProps) {
                   className="flex items-center justify-between p-2 bg-white/5 hover:bg-white/10 rounded-lg border border-white/10"
                 >
                   <div className="flex items-center gap-2">
-                    {game.coverImage && (
-                      <img
+                    {game.coverImage ? (
+                      <Image
                         src={game.coverImage}
-                        alt={game.title}
+                        alt={game.title || "Game cover"}
+                        width={40}
+                        height={40}
                         className="w-10 h-10 object-cover rounded"
                       />
-                    )}
+                    ) : null}
                     <span className="text-white">{game.title}</span>
                   </div>
                   <Button
@@ -319,13 +326,15 @@ export function PlaylistManager({ initialPlaylist }: PlaylistManagerProps) {
                           <div {...provided.dragHandleProps}>
                             <GripVertical className="w-4 h-4 text-white/60" />
                           </div>
-                          {game.coverImage && (
-                            <img
+                          {game.coverImage ? (
+                            <Image
                               src={game.coverImage}
-                              alt={game.title}
+                              alt={game.title || "Game cover"}
+                              width={40}
+                              height={40}
                               className="w-10 h-10 object-cover rounded"
                             />
-                          )}
+                          ) : null}
                           <span className="text-white">{game.title}</span>
                         </div>
                         <Button

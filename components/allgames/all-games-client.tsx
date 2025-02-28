@@ -8,7 +8,6 @@ import { GamesGrid } from "../games/sections/games-grid";
 import { GamesError } from "../games/GamesError";
 import { useGamesStore } from "@/stores/useGamesStore";
 import { useUrlParams } from "@/hooks/Settings/useUrlParams";
-import { useViewModeStore } from "@/stores/useViewModeStore";
 
 // Dynamically import the GamesHeader component with loading state
 const GamesHeader = dynamic(
@@ -32,7 +31,6 @@ export default function AllGamesClient() {
   });
 
   const { handleResetFilters } = useGamesStore();
-  const { viewMode } = useViewModeStore();
 
   const {
     error,

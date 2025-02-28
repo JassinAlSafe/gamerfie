@@ -6,7 +6,6 @@ import {
   Search,
   Filter,
   X,
-  SlidersHorizontal,
   Gamepad2,
   LayoutGrid,
   List,

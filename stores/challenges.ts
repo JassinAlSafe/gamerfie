@@ -27,6 +27,7 @@ interface ChallengesState {
     goals: ChallengeGoal[];
     teams: ChallengeTeam[];
   } | null>;
+  createChallenge: (_data: Partial<Challenge>) => Promise<string>;
   clearError: () => void;
 
   // Team Management
@@ -46,6 +47,39 @@ export const useChallengesStore = create<ChallengesState>((set, get) => ({
   filter: "all",
   statusFilter: "all",
   sortBy: "date",
+
+  // Add the createChallenge implementation
+  createChallenge: async (data) => {
+    set({ isLoading: true, error: null });
+    try {
+      const response = await fetch('/api/challenges', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create challenge');
+      }
+      
+      const result = await response.json();
+      set((state) => ({
+        challenges: [...state.challenges, result.challenge],
+        isLoading: false,
+      }));
+      
+      return result.challenge.id;
+    } catch (error) {
+      set({ 
+        error: error instanceof Error ? error.message : 'Failed to create challenge',
+        isLoading: false 
+      });
+      throw error;
+    }
+  },
 
   // Rest of the implementation remains the same...
   // ... (copy the rest of the implementation from your existing file)

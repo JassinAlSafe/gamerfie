@@ -1,11 +1,14 @@
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
-import { Game, GameQueryParams, SortOption, Platform } from '@/types/game'
-import {  GameServiceError } from '@/types/errors';
-import { FetchGamesResponse } from '@/types/game';
+import { GameServiceError } from '../types/errors';
+import { 
+  GameQueryParams, 
+  FetchGamesResponse, 
+  Platform, 
+  SortOption,
+  GameExtended
+} from '../types/gameService';
 
 export class GameService {
   private static readonly GAMES_PER_PAGE = 48;
-  private static readonly supabase = createClientComponentClient();
   private static readonly API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:3000';
 
   static async fetchGames({
@@ -51,7 +54,7 @@ export class GameService {
     }
   }
 
-  static async searchGames(searchTerm: string): Promise<Game[]> {
+  static async searchGames(searchTerm: string): Promise<GameExtended[]> {
     try {
       if (!searchTerm || searchTerm.length < 2) {
         return [];
@@ -149,7 +152,7 @@ export class GameService {
       popularity: 'total_rating_count desc'
     };
     
-    const sortClause = sortMapping[sortBy] || 'total_rating_count desc';
+    const sortClause = sortMapping[sortBy as SortOption] || 'total_rating_count desc';
     query += ` sort ${sortClause};`;
 
     // Add pagination
@@ -159,7 +162,7 @@ export class GameService {
     return query;
   }
 
-  private static processGameData(game: Game): Game {
+  private static processGameData(game: any): GameExtended {
     return {
       id: game.id,
       name: game.name,
@@ -179,7 +182,7 @@ export class GameService {
     };
   }
 
-  static async fetchGameById(id: number): Promise<Game | null> {
+  static async fetchGameById(id: number): Promise<GameExtended | null> {
     const query = `
       fields name,cover.url,cover.id,platforms.name,genres.name,summary,first_release_date,
       total_rating,total_rating_count,artworks.url,screenshots.url,

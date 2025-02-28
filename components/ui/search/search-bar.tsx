@@ -1,6 +1,5 @@
 "use client";
 
-import { motion } from "framer-motion";
 import { Search, Gamepad2, Star } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
