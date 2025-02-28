@@ -19,15 +19,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { ProgressIndicator } from "@/components/ui/progress-indicator";
-import { Clock, Trophy, Target, ChevronRight, Check } from "lucide-react";
+import { Clock, Trophy, Target } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 // Define interface for the challenges store
-interface ChallengesStore {
+// interface ChallengesStore {
   userChallenges: any[];
   updateProgress: (challengeId: string, progress: number) => Promise<void>;
   fetchUserChallenges: () => Promise<void>;
-}
+// }
 
 interface CompletionDialogProps {
   isOpen: boolean;
@@ -340,13 +340,13 @@ export function CompletionDialog({
     }
   };
 
-  const toggleChallenge = (challengeId: string) => {
-    setSelectedChallenges((prev) =>
-      prev.includes(challengeId)
-        ? prev.filter((id) => id !== challengeId)
-        : [...prev, challengeId]
-    );
-  };
+  // const toggleChallenge = (challengeId: string) => {
+  //   setSelectedChallenges((prev) =>
+  //     prev.includes(challengeId)
+  //       ? prev.filter((id) => id !== challengeId)
+  //       : [...prev, challengeId]
+  //   );
+  // };
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>

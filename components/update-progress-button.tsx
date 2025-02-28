@@ -6,9 +6,15 @@ import { useProgressStore } from "@/stores/useProgressStore";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { CompletionDialog } from "@/components/game/dialogs/CompletionDialog";
 import { toast } from "sonner";
-import { Game, GameProgress } from "@/types/game";
+import { Game } from "@/types/game";
 import { BarChart2, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+interface GameProgress {
+  playTime?: number;
+  completionPercentage?: number;
+  achievementsCompleted?: number;
+}
 
 interface UpdateProgressButtonProps {
   gameId: string;
@@ -23,8 +29,6 @@ interface UpdateProgressButtonProps {
 export function UpdateProgressButton({
   gameId,
   gameName,
-  game,
-  progress,
   variant = "secondary",
   size = "default",
   className,
@@ -46,9 +50,9 @@ export function UpdateProgressButton({
     }
   }, [user, gameId, fetchProgress]);
 
-  const handleDialogOpenChange = useCallback((open: boolean) => {
-    setDialogOpen(open);
-  }, []);
+  // const handleDialogOpenChange = useCallback((open: boolean) => {
+  //   setDialogOpen(open);
+  // }, []);
 
   const handleProgressUpdate = useCallback(
     async (progress: Partial<GameProgress>) => {
@@ -89,14 +93,14 @@ export function UpdateProgressButton({
     [completion_percentage]
   );
 
-  const currentProgress = useMemo(
-    () => ({
-      play_time: play_time ?? 0,
-      completion_percentage: completion_percentage ?? 0,
-      achievements_completed: achievements_completed ?? 0,
-    }),
-    [play_time, completion_percentage, achievements_completed]
-  );
+  // const currentProgress = useMemo(
+  //   () => ({
+  //     play_time: play_time ?? 0,
+  //     completion_percentage: completion_percentage ?? 0,
+  //     achievements_completed: achievements_completed ?? 0,
+  //   }),
+  //   [play_time, completion_percentage, achievements_completed]
+  // );
 
   return (
     <>

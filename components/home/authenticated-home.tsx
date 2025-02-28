@@ -16,9 +16,8 @@ interface AuthenticatedHomeProps {
 }
 
 export function AuthenticatedHome({ user }: AuthenticatedHomeProps) {
-  const { friends = [], isLoading: isLoadingFriends } = useFriends();
-  const { activities = [], isLoading: isLoadingActivities } =
-    useRecentActivities(5);
+  const { friends = [] } = useFriends();
+  const { activities = [] } = useRecentActivities(5);
   const { stats, fetchGameLibrary } = useGameLibraryStore();
   const { user: currentUser } = useUser();
 

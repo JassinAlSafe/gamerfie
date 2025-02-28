@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { cn } from "@/lib/utils";
 
 interface SparkleType {
@@ -38,7 +38,7 @@ export const SparklesCore = ({
     setDensity(particleDensity);
   }, [particleDensity]);
 
-  const createSpark = (): SparkleType => {
+  const createSpark = useCallback((): SparkleType => {
     const containerWidth = containerRef.current?.offsetWidth || 0;
     const containerHeight = containerRef.current?.offsetHeight || 0;
 
@@ -53,7 +53,7 @@ export const SparklesCore = ({
         zIndex: Math.floor(Math.random() * 3),
       },
     };
-  };
+  }, [maxSize, minSize, particleColor]);
 
   useEffect(() => {
     const animate = () => {
@@ -80,7 +80,7 @@ export const SparklesCore = ({
         cancelAnimationFrame(frame.current);
       }
     };
-  }, [density, maxSize, minSize, particleColor]);
+  }, [createSpark, density, maxSize, minSize, particleColor]);
 
   return (
     <div

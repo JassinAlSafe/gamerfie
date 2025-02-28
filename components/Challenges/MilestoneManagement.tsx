@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import {
   Card,
@@ -108,7 +108,7 @@ export function MilestoneManagement({
       setUserId(user?.id || null);
     };
     fetchUser();
-  }, []);
+  }, [supabase.auth]);
 
   useEffect(() => {
     fetchMilestones();
@@ -128,7 +128,7 @@ export function MilestoneManagement({
     }
   }, [editingMilestone, form]);
 
-  const fetchMilestones = async () => {
+  const fetchMilestones = useCallback(async () => {
     try {
       setLoading(true);
       const { data, error } = await supabase
@@ -145,7 +145,11 @@ export function MilestoneManagement({
     } finally {
       setLoading(false);
     }
-  };
+  }, [challengeId, supabase]);
+
+  useEffect(() => {
+    fetchMilestones();
+  }, [fetchMilestones]);
 
   const handleSubmit = async (values: MilestoneFormValues) => {
     if (!userId) {
@@ -412,29 +416,79 @@ export function MilestoneManagement({
         </div>
       </CardHeader>
       <CardContent>
-        <div className="space-y-4">
-          {goals.map((goal) => (
-            <div key={goal.id} className="space-y-2">
-              <Label className="text-gray-300">{goal.description}</Label>
-              <div className="space-y-2">
-                <Slider
-                  value={[progress[goal.id] || 0]}
-                  onValueChange={(value) =>
-                    handleProgressChange(goal.id, value[0])
-                  }
-                  max={goal.target}
-                  step={1}
-                  className="py-4"
-                />
-                <div className="flex justify-between text-sm text-gray-500">
-                  <span>0</span>
-                  <span>
-                    {progress[goal.id] || 0}/{goal.target}
-                  </span>
-                </div>
+        <div className="space-y-6">
+          {/* Display milestones */}
+          {milestones.length > 0 && (
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium">Milestone Rewards</h3>
+              <div className="grid gap-3">
+                {milestones.map((milestone) => (
+                  <div
+                    key={milestone.id}
+                    className="flex items-center justify-between p-3 bg-gray-800/50 rounded-lg border border-gray-700/50"
+                  >
+                    <div className="flex items-center gap-3">
+                      {getRewardIcon(milestone.reward_type)}
+                      <div>
+                        <h4 className="font-medium">{milestone.title}</h4>
+                        <p className="text-sm text-gray-400">
+                          {milestone.required_progress}% completion required
+                        </p>
+                      </div>
+                    </div>
+                    {isCreator && (
+                      <div className="flex gap-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setEditingMilestone(milestone);
+                            setIsDialogOpen(true);
+                          }}
+                        >
+                          Edit
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDelete(milestone.id)}
+                        >
+                          Delete
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                ))}
               </div>
             </div>
-          ))}
+          )}
+
+          {/* Goals progress */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-medium">Goal Progress</h3>
+            {goals.map((goal) => (
+              <div key={goal.id} className="space-y-2">
+                <Label className="text-gray-300">{goal.description}</Label>
+                <div className="space-y-2">
+                  <Slider
+                    value={[progress[goal.id] || 0]}
+                    onValueChange={(value) =>
+                      handleProgressChange(goal.id, value[0])
+                    }
+                    max={goal.target}
+                    step={1}
+                    className="py-4"
+                  />
+                  <div className="flex justify-between text-sm text-gray-500">
+                    <span>0</span>
+                    <span>
+                      {progress[goal.id] || 0}/{goal.target}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </CardContent>
     </Card>

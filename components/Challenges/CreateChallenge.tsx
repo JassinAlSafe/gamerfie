@@ -257,7 +257,7 @@ export function CreateChallenge({ onSubmit }: CreateChallengeProps) {
 
     console.log("Uploading image:", { fileName, filePath });
 
-    const { error: uploadError, data } = await supabase.storage
+    const { error: uploadError } = await supabase.storage
       .from("challenges")
       .upload(filePath, file);
 
@@ -289,6 +289,16 @@ export function CreateChallenge({ onSubmit }: CreateChallengeProps) {
   const onFormSubmit = async (data: CreateChallengeForm) => {
     try {
       setIsSubmitting(true);
+
+      // If onSubmit prop is provided, use it
+      if (onSubmit) {
+        await onSubmit(data);
+        toast({
+          title: "Success",
+          description: "Challenge created successfully!",
+        });
+        return;
+      }
 
       // Upload image first if exists
       let coverUrl = null;

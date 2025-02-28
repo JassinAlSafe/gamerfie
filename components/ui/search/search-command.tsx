@@ -32,23 +32,13 @@ interface SearchCommandProps {
 }
 
 export function SearchCommand({
-  isOpen,
-  onOpenChange,
   placeholder = "Search...",
   value = "",
   onChange,
   onSearch,
-  isLoading,
-  emptyMessage = "No results found.",
-  loadingMessage = "Searching...",
   children,
-  align = "start",
   className,
   inputClassName,
-  searching,
-  asChild = false,
-  onFocus,
-  onBlur,
   debounceMs = 500, // Add default value
 }: SearchCommandProps) {
   useEffect(() => {
@@ -70,6 +60,7 @@ export function SearchCommand({
         if (e.key === "Enter") {
           e.preventDefault();
         }
+        return;
       }}
     >
       <CommandInput
@@ -112,7 +103,9 @@ export function SearchItem({
       value={value}
       onSelect={() => {
         console.log("SearchItem selected:", value);
-        onSelect?.(value);
+        if (value !== undefined) {
+          onSelect?.(value);
+        }
       }}
       className={cn(
         "flex items-center gap-2 w-full p-2 text-sm cursor-pointer hover:bg-accent transition-colors",

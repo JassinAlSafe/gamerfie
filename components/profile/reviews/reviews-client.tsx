@@ -170,9 +170,9 @@ export default function ReviewsClient() {
   };
 
   // Extract unique genres from all reviews - removed due to type issues
-  const popularGenres = useMemo(() => {
-    return []; // Return empty array to avoid type errors
-  }, [reviews]);
+  // const popularGenres = useMemo(() => {
+  //   return []; // Return empty array to avoid type errors
+  // }, [reviews]);
 
   if (isLoading) {
     return (

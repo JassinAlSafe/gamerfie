@@ -19,11 +19,12 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { AuthCheck } from "@/components/auth/AuthCheck";
-import { Game, GameStatus } from "@/types/game";
+import { Game } from "@/types/game";
+// Define GameStatus type directly to avoid import issues
+type GameStatus = "playing" | "completed" | "want_to_play" | "dropped";
 import { useProgressStore } from "@/stores/useProgressStore";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { useLibraryStore } from "@/stores/useLibraryStore";
-import { useFriendsStore } from "@/stores/useFriendsStore";
 import { toast } from "sonner";
 import { AddToLibraryButton } from "@/components/add-to-library-button";
 
@@ -48,7 +49,6 @@ export const GameActionsMenu = memo(
       (state) => state.updateGameStatus
     );
     const { games, fetchUserLibrary } = useLibraryStore();
-    const { createActivity } = useFriendsStore();
 
     useEffect(() => {
       if (user?.id) {
@@ -112,13 +112,13 @@ export const GameActionsMenu = memo(
                   <AddToLibraryButton
                     gameId={game.id}
                     gameName={title}
-                    cover={game.cover_url || game.coverImage}
+                    cover={game.cover_url || undefined}
                     rating={game.rating}
                     releaseDate={game.first_release_date}
                     platforms={game.platforms}
                     genres={game.genres}
-                    summary={game.summary}
-                    onSuccess={(status) => {
+                    summary={""}
+                    onSuccess={(_status) => {
                       setIsInLibrary(true);
                       setIsOpen(false);
                       if (user?.id) {

@@ -26,30 +26,11 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-
 import { Badge } from "@/components/ui/badge";
 import { motion } from "framer-motion";
 
 interface TimelineViewProps {
   entries: JournalEntry[];
-}
-
-function formatDate(date: string) {
-  return new Date(date)
-    .toLocaleDateString("en-US", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-    })
-    .replace(/\//g, ".");
-}
-
-function getEntryTitle(entry: JournalEntry) {
-  if (entry.type === "list") return entry.title;
-  if (entry.type === "progress") return `Progress Update: ${entry.game?.name}`;
-  if (entry.type === "review") return `Game Review: ${entry.game?.name}`;
-  if (entry.type === "daily") return "Daily Gaming Log";
-  return "Journal Entry";
 }
 
 export function TimelineView({ entries }: TimelineViewProps) {
@@ -82,87 +63,6 @@ export function TimelineView({ entries }: TimelineViewProps) {
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return format(date, "MMMM d, yyyy");
-  };
-
-  const getEntryIcon = (type: string) => {
-    switch (type) {
-      case "progress":
-        return <BarChart2 className="h-5 w-5 text-blue-400" />;
-      case "review":
-        return <Star className="h-5 w-5 text-yellow-400" />;
-      case "daily":
-        return <Calendar className="h-5 w-5 text-green-400" />;
-      case "list":
-        return <BookOpen className="h-5 w-5 text-purple-400" />;
-      default:
-        return <Calendar className="h-5 w-5 text-gray-400" />;
-    }
-  };
-
-  const getEntryTitle = (entry: JournalEntry) => {
-    if (entry.title) return entry.title;
-
-    switch (entry.type) {
-      case "progress":
-        return `Progress Update: ${entry.game?.name || "Unknown Game"}`;
-      case "review":
-        return `Review: ${entry.game?.name || "Unknown Game"}`;
-      case "daily":
-        return "Daily Gaming Log";
-      case "list":
-        return "Custom Game List";
-      default:
-        return "Journal Entry";
-    }
-  };
-
-  const getEntryColor = (type: string) => {
-    switch (type) {
-      case "progress":
-        return "border-blue-800 bg-blue-900/20";
-      case "review":
-        return "border-yellow-800 bg-yellow-900/20";
-      case "daily":
-        return "border-green-800 bg-green-900/20";
-      case "list":
-        return "border-purple-800 bg-purple-900/20";
-      default:
-        return "border-gray-800 bg-gray-900/20";
-    }
-  };
-
-  const getEntryTypeLabel = (type: string) => {
-    switch (type) {
-      case "progress":
-        return "Progress";
-      case "review":
-        return "Review";
-      case "daily":
-        return "Daily Log";
-      case "list":
-        return "Game List";
-      default:
-        return "Entry";
-    }
-  };
-
-  // Helper function to render rating stars
-  const renderRatingStars = (rating: number) => {
-    const stars = [];
-    const fullStars = Math.round(rating / 2);
-
-    for (let i = 0; i < 5; i++) {
-      stars.push(
-        <Star
-          key={i}
-          className={`h-3.5 w-3.5 ${
-            i < fullStars ? "text-yellow-400 fill-yellow-400" : "text-gray-600"
-          }`}
-        />
-      );
-    }
-
-    return stars;
   };
 
   // Update the entry card rendering with improved styling

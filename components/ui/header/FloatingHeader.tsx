@@ -12,7 +12,7 @@ import { MobileMenu } from "./mobile-menu";
 import { Button } from "@/components/ui/button";
 
 export default function FloatingHeader() {
-  const { initialize, isInitialized, user, checkUser } = useAuthStore();
+  const { initialize, isInitialized, checkUser } = useAuthStore();
   const { isMobileMenuOpen, toggleMobileMenu } = useUIStore();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
 

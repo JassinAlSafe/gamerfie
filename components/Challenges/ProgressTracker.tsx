@@ -15,7 +15,6 @@ interface ProgressTrackerProps {
 }
 
 export function ProgressTracker({
-  challengeId,
   currentProgress,
   onProgressUpdate,
   isLoading,

@@ -47,7 +47,7 @@ export const GameShowcase = memo(
           const playlist = await PlaylistService.getPlaylist(playlistId);
           if (isMounted && playlist) {
             setPlaylist(playlist);
-            setGames(playlist.games || []);
+            setGames((playlist.games as Game[]) || []);
           }
         } catch (error) {
           console.error("Failed to fetch playlist:", error);
@@ -76,7 +76,7 @@ export const GameShowcase = memo(
         playlistId,
         (updatedPlaylist) => {
           setPlaylist(updatedPlaylist);
-          setGames(updatedPlaylist.games || []);
+          setGames((updatedPlaylist.games as Game[]) || []);
         }
       );
 

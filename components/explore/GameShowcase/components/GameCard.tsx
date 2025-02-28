@@ -13,7 +13,7 @@ interface GameCardProps {
 
 export const GameCard = memo(({ game }: GameCardProps) => {
   const [imageError, setImageError] = useState(false);
-  const coverUrl = game.coverImage || game.cover_url;
+  const coverUrl = (game as any).coverImage || game.cover_url;
   const processedCoverUrl = coverUrl ? getCoverImageUrl(coverUrl) : undefined;
   const title = game.title || game.name || "Untitled Game";
 

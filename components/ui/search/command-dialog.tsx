@@ -13,7 +13,7 @@ import {
 const CommandDialog = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
   DialogPrimitive.DialogProps
->(({ children, ...props }, ref) => {
+>(({ children, ...props }) => {
   return (
     <Dialog {...props}>
       <DialogContent className="overflow-hidden p-0 shadow-lg">

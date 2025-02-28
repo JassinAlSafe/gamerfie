@@ -47,12 +47,12 @@ const RARITY_ICONS = {
   common: Medal,
 } as const;
 
-const RARITY_COLORS = {
-  legendary: "text-yellow-400 bg-yellow-400/10",
-  epic: "text-purple-400 bg-purple-400/10",
-  rare: "text-blue-400 bg-blue-400/10",
-  common: "text-gray-400 bg-gray-400/10",
-} as const;
+// const RARITY_COLORS = {
+//   legendary: "text-yellow-400 bg-yellow-400/10",
+//   epic: "text-purple-400 bg-purple-400/10",
+//   rare: "text-blue-400 bg-blue-400/10",
+//   common: "text-gray-400 bg-gray-400/10",
+// } as const;
 
 export default function UserBadges() {
   const [badges, setBadges] = useState<UserBadge[]>([]);

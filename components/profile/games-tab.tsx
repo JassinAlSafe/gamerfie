@@ -16,7 +16,6 @@ import {
   Pencil,
   Trash2,
 } from "lucide-react";
-import { GameStatus, GameWithUserData, GamesTabProps } from "@/types/game";
 import { useSettingsStore } from "@/stores/useSettingsStore";
 import { getCoverImageUrl } from "@/utils/image-utils";
 import { GameStatusDropdown } from "@/components/game/game-status-dropdown";
@@ -28,6 +27,34 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+
+// Define types locally to fix import errors
+type GameStatus = "playing" | "completed" | "want_to_play" | "dropped";
+
+interface GameWithUserData {
+  id: string;
+  user_id: string;
+  game_id: string;
+  status: GameStatus;
+  playTime: number;
+  created_at: string;
+  updated_at: string;
+  completionPercentage: number;
+  achievementsCompleted: number;
+  userRating?: number;
+  notes?: string;
+  lastPlayedAt?: string;
+  coverUrl?: string;
+  games: any; // This should match your data structure
+}
+
+interface GamesTabProps {
+  filters: {
+    status?: string;
+    sortBy?: string;
+    sortOrder?: string;
+  };
+}
 
 // List View Component
 const GameListItem = ({
@@ -117,7 +144,7 @@ const GameListItem = ({
             <DropdownMenuSeparator />
             <DropdownMenuItem
               className="text-red-500 focus:text-red-500"
-              onClick={(e) => {
+              onClick={(_e) => {
                 setShowDeleteDialog(true);
               }}
             >
@@ -209,7 +236,7 @@ const GameGridItem = ({
             <DropdownMenuSeparator />
             <DropdownMenuItem
               className="text-red-500 focus:text-red-500"
-              onClick={(e) => {
+              onClick={(_e) => {
                 setShowDeleteDialog(true);
               }}
             >

@@ -11,15 +11,10 @@ export function calculateChallengeProgress(
   if (!goals.length) return 0;
 
   let totalProgress = 0;
-  let completedGoals = 0;
-
+  
   for (const goal of goals) {
     const currentProgress = goalProgress[goal.id] || 0;
     const goalPercentage = Math.min(100, (currentProgress / goal.target) * 100);
-    
-    if (goalPercentage >= 100) {
-      completedGoals++;
-    }
     
     totalProgress += goalPercentage;
   }
