@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
-import { getIGDBToken } from '@/lib/igdb';
+import { getIGDBToken } from '../../lib-exports';
 
 export async function POST(request: Request) {
   try {
