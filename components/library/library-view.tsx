@@ -2,7 +2,7 @@
 
 import { useLibraryStore } from '@/stores/useLibraryStore';
 import { useSettingsStore } from '@/stores/useSettingsStore';
-import { Game } from '@/types/game';
+import { Game } from '@/types';
 import { LoadingSpinner } from '@/components/loadingSpinner';
 import { motion, AnimatePresence } from 'framer-motion';
 import {

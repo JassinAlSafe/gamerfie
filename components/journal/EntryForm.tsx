@@ -17,7 +17,7 @@ import { Slider } from "@/components/ui/slider";
 import { Trash2Icon } from "lucide-react";
 import { getCoverImageUrl } from "@/utils/image-utils";
 import { toast } from "react-hot-toast";
-import { JournalGameData, SearchGameResult } from "@/types/game";
+import { JournalGameData, SearchGameResult } from "@/types";
 
 interface JournalFormData {
   type: JournalEntryType;

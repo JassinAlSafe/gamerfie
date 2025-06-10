@@ -1,6 +1,6 @@
 "use client";
 
-import { Game } from "@/types/game";
+import { Game } from "@/types";
 import Image from "next/image";
 import Link from "next/link";
 import { Star, Clock, Trophy } from "lucide-react";

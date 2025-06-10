@@ -77,7 +77,7 @@ function SortableGame({ game, onRemove }: { game: GameType; onRemove: (id: strin
 }
 import { RAWGService } from "@/services/rawgService";
 import { PlaylistService } from "@/services/playlistService";
-import { Game as GameType } from "@/types/game";
+import { Game as GameType } from "@/types";
 import { CreatePlaylistInput, Playlist, PlaylistType } from "@/types/playlist";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

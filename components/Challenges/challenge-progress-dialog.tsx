@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search, Gamepad2, Plus } from "lucide-react";
 import { Challenge } from "@/types/challenge";
-import { Game } from "@/types/game";
+import { Game } from "@/types";
 import Image from "next/image";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useGameSearch } from "@/hooks/Games/use-game-search";
