@@ -35,6 +35,8 @@ export default function HeroSection({
               size={24}
             />
             <Input
+              id="hero-search"
+              name="heroSearch"
               type="text"
               placeholder="Search for games..."
               value={searchQuery}

@@ -186,10 +186,12 @@ export function RecentActivityBlock({
         className={cn("h-[180px]", className)}
       >
         <div className="flex flex-col h-full">
-          <div className="flex items-center justify-between p-3 border-b border-green-200/10">
+          <div className="flex items-center justify-between p-3 border-b border-emerald-200/10">
             <div className="flex items-center gap-2">
-              <Activity className="h-4 w-4 text-green-500" />
-              <h3 className="text-lg font-semibold bg-gradient-to-br from-green-500 to-emerald-500 bg-clip-text text-transparent">
+              <div className="p-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+                <Activity className="h-4 w-4 text-emerald-400" />
+              </div>
+              <h3 className="text-lg font-semibold bg-gradient-to-br from-emerald-400 to-green-400 bg-clip-text text-transparent">
                 Recent Activity
               </h3>
             </div>
@@ -210,10 +212,12 @@ export function RecentActivityBlock({
       className={cn("h-[180px]", className)}
     >
       <div className="flex flex-col h-full">
-        <div className="flex items-center justify-between px-3 py-2.5 border-b border-green-200/10">
+        <div className="flex items-center justify-between px-3 py-2.5 border-b border-emerald-200/10">
           <div className="flex items-center gap-2">
-            <Activity className="h-4 w-4 text-green-500" />
-            <h3 className="text-lg font-semibold bg-gradient-to-br from-green-500 to-emerald-500 bg-clip-text text-transparent">
+            <div className="p-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+              <Activity className="h-4 w-4 text-emerald-400" />
+            </div>
+            <h3 className="text-lg font-semibold bg-gradient-to-br from-emerald-400 to-green-400 bg-clip-text text-transparent">
               Recent Activity
             </h3>
           </div>

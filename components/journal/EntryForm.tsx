@@ -18,6 +18,7 @@ import { Trash2Icon } from "lucide-react";
 import { getCoverImageUrl } from "@/utils/image-utils";
 import { toast } from "react-hot-toast";
 import { JournalGameData, SearchGameResult } from "@/types";
+import { safeJsonParse } from "@/utils/json-utils";
 
 interface JournalFormData {
   type: JournalEntryType;
@@ -53,7 +54,7 @@ export function EntryForm({
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedGames, setSelectedGames] = useState<JournalGameData[]>(
     type === "list" && initialData.content
-      ? JSON.parse(initialData.content)
+      ? safeJsonParse(initialData.content, [])
       : []
   );
 

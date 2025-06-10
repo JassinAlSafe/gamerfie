@@ -30,6 +30,7 @@ import { toast } from "sonner";
 import { checkGameInLibrary } from "@/utils/game-utils";
 import { Plus, PlayCircle, CheckCircle, XCircle, Library } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { safeParsePlatforms, safeParseGenres } from "@/utils/json-utils";
 
 // Define GameStatus locally
 type GameStatus = "playing" | "completed" | "want_to_play" | "dropped";
@@ -98,7 +99,7 @@ export function AddToLibraryButton({
   const router = useRouter();
   const { user } = useAuthStore();
   const { createActivity } = useFriendsStore();
-  const { addGame } = useLibraryStore();
+  const { addGameToLibrary } = useLibraryStore();
   const { updateGameStatus, updateProgress } = useProgressStore();
   const { addError } = useErrorStore();
 
@@ -265,29 +266,21 @@ export function AddToLibraryButton({
       setIsLoading(true);
 
       // Format platforms and genres consistently
-      const formattedPlatforms = Array.isArray(platforms)
-        ? platforms
-        : typeof platforms === "string"
-        ? JSON.parse(platforms)
-        : [];
+      const formattedPlatforms = safeParsePlatforms(platforms);
+      const formattedGenres = safeParseGenres(genres);
 
-      const formattedGenres = Array.isArray(genres)
-        ? genres
-        : typeof genres === "string"
-        ? JSON.parse(genres)
-        : [];
-
-      // Add game to library with status
+      // Add game to library with complete data
       try {
-        // Add game to library using LibraryStore
-        await addGame({
+        // Add game to library using LibraryStore with full game data
+        await addGameToLibrary({
           id: gameId,
           name: gameName,
           cover_url: cover,
           genres: formattedGenres,
           platforms: formattedPlatforms,
           first_release_date: releaseDate,
-        });
+          summary: undefined // Add summary if available in props later
+        }, user.id);
 
         toast.success("Game added to library");
 
@@ -344,7 +337,7 @@ export function AddToLibraryButton({
     gameName,
     cover,
     releaseDate,
-    addGame,
+    addGameToLibrary,
     createActivity,
     onSuccess,
   ]);

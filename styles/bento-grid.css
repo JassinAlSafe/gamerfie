@@ -1,0 +1,55 @@
+/* BentoGrid custom styles for react-grid-layout */
+.react-grid-layout {
+  position: relative;
+  width: 100%;
+  display: block;
+}
+
+.react-grid-item {
+  transition: all 200ms ease;
+  transition-property: left, top, width, height;
+}
+
+.react-grid-item.react-grid-placeholder {
+  background: rgba(147, 51, 234, 0.15);
+  border: 2px dashed rgba(147, 51, 234, 0.3);
+  border-radius: 0.75rem;
+  opacity: 0.5;
+  z-index: 2;
+  transition-duration: 100ms;
+  user-select: none;
+}
+
+.react-grid-item.react-draggable-dragging {
+  transition: none;
+  z-index: 3;
+  box-shadow: 0 10px 25px -5px rgba(147, 51, 234, 0.3);
+  opacity: 0.8;
+  cursor: grabbing !important;
+}
+
+.react-grid-item.react-grid-item.resizing {
+  z-index: 3;
+  transition: none;
+}
+
+.react-grid-item.cssTransforms {
+  transition-property: transform;
+}
+
+.react-grid-item.dropping {
+  visibility: hidden;
+}
+
+.react-grid-item.dropping-over {
+  background-color: rgba(147, 51, 234, 0.2);
+  border-radius: 0.75rem;
+}
+
+.react-draggable-handle {
+  cursor: grab !important;
+}
+
+.react-draggable-handle:active {
+  cursor: grabbing !important;
+}

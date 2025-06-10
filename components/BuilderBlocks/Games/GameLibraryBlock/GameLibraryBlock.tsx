@@ -19,6 +19,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useUser } from "@/hooks/User/useUser";
 import React from "react";
+import { safeParseGenres } from "@/utils/json-utils";
 
 // Define the types locally to avoid import issues
 type GameStatus = "playing" | "completed" | "want_to_play" | "dropped";
@@ -89,30 +90,8 @@ function formatGameStatus(status: GameStatus): string {
   }
 }
 
-// Helper function to safely parse genres
-function parseGenres(
-  genres: Array<{ id: string; name: string }> | string | undefined
-): Array<{ id: string; name: string }> {
-  if (!genres) return [];
-
-  if (Array.isArray(genres)) {
-    return genres;
-  }
-
-  if (typeof genres === "string") {
-    try {
-      const parsed = JSON.parse(genres);
-      return Array.isArray(parsed) ? parsed : [];
-    } catch {
-      return [];
-    }
-  }
-
-  return [];
-}
-
 function GameCard({ game }: { game: GameWithProgress }) {
-  const parsedGenres = parseGenres(game.genres);
+  const parsedGenres = safeParseGenres(game.genres);
 
   return (
     <div className="group flex items-start gap-3 p-2 rounded-lg hover:bg-accent/50 transition-colors">
@@ -241,15 +220,18 @@ export function GameLibraryBlock({
   className,
 }: GameLibraryBlockProps) {
   const { user } = useUser();
-  const fetchUserLibrary = useLibraryStore((state) => state.fetchUserLibrary);
   const [showMore, setShowMore] = React.useState(false);
   const scrollRef = React.useRef<HTMLDivElement>(null);
+  const lastUserIdRef = React.useRef<string | null>(null);
 
+  // Only fetch library when user ID actually changes
   useEffect(() => {
-    if (user?.id) {
-      fetchUserLibrary(user.id);
+    if (user?.id && user.id !== lastUserIdRef.current) {
+      lastUserIdRef.current = user.id;
+      // Use direct store access to avoid dependency issues
+      useLibraryStore.getState().fetchUserLibrary(user.id);
     }
-  }, [fetchUserLibrary, user?.id]);
+  }, [user?.id]); // Removed fetchUserLibrary from dependencies
 
   const handleScroll = React.useCallback((e: React.UIEvent<HTMLDivElement>) => {
     const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;

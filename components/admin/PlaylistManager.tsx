@@ -296,6 +296,7 @@ export function PlaylistManager({ initialPlaylist }: PlaylistManagerProps) {
           <div className="flex items-center gap-4 mb-4">
             <label className="flex items-center gap-2 text-white">
               <input
+                id="isPublished"
                 type="checkbox"
                 {...register("isPublished")}
                 className="rounded border-white/20 bg-white/10"

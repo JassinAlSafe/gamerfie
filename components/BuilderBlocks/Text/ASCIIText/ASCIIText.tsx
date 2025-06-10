@@ -1,4 +1,4 @@
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, memo } from "react";
 import styles from "./ascii-text.module.css";
 import * as THREE from "three";
 const vertexShader = `
@@ -520,7 +520,7 @@ interface ASCIITextProps {
   enableWaves?: boolean;
 }
 
-export default function ASCIIText({
+const ASCIIText = memo(function ASCIIText({
   text = "David!",
   asciiFontSize = 8,
   textFontSize = 200,
@@ -530,38 +530,102 @@ export default function ASCIIText({
 }: ASCIITextProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const asciiRef = useRef<CanvAscii | null>(null);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const isDisposingRef = useRef(false);
 
   useEffect(() => {
     if (!containerRef.current) return;
 
-    const { width, height } = containerRef.current.getBoundingClientRect();
+    // Clear any existing timeout
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
 
-    asciiRef.current = new CanvAscii(
-      {
-        text,
-        asciiFontSize,
-        textFontSize,
-        textColor,
-        planeBaseHeight,
-        enableWaves,
-      },
-      containerRef.current,
-      width,
-      height
-    );
-    asciiRef.current.load();
+    // Dispose of existing instance if it exists
+    if (asciiRef.current && !isDisposingRef.current) {
+      isDisposingRef.current = true;
+      const currentInstance = asciiRef.current;
+      asciiRef.current = null;
+      
+      // Dispose after a short delay to ensure proper cleanup
+      setTimeout(() => {
+        try {
+          currentInstance.dispose();
+        } catch (error) {
+          console.warn('Error disposing ASCIIText instance:', error);
+        }
+        isDisposingRef.current = false;
+      }, 100);
+    }
 
-    const ro = new ResizeObserver((entries) => {
-      if (!entries[0]) return;
-      const { width: w, height: h } = entries[0].contentRect;
-      asciiRef.current?.setSize(w, h);
-    });
-    ro.observe(containerRef.current);
+    // Debounce the creation of new instance
+    timeoutRef.current = setTimeout(() => {
+      if (!containerRef.current || isDisposingRef.current) return;
+
+      try {
+        const { width, height } = containerRef.current.getBoundingClientRect();
+        
+        // Only create if we have valid dimensions
+        if (width > 0 && height > 0) {
+          asciiRef.current = new CanvAscii(
+            {
+              text,
+              asciiFontSize,
+              textFontSize,
+              textColor,
+              planeBaseHeight,
+              enableWaves,
+            },
+            containerRef.current,
+            width,
+            height
+          );
+          asciiRef.current.load();
+        }
+      } catch (error) {
+        console.warn('Error creating ASCIIText instance:', error);
+      }
+    }, 200); // 200ms debounce
+
+    const setupResizeObserver = () => {
+      if (!containerRef.current) return null;
+      
+      const ro = new ResizeObserver((entries) => {
+        if (!entries[0] || !asciiRef.current || isDisposingRef.current) return;
+        const { width: w, height: h } = entries[0].contentRect;
+        if (w > 0 && h > 0) {
+          asciiRef.current?.setSize(w, h);
+        }
+      });
+      ro.observe(containerRef.current);
+      return ro;
+    };
+
+    const ro = setupResizeObserver();
 
     return () => {
-      ro.disconnect();
-      if (asciiRef.current) {
-        asciiRef.current.dispose();
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+      
+      if (ro) {
+        ro.disconnect();
+      }
+      
+      if (asciiRef.current && !isDisposingRef.current) {
+        isDisposingRef.current = true;
+        const currentInstance = asciiRef.current;
+        asciiRef.current = null;
+        
+        // Immediate disposal on unmount
+        setTimeout(() => {
+          try {
+            currentInstance.dispose();
+          } catch (error) {
+            console.warn('Error disposing ASCIIText instance on unmount:', error);
+          }
+          isDisposingRef.current = false;
+        }, 0);
       }
     };
   }, [
@@ -574,4 +638,6 @@ export default function ASCIIText({
   ]);
 
   return <div ref={containerRef} className={styles.container} />;
-}
+});
+
+export default ASCIIText;

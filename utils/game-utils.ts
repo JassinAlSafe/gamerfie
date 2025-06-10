@@ -26,12 +26,6 @@ const normalizeGameForStore = (game: any): Game => {
   } as Game;
 };
 
-// Helper function to extract cover URL safely
-const getCoverUrl = (cover: string | { id: string; url: string } | undefined): string | null => {
-  if (!cover) return null;
-  if (typeof cover === 'string') return cover;
-  return cover.url;
-};
 
 export const fetchGameDetails = async (gameIds: string[]) => {
   try {
@@ -213,107 +207,6 @@ export const fetchUserStats = async (
   return stats;
 };
 
-export const addGame = async (game: Game, userId: string) => {
-  const supabase = createClient();
-
-  try {
-    console.log('Adding game:', game);
-
-    // Extract cover URL safely
-    const coverUrl = getCoverUrl((game as any).cover || (game as any).cover_url);
-    const processedCoverUrl = coverUrl ? 
-      (coverUrl.startsWith('//') 
-        ? `https:${coverUrl.replace('t_thumb', 't_1080p').replace('t_micro', 't_1080p')}` 
-        : coverUrl.replace('t_thumb', 't_1080p').replace('t_micro', 't_1080p'))
-      : null;
-
-    // First, insert or update the game in games table
-    const { error: gameError } = await supabase
-      .from('games')
-      .upsert({
-        id: game.id,
-        name: game.name,
-        cover_url: processedCoverUrl,
-        rating: game.rating || 0,
-        total_rating_count: (game as any).total_rating_count || 0,
-        first_release_date: game.first_release_date,
-        platforms: game.platforms || [],
-        genres: game.genres || [],
-        summary: (game as any).summary || '',
-        storyline: (game as any).storyline || ''
-      }, { 
-        onConflict: 'id' 
-      });
-
-    if (gameError) {
-      console.error('Error inserting game:', gameError);
-      throw gameError;
-    }
-
-    // Then create the user-game relationship
-    const { error: userGameError } = await supabase
-      .from('user_games')
-      .upsert({
-        user_id: userId,
-        game_id: game.id,
-        status: 'want_to_play',
-        created_at: new Date().toISOString()
-      });
-
-    if (userGameError) {
-      console.error('Error creating user-game relationship:', userGameError);
-      throw userGameError;
-    }
-
-    // Return both the game and a success flag for the UI to handle
-    return { game, success: true };
-  } catch (error) {
-    console.error('Error adding game:', error);
-    throw error;
-  }
-};
-
-export const addGameToLibrary = async (
-  gameId: string,
-  userId: string,
-  initialStatus: string = 'want_to_play'
-) => {
-  const supabase = createClient();
-
-  // First check if the game exists in our games table
-  const { data: existingGame } = await supabase
-    .from('games')
-    .select('id')
-    .eq('id', gameId)
-    .single();
-
-  // If game doesn't exist in our database, fetch and insert it
-  if (!existingGame) {
-    const response = await fetch(`/api/games/details`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ids: [gameId] })
-    });
-
-    if (!response.ok) {
-      throw new Error('Failed to fetch game details');
-    }
-  }
-
-  // Add the game to user's library
-  const { data, error } = await supabase
-    .from('user_games')
-    .upsert({
-      user_id: userId,
-      game_id: gameId,
-      status: initialStatus,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    });
-
-  if (error) throw error;
-  return data;
-};
 
 export const removeGameFromLibrary = async (
   gameId: string,

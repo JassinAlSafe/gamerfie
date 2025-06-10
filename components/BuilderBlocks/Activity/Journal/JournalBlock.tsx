@@ -6,11 +6,13 @@ import { cn } from "@/lib/utils";
 import {
   BookOpen,
   Star,
-  Trophy,
   ListTodo,
-  PenLine,
   Loader2,
   LineChart,
+  Plus,
+  Edit3,
+  Heart,
+  Sparkles,
 } from "lucide-react";
 import {
   useJournalStore,
@@ -30,22 +32,32 @@ interface JournalBlockProps {
   className?: string;
 }
 
+// Harmonious color palette based on our theme
 const journalTypeIcons: Record<JournalEntryType, React.ReactNode> = {
-  progress: <LineChart className="h-4 w-4 text-blue-500" />,
-  review: <Star className="h-4 w-4 text-amber-500" />,
-  daily: <PenLine className="h-4 w-4 text-purple-500" />,
-  list: <ListTodo className="h-4 w-4 text-indigo-500" />,
-  note: <PenLine className="h-4 w-4 text-emerald-500" />,
-  achievement: <Trophy className="h-4 w-4 text-yellow-500" />,
+  progress: <LineChart className="h-4 w-4 text-blue-400" />,
+  review: <Star className="h-4 w-4 text-amber-400" />,
+  daily: <Edit3 className="h-4 w-4 text-purple-400" />,
+  list: <ListTodo className="h-4 w-4 text-indigo-400" />,
+  note: <Heart className="h-4 w-4 text-rose-400" />,
+  achievement: <Sparkles className="h-4 w-4 text-emerald-400" />,
 };
 
 const journalTypeColors: Record<JournalEntryType, string> = {
-  progress: "text-blue-500",
-  review: "text-amber-500",
-  daily: "text-purple-500",
-  list: "text-indigo-500",
-  note: "text-emerald-500",
-  achievement: "text-yellow-500",
+  progress: "text-blue-400",
+  review: "text-amber-400",
+  daily: "text-purple-400",
+  list: "text-indigo-400",
+  note: "text-rose-400",
+  achievement: "text-emerald-400",
+};
+
+const journalTypeBgs: Record<JournalEntryType, string> = {
+  progress: "bg-blue-500/10 border-blue-500/20",
+  review: "bg-amber-500/10 border-amber-500/20",
+  daily: "bg-purple-500/10 border-purple-500/20",
+  list: "bg-indigo-500/10 border-indigo-500/20",
+  note: "bg-rose-500/10 border-rose-500/20",
+  achievement: "bg-emerald-500/10 border-emerald-500/20",
 };
 
 const MAX_CHARS = 500;
@@ -56,66 +68,78 @@ function JournalEntryCard({ entry }: { entry: JournalEntry }) {
   const shouldShowTitle = entry.title && entry.title !== firstLine;
 
   return (
-    <div className="flex items-start gap-3 p-3 min-w-0">
-      <div className="relative mt-1 flex-shrink-0">
-        {entry.game?.cover_url ? (
-          <Avatar className="h-8 w-8 sm:h-10 sm:w-10 ring-2 ring-indigo-500/20">
-            <AvatarImage src={entry.game.cover_url} />
-            <AvatarFallback className="bg-accent">
-              {entry.game.name[0]}
-            </AvatarFallback>
-          </Avatar>
-        ) : (
-          <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-lg bg-accent/50 flex items-center justify-center">
-            {journalTypeIcons[entry.type]}
+    <div className="group relative p-4 hover:bg-muted/20 transition-all duration-200 border-l-2 border-transparent hover:border-purple-400/30">
+      <div className="flex items-start gap-3">
+        <div className="relative flex-shrink-0">
+          {entry.game?.cover_url ? (
+            <Avatar className="h-10 w-10 ring-2 ring-purple-500/20 ring-offset-2 ring-offset-background group-hover:ring-purple-500/40 transition-all duration-200">
+              <AvatarImage src={entry.game.cover_url} />
+              <AvatarFallback className="bg-gradient-to-br from-purple-500/20 to-blue-500/20">
+                {entry.game.name[0]}
+              </AvatarFallback>
+            </Avatar>
+          ) : (
+            <div
+              className={cn(
+                "h-10 w-10 rounded-xl border flex items-center justify-center transition-all duration-200 group-hover:scale-105",
+                journalTypeBgs[entry.type]
+              )}
+            >
+              {journalTypeIcons[entry.type]}
+            </div>
+          )}
+        </div>
+
+        <div className="flex-1 min-w-0 space-y-2">
+          <div className="flex items-start justify-between gap-2">
+            <h4 className="text-sm font-medium text-foreground group-hover:text-purple-400 transition-colors duration-200 line-clamp-2">
+              {shouldShowTitle ? entry.title : firstLine}
+            </h4>
+            <span className="text-xs text-muted-foreground/70 flex-shrink-0 mt-0.5">
+              {formatDistanceToNow(new Date(entry.createdAt))} ago
+            </span>
           </div>
-        )}
-      </div>
 
-      <div className="flex-1 min-w-0 space-y-1">
-        <div className="flex items-center justify-between gap-2">
-          <h4 className="text-sm font-medium truncate text-foreground">
-            {shouldShowTitle ? entry.title : firstLine}
-          </h4>
-          <span className="text-xs text-muted-foreground flex-shrink-0">
-            {formatDistanceToNow(new Date(entry.createdAt))} ago
-          </span>
-        </div>
+          {entry.game && (
+            <p className="text-xs text-muted-foreground/80 truncate flex items-center gap-1.5">
+              <div className="h-1.5 w-1.5 bg-purple-400 rounded-full" />
+              {entry.game.name}
+            </p>
+          )}
 
-        {entry.game && (
-          <p className="text-xs sm:text-sm text-muted-foreground truncate">
-            {entry.game.name}
-          </p>
-        )}
+          <div className="flex flex-wrap items-center gap-2">
+            <span
+              className={cn(
+                "inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium border",
+                journalTypeBgs[entry.type],
+                journalTypeColors[entry.type]
+              )}
+            >
+              {journalTypeIcons[entry.type]}
+              <span className="capitalize">{entry.type}</span>
+            </span>
 
-        <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm">
-          <span
-            className={cn(
-              "flex items-center gap-1.5",
-              journalTypeColors[entry.type]
+            {entry.rating && (
+              <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs bg-amber-500/10 border border-amber-500/20 text-amber-400">
+                <Star className="h-3 w-3" />
+                {entry.rating}/10
+              </span>
             )}
-          >
-            {journalTypeIcons[entry.type]}
-            <span className="capitalize">{entry.type}</span>
-          </span>
-          {entry.rating && (
-            <span className="flex items-center gap-1.5 text-amber-500">
-              <Star className="h-3 w-3" />
-              {entry.rating}/10
-            </span>
-          )}
-          {entry.progress && (
-            <span className="flex items-center gap-1.5 text-blue-500">
-              {entry.progress}%
-            </span>
+
+            {entry.progress && (
+              <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs bg-blue-500/10 border border-blue-500/20 text-blue-400">
+                <LineChart className="h-3 w-3" />
+                {entry.progress}%
+              </span>
+            )}
+          </div>
+
+          {remainingContent && (
+            <p className="text-xs text-muted-foreground/70 line-clamp-2 break-words leading-relaxed">
+              {remainingContent}
+            </p>
           )}
         </div>
-
-        {remainingContent && (
-          <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2 break-words">
-            {remainingContent}
-          </p>
-        )}
       </div>
     </div>
   );
@@ -124,13 +148,9 @@ function JournalEntryCard({ entry }: { entry: JournalEntry }) {
 function JournalInput() {
   const [content, setContent] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { addEntry } = useJournalStore();
-
-  // Auto-focus textarea on mount
-  useEffect(() => {
-    textareaRef.current?.focus();
-  }, []);
 
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
@@ -152,11 +172,11 @@ function JournalInput() {
       });
       setContent("");
       toast.success("Entry added successfully", {
-        icon: "✍️",
+        icon: "✨",
         style: {
-          background: "#1a1b1e",
-          color: "#fff",
-          border: "1px solid rgba(147, 51, 234, 0.1)",
+          background: "hsl(var(--card))",
+          color: "hsl(var(--foreground))",
+          border: "1px solid rgba(147, 51, 234, 0.2)",
         },
       });
       textareaRef.current?.focus();
@@ -166,58 +186,110 @@ function JournalInput() {
   };
 
   const charCount = content.length;
-  const remaining = MAX_CHARS - charCount;
   const isOverLimit = charCount > MAX_CHARS;
+  const hasContent = content.trim().length > 0;
 
   return (
-    <div className="h-full flex flex-col p-3 sm:p-4">
-      <div className="flex-1 min-h-0 relative">
-        <Textarea
-          ref={textareaRef}
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder="Write your daily journal entry..."
-          className={cn(
-            "absolute inset-0 resize-none transition-colors",
-            isOverLimit &&
-              "border-red-500/50 focus:border-red-500/50 focus:ring-red-500/20"
-          )}
-        />
-        <div className="absolute bottom-1.5 right-1.5 flex flex-col sm:flex-row items-end sm:items-center gap-1 sm:gap-2">
-          <div className="px-1.5 py-0.5 rounded-md bg-background/80 backdrop-blur-sm border border-border/5">
-            <span
+    <div className="h-full flex flex-col p-4 space-y-3">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <div
+            className={cn(
+              "p-2 rounded-lg transition-all duration-200",
+              isFocused
+                ? "bg-purple-500/20 border border-purple-500/30"
+                : "bg-muted/30 border border-transparent"
+            )}
+          >
+            <Edit3
               className={cn(
-                "text-[10px] tabular-nums",
-                isOverLimit ? "text-red-500" : "text-muted-foreground/40"
+                "h-4 w-4 transition-colors duration-200",
+                isFocused ? "text-purple-400" : "text-muted-foreground"
               )}
-            >
-              {remaining}
-            </span>
+            />
           </div>
-          <span className="text-[10px] text-muted-foreground/40 hidden sm:inline-block">
-            ⌘/Ctrl + Enter to submit
-          </span>
+          <div>
+            <h4 className="text-sm font-medium text-foreground">Quick Entry</h4>
+            <p className="text-xs text-muted-foreground">
+              Share your gaming thoughts
+            </p>
+          </div>
         </div>
+
+        {hasContent && (
+          <div
+            className={cn(
+              "px-2 py-1 rounded-full text-xs font-medium transition-all duration-200",
+              isOverLimit
+                ? "bg-red-500/10 border border-red-500/20 text-red-400"
+                : "bg-purple-500/10 border border-purple-500/20 text-purple-400"
+            )}
+          >
+            {charCount}/{MAX_CHARS}
+          </div>
+        )}
       </div>
 
-      <div className="flex items-center justify-end mt-3 gap-2">
-        <Button
-          size="sm"
-          onClick={handleSubmit}
-          disabled={!content.trim() || isSubmitting || isOverLimit}
+      {/* Input Area */}
+      <div className="flex-1 min-h-0 relative">
+        <div
           className={cn(
-            "transition-all duration-200",
-            isSubmitting ? "w-[40px]" : "w-[100px]",
-            "bg-indigo-500 hover:bg-indigo-600"
+            "absolute inset-0 rounded-xl border-2 transition-all duration-200",
+            isFocused
+              ? "border-purple-500/30 bg-purple-500/5"
+              : "border-border/30 bg-muted/20",
+            isOverLimit && "border-red-500/30 bg-red-500/5"
           )}
         >
-          {isSubmitting ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            "Add Entry"
-          )}
-        </Button>
+          <Textarea
+            ref={textareaRef}
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            onKeyDown={handleKeyDown}
+            onFocus={() => setIsFocused(true)}
+            onBlur={() => setIsFocused(false)}
+            placeholder="What's on your mind about gaming today?\n\nShare a thought, achievement, or reflection..."
+            className="absolute inset-0 resize-none border-0 bg-transparent focus:ring-0 placeholder:text-muted-foreground/50 text-sm leading-relaxed p-4"
+          />
+
+          {/* Floating action area */}
+          <div
+            className={cn(
+              "absolute bottom-3 right-3 flex items-center gap-2 transition-all duration-200",
+              isFocused || hasContent ? "opacity-100" : "opacity-0"
+            )}
+          >
+            {!hasContent && (
+              <span className="text-xs text-muted-foreground/60 hidden sm:block">
+                ⌘/Ctrl + Enter to submit
+              </span>
+            )}
+
+            <Button
+              size="sm"
+              onClick={handleSubmit}
+              disabled={!content.trim() || isSubmitting || isOverLimit}
+              className={cn(
+                "transition-all duration-300 shadow-lg",
+                isSubmitting
+                  ? "w-9 h-9 p-0"
+                  : hasContent
+                  ? "bg-purple-600 hover:bg-purple-700 border-purple-500/20"
+                  : "bg-muted hover:bg-muted/80",
+                hasContent && "ring-2 ring-purple-500/20"
+              )}
+            >
+              {isSubmitting ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : hasContent ? (
+                <Plus className="h-4 w-4" />
+              ) : (
+                <Edit3 className="h-4 w-4" />
+              )}
+            </Button>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -228,12 +300,20 @@ function LatestEntry() {
 
   if (loading) {
     return (
-      <div className="p-4">
-        <div className="flex gap-4">
-          <Skeleton className="h-10 w-10 rounded-lg" />
+      <div className="p-4 space-y-3">
+        <div className="flex items-center gap-2 mb-2">
+          <Skeleton className="h-4 w-4 rounded" />
+          <Skeleton className="h-4 w-20" />
+        </div>
+        <div className="flex gap-3">
+          <Skeleton className="h-10 w-10 rounded-xl" />
           <div className="flex-1 space-y-2">
-            <Skeleton className="h-5 w-3/4" />
-            <Skeleton className="h-4 w-1/2" />
+            <Skeleton className="h-4 w-3/4" />
+            <Skeleton className="h-3 w-1/2" />
+            <div className="flex gap-2">
+              <Skeleton className="h-5 w-16 rounded-full" />
+              <Skeleton className="h-5 w-12 rounded-full" />
+            </div>
           </div>
         </div>
       </div>
@@ -242,50 +322,74 @@ function LatestEntry() {
 
   if (!entries || entries.length === 0) {
     return (
-      <div className="flex items-center justify-center p-4 h-full">
-        <p className="text-sm text-muted-foreground">No entries yet</p>
+      <div className="flex flex-col items-center justify-center p-6 h-full text-center space-y-3">
+        <div className="p-3 rounded-full bg-purple-500/10 border border-purple-500/20">
+          <BookOpen className="h-6 w-6 text-purple-400" />
+        </div>
+        <div>
+          <p className="text-sm font-medium text-foreground">No entries yet</p>
+          <p className="text-xs text-muted-foreground mt-1">
+            Start writing about your gaming journey
+          </p>
+        </div>
       </div>
     );
   }
 
   const latestEntry = entries[0];
-  return <JournalEntryCard entry={latestEntry} />;
+  return (
+    <div className="space-y-2">
+      <div className="px-4 pt-3 pb-1">
+        <div className="flex items-center gap-2">
+          <Heart className="h-3.5 w-3.5 text-purple-400" />
+          <span className="text-xs font-medium text-purple-400">
+            Latest Entry
+          </span>
+        </div>
+      </div>
+      <JournalEntryCard entry={latestEntry} />
+    </div>
+  );
 }
 
 export function JournalBlock({ size = "sm", className }: JournalBlockProps) {
-  const { fetchEntries } = useJournalStore();
-
   useEffect(() => {
-    fetchEntries();
-  }, [fetchEntries]);
+    // Use direct store access to avoid dependency issues
+    useJournalStore.getState().fetchEntries();
+  }, []); // Removed fetchEntries from dependencies
 
   return (
     <Block
       size={size}
       variant="ghost"
-      hover={false}
+      hover={true}
       glassmorphism={false}
       className={cn(
-        "min-h-0 w-full h-full rounded-xl border shadow-sm border-indigo-200/10",
-        "bg-gradient-to-b from-indigo-500/5 via-indigo-500/2 to-background",
-        "flex flex-col",
+        "min-h-0 w-full h-full rounded-2xl border shadow-sm border-purple-200/20",
+        "bg-gradient-to-br from-purple-500/5 via-purple-500/3 to-card/80 backdrop-blur-sm",
+        "flex flex-col group",
+        "hover:border-purple-300/30 hover:shadow-md transition-all duration-300",
         className
       )}
     >
       <div className="flex flex-col flex-1 min-h-0">
-        <div className="flex-shrink-0 flex items-center justify-between p-4 border-b border-indigo-200/10">
+        <div className="flex-shrink-0 flex items-center justify-between p-4 border-b border-purple-200/10">
           <div className="flex items-center gap-2">
-            <BookOpen className="h-4 w-4 text-indigo-500" />
-            <h3 className="text-lg font-semibold bg-gradient-to-br from-indigo-500 to-purple-500 bg-clip-text text-transparent">
-              Journal
-            </h3>
+            <div className="p-1.5 rounded-lg bg-purple-500/10 border border-purple-500/20 group-hover:bg-purple-500/20 transition-colors duration-200">
+              <BookOpen className="h-4 w-4 text-purple-400" />
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold bg-gradient-to-br from-purple-400 to-blue-400 bg-clip-text text-transparent">
+                Gaming Journal
+              </h3>
+            </div>
           </div>
         </div>
         <div className="flex-1 min-h-0 flex flex-col">
-          <div className="flex-[3] min-h-0 overflow-hidden">
+          <div className="flex-[2.5] min-h-0 overflow-hidden">
             <JournalInput />
           </div>
-          <div className="flex-1 min-h-0 border-t border-indigo-200/10 overflow-y-auto scrollbar-thin scrollbar-thumb-indigo-500/10 scrollbar-track-transparent">
+          <div className="flex-[1.5] min-h-0 border-t border-purple-200/10 overflow-y-auto scrollbar-thin scrollbar-thumb-purple-500/10 scrollbar-track-transparent hover:scrollbar-thumb-purple-500/20">
             <LatestEntry />
           </div>
         </div>

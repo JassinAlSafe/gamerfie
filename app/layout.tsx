@@ -8,7 +8,6 @@ import { ThemeProvider } from "next-themes";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useState } from "react";
 import SupabaseProvider from "@/components/providers/supabase-provider";
-import { SessionProvider } from "next-auth/react";
 import * as Sentry from "@sentry/nextjs";
 import { usePathname } from "next/navigation";
 import { CacheBuster } from "@/components/ui/cache-buster";
@@ -56,27 +55,25 @@ export default function RootLayout({
       <body className={inter.className}>
         <QueryClientProvider client={queryClient}>
           <SupabaseProvider initialSession={null}>
-            <SessionProvider refetchInterval={300} refetchOnWindowFocus={false}>
-              <ThemeProvider
-                attribute="class"
-                defaultTheme="dark"
-                enableSystem={false}
-                forcedTheme="dark"
-              >
-                <div className="min-h-screen flex flex-col">
-                  <CacheBuster />
-                  {!isAuthPage && <FloatingHeader />}
-                  <main className={!isAuthPage ? "flex-1 pt-16" : "flex-1"}>
-                    {children}
-                  </main>
-                  {!isAuthPage && (
-                    <div className="mt-auto">
-                      <Footer />
-                    </div>
-                  )}
-                </div>
-              </ThemeProvider>
-            </SessionProvider>
+            <ThemeProvider
+              attribute="class"
+              defaultTheme="dark"
+              enableSystem={false}
+              forcedTheme="dark"
+            >
+              <div className="min-h-screen flex flex-col">
+                <CacheBuster />
+                {!isAuthPage && <FloatingHeader />}
+                <main className={!isAuthPage ? "flex-1 pt-16" : "flex-1"}>
+                  {children}
+                </main>
+                {!isAuthPage && (
+                  <div className="mt-auto">
+                    <Footer />
+                  </div>
+                )}
+              </div>
+            </ThemeProvider>
           </SupabaseProvider>
         </QueryClientProvider>
       </body>

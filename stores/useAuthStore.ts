@@ -233,16 +233,16 @@ export const useAuthStore = create<AuthState>()(
           }
 
           try {
-            set({ isLoading: true, error: null });
-            const { data: { session }, error } = await supabase.auth.getSession();
+            // Use getUser() instead of getSession() for security
+            const { data: { user }, error } = await supabase.auth.getUser();
             
             if (error) throw error;
 
-            if (session?.user) {
-              const profile = await fetchUserProfile(session.user.id);
+            if (user) {
+              const profile = await fetchUserProfile(user.id);
 
               set({ 
-                user: { ...session.user, profile: profile || null },
+                user: { ...user, profile: profile || null },
                 error: null 
               });
             } else {
@@ -251,8 +251,6 @@ export const useAuthStore = create<AuthState>()(
           } catch (error) {
             console.warn('Auth check warning:', error);
             set({ user: null });
-          } finally {
-            set({ isLoading: false });
           }
         },
 

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 
 interface Props {
   children: React.ReactNode;
+  fallback?: React.ReactNode;
 }
 
 interface State {
@@ -36,6 +37,10 @@ export class ErrorBoundary extends React.Component<Props, State> {
 
   render() {
     if (this.state.hasError) {
+      if (this.props.fallback) {
+        return this.props.fallback;
+      }
+      
       return (
         <div className="flex flex-col items-center justify-center min-h-[400px] p-4">
           <h2 className="text-xl font-semibold text-red-500 mb-4">

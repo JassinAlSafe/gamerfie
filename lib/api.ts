@@ -175,25 +175,6 @@ export async function fetchUserProfile(userId: string) {
     return data
 }
 
-export async function addGameToLibrary(gameId: string, status: string = 'want_to_play') {
-    const { data: { user } } = await supabase.auth.getUser()
-    
-    if (!user) throw new Error('Not authenticated')
-
-    const { data, error } = await supabase
-        .from('user_games')
-        .insert({
-            user_id: user.id,
-            game_id: gameId,
-            status,
-            created_at: new Date().toISOString()
-        })
-        .select()
-        .single()
-
-    if (error) throw error
-    return data
-}
 
 export async function updateGameStatus(gameId: string, status: GameStatus) {
     const { data: { user } } = await supabase.auth.getUser()

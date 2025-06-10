@@ -10,58 +10,10 @@ import { EditingControls } from "./EditingControls";
 import { useGridItems } from "./useGridItems";
 import { GRID_CONFIG } from "./constants";
 import { GridItem } from "./GridItem";
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useEffect, useRef, memo } from "react";
 import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
-
-// Add custom CSS to fix layout issues
-const customGridStyles = `
-.react-grid-layout {
-  position: relative;
-  width: 100%;
-  display: block;
-}
-.react-grid-item {
-  transition: all 200ms ease;
-  transition-property: left, top, width, height;
-}
-.react-grid-item.react-grid-placeholder {
-  background: rgba(147, 51, 234, 0.15);
-  border: 2px dashed rgba(147, 51, 234, 0.3);
-  border-radius: 0.75rem;
-  opacity: 0.5;
-  z-index: 2;
-  transition-duration: 100ms;
-  user-select: none;
-}
-.react-grid-item.react-draggable-dragging {
-  transition: none;
-  z-index: 3;
-  box-shadow: 0 10px 25px -5px rgba(147, 51, 234, 0.3);
-  opacity: 0.8;
-  cursor: grabbing !important;
-}
-.react-grid-item.react-grid-item.resizing {
-  z-index: 3;
-  transition: none;
-}
-.react-grid-item.cssTransforms {
-  transition-property: transform;
-}
-.react-grid-item.dropping {
-  visibility: hidden;
-}
-.react-grid-item.dropping-over {
-  background-color: rgba(147, 51, 234, 0.2);
-  border-radius: 0.75rem;
-}
-.react-draggable-handle {
-  cursor: grab !important;
-}
-.react-draggable-handle:active {
-  cursor: grabbing !important;
-}
-`;
+import "@/styles/bento-grid.css";
 
 // Use the WidthProvider to automatically set width
 const ResponsiveGridLayout = WidthProvider(Responsive);
@@ -73,7 +25,7 @@ interface BentoGridProps {
   className?: string;
 }
 
-export function BentoGrid({
+const BentoGridComponent = memo(function BentoGrid({
   user,
   friends,
   activities,
@@ -93,46 +45,15 @@ export function BentoGrid({
   const [mounted, setMounted] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Force a re-render when editing mode changes
-  useEffect(() => {
-    // Add a small delay to ensure the DOM is updated
-    const timer = setTimeout(() => {
-      if (containerRef.current) {
-        const event = new Event("resize");
-        window.dispatchEvent(event);
-      }
-    }, 100);
-
-    return () => clearTimeout(timer);
-  }, [isEditing]);
-
-  // Ensure the layout is properly initialized
+  // Simple mount effect without complex resize handling
   useEffect(() => {
     setMounted(true);
-
-    // Force a resize event to ensure the grid layout is calculated correctly
-    const timer = setTimeout(() => {
-      window.dispatchEvent(new Event("resize"));
-    }, 200);
-
-    return () => {
-      setMounted(false);
-      clearTimeout(timer);
-    };
   }, []);
 
   const handleDragStop = useCallback(() => {
     setIsDragging(false);
     document.body.style.cursor = "";
     document.body.classList.remove("select-none");
-
-    // Force a resize event after dragging to ensure layout is correct
-    window.dispatchEvent(new Event("resize"));
-
-    // Add a small delay to ensure the layout is properly updated
-    setTimeout(() => {
-      window.dispatchEvent(new Event("resize"));
-    }, 100);
   }, []);
 
   // Helper function to ensure the layout is compact and has no gaps
@@ -178,69 +99,91 @@ export function BentoGrid({
     setIsResizing(false);
     document.body.style.cursor = "";
     document.body.classList.remove("select-none");
-
-    // Force a resize event after resizing to ensure layout is correct
-    window.dispatchEvent(new Event("resize"));
   }, []);
+
+  // Don't render until mounted to prevent hydration issues
+  if (!mounted) {
+    return (
+      <div
+        className={cn(
+          "w-full rounded-2xl border border-border/30",
+          "bg-gradient-to-br from-card/50 to-card/80 backdrop-blur-sm",
+          "shadow-sm p-4",
+          className
+        )}
+      >
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div
+              key={i}
+              className="h-44 w-full rounded-xl bg-muted/50 animate-pulse"
+            />
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full relative">
-      <style dangerouslySetInnerHTML={{ __html: customGridStyles }} />
-      <div className="w-full px-4 sm:px-6 lg:px-8">
+      <div className="w-full">
         <div
           ref={containerRef}
           className={cn(
-            "relative w-full rounded-xl border border-border/40",
-            "bg-gray-950/80 backdrop-blur-sm shadow-lg",
+            "relative w-full rounded-2xl border border-border/30",
+            "bg-gradient-to-br from-card/50 to-card/80 backdrop-blur-sm",
+            "shadow-sm hover:shadow-md transition-all duration-300",
             isDragging && "cursor-grabbing",
             isResizing && "cursor-se-resize",
             isEditing && "ring-2 ring-purple-500/20",
             className
           )}
         >
-          {/* Pattern overlay */}
-          <div className="absolute inset-0 pointer-events-none bg-grid-pattern opacity-5" />
+          {/* Subtle pattern overlay */}
+          <div className="absolute inset-0 pointer-events-none bg-grid-pattern opacity-[0.02]" />
 
-          {/* Glow Effects */}
-          <div className="absolute -left-32 -top-32 w-64 h-64 bg-purple-500/10 rounded-full blur-3xl pointer-events-none" />
-          <div className="absolute -right-32 -bottom-32 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
+          {/* Minimal glow effects */}
+          <div className="absolute -top-20 -left-20 w-40 h-40 bg-gradient-to-br from-purple-500/5 to-blue-500/5 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute -bottom-20 -right-20 w-40 h-40 bg-gradient-to-br from-indigo-500/5 to-purple-500/5 rounded-full blur-3xl pointer-events-none" />
 
           {/* Content container */}
-          <div className="relative z-10 w-full p-3 sm:p-4">
-            {mounted && (
-              <ResponsiveGridLayout
-                className="layout"
-                layouts={layouts}
-                breakpoints={GRID_CONFIG.breakpoints}
-                cols={GRID_CONFIG.cols}
-                rowHeight={GRID_CONFIG.rowHeight}
-                margin={GRID_CONFIG.margin}
-                containerPadding={GRID_CONFIG.containerPadding}
-                onLayoutChange={handleLayoutChange}
-                onBreakpointChange={handleBreakpointChange}
-                isDraggable={isEditing}
-                isResizable={isEditing}
-                onDragStart={handleDragStart}
-                onDragStop={handleDragStop}
-                onResizeStart={handleResizeStart}
-                onResizeStop={handleResizeStop}
-                compactType="vertical"
-                preventCollision={false}
-                useCSSTransforms={true}
-                draggableHandle=".react-draggable-handle"
-                style={{ width: "100%" }}
-              >
-                {gridItems.map((item) => (
-                  <div key={item.id} className="w-full h-full">
-                    <GridItem isEditing={isEditing}>{item.component}</GridItem>
-                  </div>
-                ))}
-              </ResponsiveGridLayout>
-            )}
+          <div className="relative z-10 w-full p-4">
+            <ResponsiveGridLayout
+              className="layout"
+              layouts={layouts}
+              breakpoints={GRID_CONFIG.breakpoints}
+              cols={GRID_CONFIG.cols}
+              rowHeight={GRID_CONFIG.rowHeight}
+              margin={GRID_CONFIG.margin}
+              containerPadding={GRID_CONFIG.containerPadding}
+              onLayoutChange={handleLayoutChange}
+              onBreakpointChange={handleBreakpointChange}
+              isDraggable={isEditing}
+              isResizable={isEditing}
+              onDragStart={handleDragStart}
+              onDragStop={handleDragStop}
+              onResizeStart={handleResizeStart}
+              onResizeStop={handleResizeStop}
+              compactType="vertical"
+              preventCollision={false}
+              useCSSTransforms={true}
+              draggableHandle=".react-draggable-handle"
+              style={{ width: "100%" }}
+            >
+              {gridItems.map((item) => (
+                <div key={item.id} className="w-full h-full">
+                  <GridItem isEditing={isEditing}>{item.component}</GridItem>
+                </div>
+              ))}
+            </ResponsiveGridLayout>
           </div>
         </div>
       </div>
       <EditingControls />
     </div>
   );
+});
+
+export function BentoGrid(props: BentoGridProps) {
+  return <BentoGridComponent {...props} />;
 }

@@ -4,12 +4,15 @@ import { UnauthenticatedHome } from "@/components/home/unauthenticated-home";
 
 export default async function HomePage() {
   const supabase = await createClient();
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
 
-  if (session?.user) {
-    return <AuthenticatedHome user={session.user} />;
+  // Use getUser() instead of getSession() for security
+  // getUser() authenticates the data by contacting the Supabase Auth server
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (user) {
+    return <AuthenticatedHome user={user} />;
   }
 
   return <UnauthenticatedHome />;

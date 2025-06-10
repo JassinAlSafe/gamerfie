@@ -6,7 +6,6 @@ import { Sparkles } from "lucide-react";
 import { Friend } from "@/types/friend";
 import { Activity } from "@/types/activity";
 import { Block } from "../Block";
-import { TextBlock } from "../Text/TextBlock";
 import { RecentFriendsBlock } from "../Friends/RecentFriendsBlock/RecentFriendsBlock";
 import { RecentActivityBlock } from "../Activity/RecentActivityBlock/RecentActivityBlock";
 import { GameLibraryBlock } from "../Games/GameLibraryBlock/GameLibraryBlock";
@@ -44,16 +43,15 @@ export function useGridItems({ user, friends, activities }: UseGridItemsProps) {
                   </h3>
                 </div>
               </div>
-              <div className="flex-1 relative">
-                <TextBlock
-                  text={user.email?.split("@")[0] || "Gamer"}
-                  textFontSize={80}
-                  asciiFontSize={1}
-                  enableWaves={true}
-                  textColor="#9333ea"
-                  planeBaseHeight={4}
-                  variant="ghost"
-                />
+              <div className="flex-1 relative flex items-center justify-center">
+                <div className="text-center space-y-2">
+                  <h2 className="text-3xl font-bold bg-gradient-to-br from-purple-500 to-indigo-500 bg-clip-text text-transparent">
+                    {user.email?.split("@")[0] || "Gamer"}
+                  </h2>
+                  <p className="text-sm text-muted-foreground">
+                    Ready to game?
+                  </p>
+                </div>
               </div>
             </div>
           </Block>
