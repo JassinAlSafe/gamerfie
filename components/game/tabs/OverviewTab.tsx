@@ -33,20 +33,20 @@ export function OverviewTab({ game, onViewMoreRelated }: OverviewTabProps) {
   const storylineMaxLength = 300;
 
   const truncatedSummary = React.useMemo(() => {
-    if (!game.summary || game.summary.length <= summaryMaxLength)
-      return game.summary;
+    const summary = (game as any).summary;
+    if (!summary || summary.length <= summaryMaxLength) return summary;
     return isAboutExpanded
-      ? game.summary
-      : `${game.summary.slice(0, summaryMaxLength)}...`;
-  }, [game.summary, isAboutExpanded]);
+      ? summary
+      : `${summary.slice(0, summaryMaxLength)}...`;
+  }, [(game as any).summary, isAboutExpanded]);
 
   const truncatedStoryline = React.useMemo(() => {
-    if (!game.storyline || game.storyline.length <= storylineMaxLength)
-      return game.storyline;
+    const storyline = (game as any).storyline;
+    if (!storyline || storyline.length <= storylineMaxLength) return storyline;
     return isStorylineExpanded
-      ? game.storyline
-      : `${game.storyline.slice(0, storylineMaxLength)}...`;
-  }, [game.storyline, isStorylineExpanded]);
+      ? storyline
+      : `${storyline.slice(0, storylineMaxLength)}...`;
+  }, [(game as any).storyline, isStorylineExpanded]);
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -64,7 +64,7 @@ export function OverviewTab({ game, onViewMoreRelated }: OverviewTabProps) {
   };
 
   // Get related games (if available)
-  const relatedGames = game.relatedGames || [];
+  const relatedGames = (game as any).relatedGames || [];
   const hasRelatedGames = relatedGames.length > 0;
 
   return (
@@ -88,17 +88,18 @@ export function OverviewTab({ game, onViewMoreRelated }: OverviewTabProps) {
             <p className="text-gray-300 leading-relaxed">
               {truncatedSummary || "No description available for this game."}
             </p>
-            {game.summary && game.summary.length > summaryMaxLength && (
-              <Button
-                variant="link"
-                onClick={() => setIsAboutExpanded(!isAboutExpanded)}
-                className="mt-2 text-purple-400 hover:text-purple-300 p-0 h-auto font-semibold"
-              >
-                {isAboutExpanded ? "Show Less" : "Read More"}
-              </Button>
-            )}
+            {(game as any).summary &&
+              (game as any).summary.length > summaryMaxLength && (
+                <Button
+                  variant="link"
+                  onClick={() => setIsAboutExpanded(!isAboutExpanded)}
+                  className="mt-2 text-purple-400 hover:text-purple-300 p-0 h-auto font-semibold"
+                >
+                  {isAboutExpanded ? "Show Less" : "Read More"}
+                </Button>
+              )}
           </div>
-          {game.storyline && (
+          {(game as any).storyline && (
             <div>
               <h4 className="text-lg font-semibold mb-2 text-white/90">
                 Storyline
@@ -106,7 +107,7 @@ export function OverviewTab({ game, onViewMoreRelated }: OverviewTabProps) {
               <p className="text-gray-300 leading-relaxed">
                 {truncatedStoryline}
               </p>
-              {game.storyline.length > storylineMaxLength && (
+              {(game as any).storyline.length > storylineMaxLength && (
                 <Button
                   variant="link"
                   onClick={() => setIsStorylineExpanded(!isStorylineExpanded)}
@@ -205,16 +206,16 @@ export function OverviewTab({ game, onViewMoreRelated }: OverviewTabProps) {
           )}
 
           {/* Developer/Publisher */}
-          {game.involved_companies && (
+          {(game as any).involved_companies && (
             <div>
               <h4 className="text-sm font-medium text-gray-400 mb-2 flex items-center">
                 <Monitor className="w-4 h-4 mr-2 text-blue-400" />
                 Companies
               </h4>
               <div className="flex flex-wrap gap-2">
-                {Array.isArray(game.involved_companies) &&
-                game.involved_companies.length > 0 ? (
-                  game.involved_companies.map((company) => (
+                {Array.isArray((game as any).involved_companies) &&
+                (game as any).involved_companies.length > 0 ? (
+                  (game as any).involved_companies.map((company) => (
                     <Badge
                       key={company.id}
                       variant="secondary"
@@ -266,9 +267,13 @@ export function OverviewTab({ game, onViewMoreRelated }: OverviewTabProps) {
               >
                 {/* Game Cover */}
                 <div className="relative aspect-[3/4] w-full">
-                  {relatedGame.cover?.url || relatedGame.cover_url ? (
+                  {relatedGame.cover?.url || (relatedGame as any).cover_url ? (
                     <Image
-                      src={getCoverImageUrl(relatedGame.cover?.url || relatedGame.cover_url || "")}
+                      src={getCoverImageUrl(
+                        relatedGame.cover?.url ||
+                          (relatedGame as any).cover_url ||
+                          ""
+                      )}
                       alt={relatedGame.name}
                       fill
                       className="object-cover"
@@ -288,18 +293,20 @@ export function OverviewTab({ game, onViewMoreRelated }: OverviewTabProps) {
                   </h4>
 
                   <div className="flex items-center justify-between">
-                    {relatedGame.rating && (
+                    {(relatedGame as any).rating && (
                       <div className="flex items-center gap-1">
                         <Star className="w-3 h-3 text-yellow-400" />
                         <span className="text-xs font-medium text-yellow-400">
-                          {relatedGame.rating.toFixed(1)}
+                          {(relatedGame as any).rating.toFixed(1)}
                         </span>
                       </div>
                     )}
 
                     {relatedGame.first_release_date && (
                       <span className="text-xs text-gray-400">
-                        {new Date(relatedGame.first_release_date * 1000).getFullYear()}
+                        {new Date(
+                          relatedGame.first_release_date * 1000
+                        ).getFullYear()}
                       </span>
                     )}
                   </div>

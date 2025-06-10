@@ -31,29 +31,14 @@ interface GameTabsProps {
   };
 }
 
-const TABS = [
-  { id: "overview", label: "Overview" },
-  { id: "stats", label: "Stats" },
-  { id: "media", label: "Media" },
-  { id: "achievements", label: "Achievements" },
-  { id: "challenges", label: "Challenges" },
-  { id: "activity", label: "Activity" },
-  { id: "related", label: "Related" },
-] as const;
-
 export function GameTabs({
   game,
-  profile,
+  profile: _profile,
   activeTab,
   onTabChange,
-  progress,
+  progress: _progress,
   activities,
 }: GameTabsProps) {
-  // Function to handle tab navigation from within tab content
-  const handleViewMoreRelated = React.useCallback(() => {
-    onTabChange("related");
-  }, [onTabChange]);
-
   return (
     <div className="bg-gray-950/80 backdrop-blur-md border-t border-gray-800/50">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -106,7 +91,6 @@ export function GameTabs({
             >
               <OverviewTab
                 game={game}
-                progress={progress}
                 onViewMoreRelated={() => onTabChange("related")}
               />
             </TabsContent>
@@ -119,24 +103,18 @@ export function GameTabs({
               value="achievements"
               className="focus-visible:outline-none"
             >
-              <AchievementsTab game={game} />
+              <AchievementsTab game={game} profile={_profile} />
             </TabsContent>
 
             <TabsContent value="related" className="focus-visible:outline-none">
-              <RelatedTab game={game} />
+              <RelatedTab games={[]} />
             </TabsContent>
 
             <TabsContent
               value="activity"
               className="focus-visible:outline-none"
             >
-              <ActivityTab
-                gameId={game.id}
-                activities={activities.data}
-                loading={activities.loading}
-                hasMore={activities.hasMore}
-                loadMore={activities.loadMore}
-              />
+              <ActivityTab gameId={game.id} activities={activities} />
             </TabsContent>
           </div>
         </Tabs>

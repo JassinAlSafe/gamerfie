@@ -1,7 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { Game, GameStatus } from "@/types/game";
+import { Game } from "@/types/game";
+
+// Define GameStatus locally to avoid import issues
+type GameStatus = "playing" | "completed" | "want_to_play" | "dropped";
 import { useProgressStore } from "@/stores/useProgressStore";
 import { useProfile } from "@/hooks/Profile/use-profile";
 import { toast } from "react-hot-toast";
@@ -54,13 +57,7 @@ export function StatusDialog({
     setIsSubmitting(true);
 
     try {
-      await updateGameStatus(
-        profile.id.toString(),
-        game.id.toString(),
-        status,
-        undefined,
-        comment.trim() || undefined
-      );
+      await updateGameStatus(profile.id.toString(), game.id.toString(), status);
 
       onStatusChange(status);
       setIsOpen(false);

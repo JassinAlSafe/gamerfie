@@ -40,7 +40,7 @@ export function SignUpForm() {
 
   const router = useRouter();
   const { toast } = useToast();
-  const { signUp, isLoading: _authLoading } = useAuthStore();
+  const { signUp } = useAuthStore();
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>

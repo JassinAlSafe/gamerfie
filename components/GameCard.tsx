@@ -4,10 +4,18 @@ import { useState, memo } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Star, Users, Flame } from "lucide-react";
-import { Game, CategoryOption } from "@/types/game";
+import { Game } from "@/types/game";
 import { getCoverImageUrl } from "@/utils/image-utils";
 
-// Define the interface locally instead of importing it
+// Define CategoryOption locally to avoid import issues
+type CategoryOption =
+  | "all"
+  | "popular"
+  | "trending"
+  | "upcoming"
+  | "recent"
+  | "classic";
+
 interface GameCardProps {
   game: Game;
   index?: number;
@@ -25,9 +33,17 @@ export const GameCard = memo(function GameCard({
   // Handle both IGDB and processed cover URL formats
   const coverUrl = (() => {
     if (imageError) return "/placeholder.png"; // Fallback image
-    if (!game.cover_url && !game.cover?.url) return "/placeholder.png";
+    if (
+      !game.cover_url &&
+      (!game.cover || typeof game.cover !== "object" || !game.cover.url)
+    )
+      return "/placeholder.png";
 
-    const rawUrl = game.cover_url || game.cover?.url;
+    const rawUrl =
+      game.cover_url ||
+      (game.cover && typeof game.cover === "object"
+        ? game.cover.url
+        : undefined);
     // If URL is already https, use it directly
     if (rawUrl?.startsWith("https://")) return rawUrl;
     // Otherwise, process it
@@ -36,7 +52,8 @@ export const GameCard = memo(function GameCard({
 
   const renderMetrics = () => {
     if (category === "upcoming") {
-      const hypeCount = game.follows_count || game.hype_count || 0;
+      const hypeCount =
+        (game as any).follows_count || (game as any).hype_count || 0;
       return (
         <div className="flex items-center gap-2 text-sm text-gray-200">
           <Flame className="w-4 h-4 text-purple-400" aria-hidden="true" />
@@ -52,8 +69,9 @@ export const GameCard = memo(function GameCard({
     }
 
     // For trending and popular games
-    const rating = game.total_rating || game.rating;
-    const ratingCount = game.total_rating_count || game.rating_count;
+    const rating = (game as any).total_rating || game.rating;
+    const ratingCount =
+      (game as any).total_rating_count || (game as any).rating_count;
 
     return (
       <div className="flex items-center gap-2 text-sm text-gray-200">

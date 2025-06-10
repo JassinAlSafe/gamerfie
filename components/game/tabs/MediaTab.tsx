@@ -46,8 +46,8 @@ export function MediaTab({ game }: MediaTabProps) {
   const [shouldRenderVideo, setShouldRenderVideo] = useState(false);
 
   const hasScreenshots = useMemo(
-    () => game.screenshots && game.screenshots.length > 0,
-    [game.screenshots]
+    () => (game as any).screenshots && (game as any).screenshots.length > 0,
+    [(game as any).screenshots]
   );
 
   const hasVideos = useMemo(
@@ -75,9 +75,11 @@ export function MediaTab({ game }: MediaTabProps) {
     setIsScreenshotModalOpen(true);
   }, []);
 
-  const handleVideoClick = useCallback((videoUrl: string) => {
-    // Convert to embed URL if needed
-    const embedUrl = getYouTubeEmbedUrl(videoUrl);
+  const handleVideoClick = useCallback((videoId: string) => {
+    // Convert video ID to embed URL
+    const embedUrl = getYouTubeEmbedUrl(
+      `https://www.youtube.com/watch?v=${videoId}`
+    );
     setCurrentVideoUrl(embedUrl);
     setVideoDialogOpen(true);
   }, []);
@@ -151,7 +153,7 @@ export function MediaTab({ game }: MediaTabProps) {
                 Screenshots{" "}
                 {hasScreenshots && (
                   <span className="text-xs ml-1 opacity-70">
-                    ({game.screenshots?.length})
+                    ({(game as any).screenshots?.length})
                   </span>
                 )}
               </TabsTrigger>
@@ -182,34 +184,36 @@ export function MediaTab({ game }: MediaTabProps) {
               <div className="p-6 pt-2">
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-5">
                   <AnimatePresence>
-                    {game.screenshots.map((screenshot, index) => (
-                      <motion.div
-                        key={`screenshot-${screenshot.id}-${index}`}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -20 }}
-                        transition={{
-                          duration: 0.3,
-                          delay: Math.min(index * 0.05, 0.5),
-                        }}
-                        whileHover={{ scale: 1.03, y: -5 }}
-                        className="relative aspect-video rounded-lg overflow-hidden cursor-pointer group shadow-md"
-                        onClick={() => handleScreenshotClick(index)}
-                      >
-                        <Image
-                          src={getHighQualityImageUrl(screenshot.url)}
-                          alt={`Screenshot ${index + 1}`}
-                          fill
-                          sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                          className="object-cover transition-transform duration-300 group-hover:scale-110"
-                          loading={index < 4 ? "eager" : "lazy"}
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                        <div className="absolute bottom-3 left-3 bg-black/60 rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                          <ImageIcon className="w-4 h-4 text-white" />
-                        </div>
-                      </motion.div>
-                    ))}
+                    {(game as any).screenshots.map(
+                      (screenshot: any, index: number) => (
+                        <motion.div
+                          key={`screenshot-${screenshot.id}-${index}`}
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -20 }}
+                          transition={{
+                            duration: 0.3,
+                            delay: Math.min(index * 0.05, 0.5),
+                          }}
+                          whileHover={{ scale: 1.03, y: -5 }}
+                          className="relative aspect-video rounded-lg overflow-hidden cursor-pointer group shadow-md"
+                          onClick={() => handleScreenshotClick(index)}
+                        >
+                          <Image
+                            src={getHighQualityImageUrl(screenshot.url)}
+                            alt={`Screenshot ${index + 1}`}
+                            fill
+                            sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                            className="object-cover transition-transform duration-300 group-hover:scale-110"
+                            loading={index < 4 ? "eager" : "lazy"}
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                          <div className="absolute bottom-3 left-3 bg-black/60 rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                            <ImageIcon className="w-4 h-4 text-white" />
+                          </div>
+                        </motion.div>
+                      )
+                    )}
                   </AnimatePresence>
                 </div>
               </div>
@@ -227,7 +231,7 @@ export function MediaTab({ game }: MediaTabProps) {
               <div className="p-6 pt-2">
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-5">
                   <AnimatePresence>
-                    {game.videos.map((video, index) => (
+                    {game.videos?.map((video, index) => (
                       <motion.div
                         key={`video-${video.id}-${index}`}
                         initial={{ opacity: 0, y: 20 }}
@@ -239,16 +243,13 @@ export function MediaTab({ game }: MediaTabProps) {
                         }}
                         whileHover={{ scale: 1.03, y: -5 }}
                         className="relative aspect-video rounded-lg overflow-hidden cursor-pointer group shadow-md"
-                        onClick={() => handleVideoClick(video.url)}
+                        onClick={() => handleVideoClick(video.video_id)}
                       >
                         {/* Video Thumbnail */}
                         <div className="absolute inset-0 bg-gray-800 flex items-center justify-center">
-                          {video.thumbnail_url || video.video_id ? (
+                          {video.video_id ? (
                             <Image
-                              src={
-                                video.thumbnail_url ||
-                                getYouTubeThumbnail(video.video_id)
-                              }
+                              src={getYouTubeThumbnail(video.video_id)}
                               alt={video.name || `Video ${index + 1}`}
                               fill
                               sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, 33vw"
@@ -295,7 +296,7 @@ export function MediaTab({ game }: MediaTabProps) {
           <ScreenshotModal
             isOpen={isScreenshotModalOpen}
             onClose={handleCloseScreenshotModal}
-            screenshots={game.screenshots || []}
+            screenshots={(game as any).screenshots || []}
             currentIndex={currentScreenshotIndex}
             onIndexChange={setCurrentScreenshotIndex}
           />

@@ -42,6 +42,7 @@ export function GameHero({ game, profile, progress }: GameHeroProps) {
   const [backgroundLoaded, setBackgroundLoaded] = useState(false);
   const [trailerOpen, setTrailerOpen] = useState(false);
   const [shouldRenderTrailer, setShouldRenderTrailer] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   // Process the game object to ensure it has the correct structure
   const processedGame: Game = {
@@ -307,6 +308,7 @@ export function GameHero({ game, profile, progress }: GameHeroProps) {
                 className="flex flex-wrap items-center gap-4 pt-4"
               >
                 <AddToLibraryButton
+                  key={`library-${refreshKey}`}
                   gameId={processedGame.id}
                   gameName={processedGame.name}
                   cover={(processedGame as any).cover_url || (processedGame as any).coverImage}
@@ -315,12 +317,21 @@ export function GameHero({ game, profile, progress }: GameHeroProps) {
                   platforms={processedGame.platforms}
                   genres={processedGame.genres}
                   summary={(processedGame as any).summary}
+                  onSuccess={() => {
+                    // Trigger re-render of both buttons
+                    setRefreshKey(prev => prev + 1);
+                  }}
                 />
                 <UpdateProgressButton
+                  key={`progress-${refreshKey}`}
                   gameId={processedGame.id}
                   gameName={processedGame.name}
                   game={processedGame}
                   progress={progress}
+                  onSuccess={() => {
+                    // Trigger re-render of both buttons when progress updates
+                    setRefreshKey(prev => prev + 1);
+                  }}
                 />
 
                 {/* Trailer Button */}

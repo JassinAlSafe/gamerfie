@@ -13,7 +13,7 @@ interface AchievementsTabProps {
 }
 
 export function AchievementsTab({ game, profile }: AchievementsTabProps) {
-  if (!game.achievements?.length) {
+  if (!(game as any).achievements?.length) {
     return (
       <div className="bg-gray-900/30 rounded-lg p-6 backdrop-blur-sm transition-all duration-300 hover:bg-gray-900/40">
         <p className="text-gray-400 text-center">No achievements available</p>
@@ -21,7 +21,7 @@ export function AchievementsTab({ game, profile }: AchievementsTabProps) {
     );
   }
 
-  const totalAchievements = game.achievements.length;
+  const totalAchievements = (game as any).achievements.length;
   const unlockedAchievements = profile ? 0 : null; // TODO: Get from user progress
 
   return (
@@ -51,7 +51,7 @@ export function AchievementsTab({ game, profile }: AchievementsTabProps) {
       {/* Achievements List */}
       <div className="bg-gray-900/30 rounded-lg p-6 backdrop-blur-sm transition-all duration-300 hover:bg-gray-900/40">
         <div className="space-y-4">
-          {game.achievements.map((achievement) => (
+          {(game as any).achievements.map((achievement: any) => (
             <div
               key={achievement.id}
               className="flex items-center gap-4 p-4 bg-gray-900/50 rounded-lg border border-white/5 transition-all duration-200 hover:bg-gray-900/70"

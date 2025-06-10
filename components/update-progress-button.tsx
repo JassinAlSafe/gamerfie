@@ -4,11 +4,11 @@ import React, { useCallback, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { useProgressStore } from "@/stores/useProgressStore";
 import { useAuthStore } from "@/stores/useAuthStore";
-import { useLibraryStore } from "@/stores/useLibraryStore";
+import { checkGameInLibrary } from "@/utils/game-utils";
 import { CompletionDialog } from "@/components/game/dialogs/CompletionDialog";
 import { toast } from "sonner";
 import { Game } from "@/types/game";
-import { BarChart2, Loader2, Trophy, Play, Plus } from "lucide-react";
+import { Loader2, Trophy, Play, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface GameProgress {
@@ -25,14 +25,15 @@ interface UpdateProgressButtonProps {
   variant?: "default" | "outline" | "secondary" | "ghost";
   size?: "default" | "sm" | "lg";
   className?: string;
+  onSuccess?: () => void;
 }
 
 export function UpdateProgressButton({
   gameId,
   gameName,
-  variant = "secondary",
   size = "default",
   className,
+  onSuccess,
 }: UpdateProgressButtonProps) {
   const [dialogOpen, setDialogOpen] = React.useState(false);
   const { user } = useAuthStore();
@@ -45,7 +46,6 @@ export function UpdateProgressButton({
     achievements_completed,
     fetchProgress,
   } = useProgressStore();
-  const { checkGameInLibrary } = useLibraryStore();
 
   React.useEffect(() => {
     if (user && gameId) {
@@ -73,12 +73,38 @@ export function UpdateProgressButton({
       console.log("UpdateProgressButton: Updating progress with data:", updateData);
       
       try {
+        // First update the progress
         await updateProgress(user.id, gameId, updateData);
+        
+        // Determine the appropriate status based on progress
+        let newStatus: "playing" | "completed" | "want_to_play" = "playing";
+        
+        if (updateData.completion_percentage >= 100) {
+          newStatus = "completed";
+        } else if (updateData.play_time > 0 || updateData.completion_percentage > 0) {
+          newStatus = "playing";
+        } else {
+          newStatus = "want_to_play";
+        }
+
+        // Check if game is already in library and get current status
+        const libraryEntry = await checkGameInLibrary(gameId, user.id);
+        
+        // Only update status if it needs to change or if game isn't in library yet
+        if (!libraryEntry || libraryEntry.status !== newStatus) {
+          console.log(`UpdateProgressButton: Updating status to ${newStatus}`);
+          await updateGameStatus(user.id, gameId, newStatus);
+        }
+
         console.log("UpdateProgressButton: Progress update successful");
-        toast.success("Progress updated successfully!");
+        toast.success(`Progress updated! Game status: ${newStatus === 'want_to_play' ? 'Want to Play' : newStatus === 'playing' ? 'Currently Playing' : 'Completed'}`);
         setDialogOpen(false);
+        
         // Refetch progress to ensure UI is updated
         await fetchProgress(user.id, gameId);
+        
+        // Trigger parent component refresh
+        onSuccess?.();
       } catch (error) {
         console.error("UpdateProgressButton: Error updating progress:", error);
         toast.error(
@@ -86,7 +112,7 @@ export function UpdateProgressButton({
         );
       }
     },
-    [user, play_time, completion_percentage, achievements_completed, updateProgress, gameId, fetchProgress]
+    [user, play_time, completion_percentage, achievements_completed, updateProgress, updateGameStatus, gameId, fetchProgress, onSuccess]
   );
 
   const progressText = useMemo(() => {
