@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import Image from "next/image";
 import Link from "next/link";
@@ -110,12 +110,15 @@ export default function PopularGamesPage() {
     mostAnticipated: "Most Anticipated",
   };
 
-  const getGamesForCategory = (category: string) => {
-    if (!data) return [];
-    return category === "all"
-      ? data.all
-      : data[category as keyof typeof data] || [];
-  };
+  const getGamesForCategory = useCallback(
+    (category: string) => {
+      if (!data) return [];
+      return category === "all"
+        ? data.all
+        : data[category as keyof typeof data] || [];
+    },
+    [data]
+  );
 
   const filteredGames = useMemo(() => {
     if (!data) return [];
@@ -159,6 +162,7 @@ export default function PopularGamesPage() {
     selectedGenre,
     selectedCategory,
     sortBy,
+    getGamesForCategory,
   ]);
 
   const totalPages = Math.ceil((filteredGames?.length || 0) / ITEMS_PER_PAGE);

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,6 +17,8 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { debounce } from "lodash";
+
+import Image from "next/image";
 
 interface GameResult {
   id: string;
@@ -168,7 +170,13 @@ export function EnhancedSearch() {
 
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [state.isOpen, state.selectedIndex, state.games, state.users]);
+  }, [
+    state.isOpen,
+    state.selectedIndex,
+    state.games,
+    state.users,
+    handleSelection,
+  ]);
 
   // Handle clicking outside to close
   useEffect(() => {
@@ -195,7 +203,7 @@ export function EnhancedSearch() {
     }));
   };
 
-  const handleSelection = () => {
+  const handleSelection = useCallback(() => {
     const totalGames = state.games.length;
 
     if (state.selectedIndex >= 0) {
@@ -210,7 +218,7 @@ export function EnhancedSearch() {
       }
       handleClose();
     }
-  };
+  }, [state.games, state.selectedIndex, state.users, router]);
 
   const handleGameClick = (game: GameResult) => {
     router.push(`/game/${game.id}`);
@@ -321,9 +329,11 @@ export function EnhancedSearch() {
                       >
                         <div className="w-10 h-10 rounded bg-gray-800 overflow-hidden flex-shrink-0">
                           {game.cover_url ? (
-                            <img
+                            <Image
                               src={game.cover_url}
                               alt={game.name}
+                              width={40}
+                              height={40}
                               className="w-full h-full object-cover"
                             />
                           ) : (
@@ -383,9 +393,11 @@ export function EnhancedSearch() {
                       >
                         <div className="w-10 h-10 rounded-full bg-gray-800 overflow-hidden flex-shrink-0">
                           {user.avatar_url ? (
-                            <img
+                            <Image
                               src={user.avatar_url}
                               alt={user.username}
+                              width={40}
+                              height={40}
                               className="w-full h-full object-cover"
                             />
                           ) : (

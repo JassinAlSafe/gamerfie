@@ -32,21 +32,21 @@ export function OverviewTab({ game, onViewMoreRelated }: OverviewTabProps) {
   const summaryMaxLength = 300;
   const storylineMaxLength = 300;
 
+  const gameSummary = (game as any).summary;
   const truncatedSummary = React.useMemo(() => {
-    const summary = (game as any).summary;
-    if (!summary || summary.length <= summaryMaxLength) return summary;
+    if (!gameSummary || gameSummary.length <= summaryMaxLength) return gameSummary;
     return isAboutExpanded
-      ? summary
-      : `${summary.slice(0, summaryMaxLength)}...`;
-  }, [(game as any).summary, isAboutExpanded]);
+      ? gameSummary
+      : `${gameSummary.slice(0, summaryMaxLength)}...`;
+  }, [gameSummary, isAboutExpanded]);
 
+  const gameStoryline = (game as any).storyline;
   const truncatedStoryline = React.useMemo(() => {
-    const storyline = (game as any).storyline;
-    if (!storyline || storyline.length <= storylineMaxLength) return storyline;
+    if (!gameStoryline || gameStoryline.length <= storylineMaxLength) return gameStoryline;
     return isStorylineExpanded
-      ? storyline
-      : `${storyline.slice(0, storylineMaxLength)}...`;
-  }, [(game as any).storyline, isStorylineExpanded]);
+      ? gameStoryline
+      : `${gameStoryline.slice(0, storylineMaxLength)}...`;
+  }, [gameStoryline, isStorylineExpanded]);
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -88,8 +88,8 @@ export function OverviewTab({ game, onViewMoreRelated }: OverviewTabProps) {
             <p className="text-gray-300 leading-relaxed">
               {truncatedSummary || "No description available for this game."}
             </p>
-            {(game as any).summary &&
-              (game as any).summary.length > summaryMaxLength && (
+            {gameSummary &&
+              gameSummary.length > summaryMaxLength && (
                 <Button
                   variant="link"
                   onClick={() => setIsAboutExpanded(!isAboutExpanded)}
@@ -99,7 +99,7 @@ export function OverviewTab({ game, onViewMoreRelated }: OverviewTabProps) {
                 </Button>
               )}
           </div>
-          {(game as any).storyline && (
+          {gameStoryline && (
             <div>
               <h4 className="text-lg font-semibold mb-2 text-white/90">
                 Storyline
@@ -107,7 +107,7 @@ export function OverviewTab({ game, onViewMoreRelated }: OverviewTabProps) {
               <p className="text-gray-300 leading-relaxed">
                 {truncatedStoryline}
               </p>
-              {(game as any).storyline.length > storylineMaxLength && (
+              {gameStoryline.length > storylineMaxLength && (
                 <Button
                   variant="link"
                   onClick={() => setIsStorylineExpanded(!isStorylineExpanded)}
@@ -215,7 +215,7 @@ export function OverviewTab({ game, onViewMoreRelated }: OverviewTabProps) {
               <div className="flex flex-wrap gap-2">
                 {Array.isArray((game as any).involved_companies) &&
                 (game as any).involved_companies.length > 0 ? (
-                  (game as any).involved_companies.map((company) => (
+                  (game as any).involved_companies.map((company: any) => (
                     <Badge
                       key={company.id}
                       variant="secondary"
@@ -258,7 +258,7 @@ export function OverviewTab({ game, onViewMoreRelated }: OverviewTabProps) {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-            {relatedGames.slice(0, 4).map((relatedGame) => (
+            {relatedGames.slice(0, 4).map((relatedGame: any) => (
               <motion.div
                 key={relatedGame.id}
                 whileHover={{ scale: 1.03 }}

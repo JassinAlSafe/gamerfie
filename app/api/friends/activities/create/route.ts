@@ -20,12 +20,12 @@ export async function POST(request: Request) {
 
   try {
     // Get user session
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-    if (sessionError) {
-      console.error('Session error:', sessionError);
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError) {
+      console.error('User error:', userError);
       throw new Error('Authentication error');
     }
-    if (!session?.user) {
+    if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -35,7 +35,7 @@ export async function POST(request: Request) {
       game_id: string; 
       details?: any 
     };
-    console.log('Creating activity:', { activity_type, game_id, details, user_id: session.user.id });
+    console.log('Creating activity:', { activity_type, game_id, details, user_id: user.id });
 
     if (!activity_type) {
       return NextResponse.json({ error: 'Activity type is required' }, { status: 400 });
@@ -47,7 +47,7 @@ export async function POST(request: Request) {
       const { data: recentActivity } = await supabase
         .from('friend_activities')
         .select('created_at')
-        .eq('user_id', session.user.id)
+        .eq('user_id', user.id)
         .eq('game_id', game_id)
         .eq('activity_type', activity_type)
         .order('created_at', { ascending: false })
@@ -72,7 +72,7 @@ export async function POST(request: Request) {
     const { data: newActivity, error: insertError } = await supabase
       .from('friend_activities')
       .insert({
-        user_id: session.user.id,
+        user_id: user.id,
         activity_type,
         game_id: game_id || null,
         details: details || {},

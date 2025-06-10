@@ -9,10 +9,10 @@ export async function GET(request: Request) {
   const limit = 20;
 
   try {
-    // Get user session
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-    if (sessionError) throw new Error('Authentication error');
-    if (!session?.user) {
+    // Get authenticated user (secure method)
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError) throw new Error('Authentication error');
+    if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -20,7 +20,7 @@ export async function GET(request: Request) {
     const { data: friends, error: friendsError } = await supabase
       .from('friends')
       .select('friend_id')
-      .eq('user_id', session.user.id)
+      .eq('user_id', user.id)
       .eq('status', 'accepted');
 
     if (friendsError) {
@@ -29,7 +29,7 @@ export async function GET(request: Request) {
     }
 
     // Include both friends' IDs and the user's own ID
-    const userIds = [...(friends?.map(f => f.friend_id) || []), session.user.id];
+    const userIds = [...(friends?.map(f => f.friend_id) || []), user.id];
     console.log('Fetching activities for users:', userIds);
 
     // First, let's check if we have any activities

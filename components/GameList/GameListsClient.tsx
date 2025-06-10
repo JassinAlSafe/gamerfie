@@ -9,7 +9,7 @@ import { JournalEntryDialog } from "../journal/JournalEntryDialog";
 import { formatDistanceToNow } from "date-fns";
 import Image from "next/image";
 import { getCoverImageUrl } from "@/utils/image-utils";
-import { GameList, GameListItem } from "@/types/gamelist/game-list";
+import { GameListItem } from "@/types/gamelist/game-list";
 
 export default function GameListsClient() {
   const { entries, isLoading, error, fetchEntries } = useJournalStore();
@@ -22,7 +22,7 @@ export default function GameListsClient() {
 
   // Filter only list type entries and parse games from content
   const lists = entries
-    .filter((entry): entry is GameList => entry.type === "list")
+    .filter((entry) => entry.type === "list")
     .map((entry) => {
       let games: GameListItem[] = [];
       if (entry.content) {

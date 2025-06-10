@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { createClient } from "@/utils/supabase/client";
 import {
   Card,
@@ -40,11 +40,7 @@ export function TeamInvitations({ challengeId, teamId }: TeamInvitationsProps) {
 
   const supabase = createClient();
 
-  useEffect(() => {
-    fetchInvitations();
-  }, [challengeId, teamId]);
-
-  const fetchInvitations = async () => {
+  const fetchInvitations = useCallback(async () => {
     try {
       setLoading(true);
       const { data, error } = await supabase
@@ -67,7 +63,11 @@ export function TeamInvitations({ challengeId, teamId }: TeamInvitationsProps) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [supabase, teamId]);
+
+  useEffect(() => {
+    fetchInvitations();
+  }, [challengeId, teamId, fetchInvitations]);
 
   const handleInvite = async () => {
     try {

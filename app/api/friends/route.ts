@@ -17,10 +17,10 @@ export async function GET() {
   try {
     const supabase = await createClient();
     const {
-      data: { session },
-    } = await supabase.auth.getSession();
+      data: { user },
+    } = await supabase.auth.getUser();
 
-    if (!session) {
+    if (!user) {
       return NextResponse.json(
         { error: 'Not authenticated' },
         { status: 401 }
@@ -47,7 +47,7 @@ export async function GET() {
           bio
         )
       `)
-      .or(`user_id.eq.${session.user.id},friend_id.eq.${session.user.id}`);
+      .or(`user_id.eq.${user.id},friend_id.eq.${user.id}`);
 
     if (error) {
       console.error('Error fetching friends:', error);
@@ -58,7 +58,7 @@ export async function GET() {
     }
 
     const friends: FriendData[] = friendships?.map(friendship => {
-      const isRequester = friendship.user_id === session.user.id;
+      const isRequester = friendship.user_id === user.id;
       const friendProfile = isRequester ? friendship.friend : friendship.sender;
       
       return {
@@ -87,9 +87,9 @@ export async function POST(request: Request) {
 
   try {
     const { friendId } = await request.json();
-    const { data: { session } } = await supabase.auth.getSession();
+    const { data: { user } } = await supabase.auth.getUser();
     
-    if (!session?.user) {
+    if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -98,8 +98,8 @@ export async function POST(request: Request) {
       .from('friends')
       .select('*')
       .or(
-        `and(user_id.eq.${session.user.id},friend_id.eq.${friendId}),` +
-        `and(user_id.eq.${friendId},friend_id.eq.${session.user.id})`
+        `and(user_id.eq.${user.id},friend_id.eq.${friendId}),` +
+        `and(user_id.eq.${friendId},friend_id.eq.${user.id})`
       )
       .single();
 
@@ -114,7 +114,7 @@ export async function POST(request: Request) {
     const { data: friendship, error: insertError } = await supabase
       .from('friends')
       .insert({
-        user_id: session.user.id,
+        user_id: user.id,
         friend_id: friendId,
         status: 'pending'
       })
@@ -141,7 +141,7 @@ export async function POST(request: Request) {
       username: friendProfile?.username,
       avatar_url: friendProfile?.avatar_url,
       status: friendship.status,
-      sender_id: session.user.id
+      sender_id: user.id
     });
   } catch (error) {
     console.error('Error in POST /api/friends:', error);

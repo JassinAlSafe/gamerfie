@@ -33,9 +33,9 @@ export const ListViewGameCard = memo(function ListViewGameCard({
   const imageUrl = (() => {
     if (imageError) return "/placeholder.png";
     return (
-      game.background_image ||
-      game.cover?.url ||
-      game.cover_url ||
+      (game as any).background_image ||
+      (game as any).cover?.url ||
+      (game as any).cover_url ||
       "/placeholder.png"
     );
   })();

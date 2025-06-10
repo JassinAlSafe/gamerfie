@@ -12,17 +12,17 @@ export interface AuthResult {
 export async function authenticateRequest(): Promise<AuthResult | NextResponse> {
   try {
     const supabase = await createClient();
-    const { data: { session }, error } = await supabase.auth.getSession();
+    const { data: { user }, error } = await supabase.auth.getUser();
     
     if (error) {
-      console.error('Auth session error:', error);
+      console.error('Auth user error:', error);
       return NextResponse.json(
         { error: 'Authentication failed' },
         { status: 401 }
       );
     }
     
-    if (!session?.user) {
+    if (!user) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
@@ -31,8 +31,8 @@ export async function authenticateRequest(): Promise<AuthResult | NextResponse> 
     
     return {
       user: {
-        id: session.user.id,
-        email: session.user.email
+        id: user.id,
+        email: user.email
       },
       supabase
     };

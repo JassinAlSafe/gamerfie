@@ -7,9 +7,9 @@ export async function POST(
 ) {
   try {
     const supabase = await createClient();
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
     
-    if (sessionError || !session?.user) {
+    if (userError || !user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -23,7 +23,7 @@ export async function POST(
       .from("activity_comments")
       .insert({
         activity_id: params.id,
-        user_id: session.user.id,
+        user_id: user.id,
         content: content.trim(),
       })
       .select(`

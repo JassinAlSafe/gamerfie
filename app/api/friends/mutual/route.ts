@@ -15,15 +15,15 @@ export async function GET(request: Request) {
     }
 
     // Get current user session
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-    if (sessionError || !session?.user) {
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Use the optimized get_mutual_friends function
     const { data: mutualFriends, error } = await supabase
       .rpc('get_mutual_friends', {
-        user1_id: session.user.id,
+        user1_id: user.id,
         user2_id: friendId
       });
 

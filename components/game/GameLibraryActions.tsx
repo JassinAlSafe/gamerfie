@@ -74,7 +74,7 @@ export function GameLibraryActions({
     };
 
     fetchCurrentStatus();
-  }, [gameId]);
+  }, [gameId, supabase]);
 
   useEffect(() => {
     // Find matching active challenges based on game genres

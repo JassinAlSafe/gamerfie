@@ -381,7 +381,7 @@ export function TimelineView({ entries }: TimelineViewProps) {
                       </div>
                     );
                   }
-                } catch (e) {
+                } catch (_e) {
                   // If parsing fails, just show the content as text
                   content = (
                     <div className="text-gray-200 whitespace-pre-wrap bg-background/40 backdrop-blur-sm p-3 rounded-lg border border-purple-500/20">

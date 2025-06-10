@@ -7,9 +7,9 @@ export async function PATCH(
 ) {
   try {
     const supabase = await createClient();
-    const { data: { session } } = await supabase.auth.getSession();
+    const { data: { user } } = await supabase.auth.getUser();
 
-    if (!session) {
+    if (!user) {
       return NextResponse.json(
         { error: "Not authenticated" },
         { status: 401 }
@@ -30,7 +30,7 @@ export async function PATCH(
     const { error: updateError } = await supabase
       .from("user_games")
       .upsert({
-        user_id: session.user.id,
+        user_id: user.id,
         game_id: params.id,
         play_time: progress.play_time,
         last_played_at: new Date().toISOString(),
@@ -51,7 +51,7 @@ export async function PATCH(
       const { error: historyError } = await supabase
         .from("game_progress_history")
         .insert({
-          user_id: session.user.id,
+          user_id: user.id,
           game_id: params.id,
           play_time: progress.play_time,
           completion_percentage: progress.completion_percentage,
@@ -67,7 +67,7 @@ export async function PATCH(
       const { error: achievementError } = await supabase
         .from("game_achievement_history")
         .insert({
-          user_id: session.user.id,
+          user_id: user.id,
           game_id: params.id,
           achievements_completed: progress.achievements_completed,
         });

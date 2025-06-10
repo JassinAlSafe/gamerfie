@@ -11,7 +11,6 @@ import { getCoverImageUrl } from "@/utils/image-utils";
 import { useProfile } from "@/hooks/Profile/use-profile";
 import { MessageCircle, Share2, Heart, Gamepad2 } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
-import type { Database } from "@/types/supabase";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
@@ -143,7 +142,7 @@ export function GameListDetails({ listId }: { listId: string }) {
         text: currentList?.content || "",
         url: window.location.href,
       });
-    } catch (error) {
+    } catch (_error) {
       navigator.clipboard.writeText(window.location.href);
       toast({
         title: "Link copied to clipboard",

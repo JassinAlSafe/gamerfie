@@ -29,7 +29,7 @@ import { useViewModeStore } from "@/stores/useViewModeStore";
 export function GamesHeader() {
   const searchInputId = useId();
   const {
-    sortBy,
+    sortBy = 'popularity' as const,
     setSortBy,
     selectedPlatform,
     selectedGenre,
@@ -75,7 +75,7 @@ export function GamesHeader() {
     return count;
   };
 
-  const activeFilterCount = getActiveFilterCount();
+  const _activeFilterCount = getActiveFilterCount();
 
   // Get platform name for display
   const getPlatformName = () => {

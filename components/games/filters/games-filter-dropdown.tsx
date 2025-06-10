@@ -16,7 +16,18 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
-import { Platform, Genre } from "@/types/game";
+
+interface Platform {
+  id: string | number;
+  name: string;
+  slug?: string;
+}
+
+interface Genre {
+  id: string | number;
+  name: string;
+  slug?: string;
+}
 
 interface GamesFilterDropdownProps {
   platforms: Platform[];
@@ -83,14 +94,15 @@ export function GamesFilterDropdown({
           <DropdownMenuItem
             key={platform.id}
             onClick={() => {
-              onPlatformChange(platform.id);
+              onPlatformChange(platform.id.toString());
               setIsOpen(false);
             }}
             className={cn(
               "cursor-pointer hover:bg-gray-800 focus:bg-gray-800 focus:text-white transition-colors",
-              selectedPlatform === platform.id && "bg-purple-500/30 text-white"
+              selectedPlatform === platform.id.toString() &&
+                "bg-purple-500/30 text-white"
             )}
-            aria-selected={selectedPlatform === platform.id}
+            aria-selected={selectedPlatform === platform.id.toString()}
           >
             {platform.name}
           </DropdownMenuItem>
@@ -121,14 +133,15 @@ export function GamesFilterDropdown({
           <DropdownMenuItem
             key={genre.id}
             onClick={() => {
-              onGenreChange(genre.id);
+              onGenreChange(genre.id.toString());
               setIsOpen(false);
             }}
             className={cn(
               "cursor-pointer hover:bg-gray-800 focus:bg-gray-800 focus:text-white transition-colors",
-              selectedGenre === genre.id && "bg-purple-500/30 text-white"
+              selectedGenre === genre.id.toString() &&
+                "bg-purple-500/30 text-white"
             )}
-            aria-selected={selectedGenre === genre.id}
+            aria-selected={selectedGenre === genre.id.toString()}
           >
             {genre.name}
           </DropdownMenuItem>

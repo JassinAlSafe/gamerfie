@@ -6,8 +6,8 @@ export async function GET(request: Request) {
     const supabase = await createClient();
 
     // Check if user is authenticated and is admin
-    const { data: { session }, error: authError } = await supabase.auth.getSession();
-    if (authError || !session?.user) {
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -15,7 +15,7 @@ export async function GET(request: Request) {
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('role')
-      .eq('id', session.user.id)
+      .eq('id', user.id)
       .single();
 
     if (profileError || profile?.role !== 'admin') {
@@ -126,8 +126,8 @@ export async function POST(request: Request) {
     const supabase = await createClient();
 
     // Check if user is authenticated and is admin
-    const { data: { session }, error: authError } = await supabase.auth.getSession();
-    if (authError || !session?.user) {
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -135,7 +135,7 @@ export async function POST(request: Request) {
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('role')
-      .eq('id', session.user.id)
+      .eq('id', user.id)
       .single();
 
     if (profileError || profile?.role !== 'admin') {

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -45,7 +45,7 @@ export function DatabaseHealth() {
 
   const supabase = createClient();
 
-  const fetchHealthData = async () => {
+  const fetchHealthData = useCallback(async () => {
     setIsLoading(true);
     try {
       // Fetch health checks
@@ -81,11 +81,11 @@ export function DatabaseHealth() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [supabase]);
 
   const runMaintenanceCheck = async () => {
     try {
-      const { data: _data, error } = await supabase.rpc("quick_health_check");
+      const { error } = await supabase.rpc("quick_health_check");
       if (!error) {
         await fetchHealthData();
       }
@@ -96,7 +96,7 @@ export function DatabaseHealth() {
 
   useEffect(() => {
     fetchHealthData();
-  }, []);
+  }, [fetchHealthData]);
 
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {

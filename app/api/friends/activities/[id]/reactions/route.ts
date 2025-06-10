@@ -7,9 +7,9 @@ export async function POST(
 ) {
   try {
     const supabase = await createClient();
-    const { data: { session } } = await supabase.auth.getSession();
+    const { data: { user } } = await supabase.auth.getUser();
     
-    if (!session?.user) {
+    if (!user) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
@@ -22,7 +22,7 @@ export async function POST(
       .from("activity_reactions")
       .insert({
         activity_id: params.id,
-        user_id: session.user.id,
+        user_id: user.id,
         emoji,
       })
       .select("*, user:profiles(username, avatar_url)")
@@ -49,9 +49,9 @@ export async function DELETE(
 ) {
   try {
     const supabase = await createClient();
-    const { data: { session } } = await supabase.auth.getSession();
+    const { data: { user } } = await supabase.auth.getUser();
     
-    if (!session?.user) {
+    if (!user) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
@@ -65,7 +65,7 @@ export async function DELETE(
       .delete()
       .match({
         activity_id: params.id,
-        user_id: session.user.id,
+        user_id: user.id,
         emoji,
       });
 

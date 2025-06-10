@@ -34,7 +34,7 @@ export function StatsTab({ game, profile, progress }: StatsTabProps) {
             playTime={progress.playTime || 0}
             completionPercentage={progress.completionPercentage || 0}
             achievementsCompleted={progress.achievementsCompleted || 0}
-            totalAchievements={game.achievements?.length || 0}
+            totalAchievements={(game as any).achievements?.length || 0}
             playTimeHistory={progress.playTimeHistory || []}
             achievementHistory={progress.achievementHistory || []}
           />
@@ -51,22 +51,24 @@ export function StatsTab({ game, profile, progress }: StatsTabProps) {
           <StatCard
             icon={<Users className="w-5 h-5 text-blue-400" />}
             label="Total Players"
-            value={formatNumber(game.total_players || 0)}
+            value={formatNumber((game as any).total_players || 0)}
           />
           <StatCard
             icon={<Activity className="w-5 h-5 text-green-400" />}
             label="Active Players"
-            value={formatNumber(game.active_players || 0)}
+            value={formatNumber((game as any).active_players || 0)}
           />
           <StatCard
             icon={<Trophy className="w-5 h-5 text-yellow-400" />}
-            label="Avg. Completion"
-            value={`${Math.round(game.completion_rate || 0)}%`}
+            label="Achievements"
+            value={`${(game as any).achievements?.completed || 0}/${
+              (game as any).achievements?.total || 0
+            }`}
           />
           <StatCard
             icon={<Clock className="w-5 h-5 text-purple-400" />}
             label="Avg. Playtime"
-            value={formatPlaytime(game.average_playtime || 0)}
+            value={formatPlaytime((game as any).average_playtime || 0)}
           />
         </div>
         <div className="mt-8">

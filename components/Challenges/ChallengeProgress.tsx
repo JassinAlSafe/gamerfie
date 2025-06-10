@@ -40,7 +40,7 @@ export function ChallengeProgress({
           description: `Your progress has been updated to ${newProgress}%`,
         });
       }
-    } catch (error) {
+    } catch (_error) {
       toast({
         title: "Error",
         description: "Failed to update progress. Please try again.",

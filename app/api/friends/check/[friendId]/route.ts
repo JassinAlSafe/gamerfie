@@ -8,9 +8,9 @@ export async function GET(
   const supabase = await createClient();
 
   try {
-    const { data: { session } } = await supabase.auth.getSession();
+    const { data: { user } } = await supabase.auth.getUser();
     
-    if (!session?.user) {
+    if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -19,8 +19,8 @@ export async function GET(
       .from('friends')
       .select('*')
       .or(
-        `and(user_id.eq.${session.user.id},friend_id.eq.${params.friendId}),` +
-        `and(user_id.eq.${params.friendId},friend_id.eq.${session.user.id})`
+        `and(user_id.eq.${user.id},friend_id.eq.${params.friendId}),` +
+        `and(user_id.eq.${params.friendId},friend_id.eq.${user.id})`
       )
       .single();
 

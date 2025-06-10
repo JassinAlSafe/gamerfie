@@ -39,10 +39,10 @@ export async function POST(request: Request) {
     
     // Check if user is authenticated
     const {
-      data: { session },
-    } = await supabase.auth.getSession();
+      data: { user },
+    } = await supabase.auth.getUser();
 
-    if (!session) {
+    if (!user) {
       return NextResponse.json(
         { error: "Not authenticated" },
         { status: 401 }
@@ -53,7 +53,7 @@ export async function POST(request: Request) {
     const { data: profile, error: profileError } = await supabase
       .from("profiles")
       .select("role")
-      .eq("id", session.user.id)
+      .eq("id", user.id)
       .single();
 
     if (profileError) {

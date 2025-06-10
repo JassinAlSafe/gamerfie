@@ -45,7 +45,7 @@ export function GameHero({ game, profile, progress }: GameHeroProps) {
   const [refreshKey, setRefreshKey] = useState(0);
 
   // Process the game object to ensure it has the correct structure
-  const processedGame: Game = {
+  const processedGame: Game = useMemo(() => ({
     ...game,
     // Ensure cover is an object with id and url properties
     cover:
@@ -62,7 +62,7 @@ export function GameHero({ game, profile, progress }: GameHeroProps) {
       video_id: video.video_id,
       provider: video.provider || "youtube",
     })),
-  } as Game;
+  } as Game), [game]);
 
   // Get the background image URL, using cover as fallback if no background image
   const backgroundImage = useMemo(

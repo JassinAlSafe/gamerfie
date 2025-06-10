@@ -15,34 +15,34 @@ export async function GET(request: Request) {
 
     // Check if user is authenticated
     const {
-      data: { session },
-      error: sessionError,
-    } = await supabase.auth.getSession();
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
 
-    if (sessionError) {
-      console.error("Session error:", sessionError);
+    if (userError) {
+      console.error("User error:", userError);
       return NextResponse.json(
-        { error: "Authentication failed", details: sessionError },
+        { error: "Authentication failed", details: userError },
         { status: 401 }
       );
     }
 
-    if (!session) {
-      console.log("No authenticated session");
+    if (!user) {
+      console.log("No authenticated user");
       return NextResponse.json(
         { error: "Not authenticated" },
         { status: 401 }
       );
     }
 
-    console.log("Authenticated user:", session.user.id);
+    console.log("Authenticated user:", user.id);
 
     try {
       // First, get the challenge IDs where the user is a participant
       const { data: participations, error: participationsError } = await supabase
         .from("challenge_participants")
         .select("challenge_id")
-        .eq("user_id", session.user.id);
+        .eq("user_id", user.id);
 
       if (participationsError) {
         console.error("Error fetching participations:", participationsError);
@@ -185,27 +185,27 @@ export async function POST(request: Request) {
     
     // Check authentication
     const {
-      data: { session },
-      error: sessionError,
-    } = await supabase.auth.getSession();
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
     
-    if (sessionError) {
-      console.error("Session error:", sessionError);
+    if (userError) {
+      console.error("User error:", userError);
       return NextResponse.json(
-        { error: "Authentication failed", details: sessionError },
+        { error: "Authentication failed", details: userError },
         { status: 401 }
       );
     }
 
-    if (!session) {
-      console.log("No session found");
+    if (!user) {
+      console.log("No user found");
       return NextResponse.json(
         { error: "Not authenticated" },
         { status: 401 }
       );
     }
 
-    console.log("User authenticated:", session.user.id);
+    console.log("User authenticated:", user.id);
 
     // Parse request body
     const body = await request.json();
@@ -229,7 +229,7 @@ export async function POST(request: Request) {
         status: "active",
         start_date: body.start_date,
         end_date: body.end_date,
-        creator_id: session.user.id,
+        creator_id: user.id,
         max_participants: body.max_participants || null,
         is_team_based: body.is_team_based || false,
         visibility: body.visibility || "public",

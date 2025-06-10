@@ -110,24 +110,6 @@ export function MilestoneManagement({
     fetchUser();
   }, [supabase.auth]);
 
-  useEffect(() => {
-    fetchMilestones();
-  }, [challengeId]);
-
-  useEffect(() => {
-    if (editingMilestone) {
-      form.reset({
-        title: editingMilestone.title,
-        description: editingMilestone.description || "",
-        required_progress: editingMilestone.required_progress,
-        reward_type: editingMilestone.reward_type || "badge",
-        reward_amount: editingMilestone.reward_amount || 0,
-      });
-    } else {
-      form.reset(defaultValues);
-    }
-  }, [editingMilestone, form]);
-
   const fetchMilestones = useCallback(async () => {
     try {
       setLoading(true);
@@ -149,7 +131,21 @@ export function MilestoneManagement({
 
   useEffect(() => {
     fetchMilestones();
-  }, [fetchMilestones]);
+  }, [challengeId, fetchMilestones]);
+
+  useEffect(() => {
+    if (editingMilestone) {
+      form.reset({
+        title: editingMilestone.title,
+        description: editingMilestone.description || "",
+        required_progress: editingMilestone.required_progress,
+        reward_type: editingMilestone.reward_type || "badge",
+        reward_amount: editingMilestone.reward_amount || 0,
+      });
+    } else {
+      form.reset(defaultValues);
+    }
+  }, [editingMilestone, form]);
 
   const handleSubmit = async (values: MilestoneFormValues) => {
     if (!userId) {

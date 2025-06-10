@@ -45,14 +45,17 @@ export function MediaTab({ game }: MediaTabProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [shouldRenderVideo, setShouldRenderVideo] = useState(false);
 
+  const gameScreenshots = (game as any).screenshots;
+  const gameVideos = game.videos;
+
   const hasScreenshots = useMemo(
-    () => (game as any).screenshots && (game as any).screenshots.length > 0,
-    [(game as any).screenshots]
+    () => gameScreenshots && gameScreenshots.length > 0,
+    [gameScreenshots]
   );
 
   const hasVideos = useMemo(
-    () => game.videos && game.videos.length > 0,
-    [game.videos]
+    () => gameVideos && gameVideos.length > 0,
+    [gameVideos]
   );
 
   // Simulate loading for better UX

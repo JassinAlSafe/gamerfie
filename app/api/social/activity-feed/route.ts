@@ -8,9 +8,9 @@ export async function GET(request: Request) {
     const offset = parseInt(searchParams.get('offset') || '0');
     const limit = Math.min(parseInt(searchParams.get('limit') || '20'), 50);
 
-    // Get current user session
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-    if (sessionError || !session?.user) {
+    // Get current authenticated user (secure method)
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -18,7 +18,7 @@ export async function GET(request: Request) {
     const { data: friends, error: friendsError } = await supabase
       .from('friends')
       .select('friend_id')
-      .eq('user_id', session.user.id)
+      .eq('user_id', user.id)
       .eq('status', 'accepted');
 
     if (friendsError) {
@@ -31,7 +31,7 @@ export async function GET(request: Request) {
 
     // Get friend IDs plus current user ID
     const friendIds = friends?.map(f => f.friend_id) || [];
-    const userIds = [session.user.id, ...friendIds];
+    const userIds = [user.id, ...friendIds];
 
     // Use the optimized social_activity_feed view for better performance
     // Filter to show activities from friends + current user

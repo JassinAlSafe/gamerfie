@@ -116,7 +116,7 @@ function formatTimeAgo(dateString: string) {
     const days = Math.floor(hours / 24);
     if (days < 7) return `${days}d ago`;
     return date.toLocaleDateString();
-  } catch (error) {
+  } catch (_error) {
     return "recently";
   }
 }

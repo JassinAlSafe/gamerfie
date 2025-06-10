@@ -18,10 +18,10 @@ export async function GET(request: Request) {
 
     // Check if user is authenticated
     const {
-      data: { session },
-    } = await supabase.auth.getSession();
+      data: { user },
+    } = await supabase.auth.getUser();
 
-    if (!session) {
+    if (!user) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
@@ -44,7 +44,7 @@ export async function GET(request: Request) {
     }
 
     // Filter out current user from results
-    const filteredUsers = users?.filter(user => user.id !== session.user.id) || [];
+    const filteredUsers = users?.filter(profile => profile.id !== user.id) || [];
 
     return NextResponse.json(filteredUsers);
   } catch (error) {

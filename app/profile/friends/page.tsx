@@ -204,21 +204,23 @@ export default function ProfileFriendsPage() {
             <ProfileHeader
               profile={profile}
               stats={
-                gameStats ? {
-                  ...gameStats,
-                  totalGames: gameStats.total_played,
-                  totalPlaytime: 0,
-                  recentlyPlayed: [],
-                  mostPlayed: []
-                } : {
-                  total_played: 0,
-                  played_this_year: 0,
-                  backlog: 0,
-                  totalGames: 0,
-                  totalPlaytime: 0,
-                  recentlyPlayed: [],
-                  mostPlayed: []
-                }
+                gameStats
+                  ? {
+                      ...gameStats,
+                      totalGames: gameStats.total_played,
+                      totalPlaytime: 0,
+                      recentlyPlayed: [],
+                      mostPlayed: [],
+                    }
+                  : {
+                      total_played: 0,
+                      played_this_year: 0,
+                      backlog: 0,
+                      totalGames: 0,
+                      totalPlaytime: 0,
+                      recentlyPlayed: [],
+                      mostPlayed: [],
+                    }
               }
               onProfileUpdate={() => {}}
             />
@@ -371,7 +373,7 @@ export default function ProfileFriendsPage() {
                                                   { id: toastId }
                                                 );
                                                 searchUsers(searchQuery);
-                                              } catch (error) {
+                                              } catch {
                                                 toast.error(
                                                   "Failed to accept friend request",
                                                   { id: toastId }

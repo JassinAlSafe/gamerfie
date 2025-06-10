@@ -159,7 +159,7 @@ const GamesGrid = memo(({ games, isLoading }: GamesGridProps) => {
               )}
               role="row"
             >
-              {rowGames.map((game, idx) => (
+              {rowGames.map((game, _idx) => (
                 <motion.div
                   key={game.id}
                   variants={itemVariants}

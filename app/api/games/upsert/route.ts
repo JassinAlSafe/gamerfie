@@ -6,8 +6,8 @@ export async function POST(request: Request) {
     const supabase = await createClient();
     
     // Verify authentication
-    const { data: { session }, error: authError } = await supabase.auth.getSession();
-    if (authError || !session) {
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
       return new NextResponse('Unauthorized', { status: 401 });
     }
 

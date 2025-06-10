@@ -3,9 +3,78 @@
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { Plus, Search, X, GripVertical } from "lucide-react";
-import type { DropResult } from "react-beautiful-dnd";
-import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import {
+  useSortable,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { useDebounce } from "@/hooks/Settings/useDebounce";
+
+// Sortable Item Component
+function SortableGame({ game, onRemove }: { game: GameType; onRemove: (id: string) => void }) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+  } = useSortable({ id: game.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="flex items-center justify-between p-2 bg-white/5 rounded border border-white/10"
+    >
+      <div className="flex items-center gap-2">
+        <div
+          {...attributes}
+          {...listeners}
+          className="cursor-grab active:cursor-grabbing text-white/60 hover:text-white"
+        >
+          <GripVertical className="w-4 h-4" />
+        </div>
+        {game.cover_url && (
+          <Image
+            src={game.cover_url}
+            alt={game.title || "Game cover"}
+            width={40}
+            height={40}
+            className="w-10 h-10 object-cover rounded"
+          />
+        )}
+        <span className="text-white">{game.title}</span>
+      </div>
+      <Button
+        size="sm"
+        variant="ghost"
+        onClick={() => onRemove(game.id)}
+        className="text-white hover:bg-white/10"
+      >
+        <X className="w-4 h-4" />
+      </Button>
+    </div>
+  );
+}
 import { RAWGService } from "@/services/rawgService";
 import { PlaylistService } from "@/services/playlistService";
 import { Game as GameType } from "@/types/game";
@@ -96,7 +165,7 @@ export function PlaylistManager({ initialPlaylist }: PlaylistManagerProps) {
       try {
         const result = await RAWGService.searchGames(debouncedSearch);
         setSearchResults(result.games);
-      } catch (error) {
+      } catch (_error) {
         toast.error("Failed to search games");
       } finally {
         setIsSearching(false);
@@ -116,14 +185,24 @@ export function PlaylistManager({ initialPlaylist }: PlaylistManagerProps) {
     setSelectedGames((prev) => prev.filter((g) => g.id !== gameId));
   };
 
-  const onDragEnd = (result: DropResult) => {
-    if (!result.destination) return;
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
-    const items = Array.from(selectedGames);
-    const [reorderedItem] = items.splice(result.source.index, 1);
-    items.splice(result.destination.index, 0, reorderedItem);
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
 
-    setSelectedGames(items);
+    if (active.id !== over?.id) {
+      setSelectedGames((items) => {
+        const oldIndex = items.findIndex((item) => item.id === active.id);
+        const newIndex = items.findIndex((item) => item.id === over?.id);
+
+        return arrayMove(items, oldIndex, newIndex);
+      });
+    }
   };
 
   if (authLoading) {
@@ -306,54 +385,26 @@ export function PlaylistManager({ initialPlaylist }: PlaylistManagerProps) {
         <h3 className="text-lg font-semibold mb-4 text-white">
           Selected Games
         </h3>
-        <DragDropContext onDragEnd={onDragEnd}>
-          <Droppable droppableId="games">
-            {(provided) => (
-              <div
-                {...provided.droppableProps}
-                ref={provided.innerRef}
-                className="space-y-2"
-              >
-                {selectedGames.map((game, index) => (
-                  <Draggable key={game.id} draggableId={game.id} index={index}>
-                    {(provided) => (
-                      <div
-                        ref={provided.innerRef}
-                        {...provided.draggableProps}
-                        className="flex items-center justify-between p-2 bg-white/5 hover:bg-white/10 rounded-lg border border-white/10"
-                      >
-                        <div className="flex items-center gap-2">
-                          <div {...provided.dragHandleProps}>
-                            <GripVertical className="w-4 h-4 text-white/60" />
-                          </div>
-                          {game.coverImage ? (
-                            <Image
-                              src={game.coverImage}
-                              alt={game.title || "Game cover"}
-                              width={40}
-                              height={40}
-                              className="w-10 h-10 object-cover rounded"
-                            />
-                          ) : null}
-                          <span className="text-white">{game.title}</span>
-                        </div>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => handleRemoveGame(game.id)}
-                          className="text-white hover:bg-white/10"
-                        >
-                          <X className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    )}
-                  </Draggable>
-                ))}
-                {provided.placeholder}
-              </div>
-            )}
-          </Droppable>
-        </DragDropContext>
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEnd}
+        >
+          <SortableContext
+            items={selectedGames.map(game => game.id)}
+            strategy={verticalListSortingStrategy}
+          >
+            <div className="space-y-2">
+              {selectedGames.map((game) => (
+                <SortableGame
+                  key={game.id}
+                  game={game}
+                  onRemove={handleRemoveGame}
+                />
+              ))}
+            </div>
+          </SortableContext>
+        </DndContext>
       </div>
     </div>
   );
