@@ -7,7 +7,7 @@
 // import { Badge } from "@/components/ui/badge";
 // import { formatDistanceToNow } from "date-fns";
 // import Link from "next/link";
-// import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+// import { createClient } from "@/utils/supabase/client";
 // import { ChallengeServices } from "@/lib/services/ChallengeServices";
 // import {
 //   Trophy,
@@ -55,7 +55,7 @@
 //   onShare,
 //   onChallengeUpdate,
 // }: ChallengeDetailsProps) {
-//   const supabase = createClientComponentClient();
+//   const supabase = createClient();
 //   const { toast } = useToast();
 //   const [isJoining, setIsJoining] = useState(false);
 //   const [isLeaving, setIsLeaving] = useState(false);

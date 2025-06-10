@@ -1,10 +1,9 @@
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
-import type { UserGame, GameStats } from '@/types/game'
+import { createClient } from '@/utils/supabase/client'
 import type { Profile } from '@/types/profile'
 
-export async function fetchProfile() {
-    const supabase = createClientComponentClient()
+const supabase = createClient()
 
+export async function fetchProfile() {
     const { data: { user }, error: userError } = await supabase.auth.getUser()
 
     if (userError) {
@@ -31,8 +30,6 @@ export async function fetchProfile() {
 }
 
 export async function fetchUserGames(userId: string, page = 1, pageSize = 10) {
-    const supabase = createClientComponentClient()
-
     const start = (page - 1) * pageSize
     const end = start + pageSize - 1
 
@@ -57,103 +54,192 @@ export async function fetchUserGames(userId: string, page = 1, pageSize = 10) {
     }
 }
 
-export async function updateProfile(userId: string, updates: Partial<Profile>) {
-    if (!userId) {
-        throw new Error('User ID is required to update profile')
+export async function fetchUserStats(userId: string) {
+    const { data: userGames, error } = await supabase
+        .from('user_games')
+        .select('status')
+        .eq('user_id', userId)
+
+    if (error) throw error
+
+    const stats = {
+        playing: 0,
+        completed: 0,
+        want_to_play: 0,
+        dropped: 0,
+        total: userGames?.length || 0
     }
 
-    const supabase = createClientComponentClient()
+    userGames?.forEach(game => {
+        const status = game.status as 'playing' | 'completed' | 'want_to_play' | 'dropped'
+        if (status in stats) {
+            stats[status]++
+        }
+    })
 
-    const { data, error } = await supabase
-        .from('profiles')
-        .update({
-            ...updates,
-            updated_at: new Date().toISOString()
-        })
-        .eq('id', userId)
-        .select()
-        .single()
-
-    if (error) {
-        console.error('Error updating user profile:', error)
-        throw error
-    }
-
-    return data as unknown as Profile
+    return stats
 }
 
-export async function calculateGameStats(userId: string): Promise<GameStats> {
-    const supabase = createClientComponentClient()
-
-    // Fetch user's games with game details
-    const { data: userGames, error: gamesError } = await supabase
+export async function fetchTopGenres(userId: string) {
+    const { data, error } = await supabase
         .from('user_games')
         .select(`
-            *,
-            games (
-                id,
-                name,
-                cover_url,
-                platforms,
-                genres,
-                summary,
-                created_at,
-                updated_at
+            games!inner(
+                genres
             )
         `)
         .eq('user_id', userId)
-        .order('last_played_at', { ascending: false })
 
-    if (gamesError) {
-        console.error('Error fetching games for stats:', gamesError)
-        throw gamesError
+    if (error) throw error
+    
+    const genreCount: Record<string, number> = {}
+    
+    data?.forEach((userGame: any) => {
+        if (userGame.games?.genres && Array.isArray(userGame.games.genres)) {
+            userGame.games.genres.forEach((genre: string) => {
+                genreCount[genre] = (genreCount[genre] || 0) + 1
+            })
+        }
+    })
+
+    return Object.entries(genreCount)
+        .sort(([,a], [,b]) => b - a)
+        .slice(0, 5)
+        .map(([name, count]) => ({ name, count }))
+}
+
+export async function fetchRecentActivity(userId: string) {
+    const { data, error } = await supabase
+        .from('friend_activities')
+        .select(`
+            *,
+            game:games(id, name, cover_url)
+        `)
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(5)
+
+    if (error) throw error
+    return data
+}
+
+export async function fetchGameStats(gameId: string) {
+    const { data: userGames, error } = await supabase
+        .from('user_games')
+        .select('status')
+        .eq('game_id', gameId)
+
+    if (error) throw error
+
+    const stats = {
+        playing: 0,
+        completed: 0,
+        want_to_play: 0,
+        dropped: 0,
+        total: userGames?.length || 0
     }
 
-    // Process games for stats
-    const totalGames = userGames?.length || 0
-    const totalPlaytime = userGames?.reduce((total, game) => total + (game.play_time || 0), 0) || 0
+    userGames?.forEach(game => {
+        const status = game.status as 'playing' | 'completed' | 'want_to_play' | 'dropped'
+        if (status in stats) {
+            stats[status]++
+        }
+    })
 
-    // Get recently played games (last 5)
-    const recentlyPlayed = userGames
-        ?.filter(game => game.last_played_at)
-        ?.slice(0, 5)
-        ?.map(game => ({
-            id: game.game_id,
-            name: game.games?.name || '',
-            title: game.games?.name || '',
-            cover_url: game.games?.cover_url || null,
-            platforms: game.games?.platforms ? JSON.parse(game.games.platforms) : [],
-            genres: game.games?.genres ? JSON.parse(game.games.genres) : [],
-            status: game.status,
-            rating: game.user_rating || 0,
-            summary: game.games?.summary || '',
-            created_at: game.created_at,
-            updated_at: game.updated_at
-        })) || []
+    return stats
+}
 
-    // Get most played games (top 5 by playtime)
-    const mostPlayed = [...(userGames || [])]
-        ?.sort((a, b) => (b.play_time || 0) - (a.play_time || 0))
-        ?.slice(0, 5)
-        ?.map(game => ({
-            id: game.game_id,
-            name: game.games?.name || '',
-            title: game.games?.name || '',
-            cover_url: game.games?.cover_url || null,
-            platforms: game.games?.platforms ? JSON.parse(game.games.platforms) : [],
-            genres: game.games?.genres ? JSON.parse(game.games.genres) : [],
-            status: game.status,
-            rating: game.user_rating || 0,
-            summary: game.games?.summary || '',
-            created_at: game.created_at,
-            updated_at: game.updated_at
-        })) || []
+export async function fetchGameActivities(gameId: string) {
+    const { data, error } = await supabase
+        .from('friend_activities')
+        .select(`
+            *,
+            user:profiles(username, avatar_url)
+        `)
+        .eq('game_id', gameId)
+        .order('created_at', { ascending: false })
 
-    return {
-        totalGames,
-        totalPlaytime,
-        recentlyPlayed,
-        mostPlayed
+    if (error) throw error
+    return data
+}
+
+export async function fetchUserProfile(userId: string) {
+    const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single()
+
+    if (error) throw error
+    return data
+}
+
+export async function addGameToLibrary(gameId: string, status: string = 'want_to_play') {
+    const { data: { user } } = await supabase.auth.getUser()
+    
+    if (!user) throw new Error('Not authenticated')
+
+    const { data, error } = await supabase
+        .from('user_games')
+        .insert({
+            user_id: user.id,
+            game_id: gameId,
+            status,
+            created_at: new Date().toISOString()
+        })
+        .select()
+        .single()
+
+    if (error) throw error
+    return data
+}
+
+export async function updateGameStatus(gameId: string, status: string) {
+    const { data: { user } } = await supabase.auth.getUser()
+    
+    if (!user) throw new Error('Not authenticated')
+
+    const { data, error } = await supabase
+        .from('user_games')
+        .update({ 
+            status,
+            updated_at: new Date().toISOString()
+        })
+        .eq('user_id', user.id)
+        .eq('game_id', gameId)
+        .select()
+        .single()
+
+    if (error) throw error
+    return data
+}
+
+export async function removeGameFromLibrary(gameId: string) {
+    const { data: { user } } = await supabase.auth.getUser()
+    
+    if (!user) throw new Error('Not authenticated')
+
+    const { error } = await supabase
+        .from('user_games')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('game_id', gameId)
+
+    if (error) throw error
+}
+
+// Define missing types locally
+interface UserGame {
+    user_id: string
+    game_id: string
+    status: 'playing' | 'completed' | 'want_to_play' | 'dropped'
+    created_at: string
+    updated_at?: string
+    games?: {
+        id: string
+        name: string
+        cover_url?: string
+        genres?: string[]
     }
 }
 

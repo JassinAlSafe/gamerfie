@@ -10,7 +10,7 @@ import Image from "next/image";
 import { getCoverImageUrl } from "@/utils/image-utils";
 import { useProfile } from "@/hooks/Profile/use-profile";
 import { MessageCircle, Share2, Heart, Gamepad2 } from "lucide-react";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { createClient } from "@/utils/supabase/client";
 import type { Database } from "@/types/supabase";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -54,7 +54,7 @@ export function GameListDetails({ listId }: { listId: string }) {
   const [likeCount, setLikeCount] = useState(0);
 
   const fetchComments = useCallback(async () => {
-    const supabase = createClientComponentClient<Database>();
+    const supabase = createClient();
     try {
       const { data: commentsData, error: commentsError } = await supabase
         .from("list_comments")
@@ -110,7 +110,7 @@ export function GameListDetails({ listId }: { listId: string }) {
     if (!newComment.trim() || !profile) return;
 
     setIsSubmitting(true);
-    const supabase = createClientComponentClient();
+    const supabase = createClient();
 
     try {
       const { error } = await supabase.from("list_comments").insert({

@@ -1,6 +1,5 @@
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
+import { authenticateRequest, isAuthResult } from '../../lib/auth';
 
 
 
@@ -8,9 +7,13 @@ export async function PATCH(
   request: Request,
   { params }: { params: { id: string } }
 ) {
-  const supabase = createRouteHandlerClient({ cookies });
-
   try {
+    const authResult = await authenticateRequest();
+    if (!isAuthResult(authResult)) {
+      return authResult; // Return the error response
+    }
+    
+    const { user, supabase } = authResult;
     const { status } = await request.json();
     
     // Validate status is one of the allowed values
@@ -21,17 +24,12 @@ export async function PATCH(
       );
     }
 
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
     // Update friend status
     const { data: updatedFriend, error: updateError } = await supabase
       .from('friends')
       .update({ status })
       .match({
-        friend_id: session.user.id,
+        friend_id: user.id,
         user_id: params.id,
         status: 'pending'
       })
@@ -73,20 +71,19 @@ export async function DELETE(
   _request: Request,
   { params }: { params: { id: string } }
 ) {
-  const supabase = createRouteHandlerClient({ cookies });
-
   try {
-    const { data: { session } } = await supabase.auth.getSession();
-    
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const authResult = await authenticateRequest();
+    if (!isAuthResult(authResult)) {
+      return authResult; // Return the error response
     }
+    
+    const { user, supabase } = authResult;
 
     // Delete friend connection
     const { error } = await supabase
       .from('friends')
       .delete()
-      .or(`and(user_id.eq.${session.user.id},friend_id.eq.${params.id}),and(user_id.eq.${params.id},friend_id.eq.${session.user.id})`);
+      .or(`and(user_id.eq.${user.id},friend_id.eq.${params.id}),and(user_id.eq.${params.id},friend_id.eq.${user.id})`);
 
     if (error) throw error;
 

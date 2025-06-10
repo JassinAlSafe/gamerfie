@@ -4,7 +4,7 @@ import { Calendar, Star, Users } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { Game } from "@/types/game";
-import { useState } from "react";
+import { useState, memo } from "react";
 
 // Add interface for RAWG API game properties that aren't in our Game type
 interface RAWGGameProperties {
@@ -22,7 +22,7 @@ interface ListViewGameCardProps {
   priority?: boolean;
 }
 
-export function ListViewGameCard({
+export const ListViewGameCard = memo(function ListViewGameCard({
   game,
   priority = false,
 }: ListViewGameCardProps) {
@@ -121,4 +121,4 @@ export function ListViewGameCard({
       </div>
     </Link>
   );
-}
+});

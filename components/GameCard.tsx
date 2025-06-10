@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, memo } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Star, Users, Flame } from "lucide-react";
@@ -14,7 +14,7 @@ interface GameCardProps {
   category?: CategoryOption;
 }
 
-export function GameCard({
+export const GameCard = memo(function GameCard({
   game,
   category = "popular",
   priority = false,
@@ -125,4 +125,4 @@ export function GameCard({
       </div>
     </Link>
   );
-}
+});

@@ -12,7 +12,7 @@ import {
 import { FriendActivity } from "@/types/friend";
 import { ActivityReaction } from "@/types/activity";
 import { useFriendsStore } from "@/stores/useFriendsStore";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { createClient } from "@/utils/supabase/client";
 import { toast } from "react-hot-toast";
 import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
@@ -30,7 +30,7 @@ const reactionEmojis = {
 };
 
 export function ActivityReactions({ activity }: ActivityReactionsProps) {
-  const supabase = createClientComponentClient();
+  const supabase = createClient();
   const [userId, setUserId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const { addReaction, removeReaction } = useFriendsStore();

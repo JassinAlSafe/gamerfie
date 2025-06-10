@@ -1,7 +1,6 @@
 import { create } from 'zustand';
-import { GameStats } from '@/types/game';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
-import type { Database } from '@/types/supabase';
+import { GameStats } from '@/types/user';
+import { createClient } from '@/utils/supabase/client';
 
 interface GameLibraryState {
   isLoading: boolean;
@@ -22,7 +21,7 @@ export const useGameLibraryStore = create<GameLibraryState>((set) => ({
   fetchGameLibrary: async (userId: string) => {
     set({ isLoading: true, error: null });
     try {
-      const supabase = createClientComponentClient<Database>();
+      const supabase = createClient();
 
       // Fetch user's games with stats
       const { data: userGames, error: gamesError } = await supabase

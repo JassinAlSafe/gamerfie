@@ -1,5 +1,4 @@
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
+import { createClient } from "@/utils/supabase/server";
 import { NextResponse } from 'next/server';
 import { FriendActivity, ActivityType } from '../../../../../types/activity';
 
@@ -17,7 +16,7 @@ const COOLDOWN_PERIODS: Record<ActivityType, number> = {
 };
 
 export async function POST(request: Request) {
-  const supabase = createRouteHandlerClient({ cookies });
+  const supabase = await createClient();
 
   try {
     // Get user session

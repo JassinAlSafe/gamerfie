@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { createClient } from "@/utils/supabase/client";
 import { Database } from "@/types/supabase";
 import { GameStatus } from "@/types/game";
 
@@ -24,7 +24,7 @@ export function useCommunityStats(gameId: string) {
       if (!gameId) return;
 
       try {
-        const supabase = createClientComponentClient<Database>();
+        const supabase = createClient();
 
         // Get current user
         const { data: { user }, error: userError } = await supabase.auth.getUser();

@@ -4,7 +4,7 @@ import { ProfileDropdown } from "../profile/profile-dropdown";
 import { AnimatedButton } from "../animated-button";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { useRouter } from "next/navigation";
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "@/components/ui/use-toast";
 import { useEffect } from "react";
 
 export function AuthButtons() {

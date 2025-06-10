@@ -11,14 +11,21 @@ import SupabaseProvider from "@/components/providers/supabase-provider";
 import { SessionProvider } from "next-auth/react";
 import * as Sentry from "@sentry/nextjs";
 import { usePathname } from "next/navigation";
+import { CacheBuster } from "@/components/ui/cache-buster";
 
 const inter = Inter({ subsets: ["latin"] });
 
-Sentry.init({
-  dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
-  tracesSampleRate: 1.0,
-  debug: process.env.NODE_ENV === "development",
-});
+// Only initialize Sentry if DSN is properly configured
+if (
+  process.env.NEXT_PUBLIC_SENTRY_DSN &&
+  process.env.NEXT_PUBLIC_SENTRY_DSN !== "your-sentry-dsn-here"
+) {
+  Sentry.init({
+    dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
+    tracesSampleRate: 1.0,
+    debug: process.env.NODE_ENV === "development",
+  });
+}
 
 const authPages = ["/signin", "/signup", "/forgot-password"];
 
@@ -57,6 +64,7 @@ export default function RootLayout({
                 forcedTheme="dark"
               >
                 <div className="min-h-screen flex flex-col">
+                  <CacheBuster />
                   {!isAuthPage && <FloatingHeader />}
                   <main className={!isAuthPage ? "flex-1 pt-16" : "flex-1"}>
                     {children}

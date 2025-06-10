@@ -56,6 +56,7 @@ export function CompletionDialog({
       completionPercentage: completionPercentage,
       playTime: playTime,
     });
+    onOpenChange(false);
   };
 
   return (

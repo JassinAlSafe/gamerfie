@@ -4,10 +4,11 @@ import React, { useCallback, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { useProgressStore } from "@/stores/useProgressStore";
 import { useAuthStore } from "@/stores/useAuthStore";
+import { useLibraryStore } from "@/stores/useLibraryStore";
 import { CompletionDialog } from "@/components/game/dialogs/CompletionDialog";
 import { toast } from "sonner";
 import { Game } from "@/types/game";
-import { BarChart2, Loader2 } from "lucide-react";
+import { BarChart2, Loader2, Trophy, Play, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface GameProgress {
@@ -37,12 +38,14 @@ export function UpdateProgressButton({
   const { user } = useAuthStore();
   const {
     updateProgress,
+    updateGameStatus,
     loading,
     play_time,
     completion_percentage,
     achievements_completed,
     fetchProgress,
   } = useProgressStore();
+  const { checkGameInLibrary } = useLibraryStore();
 
   React.useEffect(() => {
     if (user && gameId) {
@@ -61,37 +64,83 @@ export function UpdateProgressButton({
         return;
       }
 
-      const updateData: Partial<GameProgress> = {
-        playTime: progress.playTime ?? (play_time || 0),
-        completionPercentage:
-          progress.completionPercentage ?? (completion_percentage || 0),
+      const updateData = {
+        play_time: progress.playTime ?? (play_time || 0),
+        completion_percentage: progress.completionPercentage ?? (completion_percentage || 0),
+        achievements_completed: progress.achievementsCompleted ?? (achievements_completed || 0),
       };
 
-      if (typeof progress.achievementsCompleted === "number") {
-        updateData.achievementsCompleted = progress.achievementsCompleted;
-      }
-
+      console.log("UpdateProgressButton: Updating progress with data:", updateData);
+      
       try {
-        await updateProgress(user.id, gameId, updateData as any);
+        await updateProgress(user.id, gameId, updateData);
+        console.log("UpdateProgressButton: Progress update successful");
         toast.success("Progress updated successfully!");
         setDialogOpen(false);
+        // Refetch progress to ensure UI is updated
+        await fetchProgress(user.id, gameId);
       } catch (error) {
-        console.error(error);
+        console.error("UpdateProgressButton: Error updating progress:", error);
         toast.error(
           error instanceof Error ? error.message : "Failed to update progress"
         );
       }
     },
-    [user, play_time, completion_percentage, updateProgress, gameId]
+    [user, play_time, completion_percentage, achievements_completed, updateProgress, gameId, fetchProgress]
   );
 
-  const progressText = useMemo(
-    () =>
-      completion_percentage
-        ? `${completion_percentage}% Complete`
-        : "Update Progress",
-    [completion_percentage]
-  );
+  const progressText = useMemo(() => {
+    // Show comprehensive progress if both available
+    if (play_time && play_time > 0 && completion_percentage && completion_percentage > 0) {
+      return `${completion_percentage}% • ${play_time}h`;
+    }
+    
+    // Show play time if available
+    if (play_time && play_time > 0) {
+      return `${play_time}h played`;
+    }
+    
+    // Show completion percentage if available
+    if (completion_percentage && completion_percentage > 0) {
+      return `${completion_percentage}% Complete`;
+    }
+    
+    // Default text
+    return "Track Progress";
+  }, [completion_percentage, play_time]);
+
+  // Determine button variant based on progress state
+  const buttonVariant = useMemo(() => {
+    if (completion_percentage && completion_percentage >= 100) {
+      return "default"; // Completed games get primary styling
+    }
+    if (play_time && play_time > 0) {
+      return "secondary"; // Games with playtime get secondary styling
+    }
+    return "outline"; // New games get outline styling
+  }, [completion_percentage, play_time]);
+
+  // Determine button color scheme
+  const buttonColorClass = useMemo(() => {
+    if (completion_percentage && completion_percentage >= 100) {
+      return "bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700";
+    }
+    if (play_time && play_time > 0) {
+      return "bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700";
+    }
+    return "bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700";
+  }, [completion_percentage, play_time]);
+
+  // Determine icon based on progress state
+  const progressIcon = useMemo(() => {
+    if (completion_percentage && completion_percentage >= 100) {
+      return <Trophy className="w-4 h-4 mr-2" />;
+    }
+    if (play_time && play_time > 0) {
+      return <Play className="w-4 h-4 mr-2" />;
+    }
+    return <Plus className="w-4 h-4 mr-2" />;
+  }, [completion_percentage, play_time]);
 
   // const currentProgress = useMemo(
   //   () => ({
@@ -105,13 +154,13 @@ export function UpdateProgressButton({
   return (
     <>
       <Button
-        variant={variant}
+        variant={buttonVariant}
         size={size}
         onClick={() => setDialogOpen(true)}
         disabled={loading}
         className={cn(
           "min-w-[140px] h-10 transition-all duration-200 font-medium",
-          "bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700",
+          buttonColorClass,
           "border-none text-white shadow-md hover:shadow-lg",
           "relative overflow-hidden group",
           className
@@ -120,7 +169,7 @@ export function UpdateProgressButton({
         {loading ? (
           <Loader2 className="w-4 h-4 mr-2 animate-spin" />
         ) : (
-          <BarChart2 className="w-4 h-4 mr-2" />
+          progressIcon
         )}
         <span className="relative z-10">{progressText}</span>
         <span className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />

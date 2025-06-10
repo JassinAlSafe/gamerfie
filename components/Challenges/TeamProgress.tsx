@@ -2,7 +2,7 @@
 
 // import { useState, useEffect } from "react";
 // import { useRouter } from "next/navigation";
-// import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+// import { createClient } from "@/utils/supabase/client";
 // import {
 //   Card,
 //   CardContent,
@@ -44,7 +44,7 @@
 //   const [loading, setLoading] = useState(true);
 
 //   const router = useRouter();
-//   const supabase = createClientComponentClient();
+//   const supabase = createClient();
 
 //   useEffect(() => {
 //     fetchTeamData();

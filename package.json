@@ -36,8 +36,6 @@
     "@sentry/nextjs": "^8.54.0",
     "@sentry/replay": "^7.116.0",
     "@shadcn/ui": "^0.0.4",
-    "@supabase/auth-helpers-nextjs": "^0.10.0",
-    "@supabase/auth-helpers-react": "^0.5.0",
     "@supabase/ssr": "^0.5.1",
     "@supabase/supabase-js": "^2.45.6",
     "@tabler/icons-react": "^3.19.0",

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { createClient } from "@/utils/supabase/client";
 import {
   Card,
   CardContent,
@@ -89,7 +89,7 @@ export function MilestoneManagement({
   const [progress, setProgress] = useState<{ [key: string]: number }>({});
   const { updateGoalProgress } = useChallengesStore();
 
-  const supabase = createClientComponentClient();
+  const supabase = createClient();
   const form = useForm<MilestoneFormValues>({
     resolver: zodResolver(milestoneSchema),
     defaultValues,

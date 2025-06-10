@@ -13,10 +13,12 @@ import {
 const CommandDialog = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
   DialogPrimitive.DialogProps
->(({ children, ...props }) => {
+>((props, ref) => {
+  const { children, ...dialogProps } = props;
+
   return (
-    <Dialog {...props}>
-      <DialogContent className="overflow-hidden p-0 shadow-lg">
+    <Dialog {...dialogProps}>
+      <DialogContent className="overflow-hidden p-0 shadow-lg" ref={ref}>
         <DialogTitle className="sr-only">Search</DialogTitle>
         <DialogDescription className="sr-only">
           Search through games and content

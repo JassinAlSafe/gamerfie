@@ -3,7 +3,7 @@
 import { Card } from "@/components/ui/card";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
 import LoadingSpinner from "@/components/loadingSpinner";
 import { ProfileHeader } from "@/components/profile/profile-header";
@@ -39,7 +39,7 @@ export default function ProfileFriendsPage() {
   const [isSessionLoading, setIsSessionLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<Friend[]>([]);
-  const supabase = createClientComponentClient();
+  const supabase = createClient();
   const router = useRouter();
   const { addFriend, friends, fetchFriends } = useFriendsStore();
 
@@ -204,10 +204,20 @@ export default function ProfileFriendsPage() {
             <ProfileHeader
               profile={profile}
               stats={
-                gameStats ?? {
+                gameStats ? {
+                  ...gameStats,
+                  totalGames: gameStats.total_played,
+                  totalPlaytime: 0,
+                  recentlyPlayed: [],
+                  mostPlayed: []
+                } : {
                   total_played: 0,
                   played_this_year: 0,
                   backlog: 0,
+                  totalGames: 0,
+                  totalPlaytime: 0,
+                  recentlyPlayed: [],
+                  mostPlayed: []
                 }
               }
               onProfileUpdate={() => {}}

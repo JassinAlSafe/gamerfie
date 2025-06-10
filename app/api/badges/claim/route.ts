@@ -1,5 +1,4 @@
-import { cookies } from "next/headers";
-import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
+import { createClient } from "@/utils/supabase/server";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
@@ -10,7 +9,7 @@ const claimBadgeSchema = z.object({
 
 export async function POST(request: Request) {
   try {
-    const supabase = createRouteHandlerClient({ cookies });
+    const supabase = await createClient();
     
     // Get current user
     const {

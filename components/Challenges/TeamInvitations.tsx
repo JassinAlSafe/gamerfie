@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { createClient } from "@/utils/supabase/client";
 import {
   Card,
   CardContent,
@@ -38,7 +38,7 @@ export function TeamInvitations({ challengeId, teamId }: TeamInvitationsProps) {
   const [isInviting, setIsInviting] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  const supabase = createClientComponentClient();
+  const supabase = createClient();
 
   useEffect(() => {
     fetchInvitations();

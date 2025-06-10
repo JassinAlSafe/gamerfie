@@ -16,8 +16,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Slider } from "@/components/ui/slider";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
-import { Database } from "@/types/supabase";
+import { createClient } from "@/utils/supabase/client";
 import { GameStatus } from "../../types/game";
 import { LoadingSpinner } from "@/components/loadingSpinner";
 import { useFriendsStore } from "@/stores/useFriendsStore";
@@ -52,7 +51,7 @@ export function GameLibraryActions({
   const { createActivity } = useFriendsStore();
   const { getActiveChallenges } = useChallengesStore();
 
-  const supabase = createClientComponentClient<Database>();
+  const supabase = createClient();
 
   useEffect(() => {
     const fetchCurrentStatus = async () => {
@@ -63,14 +62,14 @@ export function GameLibraryActions({
 
       const { data } = await supabase
         .from("user_games")
-        .select("status, progress")
+        .select("status, play_time")
         .eq("user_id", user.id)
         .eq("game_id", gameId)
         .single();
 
       if (data) {
         setCurrentStatus(data.status as GameStatus);
-        setProgress(data.progress || 0);
+        setProgress(data.play_time || 0);
       }
     };
 

@@ -70,10 +70,20 @@ export default function ActivityPage() {
             <ProfileHeader
               profile={profile}
               stats={
-                gameStats ?? {
+                gameStats ? {
+                  ...gameStats,
+                  totalGames: gameStats.total_played,
+                  totalPlaytime: 0,
+                  recentlyPlayed: [],
+                  mostPlayed: []
+                } : {
                   total_played: 0,
                   played_this_year: 0,
                   backlog: 0,
+                  totalGames: 0,
+                  totalPlaytime: 0,
+                  recentlyPlayed: [],
+                  mostPlayed: []
                 }
               }
               onProfileUpdate={() => {}}

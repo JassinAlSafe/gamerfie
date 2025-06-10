@@ -5,10 +5,8 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
-import {
-  createClientComponentClient,
-  User,
-} from "@supabase/auth-helpers-nextjs";
+import { createClient } from "@/utils/supabase/client";
+import type { User } from "@supabase/supabase-js";
 
 // Types
 interface Profile {
@@ -67,7 +65,7 @@ export default function TestChallenge() {
   });
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
-  const supabase = createClientComponentClient();
+  const supabase = createClient();
 
   useEffect(() => {
     checkUser();

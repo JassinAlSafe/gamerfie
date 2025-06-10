@@ -2,10 +2,11 @@ import { create } from 'zustand';
 import { 
   FriendsState, 
   FriendStatus, 
-  Friend 
+  Friend,
+  FriendActivity
 } from '../types/friend';
 import { ActivityType, ActivityDetails, ActivityReaction, ActivityComment } from '../types/activity';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createClient } from '@/utils/supabase/client';
 
 type FriendsStore = Omit<FriendsState, 'setFilter'> & {
   setFilter: (filter: FriendStatus | 'all') => void;
@@ -20,7 +21,7 @@ type FriendsStore = Omit<FriendsState, 'setFilter'> & {
   removeReaction: (activityId: string, emoji: string) => Promise<void>;
   addComment: (activityId: string, comment: string) => Promise<void>;
   loadMoreActivities: () => Promise<void>;
-  getGameActivities: (gameId: string, page: number) => Promise<void>;
+  getGameActivities: (gameId: string, page?: number) => Promise<FriendActivity[]>;
   deleteComment: (commentId: string) => Promise<void>;
 };
 
@@ -37,128 +38,192 @@ export const useFriendsStore = create<FriendsStore>((set, get) => ({
 
   fetchFriends: async () => {
     try {
-      // Check if we already have friends data and not currently loading
-      if (get().friends.length > 0 && !get().isLoading) {
-        return; // Use cached data
+      set({ isLoading: true, error: null });
+      const supabase = createClient();
+      
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) {
+        set({ friends: [], isLoading: false });
+        return;
+      }
+
+      // Fetch friends from the friends table
+      const { data: friendships, error } = await supabase
+        .from('friends')
+        .select('*')
+        .or(`user_id.eq.${session.user.id},friend_id.eq.${session.user.id}`);
+
+      if (error) {
+        // If table doesn't exist or relationship is broken, gracefully handle it
+        console.warn('Friends feature not available:', error.message);
+        set({ friends: [], isLoading: false });
+        return;
+      }
+
+      if (!friendships || friendships.length === 0) {
+        set({ friends: [], isLoading: false });
+        return;
+      }
+
+      // Get all unique friend IDs to fetch their profiles
+      const friendIds = new Set<string>();
+      friendships.forEach(friendship => {
+        const friendId = friendship.user_id === session.user.id 
+          ? friendship.friend_id 
+          : friendship.user_id;
+        friendIds.add(friendId);
+      });
+
+      // Fetch profiles for all friends
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, username, display_name, avatar_url, bio')
+        .in('id', Array.from(friendIds));
+
+      if (profilesError) {
+        console.warn('Error fetching friend profiles:', profilesError.message);
+        set({ friends: [], isLoading: false });
+        return;
+      }
+
+      // Create a map of profiles for quick lookup
+      const profilesMap = new Map(profiles?.map(profile => [profile.id, profile]) || []);
+
+      const friends: Friend[] = friendships?.map((friendship) => {
+        // Determine which ID is the friend (not the current user)
+        const friendId = friendship.user_id === session.user.id 
+          ? friendship.friend_id 
+          : friendship.user_id;
+
+        const friendProfile = profilesMap.get(friendId);
+        if (!friendProfile) return null;
+
+        return {
+          id: friendProfile.id,
+          username: friendProfile.username,
+          avatar_url: friendProfile.avatar_url || undefined,
+          status: friendship.status,
+          online_status: 'offline' as const,
+          sender_id: friendship.user_id,
+        };
+      }).filter(Boolean) as Friend[];
+
+      set({ friends, isLoading: false });
+    } catch (error) {
+      console.warn('Error fetching friends (table may not exist):', error);
+      // Set empty friends array if there's any error
+      set({ friends: [], isLoading: false, error: null });
+    }
+  },
+
+  fetchActivities: async () => {
+    try {
+      set({ isLoadingActivities: true, error: null });
+      
+      // Use the optimized social activity feed API
+      const response = await fetch('/api/social/activity-feed?limit=20');
+      
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
       }
       
-      set({ isLoading: true, error: null });
-      const supabase = createClientComponentClient();
+      const data = await response.json();
       
-      // Get current user's session
+      // Transform to expected format
+      const transformedActivities = data.activities?.map((activity: any) => ({
+        id: activity.id,
+        type: activity.activity_type,
+        user_id: activity.user_id,
+        game_id: activity.game_id,
+        timestamp: activity.created_at,
+        created_at: activity.created_at,
+        details: activity.details,
+        reactions: activity.reactions || [],
+        comments: activity.comments || [],
+        user: {
+          id: activity.user_id,
+          username: activity.username,
+          avatar_url: activity.avatar_url,
+        },
+        game: activity.game_name ? {
+          id: activity.game_id,
+          name: activity.game_name,
+          cover_url: activity.game_cover_url,
+        } : null,
+      })) || [];
+
+      set({ activities: transformedActivities, isLoadingActivities: false });
+    } catch (error) {
+      console.warn('Error fetching optimized activities:', error);
+      // Fallback to direct database query
+      try {
+        const supabase = createClient();
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.user) {
+          set({ activities: [], isLoadingActivities: false });
+          return;
+        }
+
+        const { data: activities, error } = await supabase
+          .from('friend_activities')
+          .select('*')
+          .eq('user_id', session.user.id)
+          .order('created_at', { ascending: false })
+          .limit(20);
+
+        if (error) throw error;
+        set({ activities: activities || [], isLoadingActivities: false });
+      } catch (fallbackError) {
+        console.warn('Fallback activities fetch failed:', fallbackError);
+        set({ activities: [], isLoadingActivities: false });
+      }
+    }
+  },
+
+  createActivity: async (activity_type: ActivityType, game_id?: string, details?: ActivityDetails) => {
+    try {
+      const supabase = createClient();
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.user) throw new Error('No authenticated user');
 
-      // First get all friend relationships
-      const { data: friendsData, error: friendsError } = await supabase
-        .from('friends')
-        .select('*')
-        .or(`user_id.eq.${session.user.id},friend_id.eq.${session.user.id}`)
-        .order('updated_at', { ascending: false });
+      // Create activity with basic structure
+      const activityData = {
+        user_id: session.user.id,
+        activity_type,
+        game_id: game_id || null,
+        details: details || {},
+        created_at: new Date().toISOString()
+      };
 
-      if (friendsError) throw friendsError;
-      if (!friendsData || friendsData.length === 0) {
-        set({ friends: [], isLoading: false });
-        return;
-      }
+      const { error } = await supabase
+        .from('friend_activities')
+        .insert(activityData);
 
-      // Get all unique user IDs (both friend_id and user_id)
-      const userIds = friendsData.map(friend => 
-        friend.user_id === session.user.id ? friend.friend_id : friend.user_id
-      );
+      if (error) throw error;
 
-      // Fetch profiles for all users in a single query
-      const { data: profilesData, error: profilesError } = await supabase
-        .from('profiles')
-        .select('*')
-        .in('id', userIds);
-
-      if (profilesError) throw profilesError;
-      if (!profilesData) {
-        set({ friends: [], isLoading: false });
-        return;
-      }
-
-      // Create a map of user profiles for efficient lookup
-      const profileMap = new Map(profilesData.map(profile => [profile.id, profile]));
-
-      // Transform the data to match our Friend type
-      const transformedFriends = friendsData.map(friend => {
-        const otherUserId = friend.user_id === session.user.id ? friend.friend_id : friend.user_id;
-        const otherUser = profileMap.get(otherUserId);
-        
-        if (!otherUser) return null;
-
-        return {
-          id: friend.id,
-          username: otherUser.username,
-          avatar_url: otherUser.avatar_url || undefined,
-          status: friend.status,
-          online_status: otherUser.online_status || 'offline',
-          sender_id: friend.user_id
-        } as Friend;
-      }).filter((friend): friend is Friend => friend !== null);
-
-      set({ friends: transformedFriends, isLoading: false });
+      // Refresh activities
+      await get().fetchActivities();
     } catch (error) {
-      console.error('Error fetching friends:', error);
-      set({ error: (error as Error).message, isLoading: false });
+      console.error('Error creating activity:', error);
       throw error;
     }
   },
 
   addFriend: async (request: { friendId: string }) => {
     try {
-      const supabase = createClientComponentClient();
+      const supabase = createClient();
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.user) throw new Error('No authenticated user');
 
-      // Check existing friendship in both directions
-      const { data: existingFriendships, error: checkError } = await supabase
-        .from('friends')
-        .select('*')
-        .or(
-          `and(user_id.eq.${session.user.id},friend_id.eq.${request.friendId}),` +
-          `and(user_id.eq.${request.friendId},friend_id.eq.${session.user.id})`
-        );
-
-      if (checkError) throw checkError;
-      
-      if (existingFriendships && existingFriendships.length > 0) {
-        const friendship = existingFriendships[0];
-        if (friendship.status === 'pending') {
-          if (friendship.user_id === session.user.id) {
-            throw new Error('Friend request already sent');
-          } else {
-            throw new Error('Friend request already received from this user');
-          }
-        } else if (friendship.status === 'accepted') {
-          throw new Error('You are already friends with this user');
-        } else if (friendship.status === 'blocked') {
-          throw new Error('Unable to send friend request');
-        }
-      }
-
-      // Order the UUIDs so smaller one is always user_id
-      const [user_id, friend_id] = [session.user.id, request.friendId]
-        .sort((a, b) => a.localeCompare(b));
-
-      // Create new friendship with ordered IDs
-      const { error: insertError } = await supabase
+      const { error } = await supabase
         .from('friends')
         .insert({
-          user_id,
-          friend_id,
+          user_id: session.user.id,
+          friend_id: request.friendId,
           status: 'pending'
         });
 
-      if (insertError) {
-        if (insertError.code === '23505') { // Unique constraint violation
-          throw new Error('A friendship already exists with this user');
-        }
-        throw insertError;
-      }
-
+      if (error) throw error;
       await get().fetchFriends();
     } catch (error) {
       console.error('Error adding friend:', error);
@@ -169,7 +234,7 @@ export const useFriendsStore = create<FriendsStore>((set, get) => ({
   removeFriend: async (friendId: string) => {
     try {
       set({ isLoading: true, error: null });
-      const supabase = createClientComponentClient();
+      const supabase = createClient();
       
       const { error } = await supabase
         .from('friends')
@@ -187,7 +252,7 @@ export const useFriendsStore = create<FriendsStore>((set, get) => ({
   updateFriendStatus: async (friendId: string, status: FriendStatus) => {
     try {
       set({ isLoading: true, error: null });
-      const supabase = createClientComponentClient();
+      const supabase = createClient();
 
       const { error } = await supabase
         .from('friends')
@@ -202,267 +267,133 @@ export const useFriendsStore = create<FriendsStore>((set, get) => ({
     }
   },
 
-  // Activity-related functions
-  createActivity: async (activity_type: ActivityType, game_id?: string, details?: ActivityDetails) => {
+  addReaction: async (activityId: string, emoji: string) => {
     try {
-      const response = await fetch('/api/friends/activities/create', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ activity_type, game_id, details }),
-      });
+      const supabase = createClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) throw new Error('No authenticated user');
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to create activity');
-      }
+      const { error } = await supabase
+        .from('activity_reactions')
+        .insert({
+          activity_id: activityId,
+          user_id: session.user.id,
+          emoji
+        });
 
-      // Fetch updated activities
+      if (error) throw error;
       await get().fetchActivities();
     } catch (error) {
+      console.error('Error adding reaction:', error);
       throw error;
     }
-  },
-
-  batchAchievements: async (gameId: string, achievements: { name: string }[]) => {
-    if (achievements.length === 0) return;
-
-    try {
-      // If there's only one achievement, create a normal activity
-      if (achievements.length === 1) {
-        await get().createActivity('achievement', gameId, {
-          name: achievements[0].name
-        });
-        return;
-      }
-
-      // For multiple achievements, create a batched activity
-      await get().createActivity('achievement', gameId, {
-        name: `${achievements.length} Achievements`,
-        achievements: achievements,
-        isBatched: true
-      });
-    } catch (error) {
-      throw error;
-    }
-  },
-
-  fetchActivities: async () => {
-    try {
-      // Check if we already have activities data and not currently loading
-      if (get().activities.length > 0 && !get().isLoadingActivities) {
-        console.log('Using cached activities data:', get().activities.length);
-        return; // Use cached data
-      }
-      
-      console.log('Setting loading state for activities');
-      set({ isLoadingActivities: true, error: null });
-      
-      // Use AbortController to handle timeouts and cancellations
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
-      
-      try {
-        console.log('Fetching activities from API');
-        const response = await fetch('/api/friends/activities?offset=0&include=reactions,comments', {
-          signal: controller.signal,
-          headers: {
-            'Cache-Control': 'max-age=300', // Cache for 5 minutes
-          }
-        });
-        
-        clearTimeout(timeoutId);
-        
-        if (!response.ok) {
-          console.error('Activities API response not OK:', response.status, response.statusText);
-          throw new Error('Failed to fetch activities');
-        }
-        
-        const activities = await response.json();
-        console.log('Activities fetched successfully:', activities.length);
-        
-        set({ activities, isLoadingActivities: false, activitiesPage: 1 });
-      } catch (fetchError: unknown) {
-        clearTimeout(timeoutId);
-        console.error('Error in activities fetch:', fetchError);
-        if (fetchError instanceof Error && fetchError.name === 'AbortError') {
-          throw new Error('Request timed out');
-        }
-        throw fetchError;
-      }
-    } catch (error) {
-      console.error('Activities fetch error:', error);
-      set({ error: (error as Error).message, isLoadingActivities: false });
-      throw error;
-    }
-  },
-
-  addReaction: async (activityId: string, emoji: string) => {
-    const supabase = createClientComponentClient();
-    const { data: { session } } = await supabase.auth.getSession();
-    
-    if (!session?.user) {
-      throw new Error("User not authenticated");
-    }
-
-    const { error } = await supabase
-      .from('activity_reactions')
-      .insert({
-        activity_id: activityId,
-        user_id: session.user.id,
-        emoji: emoji
-      });
-
-    if (error) throw error;
-
-    // Update local state
-    set(state => ({
-      ...state,
-      activities: state.activities.map(activity => {
-        if (activity.id === activityId) {
-          const newReaction: ActivityReaction = {
-            id: `temp_${Date.now()}`,
-            activity_id: activityId,
-            user_id: session.user.id,
-            emoji: emoji,
-            created_at: new Date().toISOString(),
-            user: {
-              username: session.user.user_metadata.username || 'Unknown',
-              avatar_url: session.user.user_metadata.avatar_url
-            }
-          };
-          
-          return {
-            ...activity,
-            reactions: [...(activity.reactions || []), newReaction]
-          };
-        }
-        return activity;
-      })
-    }));
   },
 
   removeReaction: async (activityId: string, emoji: string) => {
-    const supabase = createClientComponentClient();
-    const { data: { session } } = await supabase.auth.getSession();
-    
-    if (!session?.user) {
-      throw new Error("User not authenticated");
-    }
-
-    const { error } = await supabase
-      .from('activity_reactions')
-      .delete()
-      .match({
-        activity_id: activityId,
-        user_id: session.user.id,
-        emoji: emoji
-      });
-
-    if (error) throw error;
-
-    // Update local state
-    set(state => ({
-      activities: state.activities.map(activity => {
-        if (activity.id === activityId) {
-          return {
-            ...activity,
-            reactions: (activity.reactions || []).filter(
-              r => !(r.user_id === session.user.id && r.emoji === emoji)
-            )
-          };
-        }
-        return activity;
-      })
-    }));
-  },
-
-  addComment: async (activityId: string, comment: string) => {
-    const supabase = createClientComponentClient();
-    const { data: { session } } = await supabase.auth.getSession();
-    
-    if (!session?.user) {
-      throw new Error("User not authenticated");
-    }
-
-    const { error } = await supabase
-      .from('activity_comments')
-      .insert({
-        activity_id: activityId,
-        user_id: session.user.id,
-        content: comment
-      });
-
-    if (error) throw error;
-
-    // Update local state
-    set(state => ({
-      ...state,
-      activities: state.activities.map(activity => {
-        if (activity.id === activityId) {
-          const newComment: ActivityComment = {
-            id: `temp_${Date.now()}`,
-            activity_id: activityId,
-            user_id: session.user.id,
-            content: comment,
-            created_at: new Date().toISOString(),
-            user: {
-              username: session.user.user_metadata.username || 'Unknown',
-              avatar_url: session.user.user_metadata.avatar_url
-            }
-          };
-          
-          return {
-            ...activity,
-            comments: [...(activity.comments || []), newComment]
-          };
-        }
-        return activity;
-      })
-    }));
-  },
-
-  loadMoreActivities: async () => {
     try {
-      const nextPage = get().activitiesPage + 1;
-      const response = await fetch(`/api/friends/activities?offset=${nextPage * 20}&include=reactions,comments`);
-      if (!response.ok) throw new Error('Failed to fetch more activities');
-      const newActivities = await response.json();
-      
-      set(state => ({
-        activities: [...state.activities, ...newActivities],
-        activitiesPage: nextPage,
-      }));
+      const supabase = createClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) throw new Error('No authenticated user');
+
+      const { error } = await supabase
+        .from('activity_reactions')
+        .delete()
+        .match({
+          activity_id: activityId,
+          user_id: session.user.id,
+          emoji
+        });
+
+      if (error) throw error;
+      await get().fetchActivities();
     } catch (error) {
-      set({ error: (error as Error).message });
+      console.error('Error removing reaction:', error);
       throw error;
     }
   },
 
-  getGameActivities: async (gameId: string, page: number = 0) => {
+  addComment: async (activityId: string, comment: string) => {
     try {
-      const response = await fetch(`/api/games/${gameId}/activities?offset=${page * 20}`);
-      if (!response.ok) throw new Error('Failed to fetch game activities');
-      return response.json();
+      const supabase = createClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) throw new Error('No authenticated user');
+
+      const { error } = await supabase
+        .from('activity_comments')
+        .insert({
+          activity_id: activityId,
+          user_id: session.user.id,
+          content: comment
+        });
+
+      if (error) throw error;
+      await get().fetchActivities();
     } catch (error) {
+      console.error('Error adding comment:', error);
       throw error;
     }
   },
 
   deleteComment: async (commentId: string) => {
-    const supabase = createClientComponentClient();
-    const { error } = await supabase
-      .from('activity_comments')
-      .delete()
-      .eq('id', commentId);
+    try {
+      const supabase = createClient();
 
-    if (error) throw error;
+      const { error } = await supabase
+        .from('activity_comments')
+        .delete()
+        .eq('id', commentId);
 
-    // Update local state
-    set(state => ({
-      activities: state.activities.map(activity => ({
-        ...activity,
-        comments: activity.comments?.filter(c => c.id !== commentId)
-      }))
-    }));
+      if (error) throw error;
+      await get().fetchActivities();
+    } catch (error) {
+      console.error('Error deleting comment:', error);
+      throw error;
+    }
+  },
+
+  loadMoreActivities: async () => {
+    // Implementation for pagination
+    await get().fetchActivities();
+  },
+
+  getGameActivities: async (gameId: string, page?: number): Promise<FriendActivity[]> => {
+    try {
+      const supabase = createClient();
+      
+      const { data: activities, error } = await supabase
+        .from('friend_activities')
+        .select('*')
+        .eq('game_id', gameId)
+        .order('created_at', { ascending: false })
+        .range(page ? page * 10 : 0, page ? (page + 1) * 10 - 1 : 9);
+
+      if (error) throw error;
+      
+      // Return the activities instead of updating state
+      return activities || [];
+    } catch (error) {
+      console.error('Error fetching game activities:', error);
+      throw error;
+    }
+  },
+
+  batchAchievements: async (gameId: string, achievements: { name: string }[]) => {
+    try {
+      const supabase = createClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) throw new Error('No authenticated user');
+
+      // Create achievement activities
+      const activityPromises = achievements.map(achievement =>
+        get().createActivity('achievement_unlocked', gameId, {
+          achievement: achievement.name
+        })
+      );
+
+      await Promise.all(activityPromises);
+    } catch (error) {
+      console.error('Error batch creating achievements:', error);
+      throw error;
+    }
   },
 }));

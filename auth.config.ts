@@ -1,5 +1,5 @@
 import Google from "next-auth/providers/google"
-import { supabase } from './utils/supabaseClient'
+import { createClient } from './utils/supabase/client'
 
 // Define the NextAuthConfig type locally since it's causing issues
 interface NextAuthConfig {
@@ -52,6 +52,7 @@ export const authConfig = {
     async session({ session, token }) {
       // Sync NextAuth session with Supabase
       if (token.sub && session.user) {
+        const supabase = createClient()
         const { data } = await supabase
           .from('users')
           .select('id, email, metadata')
@@ -66,6 +67,7 @@ export const authConfig = {
     },
     async jwt({ token, account, trigger, session }) {
       if (account?.provider === 'google' && account.id_token) {
+        const supabase = createClient()
         const { data } = await supabase.auth.signInWithIdToken({
           provider: 'google',
           token: account.id_token,

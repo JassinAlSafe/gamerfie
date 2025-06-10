@@ -1,18 +1,15 @@
-import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
-import { cookies } from "next/headers";
+import { createClient } from "@/utils/supabase/server";
 import { NextResponse } from "next/server";
-import type { Database } from '@/types/supabase'
 
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url);
   const code = requestUrl.searchParams.get("code");
 
   if (code) {
-    const cookieStore = cookies();
-    const supabase = createRouteHandlerClient<Database>({ cookies: () => cookieStore });
+    const supabase = await createClient();
 
     try {
-      const { data: { session, user }, error: authError } = await supabase.auth.exchangeCodeForSession(code);
+      const { data: { user }, error: authError } = await supabase.auth.exchangeCodeForSession(code);
       if (authError) throw authError;
 
       if (user) {
@@ -46,15 +43,7 @@ export async function GET(request: Request) {
           if (insertError) throw insertError;
         }
 
-        // Set session cookie
-        if (session) {
-          cookieStore.set('sb-access-token', session.access_token, {
-            path: '/',
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'lax',
-            maxAge: 60 * 60 * 24 * 7 // 1 week
-          });
-        }
+        // Session cookies are handled automatically by the new Supabase client
       }
     } catch (error) {
       console.error('Auth callback error:', error);

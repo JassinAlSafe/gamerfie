@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createClient } from "@/utils/supabase/client";
 import { Database } from '@/types/supabase';
 import { useFriendsStore } from "./useFriendsStore";
 
@@ -50,8 +50,8 @@ export const useProgressStore = create<ProgressStore>((set) => ({
   error: null,
 
   fetchProgress: async (userId: string, gameId: string) => {
-    set({ loading: true });
-    const supabase = createClientComponentClient<Database>();
+    set({ loading: true, error: null });
+    const supabase = createClient();
 
     try {
       // Ensure gameId is a string
@@ -65,7 +65,18 @@ export const useProgressStore = create<ProgressStore>((set) => ({
         .eq("game_id", gameIdString)
         .single();
 
-      if (progressError) throw progressError;
+      // Handle the case where no progress record exists
+      let progress = null;
+      if (progressError) {
+        if (progressError.code === 'PGRST116') {
+          // No rows found - this is expected for games not yet added to library
+          progress = null;
+        } else {
+          throw progressError;
+        }
+      } else {
+        progress = currentProgress;
+      }
 
       // Fetch playtime history
       const { data: playTimeData, error: playTimeError } = await supabase
@@ -88,32 +99,44 @@ export const useProgressStore = create<ProgressStore>((set) => ({
       if (achievementError) throw achievementError;
 
       // Process history data
-      const playTimeHistory = playTimeData.map(entry => ({
+      const playTimeHistory = playTimeData?.map(entry => ({
         date: new Date(entry.created_at).toLocaleDateString(),
-        hours: entry.play_time
-      }));
+        hours: entry.play_time || 0
+      })) || [];
 
-      const achievementHistory = achievementData.map(entry => ({
+      const achievementHistory = achievementData?.map(entry => ({
         date: new Date(entry.created_at).toLocaleDateString(),
-        count: entry.achievements_completed
-      }));
+        count: entry.achievements_completed || 0
+      })) || [];
 
+      // Set state with proper defaults for when no progress exists
       set({
-        play_time: currentProgress?.play_time || null,
-        completion_percentage: currentProgress?.completion_percentage || null,
-        achievements_completed: currentProgress?.achievements_completed || null,
+        play_time: progress?.play_time ?? 0,
+        completion_percentage: progress?.completion_percentage ?? 0,
+        achievements_completed: progress?.achievements_completed ?? 0,
         playTimeHistory,
         achievementHistory,
         loading: false,
+        error: null,
       });
     } catch (error) {
-      set({ error: (error as Error).message, loading: false });
+      console.error('Error fetching progress:', error);
+      // Set defaults on error
+      set({ 
+        play_time: 0,
+        completion_percentage: 0,
+        achievements_completed: 0,
+        playTimeHistory: [],
+        achievementHistory: [],
+        error: (error as Error).message, 
+        loading: false 
+      });
     }
   },
 
   updateGameStatus: async (userId: string, gameId: string, status: GameStatus, gameData?: GameData) => {
     set({ loading: true });
-    const supabase = createClientComponentClient<Database>();
+    const supabase = createClient();
 
     try {
       // Ensure gameId is a string
@@ -176,90 +199,118 @@ export const useProgressStore = create<ProgressStore>((set) => ({
 
   updateProgress: async (userId: string, gameId: string, data: ProgressData) => {
     set({ loading: true });
-    const supabase = createClientComponentClient<Database>();
+    const supabase = createClient();
 
     try {
       // Ensure gameId is a string
       const gameIdString = gameId.toString();
 
-      // Update current progress
-      const { error: progressError } = await supabase
+      // First check if the game record exists, if not create it with default status
+      const { data: existingGame } = await supabase
         .from("user_games")
-        .upsert(
-          {
+        .select("*")
+        .eq("user_id", userId)
+        .eq("game_id", gameIdString)
+        .single();
+
+      if (!existingGame) {
+        // Insert new record with default status if it doesn't exist
+        const { error: insertError } = await supabase
+          .from("user_games")
+          .insert({
             user_id: userId,
             game_id: gameIdString,
+            status: 'playing', // Default to playing when updating progress
             play_time: data.play_time,
             completion_percentage: data.completion_percentage,
             achievements_completed: data.achievements_completed,
             last_played_at: new Date().toISOString(),
-          },
-          {
-            onConflict: 'user_id,game_id',
-            ignoreDuplicates: false
-          }
-        );
+          });
 
-      if (progressError) throw progressError;
+        if (insertError) throw insertError;
+      } else {
+        // Update existing record
+        const { error: updateError } = await supabase
+          .from("user_games")
+          .update({
+            play_time: data.play_time,
+            completion_percentage: data.completion_percentage,
+            achievements_completed: data.achievements_completed,
+            last_played_at: new Date().toISOString(),
+          })
+          .eq("user_id", userId)
+          .eq("game_id", gameIdString);
 
-      // Record progress history
-      const { error: historyError } = await supabase
-        .from("game_progress_history")
-        .insert({
-          user_id: userId,
-          game_id: gameIdString,
-          play_time: data.play_time,
-          completion_percentage: data.completion_percentage,
-        });
+        if (updateError) throw updateError;
+      }
 
-      if (historyError) throw historyError;
-
-      // Record achievement history if achievements were updated
-      if (data.achievements_completed !== undefined) {
-        const { error: achievementError } = await supabase
-          .from("game_achievement_history")
+      // Record progress history (optional - don't fail if tables don't exist)
+      try {
+        await supabase
+          .from("game_progress_history")
           .insert({
             user_id: userId,
             game_id: gameIdString,
-            achievements_completed: data.achievements_completed,
+            play_time: data.play_time,
+            completion_percentage: data.completion_percentage,
           });
-
-        if (achievementError) throw achievementError;
+      } catch (historyError) {
+        console.warn("Could not record progress history:", historyError);
       }
 
-      // First get the user's active challenge participations
-      const { data: participations, error: participationsError } = await supabase
-        .from("challenge_participants")
-        .select("challenge_id")
-        .eq("user_id", userId)
-        .eq("completed", false);
+      // Record achievement history if achievements were updated (optional)
+      if (data.achievements_completed !== undefined) {
+        try {
+          await supabase
+            .from("game_achievement_history")
+            .insert({
+              user_id: userId,
+              game_id: gameIdString,
+              achievements_completed: data.achievements_completed,
+            });
+        } catch (achievementError) {
+          console.warn("Could not record achievement history:", achievementError);
+        }
+      }
 
-      if (participationsError) throw participationsError;
+      // Update challenge progress (optional - don't fail if challenges system is not working)
+      try {
+        const { data: participations } = await supabase
+          .from("challenge_participants")
+          .select("challenge_id")
+          .eq("user_id", userId)
+          .eq("completed", false);
 
-      const challengeIds = participations?.map(p => p.challenge_id) || [];
+        const challengeIds = participations?.map(p => p.challenge_id) || [];
 
-      // Then get active challenges with goals for this game
-      const { data: activeGameChallenges, error: challengesError } = await supabase
-        .from("challenges")
-        .select(`
-          id,
-          goals:challenge_goals(*)
-        `)
-        .eq("status", "active")
-        .in("id", challengeIds)
-        .filter("goals.type", "eq", "play_time");
+        if (challengeIds.length > 0) {
+          const { data: activeGameChallenges } = await supabase
+            .from("challenges")
+            .select(`
+              id,
+              goals:challenge_goals(*)
+            `)
+            .eq("status", "active")
+            .in("id", challengeIds)
+            .filter("goals.type", "eq", "play_time");
 
-      if (challengesError) throw challengesError;
-
-      // Update progress for each active challenge
-      for (const challenge of activeGameChallenges || []) {
-        await fetch(`/api/challenges/${challenge.id}/progress`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({}), // Empty body since the endpoint will calculate progress
-        });
+          // Update progress for each active challenge
+          for (const challenge of activeGameChallenges || []) {
+            try {
+              await fetch(`/api/challenges/${challenge.id}/progress`, {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({}),
+              });
+            } catch (challengeError) {
+              console.warn("Could not update challenge progress:", challengeError);
+            }
+          }
+        }
+      } catch (challengeError) {
+        console.warn("Could not update challenge progress:", challengeError);
       }
 
       // Update local state
@@ -286,13 +337,17 @@ export const useProgressStore = create<ProgressStore>((set) => ({
           : state.achievementHistory,
       }));
 
-      // Create activities for significant progress updates
-      if (data.completion_percentage === 100) {
-        await useFriendsStore.getState().createActivity("completed", gameIdString);
-      } else if (data.completion_percentage) {
-        await useFriendsStore.getState().createActivity("progress", gameIdString, {
-          progress: data.completion_percentage
-        });
+      // Create activities for significant progress updates (optional)
+      try {
+        if (data.completion_percentage === 100) {
+          await useFriendsStore.getState().createActivity("completed", gameIdString);
+        } else if (data.completion_percentage) {
+          await useFriendsStore.getState().createActivity("progress", gameIdString, {
+            progress: data.completion_percentage
+          });
+        }
+      } catch (activityError) {
+        console.warn("Could not create activity:", activityError);
       }
     } catch (error) {
       console.error("Error updating progress:", error);

@@ -1,8 +1,15 @@
-import type { Game, GameStats } from "@/types/index";
-import type { SupabaseClient } from '@supabase/supabase-js';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
-import type { Database } from '@/types/supabase';
+import { createClient } from '@/utils/supabase/client';
+import { SupabaseClient } from '@supabase/supabase-js';
+import { Game } from '@/types/game';
 import { useGameDetailsStore } from '@/stores/useGameDetailsStore';
+
+export interface GameStats {
+  total_played: number;
+  backlog: number;
+  currentlyPlaying: number;
+  completedGames: number;
+  droppedGames: number;
+}
 
 export const fetchGameDetails = async (gameIds: string[]) => {
   try {
@@ -76,20 +83,14 @@ export const fetchUserGames = async (
   offset = 0,
   limit = 24
 ) => {
-  const supabase = createClientComponentClient<Database>();
-  
   if (!userId || typeof userId !== 'string') {
     throw new Error('Invalid userId provided');
   }
 
-  type DbGame = Database['public']['Tables']['games']['Row'];
-  type DbUserGame = Database['public']['Tables']['user_games']['Row'] & {
-    games: DbGame;
-  };
-
-  const { data, error } = await supabase
-    .from('user_games')
-    .select(`
+  // Use the query wrapper for user_games queries
+  const { SupabaseQueryWrapper } = await import('@/utils/supabase/query-wrapper');
+  const { data, error } = await SupabaseQueryWrapper.queryUserGames(userId, undefined, {
+    select: `
       game_id,
       status,
       play_time,
@@ -100,14 +101,15 @@ export const fetchUserGames = async (
       completion_percentage,
       achievements_completed,
       games (*)
-    `)
-    .eq('user_id', userId)
-    .order('created_at', { ascending: false })
-    .range(offset, offset + limit - 1);
+    `
+  });
 
-  if (error) throw error;
+  if (error) {
+    console.warn('Error fetching user games:', error);
+    return [];
+  }
 
-  return (data as unknown as DbUserGame[])?.map(userGame => ({
+  return (data as any[])?.map((userGame: any) => ({
     id: userGame.games.id,
     name: userGame.games.name,
     cover: userGame.games.cover_url ? {
@@ -192,7 +194,7 @@ export const fetchUserStats = async (
 };
 
 export const addGame = async (game: Game, userId: string) => {
-  const supabase = createClientComponentClient();
+  const supabase = createClient();
 
   try {
     console.log('Adding game:', game);
@@ -203,22 +205,16 @@ export const addGame = async (game: Game, userId: string) => {
       .upsert({
         id: game.id,
         name: game.name,
-        cover: game.cover ? {
-          id: game.cover.id,
-          url: game.cover.url.startsWith('//') 
+        cover_url: game.cover_url || (game.cover ? 
+          (game.cover.url.startsWith('//') 
             ? `https:${game.cover.url.replace('t_thumb', 't_1080p').replace('t_micro', 't_1080p')}` 
-            : game.cover.url.replace('t_thumb', 't_1080p').replace('t_micro', 't_1080p')
-        } : null,
+            : game.cover.url.replace('t_thumb', 't_1080p').replace('t_micro', 't_1080p'))
+          : null),
         rating: game.rating || 0,
+        total_rating_count: game.total_rating_count || 0,
         first_release_date: game.first_release_date,
-        platforms: game.platforms?.map(p => ({
-          id: p.id,
-          name: p.name
-        })) || [],
-        genres: game.genres?.map(g => ({
-          id: g.id,
-          name: g.name
-        })) || [],
+        platforms: game.platforms || [],
+        genres: game.genres || [],
         summary: game.summary || '',
         storyline: game.storyline || ''
       }, { 
@@ -258,7 +254,7 @@ export const addGameToLibrary = async (
   userId: string,
   initialStatus: string = 'want_to_play'
 ) => {
-  const supabase = createClientComponentClient<Database>();
+  const supabase = createClient();
 
   // First check if the game exists in our games table
   const { data: existingGame } = await supabase
@@ -299,7 +295,7 @@ export const removeGameFromLibrary = async (
   gameId: string,
   userId: string
 ) => {
-  const supabase = createClientComponentClient<Database>();
+  const supabase = createClient();
 
   const { error } = await supabase
     .from('user_games')
@@ -314,7 +310,7 @@ export const checkGameInLibrary = async (
   gameId: string,
   userId: string
 ) => {
-  const supabase = createClientComponentClient<Database>();
+  const supabase = createClient();
 
   try {
     const { data: { user } } = await supabase.auth.getUser();
@@ -322,15 +318,22 @@ export const checkGameInLibrary = async (
       throw new Error('User not authenticated');
     }
 
-    const { data, error } = await supabase
-      .from('user_games')
-      .select('status')
-      .eq('user_id', userId)
-      .eq('game_id', gameId)
+    // First check if the game exists in the games table
+    const { data: gameExists } = await supabase
+      .from('games')
+      .select('id')
+      .eq('id', gameId)
       .maybeSingle();
 
-    if (error && error.code !== 'PGRST116') throw error;
-    return data;
+    // If game doesn't exist in games table, user definitely doesn't have it in library
+    if (!gameExists) {
+      return null;
+    }
+
+    // Use the query wrapper for user_games queries
+    const { SupabaseQueryWrapper } = await import('@/utils/supabase/query-wrapper');
+    const result = await SupabaseQueryWrapper.checkUserGame(userId, gameId);
+    return result;
   } catch (error) {
     console.error('Error checking game in library:', error);
     return null;

@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/text/textarea";
 import { Label } from "@/components/ui/label";
 import { useLibraryStore } from "@/stores/useLibraryStore";
 import { useSearchStore } from "@/stores/useSearchStore";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { createClient } from "@/utils/supabase/client";
 import { Separator } from "@/components/ui/separator";
 import { Loader2, Search } from "lucide-react";
 import Image from "next/image";
@@ -62,7 +62,7 @@ export function EntryForm({
 
   useEffect(() => {
     const initializeLibrary = async () => {
-      const supabase = createClientComponentClient();
+      const supabase = createClient();
       const {
         data: { user },
       } = await supabase.auth.getUser();

@@ -1,10 +1,9 @@
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
+import { createClient } from "@/utils/supabase/server";
 import { NextResponse } from 'next/server';
 import { FriendActivity } from '@/types/activity';
 
 export async function GET(request: Request) {
-  const supabase = createRouteHandlerClient({ cookies });
+  const supabase = await createClient();
   const { searchParams } = new URL(request.url);
   const offset = parseInt(searchParams.get('offset') || '0');
   const limit = 20;
@@ -39,7 +38,11 @@ export async function GET(request: Request) {
       .select(`
         *,
         reactions:activity_reactions(
-          *,
+          id,
+          emoji,
+          type,
+          user_id,
+          created_at,
           user:profiles(
             id,
             username,
@@ -47,7 +50,9 @@ export async function GET(request: Request) {
           )
         ),
         comments:activity_comments(
-          *,
+          id,
+          content,
+          created_at,
           user:profiles(
             id,
             username,
@@ -64,43 +69,46 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Failed to fetch activities' }, { status: 500 });
     }
 
+    // If no activities, return empty array
     if (!activities || activities.length === 0) {
       console.log('No activities found');
-      return NextResponse.json([], { status: 200 });
+      return NextResponse.json([]);
     }
 
-    console.log('Found activities:', activities);
+    // Fetch unique user IDs
+    const uniqueUserIds = [...new Set(activities.map(a => a.user_id))];
+    console.log('Fetching profiles for users:', uniqueUserIds);
 
-    // Now let's get the user profiles for these activities
-    const activityUserIds = activities.map(a => a.user_id);
+    // Fetch user profiles
     const { data: profiles, error: profilesError } = await supabase
       .from('profiles')
       .select('id, username, avatar_url')
-      .in('id', activityUserIds);
+      .in('id', uniqueUserIds);
 
     if (profilesError) {
       console.error('Error fetching profiles:', profilesError);
-      return NextResponse.json({ error: 'Failed to fetch profiles' }, { status: 500 });
+      return NextResponse.json({ error: 'Failed to fetch user profiles' }, { status: 500 });
     }
 
-    console.log('Found profiles:', profiles);
+    // Create profile map
+    const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
 
-    // And get the games
-    const gameIds = activities.filter(a => a.game_id).map(a => a.game_id);
+    // Fetch unique game IDs
+    const uniqueGameIds = [...new Set(activities.map(a => a.game_id).filter(Boolean))];
+    console.log('Fetching games for IDs:', uniqueGameIds);
+
+    // Fetch game details
     const { data: games, error: gamesError } = await supabase
       .from('games')
       .select('id, name, cover_url')
-      .in('id', gameIds);
+      .in('id', uniqueGameIds);
 
     if (gamesError) {
       console.error('Error fetching games:', gamesError);
-      return NextResponse.json({ error: 'Failed to fetch games' }, { status: 500 });
+      return NextResponse.json({ error: 'Failed to fetch game details' }, { status: 500 });
     }
 
-    console.log('Found games:', games);
-
-    // Create lookup maps for faster access
-    const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
+    // Create game map
     const gameMap = new Map(games?.map(g => [g.id, g]) || []);
 
     // Transform the activities with joined data

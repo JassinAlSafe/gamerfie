@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createClient } from "@/utils/supabase/client";
 import type { Profile } from '@/types/profile';
 import { useCallback } from 'react';
 
@@ -10,7 +10,7 @@ interface ProfileStats {
 }
 
 export function useProfile() {
-  const supabase = createClientComponentClient();
+  const supabase = createClient();
   const queryClient = useQueryClient();
 
   // Get user session with optimized caching

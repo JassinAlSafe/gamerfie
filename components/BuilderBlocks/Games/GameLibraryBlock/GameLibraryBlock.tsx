@@ -34,7 +34,7 @@ interface GameWithProgress {
   status?: GameStatus;
   cover_url?: string | null;
   coverImage?: string;
-  genres?: Array<{ id: string; name: string }>;
+  genres?: Array<{ id: string; name: string }> | string;
   updated_at?: string;
 }
 
@@ -89,7 +89,31 @@ function formatGameStatus(status: GameStatus): string {
   }
 }
 
+// Helper function to safely parse genres
+function parseGenres(
+  genres: Array<{ id: string; name: string }> | string | undefined
+): Array<{ id: string; name: string }> {
+  if (!genres) return [];
+
+  if (Array.isArray(genres)) {
+    return genres;
+  }
+
+  if (typeof genres === "string") {
+    try {
+      const parsed = JSON.parse(genres);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }
+
+  return [];
+}
+
 function GameCard({ game }: { game: GameWithProgress }) {
+  const parsedGenres = parseGenres(game.genres);
+
   return (
     <div className="group flex items-start gap-3 p-2 rounded-lg hover:bg-accent/50 transition-colors">
       <GameCover
@@ -138,9 +162,9 @@ function GameCard({ game }: { game: GameWithProgress }) {
           )}
         </div>
 
-        {game.genres && game.genres.length > 0 && (
+        {parsedGenres.length > 0 && (
           <div className="flex flex-wrap gap-1">
-            {game.genres.slice(0, 2).map((genre) => (
+            {parsedGenres.slice(0, 2).map((genre) => (
               <span
                 key={genre.id}
                 className="px-1.5 py-0.5 text-[10px] rounded-md bg-accent/50 text-muted-foreground"

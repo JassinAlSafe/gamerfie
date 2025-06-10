@@ -1,8 +1,14 @@
 import { create } from 'zustand'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { createClient } from '@/utils/supabase/client'
 import { ActivityType } from '@/types/activity'
 import toast from 'react-hot-toast'
-import { JournalGameData } from '@/types/game'
+// import { JournalGameData } from '@/types/game'
+
+interface JournalGameData {
+  id: string;
+  name: string;
+  cover_url?: string;
+}
 
 export type JournalEntryType = 'progress' | 'review' | 'daily' | 'list' | 'note' | 'achievement'
 
@@ -75,7 +81,7 @@ export const useJournalStore = create<JournalState>((set, get) => {
     addEntry: async (entry) => {
       try {
         set({ loading: true, error: null })
-        const supabase = createClientComponentClient()
+        const supabase = createClient()
         const { data: { session } } = await supabase.auth.getSession()
         if (!session?.user) throw new Error('No authenticated user')
 
@@ -260,7 +266,7 @@ export const useJournalStore = create<JournalState>((set, get) => {
     updateEntry: async (id: string, entry) => {
       try {
         set({ loading: true, error: null })
-        const supabase = createClientComponentClient()
+        const supabase = createClient()
         const { data: { session } } = await supabase.auth.getSession()
         if (!session?.user) throw new Error('No authenticated user')
 
@@ -449,7 +455,7 @@ export const useJournalStore = create<JournalState>((set, get) => {
     deleteEntry: async (id) => {
       try {
         set({ loading: true, error: null })
-        const supabase = createClientComponentClient()
+        const supabase = createClient()
         const { data: { session } } = await supabase.auth.getSession()
         if (!session?.user) throw new Error('No authenticated user')
 
@@ -486,7 +492,7 @@ export const useJournalStore = create<JournalState>((set, get) => {
         }
         
         set({ loading: true, error: null, isLoading: true });
-        const supabase = createClientComponentClient();
+        const supabase = createClient();
         const { data: { session } } = await supabase.auth.getSession();
         
         if (!session?.user) {

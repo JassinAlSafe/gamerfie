@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Game } from '@/types/game';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createClient } from "@/utils/supabase/client";
 import { useDebounce } from '@/hooks/Settings/use-debounce';
 import { useGamesStore } from '@/stores/useGamesStore';
 import { useSearchStore } from '@/stores/useSearchStore';
@@ -31,7 +31,7 @@ export function useGameSearch(): SearchResults & SearchState {
   const [error, setError] = useState<Error | null>(null);
   const debouncedSearch = useDebounce(query, 300);
   const setSelectedCategory = useGamesStore((state) => state.setSelectedCategory);
-  const supabase = createClientComponentClient();
+  const supabase = createClient();
 
   const handleSearch = useCallback(() => {
     if (debouncedSearch.trim()) {

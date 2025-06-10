@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createClient } from "@/utils/supabase/client";
 import { User } from '@supabase/supabase-js';
 
 interface UserState {
@@ -16,7 +16,7 @@ export const useUser = create<UserState>((set) => ({
   fetchUser: async () => {
     try {
       set({ isLoading: true, error: null });
-      const supabase = createClientComponentClient();
+      const supabase = createClient();
       const { data: { user }, error } = await supabase.auth.getUser();
       
       if (error) {

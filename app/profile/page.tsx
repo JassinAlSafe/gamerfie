@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, useMemo, useCallback } from "react";
 import { useProfile } from "@/hooks/Profile/use-profile";
+import { useUserStats } from "@/hooks/useUserStats";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { ProfileHeader } from "@/components/profile/profile-header";
@@ -10,7 +11,14 @@ import { useFriendsStore } from "@/stores/useFriendsStore";
 import { useJournalStore } from "@/stores/useJournalStore";
 import { LoadingState } from "@/components/ui/loading-state";
 import { ErrorState } from "@/components/ui/error-state";
-import { Gamepad2, BookText, Users, Star, AlertTriangle } from "lucide-react";
+import {
+  Gamepad2,
+  BookText,
+  Users,
+  Star,
+  AlertTriangle,
+  TrendingUp,
+} from "lucide-react";
 import Link from "next/link";
 import type { GameStats } from "@/types/user";
 import type { FriendActivity } from "@/types/activity";
@@ -193,6 +201,11 @@ const throttle = <T extends (...args: any[]) => any>(
 
 export default function ProfilePage(): JSX.Element {
   const { profile, isLoading, error, gameStats, updateProfile } = useProfile();
+  const {
+    stats: optimizedStats,
+    loading: statsLoading,
+    refresh: refreshStats,
+  } = useUserStats();
   const {
     friends,
     fetchFriends,
@@ -397,6 +410,80 @@ export default function ProfilePage(): JSX.Element {
                       {profile.bio ||
                         "No bio provided yet. Click 'Edit Profile' to add one!"}
                     </p>
+                  </CardContent>
+                </Card>
+              </ProfileSection>
+
+              {/* Optimized Statistics Dashboard */}
+              <ProfileSection isLoading={statsLoading} section="Statistics">
+                <Card className="bg-gray-900/50 border-gray-800 backdrop-blur-sm">
+                  <CardHeader className="flex flex-row items-center justify-between">
+                    <CardTitle className="text-xl text-white flex items-center gap-2">
+                      <TrendingUp className="h-5 w-5 text-blue-400" />
+                      Advanced Statistics
+                    </CardTitle>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => refreshStats()}
+                      className="text-blue-400 hover:text-blue-300"
+                    >
+                      Refresh
+                    </Button>
+                  </CardHeader>
+                  <CardContent>
+                    {optimizedStats ? (
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <div className="flex justify-between">
+                            <span className="text-gray-300">Total Games:</span>
+                            <span className="text-white font-medium">
+                              {optimizedStats.total_games}
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-300">Completed:</span>
+                            <span className="text-white font-medium">
+                              {optimizedStats.completed_games}
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-300">Avg Rating:</span>
+                            <span className="text-white font-medium">
+                              {optimizedStats.avg_rating?.toFixed(1) || "0.0"}⭐
+                            </span>
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <div className="flex justify-between">
+                            <span className="text-gray-300">
+                              Total Playtime:
+                            </span>
+                            <span className="text-white font-medium">
+                              {Math.round(optimizedStats.total_playtime || 0)}h
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-300">
+                              Journal Entries:
+                            </span>
+                            <span className="text-white font-medium">
+                              {optimizedStats.journal?.total_entries || 0}
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-300">Reviews:</span>
+                            <span className="text-white font-medium">
+                              {optimizedStats.journal?.total_reviews || 0}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-center text-gray-400 py-4">
+                        Loading advanced statistics...
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               </ProfileSection>

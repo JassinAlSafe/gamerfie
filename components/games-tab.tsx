@@ -1,7 +1,7 @@
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { createClient } from "@/utils/supabase/client";
 
 export default function GamesTab() {
-  const supabase = createClientComponentClient();
+  const supabase = createClient();
   
   const { data, isLoading, error } = useInfiniteQuery({
     queryKey: ['games'],

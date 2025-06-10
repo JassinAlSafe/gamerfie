@@ -30,14 +30,24 @@ export function AuthenticatedHome({ user }: AuthenticatedHomeProps) {
   // Get only the 5 most recent friends
   const recentFriends = friends.slice(0, 5);
 
-  // Cast activities to the correct type
-  const typedActivities = activities as unknown as Activity[];
+  // Cast activities to the correct type with safety checks
+  const typedActivities = activities.filter(
+    (activity) => activity && activity.id && activity.created_at
+  ) as unknown as Activity[];
+
+  // Transform GameLibrary stats to ProfileCard stats format
+  const profileStats = {
+    totalGames: stats?.totalGames || 0,
+    completedGames: 0, // We can calculate this from user games later
+    totalPlaytime: stats?.totalPlaytime || 0,
+    averageRating: 0, // We can calculate this from user games later
+  };
 
   return (
     <Shell>
       <div className="container mx-auto max-w-[1400px]">
         <div className="space-y-4">
-          <ProfileCard user={user} stats={stats} friends={friends.length} />
+          <ProfileCard user={user} stats={profileStats} friends={friends} />
           <BentoGrid
             user={user}
             friends={recentFriends}

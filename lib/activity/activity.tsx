@@ -1,4 +1,4 @@
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { createClient } from "@/utils/supabase/client";
 import { ActivityDetails } from "./activity.types";
 
 export async function createActivity(
@@ -6,7 +6,7 @@ export async function createActivity(
   game_id: string,
   details?: ActivityDetails
 ) {
-  const supabase = createClientComponentClient();
+  const supabase = createClient();
   const { data: session } = await supabase.auth.getSession();
   if (!session.session?.user) throw new Error("User not logged in");
 
@@ -27,7 +27,7 @@ export async function createActivity(
 }
 
 export async function updateGameTimeStap(gameId: string) {
-  const supabase = createClientComponentClient();
+  const supabase = createClient();
   const { data: session } = await supabase.auth.getSession();
   if (!session?.session?.user) return;
 

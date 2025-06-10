@@ -180,7 +180,7 @@ function GameContent({ game }: { game: Game }) {
       className="min-h-screen bg-gray-950 text-white relative"
     >
       {/* Background pattern */}
-      <div className="absolute inset-0 bg-[url('/assets/noise.png')] opacity-[0.03] pointer-events-none" />
+      <div className="absolute inset-0 bg-[url('/noise.webp')] opacity-[0.03] pointer-events-none" />
 
       <GameHero
         game={gameData}

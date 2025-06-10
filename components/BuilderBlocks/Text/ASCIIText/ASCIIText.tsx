@@ -214,7 +214,7 @@ class AsciiFilter {
         }
         str += "\n";
       }
-      this.pre.innerHTML = str;
+      this.pre.textContent = str;
     }
   }
 

@@ -30,9 +30,13 @@ interface RecentActivityBlockProps {
   size?: "sm" | "md" | "lg" | "full";
 }
 
-function getActivityIcon(type: ActivityTypeEnum) {
+function getActivityIcon(type: ActivityTypeEnum | undefined | null) {
   const iconClasses =
     "h-3.5 w-3.5 transition-transform group-hover:scale-110 shrink-0";
+
+  if (!type) {
+    return <Activity className={cn(iconClasses, "text-blue-400")} />;
+  }
 
   switch (type) {
     case "progress":
@@ -47,12 +51,25 @@ function getActivityIcon(type: ActivityTypeEnum) {
       return <Gamepad2 className={cn(iconClasses, "text-blue-400")} />;
     case "achievement_unlocked":
       return <Trophy className={cn(iconClasses, "text-yellow-400")} />;
+    case "game_completed":
+      return <Medal className={cn(iconClasses, "text-green-400")} />;
+    case "review_added":
+      return <Star className={cn(iconClasses, "text-amber-400")} />;
+    case "achievement":
+      return <Trophy className={cn(iconClasses, "text-yellow-400")} />;
+    case "game_status_updated":
+      return <Activity className={cn(iconClasses, "text-purple-400")} />;
     default:
       return <Activity className={cn(iconClasses, "text-blue-400")} />;
   }
 }
 
-function formatActivityType(type: ActivityTypeEnum): string {
+function formatActivityType(type: ActivityTypeEnum | undefined | null): string {
+  // Handle undefined/null/invalid types safely
+  if (!type || typeof type !== "string") {
+    return "Unknown Activity";
+  }
+
   switch (type) {
     case "want_to_play":
       return "Wants To Play";
@@ -66,8 +83,18 @@ function formatActivityType(type: ActivityTypeEnum): string {
       return "Made Progress in";
     case "achievement_unlocked":
       return "Unlocked an Achievement in";
+    case "game_completed":
+      return "Completed";
+    case "review_added":
+      return "Reviewed";
+    case "achievement":
+      return "Earned Achievement in";
+    case "game_status_updated":
+      return "Updated Status for";
     default:
-      return type.replace(/_/g, " ");
+      // Convert any unknown enum values to readable format
+      const stringType = String(type);
+      return stringType.replace(/_/g, " ");
   }
 }
 

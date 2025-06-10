@@ -1,4 +1,4 @@
-import { UserGame } from "./game";
+import { UserGame, Game } from "./game";
 
 export interface GameReview {
   id: string;
@@ -28,7 +28,13 @@ export interface ReviewUpdateData {
 }
 
 export interface GameStats {
+  // Basic counts
   total_played: number;
   played_this_year: number;
   backlog: number;
+  // Extended stats (from game.ts)
+  totalGames: number;
+  totalPlaytime: number;
+  recentlyPlayed: Game[];
+  mostPlayed: Game[];
 } 

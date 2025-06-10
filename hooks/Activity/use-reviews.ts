@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { createClient } from "@/utils/supabase/client";
 import type { Review } from "@/types/review";
 import toast from "react-hot-toast";
 
 export function useReviews() {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const supabase = createClientComponentClient();
+  const supabase = createClient();
 
   const fetchReviews = async () => {
     try {

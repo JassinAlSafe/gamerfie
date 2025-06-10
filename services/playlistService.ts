@@ -1,4 +1,4 @@
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createClient } from "@/utils/supabase/client";
 import { Database } from '@/types/supabase';
 import { Playlist, CreatePlaylistInput, UpdatePlaylistInput, PlaylistType } from '@/types/playlist';
 import { RAWGService } from './rawgService';
@@ -29,7 +29,7 @@ interface DatabasePlaylist {
 }
 
 export class PlaylistService {
-  private static supabase = createClientComponentClient<Database>();
+  private static supabase = createClient();
 
   static async createPlaylist(input: CreatePlaylistInput): Promise<Playlist> {
     try {

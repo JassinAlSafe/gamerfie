@@ -1,7 +1,7 @@
 'use client';
 
 import { create } from 'zustand';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createClient } from "@/utils/supabase/client";
 import { createActivity } from '@/lib/activity/activity';
 import { GameList, GameListItem, GameListStore } from '@/types/gamelist/game-list';
 import { Database } from '@/types/supabase';
@@ -17,7 +17,7 @@ export const useGameListStore = create<GameListStore>((set, get) => ({
   createList: async (title: string, description?: string, isPublic: boolean = false) => {
     set({ isLoading: true, error: null });
     try {
-      const supabase = createClientComponentClient();
+      const supabase = createClient();
       const { data: session } = await supabase.auth.getSession();
       if (!session?.session?.user) throw new Error('Not authenticated');
 
@@ -69,7 +69,7 @@ export const useGameListStore = create<GameListStore>((set, get) => ({
   updateList: async (listId: string, title: string, description?: string): Promise<void> => {
     set({ isLoading: true, error: null });
     try {
-      const supabase = createClientComponentClient();
+      const supabase = createClient();
       const { data: session } = await supabase.auth.getSession();
       if (!session?.session?.user) throw new Error('Not authenticated');
 
@@ -118,7 +118,7 @@ export const useGameListStore = create<GameListStore>((set, get) => ({
   addGameToList: async (listId: string, gameId: string, gameName: string, coverUrl: string): Promise<void> => {
     set({ isLoading: true, error: null });
     try {
-      const supabase = createClientComponentClient();
+      const supabase = createClient();
       const { data: session } = await supabase.auth.getSession();
       if (!session?.session?.user) throw new Error('Not authenticated');
 
@@ -172,7 +172,7 @@ export const useGameListStore = create<GameListStore>((set, get) => ({
   removeGameFromList: async (listId: string, gameId: string) => {
     set({ isLoading: true, error: null });
     try {
-      const supabase = createClientComponentClient();
+      const supabase = createClient();
       const { data: session } = await supabase.auth.getSession();
       if (!session?.session?.user) throw new Error('Not authenticated');
 
@@ -213,7 +213,7 @@ export const useGameListStore = create<GameListStore>((set, get) => ({
   deleteList: async (listId: string): Promise<void> => {
     set({ isLoading: true, error: null });
     try {
-      const supabase = createClientComponentClient();
+      const supabase = createClient();
       const { data: session } = await supabase.auth.getSession();
       if (!session?.session?.user) throw new Error('Not authenticated');
 
@@ -240,7 +240,7 @@ export const useGameListStore = create<GameListStore>((set, get) => ({
   fetchUserLists: async (): Promise<void> => {
     set({ isLoading: true, error: null });
     try {
-      const supabase = createClientComponentClient();
+      const supabase = createClient();
       const { data: session } = await supabase.auth.getSession();
       if (!session?.session?.user) throw new Error('Not authenticated');
 
@@ -279,7 +279,7 @@ export const useGameListStore = create<GameListStore>((set, get) => ({
   fetchListDetails: async (listId: string): Promise<void> => {
     set({ isLoading: true, error: null });
     try {
-      const supabase = createClientComponentClient<Database>();
+      const supabase = createClient();
       
       // First, get the journal entry
       const { data: listData, error: listError } = await supabase
@@ -343,7 +343,7 @@ export const useGameListStore = create<GameListStore>((set, get) => ({
   setListVisibility: async (listId: string, isPublic: boolean): Promise<void> => {
     set({ isLoading: true, error: null });
     try {
-      const supabase = createClientComponentClient();
+      const supabase = createClient();
       const { data: session } = await supabase.auth.getSession();
       if (!session?.session?.user) throw new Error('Not authenticated');
 
@@ -379,7 +379,7 @@ export const useGameListStore = create<GameListStore>((set, get) => ({
   fetchPublicLists: async (): Promise<void> => {
     set({ isLoading: true, error: null });
     try {
-      const supabase = createClientComponentClient();
+      const supabase = createClient();
 
       const { data, error } = await supabase
         .from('journal_entries')

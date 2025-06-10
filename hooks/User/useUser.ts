@@ -1,34 +1,40 @@
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
-import { useEffect, useState } from "react";
-import { User } from "@supabase/supabase-js";
+import { createClient } from "@/utils/supabase/client";
+import { useState, useEffect } from "react";
+import type { User } from "@supabase/supabase-js";
 
 export function useUser() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const supabase = createClientComponentClient();
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const getUser = async () => {
+    const supabase = createClient();
+
+    // Get initial session
+    const getInitialSession = async () => {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
-        setUser(user);
-      } catch (error) {
-        console.error('Error fetching user:', error);
+        const { data: { session }, error } = await supabase.auth.getSession();
+        if (error) throw error;
+        setUser(session?.user ?? null);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'An error occurred');
       } finally {
         setLoading(false);
       }
     };
 
-    getUser();
+    getInitialSession();
 
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-    });
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        setUser(session?.user ?? null);
+        setLoading(false);
+      }
+    );
 
     return () => subscription.unsubscribe();
-  }, [supabase.auth]);
+  }, []);
 
-  return { user, loading };
+  return { user, loading, error };
 } 

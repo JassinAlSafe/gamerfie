@@ -3,8 +3,7 @@
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
-import { Database } from "@/types/supabase";
+import { createClient } from "@/utils/supabase/client";
 import { useEffect, useState, useMemo } from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
@@ -365,10 +364,9 @@ const EmptyState = ({ router }: { router: ReturnType<typeof useRouter> }) => (
 
 export default function GamesTab({ filters }: GamesTabProps) {
   const router = useRouter();
-  const supabase = createClientComponentClient<Database>();
+  const supabase = createClient();
   const [userId, setUserId] = useState<string | null>(null);
   const { libraryView } = useSettingsStore();
-  const [localGames, setLocalGames] = useState<GameWithUserData[]>([]);
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -411,13 +409,6 @@ export default function GamesTab({ filters }: GamesTabProps) {
 
   const handleGameRemoval = (removedGameId: string) => {
     console.log("Handling game removal in UI for gameId:", removedGameId);
-    setLocalGames((currentGames) => {
-      const updatedGames = currentGames.filter(
-        (game) => game.game_id !== removedGameId
-      );
-      console.log("Updated games list length:", updatedGames.length);
-      return updatedGames;
-    });
     // Invalidate the cache to trigger a refetch
     queryClient.invalidateQueries({ queryKey: ["userGames", userId, "v2"] });
   };
@@ -478,18 +469,10 @@ export default function GamesTab({ filters }: GamesTabProps) {
     enabled: !!userId,
   });
 
-  // Update local state when query data changes
-  useEffect(() => {
-    if (games) {
-      console.log("Setting local games state:", games);
-      setLocalGames(games);
-    }
-  }, [games]);
-
   const sortedGames = useMemo(() => {
-    if (!localGames.length) return [];
-    console.log("Sorting games from local state:", localGames);
-    let sorted = [...localGames];
+    if (!games?.length) return [];
+    console.log("Sorting games from React Query:", games);
+    let sorted = [...games];
 
     // Apply status filter
     if (filters.status !== "all") {
@@ -514,7 +497,7 @@ export default function GamesTab({ filters }: GamesTabProps) {
 
     console.log("Final sorted games:", sorted);
     return sorted;
-  }, [localGames, filters]);
+  }, [games, filters]);
 
   const renderGameItem = (game: GameWithUserData) => {
     console.log("Rendering game item:", game);
@@ -538,7 +521,7 @@ export default function GamesTab({ filters }: GamesTabProps) {
 
   if (isLoading) return <LoadingState />;
   if (!userId) return <EmptyState router={router} />;
-  if (!localGames.length) return <EmptyState router={router} />;
+  if (!games?.length) return <EmptyState router={router} />;
 
   return (
     <div
@@ -571,7 +554,7 @@ function formatStatus(gameStatus: GameStatus): string {
 }
 
 async function handleStatusChange(gameId: string, newStatus: GameStatus) {
-  const supabase = createClientComponentClient<Database>();
+  const supabase = createClient();
   const { error } = await supabase
     .from("user_games")
     .update({ status: newStatus })

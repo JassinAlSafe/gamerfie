@@ -5,9 +5,25 @@ import { useRouter } from "next/navigation";
 import { useInView } from "react-intersection-observer";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight } from "lucide-react";
-import { GameCarouselProps } from "@/types/game";
+import { ChevronLeft, ChevronRight, LucideIcon } from "lucide-react";
+import { Game } from "@/types/game";
 import { GameCard } from "@/components/GameCard";
+
+type CategoryOption =
+  | "all"
+  | "popular"
+  | "trending"
+  | "upcoming"
+  | "recent"
+  | "classic";
+
+interface GameCarouselProps {
+  games: Game[];
+  category: CategoryOption;
+  title: string;
+  icon: LucideIcon;
+  color: string;
+}
 
 export const GameCarousel = memo(
   ({ games = [], category, title, icon: Icon, color }: GameCarouselProps) => {
@@ -74,6 +90,7 @@ export const GameCarousel = memo(
             className="relative w-full overflow-x-auto scrollbar-hide px-1"
             style={{
               height: "420px", // Increased height
+              position: "relative", // Fix for scroll offset calculation
             }}
           >
             <div

@@ -2,8 +2,17 @@
 
 import React, { useState, useCallback, useMemo } from "react";
 import { motion } from "framer-motion";
-import { Game, GameProgress } from "../../../types/game";
+import { Game } from "@/types/game";
 import { Profile } from "@/types/profile";
+
+interface GameProgress {
+  playTime: number;
+  completionPercentage?: number;
+  achievementsCompleted?: number;
+  lastPlayedAt?: string;
+  userRating?: number;
+  notes?: string;
+}
 import { GameCover } from "./GameCover";
 import { GameQuickStats } from "./GameQuickStats";
 import { getHighQualityImageUrl } from "@/utils/image-utils";
@@ -57,14 +66,10 @@ export function GameHero({ game, profile, progress }: GameHeroProps) {
   // Get the background image URL, using cover as fallback if no background image
   const backgroundImage = useMemo(
     () =>
-      processedGame.background_image ||
-      processedGame.cover_url ||
-      processedGame.coverImage,
-    [
-      processedGame.background_image,
-      processedGame.cover_url,
-      processedGame.coverImage,
-    ]
+      (processedGame as any).background_image ||
+      (processedGame as any).cover_url ||
+      (processedGame as any).coverImage,
+    [processedGame]
   );
 
   // Check if game has a trailer
@@ -74,7 +79,7 @@ export function GameHero({ game, profile, progress }: GameHeroProps) {
   );
 
   const trailerUrl = useMemo(
-    () => (hasTrailer ? processedGame.videos?.[0]?.url : null),
+    () => (hasTrailer ? (processedGame.videos?.[0] as any)?.url : null),
     [hasTrailer, processedGame.videos]
   );
 
@@ -272,7 +277,7 @@ export function GameHero({ game, profile, progress }: GameHeroProps) {
                 transition={{ duration: 0.5, delay: 0.4 }}
                 className="text-lg text-gray-300/90 leading-relaxed line-clamp-3 max-w-3xl"
               >
-                {processedGame.summary}
+                {(processedGame as any).summary}
               </motion.p>
 
               {/* Genre tags - Improved spacing and alignment */}
@@ -304,12 +309,12 @@ export function GameHero({ game, profile, progress }: GameHeroProps) {
                 <AddToLibraryButton
                   gameId={processedGame.id}
                   gameName={processedGame.name}
-                  cover={processedGame.cover_url || processedGame.coverImage}
+                  cover={(processedGame as any).cover_url || (processedGame as any).coverImage}
                   rating={processedGame.rating}
-                  releaseDate={processedGame.first_release_date}
+                  releaseDate={(processedGame as any).first_release_date}
                   platforms={processedGame.platforms}
                   genres={processedGame.genres}
-                  summary={processedGame.summary}
+                  summary={(processedGame as any).summary}
                 />
                 <UpdateProgressButton
                   gameId={processedGame.id}

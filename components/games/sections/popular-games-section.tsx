@@ -47,9 +47,16 @@ export const PopularGamesSection = memo(
       queryKey: ["games", category],
       queryFn: async () => {
         const response = await fetch(`/api/games/${category}`);
-        if (!response.ok) throw new Error("Failed to fetch games");
+        if (!response.ok) {
+          throw new Error("Failed to fetch games");
+        }
         const data = await response.json();
-        return data.games;
+
+        // Handle different response formats:
+        // Popular: returns array directly
+        // Trending/Upcoming: returns {games: [...]}
+        const games = Array.isArray(data) ? data : data.games || [];
+        return games;
       },
       staleTime: 1000 * 60 * 5, // 5 minutes
     });

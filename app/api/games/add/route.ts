@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createClient } from "@/utils/supabase/server";
 import { getIGDBToken } from '../../lib-exports';
 
 export async function POST(request: Request) {
   try {
     const { gameId, userId } = await request.json();
     
-    const supabase = createClientComponentClient();
+    const supabase = await createClient();
 
     // First check if game exists in our games table
     const { data: existingGame } = await supabase

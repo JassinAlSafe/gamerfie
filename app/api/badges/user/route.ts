@@ -1,5 +1,4 @@
-import { cookies } from "next/headers";
-import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
+import { createClient } from "@/utils/supabase/server";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
@@ -11,7 +10,7 @@ const awardBadgeSchema = z.object({
 
 export async function GET() {
   try {
-    const supabase = createRouteHandlerClient({ cookies });
+    const supabase = await createClient();
     
     // Get current user's session
     const {
@@ -27,17 +26,17 @@ export async function GET() {
 
     // Get user's badges with badge details and challenge info
     const { data: userBadges, error } = await supabase
-      .from("user_badges")
+      .from("user_badge_claims")
       .select(`
-        awarded_at,
+        claimed_at,
         badge:badge_id (*),
-        challenge:awarded_from_challenge_id (
+        challenge:challenge_id (
           id,
           title
         )
       `)
       .eq("user_id", session.user.id)
-      .order("awarded_at", { ascending: false });
+      .order("claimed_at", { ascending: false });
 
     if (error) throw error;
 
@@ -53,9 +52,9 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const supabase = createRouteHandlerClient({ cookies });
+    const supabase = await createClient();
     
-    // Check if user is authenticated and is admin
+    // Check admin authentication
     const {
       data: { session },
     } = await supabase.auth.getSession();
@@ -67,51 +66,63 @@ export async function POST(request: Request) {
       );
     }
 
-    // Get user's role from profiles table
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", session.user.id)
+    // Check if user is admin
+    const { data: adminCheck } = await supabase
+      .from("admins")
+      .select("id")
+      .eq("user_id", session.user.id)
       .single();
 
-    if (profile?.role !== "admin") {
+    if (!adminCheck) {
       return NextResponse.json(
-        { error: "Unauthorized" },
+        { error: "Unauthorized - Admin access required" },
         { status: 403 }
       );
     }
 
     const body = await request.json();
-    const validatedData = awardBadgeSchema.parse(body);
+    const validation = awardBadgeSchema.safeParse(body);
 
-    // Use the award_badge_to_user function
-    const { data, error } = await supabase.rpc(
-      "award_badge_to_user",
-      {
-        p_user_id: validatedData.user_id,
-        p_badge_id: validatedData.badge_id,
-        p_challenge_id: validatedData.challenge_id,
-      }
-    );
+    if (!validation.success) {
+      return NextResponse.json(
+        { error: "Invalid request data", details: validation.error.issues },
+        { status: 400 }
+      );
+    }
+
+    const { user_id, badge_id, challenge_id } = validation.data;
+
+    // Check if badge was already awarded to this user
+    const { data: existingClaim } = await supabase
+      .from("user_badge_claims")
+      .select("id")
+      .eq("user_id", user_id)
+      .eq("badge_id", badge_id)
+      .single();
+
+    if (existingClaim) {
+      return NextResponse.json(
+        { error: "Badge already awarded to this user" },
+        { status: 409 }
+      );
+    }
+
+    // Award the badge
+    const { data: newClaim, error } = await supabase
+      .from("user_badge_claims")
+      .insert({
+        user_id,
+        badge_id,
+        challenge_id,
+        claimed_at: new Date().toISOString(),
+      })
+      .select()
+      .single();
 
     if (error) throw error;
 
-    if (!data) {
-      return NextResponse.json(
-        { error: "User already has this badge" },
-        { status: 400 }
-      );
-    }
-
-    return NextResponse.json({ success: true });
+    return NextResponse.json(newClaim, { status: 201 });
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: error.errors },
-        { status: 400 }
-      );
-    }
-
     console.error("Error awarding badge:", error);
     return NextResponse.json(
       { error: "Failed to award badge" },

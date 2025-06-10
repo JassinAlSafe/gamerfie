@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import type { User as SupabaseUser, AuthResponse } from '@supabase/supabase-js'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { createClient } from '@/utils/supabase/client'
 import { persist } from 'zustand/middleware'
 import type { Database } from '@/types/supabase'
 
@@ -39,7 +39,7 @@ interface AuthState {
 export const useAuthStore = create<AuthState>()(
   persist(
     (set, get) => {
-      const supabase = createClientComponentClient<Database>()
+      const supabase = createClient()
 
       const fetchUserProfile = async (userId: string) => {
         const { data: profile } = await supabase

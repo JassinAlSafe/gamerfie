@@ -9,7 +9,13 @@ import {
 
 export class GameService {
   private static readonly GAMES_PER_PAGE = 48;
-  private static readonly API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:3000';
+  private static readonly API_BASE = process.env.NEXT_PUBLIC_API_BASE;
+
+  private static validateApiBase(): void {
+    if (!this.API_BASE) {
+      throw new GameServiceError('API_BASE environment variable is not configured');
+    }
+  }
 
   static async fetchGames({
     page = 1,
@@ -17,6 +23,8 @@ export class GameService {
     searchTerm = '',
     sortBy = 'popularity'
   }: GameQueryParams): Promise<FetchGamesResponse> {
+    this.validateApiBase();
+    
     try {
       const query = this.buildQuery({ page, platformId, searchTerm, sortBy });
       

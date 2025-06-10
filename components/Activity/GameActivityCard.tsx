@@ -15,8 +15,8 @@ import { ActivityShare } from "./ActivityShare";
 import {
   formatPlaytime,
   formatStatus,
-  formatTimestamp,
-} from "@/lib/formatters";
+  formatRelativeTime as formatTimestamp,
+} from "@/utils/format-utils";
 
 interface GameActivityCardProps {
   activity: GameActivity;
@@ -38,7 +38,7 @@ export function GameActivityCard({ activity, gameId }: GameActivityCardProps) {
       case "review_added":
         return "review";
       case "game_status_updated":
-        return activity.metadata.status === "want_to_play"
+        return activity.details?.status === "want_to_play"
           ? "want_to_play"
           : "started_playing";
       default:
@@ -46,23 +46,23 @@ export function GameActivityCard({ activity, gameId }: GameActivityCardProps) {
     }
   };
 
-  // Map game activity metadata to friend activity details
+  // Map game activity details to friend activity details
   const mapActivityDetails = (
     type: GameActivity["type"],
-    metadata: GameActivity["metadata"]
+    details: GameActivity["details"]
   ) => {
     switch (type) {
       case "achievement_unlocked":
         return {
-          name: metadata.achievement?.name,
+          name: details?.achievement?.name,
         };
       case "review_added":
         return {
-          comment: metadata.review,
+          comment: details?.review,
         };
       case "game_status_updated":
         return {
-          name: metadata.status,
+          name: details?.status,
         };
       default:
         return {};
@@ -75,7 +75,7 @@ export function GameActivityCard({ activity, gameId }: GameActivityCardProps) {
     user_id: activity.user.id,
     game_id: gameId,
     type: mapActivityType(activity.type),
-    details: mapActivityDetails(activity.type, activity.metadata),
+    details: mapActivityDetails(activity.type, activity.details),
     created_at: activity.created_at,
     timestamp: activity.created_at,
     user: {
@@ -99,7 +99,7 @@ export function GameActivityCard({ activity, gameId }: GameActivityCardProps) {
             <span className="text-gray-300">
               Unlocked achievement:{" "}
               <span className="text-white font-medium">
-                {activity.metadata.achievement?.name}
+                {activity.details?.achievement?.name}
               </span>
             </span>
           </div>
@@ -112,7 +112,7 @@ export function GameActivityCard({ activity, gameId }: GameActivityCardProps) {
             <span className="text-gray-300">
               Completed the game in{" "}
               <span className="text-white font-medium">
-                {formatPlaytime(activity.metadata.playtime || 0)}
+                {formatPlaytime(activity.details?.playtime || 0)}
               </span>
             </span>
           </div>
@@ -124,11 +124,11 @@ export function GameActivityCard({ activity, gameId }: GameActivityCardProps) {
             <div className="flex items-center gap-3">
               <Star className="w-5 h-5 text-yellow-400" />
               <span className="text-gray-300">
-                Rated {activity.metadata.rating}/10
+                Rated {activity.details?.rating}/10
               </span>
             </div>
-            {activity.metadata.review && (
-              <p className="text-gray-300 mt-2">{activity.metadata.review}</p>
+            {activity.details?.review && (
+              <p className="text-gray-300 mt-2">{activity.details?.review}</p>
             )}
           </div>
         );
@@ -140,7 +140,7 @@ export function GameActivityCard({ activity, gameId }: GameActivityCardProps) {
             <span className="text-gray-300">
               Status updated to{" "}
               <span className="text-white font-medium">
-                {formatStatus(activity.metadata.status || "")}
+                {formatStatus(activity.details?.status || "")}
               </span>
             </span>
           </div>

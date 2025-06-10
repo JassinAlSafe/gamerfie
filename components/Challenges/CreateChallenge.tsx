@@ -30,7 +30,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useToast } from "@/components/ui/use-toast";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { createClient } from "@/utils/supabase/client";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 
@@ -250,7 +250,7 @@ export function CreateChallenge({ onSubmit }: CreateChallengeProps) {
   };
 
   const uploadImage = async (file: File): Promise<string> => {
-    const supabase = createClientComponentClient();
+    const supabase = createClient();
     const fileExt = file.name.split(".").pop();
     const fileName = `${Math.random()}.${fileExt}`;
     const filePath = `challenge-covers/${fileName}`;
@@ -306,7 +306,7 @@ export function CreateChallenge({ onSubmit }: CreateChallengeProps) {
         coverUrl = await uploadImage(imageFile);
       }
 
-      const supabase = createClientComponentClient();
+      const supabase = createClient();
 
       // Get the current user's profile
       const {

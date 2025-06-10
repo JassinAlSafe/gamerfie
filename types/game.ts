@@ -281,13 +281,7 @@ export interface GameActivity {
   };
 }
 
-// Stats Interface
-export interface GameStats {
-  totalGames: number;
-  totalPlaytime: number;
-  recentlyPlayed: Game[];
-  mostPlayed: Game[];
-}
+// GameStats interface moved to types/user.ts to avoid duplication
 
 // Store State Types
 export interface GameFilterState {

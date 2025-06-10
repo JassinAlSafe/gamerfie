@@ -1,7 +1,21 @@
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
-import { AuthResponse, isSupabaseError } from "../types/auth";
+import { createClient } from "@/utils/supabase/client";
 
-const supabase = createClientComponentClient();
+const supabase = createClient();
+
+interface AuthError {
+  message: string;
+  code?: string;
+}
+
+interface AuthResponse {
+  success: boolean;
+  data?: any;
+  error?: AuthError;
+}
+
+function isSupabaseError(error: any): error is { message: string } {
+  return error && typeof error.message === 'string';
+}
 
 export const authService = {
   async signIn(email: string, password: string): Promise<AuthResponse> {
@@ -38,39 +52,52 @@ export const authService = {
     }
   ): Promise<AuthResponse> {
     try {
-      const { data: { user }, error: signUpError } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          emailRedirectTo: `${location.origin}/auth/callback`,
           data: {
             username: userData.username,
             display_name: userData.display_name,
-          }
-        }
+            date_of_birth: userData.date_of_birth,
+            preferred_platform: userData.preferred_platform,
+          },
+        },
       });
 
-      if (signUpError) throw signUpError;
-      if (!user) throw new Error("No user returned after signup");
+      if (error) throw error;
 
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .insert({
-          id: user.id,
-          ...userData,
-        });
+      if (data.user) {
+        // Create profile
+        const { error: profileError } = await supabase
+          .from("profiles")
+          .insert({
+            id: data.user.id,
+            username: userData.username,
+            display_name: userData.display_name,
+            bio: null,
+            avatar_url: null,
+            date_of_birth: userData.date_of_birth,
+            preferred_platform: userData.preferred_platform,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          });
 
-      if (profileError) throw profileError;
+        if (profileError) {
+          console.error("Profile creation error:", profileError);
+          // Don't fail the signup, profile can be created later
+        }
+      }
 
       return {
         success: true,
-        data: user,
+        data: data.user,
       };
     } catch (error) {
       return {
         success: false,
         error: {
-          message: isSupabaseError(error) ? error.message : "Failed to create account",
+          message: isSupabaseError(error) ? error.message : "Failed to sign up",
         },
       };
     }
@@ -78,10 +105,10 @@ export const authService = {
 
   async signInWithGoogle(): Promise<AuthResponse> {
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
+      const { data, error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${location.origin}/auth/callback`,
+          redirectTo: `${window.location.origin}/auth/callback`,
         },
       });
 
@@ -89,12 +116,15 @@ export const authService = {
 
       return {
         success: true,
+        data,
       };
     } catch (error) {
       return {
         success: false,
         error: {
-          message: isSupabaseError(error) ? error.message : "Failed to sign in with Google",
+          message: isSupabaseError(error)
+            ? error.message
+            : "Failed to sign in with Google",
         },
       };
     }
@@ -103,8 +133,9 @@ export const authService = {
   async signOut(): Promise<AuthResponse> {
     try {
       const { error } = await supabase.auth.signOut();
+
       if (error) throw error;
-      
+
       return {
         success: true,
       };

@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import type { Challenge, ChallengeStatus, ChallengeType, ChallengeGoal, ChallengeTeam } from "@/types/challenge";
-import type { SupabaseClient } from "@supabase/auth-helpers-nextjs";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 interface ChallengesState {
   challenges: Challenge[];

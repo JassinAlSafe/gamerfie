@@ -1,55 +1,56 @@
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
+import { createClient } from '@/utils/supabase/server';
 import { NextResponse } from 'next/server';
 
-// Define the UserData interface directly
-interface UserData {
-  id: string;
-  username: string;
-  display_name?: string;
-  avatar_url?: string;
-  bio?: string;
-}
 
 export async function GET(request: Request) {
-  const supabase = createRouteHandlerClient({ cookies });
-  const { searchParams } = new URL(request.url);
-  const query = searchParams.get('q');
-
-  if (!query) {
-    return NextResponse.json({ users: [] });
-  }
-
   try {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const { searchParams } = new URL(request.url);
+    const query = searchParams.get('q');
+
+    if (!query || query.trim().length < 2) {
+      return NextResponse.json(
+        { error: 'Search query must be at least 2 characters' },
+        { status: 400 }
+      );
     }
 
-    console.log('Searching for users with query:', query);
-    console.log('Current user ID:', session.user.id);
+    const supabase = await createClient();
 
-    // Query the profiles table
-    const { data, error } = await supabase
+    // Check if user is authenticated
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (!session) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    // Search for users by username or display_name
+    const { data: users, error } = await supabase
       .from('profiles')
       .select('id, username, display_name, avatar_url, bio')
-      .ilike('username', `%${query}%`)
+      .or(`username.ilike.%${query}%,display_name.ilike.%${query}%`)
       .limit(10);
 
-    console.log('Search results:', data);
     if (error) {
-      console.error('Search error details:', error);
-      throw error;
+      console.error('Search error:', error);
+      return NextResponse.json(
+        { error: 'Search failed' },
+        { status: 500 }
+      );
     }
-    if (!data) return NextResponse.json({ users: [] });
 
-    // Use the UserData interface for the response
-    const users: UserData[] = data || [];
-    return NextResponse.json({ users });
+    // Filter out current user from results
+    const filteredUsers = users?.filter(user => user.id !== session.user.id) || [];
+
+    return NextResponse.json(filteredUsers);
   } catch (error) {
-    console.error('User search error:', error);
+    console.error('Unexpected error:', error);
     return NextResponse.json(
-      { error: 'Internal Server Error' }, 
+      { error: 'Internal server error' },
       { status: 500 }
     );
   }

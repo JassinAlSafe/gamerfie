@@ -2,7 +2,7 @@
 
 import React, { Suspense } from "react";
 import { GameDetails } from "@/components/game/GameDetails";
-import { useGame } from "@/hooks/Games/useGames"; // Updated import path
+import { useGameDetails } from "@/hooks/Games/use-game-details";
 import { LoadingSpinner } from "@/components/loadingSpinner";
 import { GamePageProps } from "@/types/game";
 import { motion } from "framer-motion";
@@ -26,7 +26,8 @@ function LoadingFallback() {
 }
 
 function GameContent({ id }: { id: string }) {
-  const { data: game, error, isError } = useGame(id);
+  const { game, error } = useGameDetails(id);
+  const isError = !!error;
 
   if (isError) {
     return (
