@@ -29,7 +29,7 @@ export const GameCarousel = memo(
   ({ games = [], category, title, icon: Icon, color }: GameCarouselProps) => {
     const scrollContainerRef = useRef<HTMLDivElement>(null);
     const router = useRouter();
-    const { ref, inView: _inView } = useInView({
+    const { ref } = useInView({
       triggerOnce: true,
       threshold: 0.1,
     });

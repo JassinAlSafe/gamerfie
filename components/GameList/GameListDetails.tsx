@@ -142,7 +142,7 @@ export function GameListDetails({ listId }: { listId: string }) {
         text: currentList?.content || "",
         url: window.location.href,
       });
-    } catch (_error) {
+    } catch {
       navigator.clipboard.writeText(window.location.href);
       toast({
         title: "Link copied to clipboard",

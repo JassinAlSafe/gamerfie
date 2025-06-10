@@ -165,7 +165,8 @@ export function PlaylistManager({ initialPlaylist }: PlaylistManagerProps) {
       try {
         const result = await RAWGService.searchGames(debouncedSearch);
         setSearchResults(result.games);
-      } catch (_error) {
+      } catch (error) {
+        console.error("Failed to search games:", error);
         toast.error("Failed to search games");
       } finally {
         setIsSearching(false);

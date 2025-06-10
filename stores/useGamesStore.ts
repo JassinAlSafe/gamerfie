@@ -7,13 +7,26 @@ import {
   FilterType, 
   SortOption, 
   CategoryOption,
-  GameFilterState,
-  GamePaginationState,
   GameFilterUpdate,
   TimeRange
-} from '@/types/game';
+} from '@/types';
 
-interface GamesState extends GameFilterState, GamePaginationState {
+interface GamesState {
+  // From GameFilterState
+  sortBy: SortOption;
+  selectedPlatform: string;
+  selectedGenre: string;
+  selectedCategory: CategoryOption;
+  selectedYear: string;
+  timeRange: TimeRange;
+  searchQuery: string;
+  
+  // From GamePaginationState
+  currentPage: number;
+  totalPages: number;
+  totalGames: number;
+  
+  // Own properties
   games: Game[];
   error: string | null;
   platforms: Platform[];

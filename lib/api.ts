@@ -1,5 +1,6 @@
 import { createClient } from '@/utils/supabase/client'
 import type { Profile } from '@/types/profile'
+import type { GameStatus, UserGame } from '@/types'
 
 const supabase = createClient()
 
@@ -194,7 +195,7 @@ export async function addGameToLibrary(gameId: string, status: string = 'want_to
     return data
 }
 
-export async function updateGameStatus(gameId: string, status: string) {
+export async function updateGameStatus(gameId: string, status: GameStatus) {
     const { data: { user } } = await supabase.auth.getUser()
     
     if (!user) throw new Error('Not authenticated')
@@ -228,18 +229,4 @@ export async function removeGameFromLibrary(gameId: string) {
     if (error) throw error
 }
 
-// Define missing types locally
-interface UserGame {
-    user_id: string
-    game_id: string
-    status: 'playing' | 'completed' | 'want_to_play' | 'dropped'
-    created_at: string
-    updated_at?: string
-    games?: {
-        id: string
-        name: string
-        cover_url?: string
-        genres?: string[]
-    }
-}
 

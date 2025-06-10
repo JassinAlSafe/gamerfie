@@ -40,7 +40,8 @@ export function FriendsList() {
     try {
       await updateFriendStatus(friendId, status);
       toast.success("Friend status updated");
-    } catch (_error) {
+    } catch (error) {
+      console.error("Failed to update friend status:", error);
       toast.error("Failed to update friend status");
     }
   };

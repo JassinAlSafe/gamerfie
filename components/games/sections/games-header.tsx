@@ -28,8 +28,9 @@ import { useViewModeStore } from "@/stores/useViewModeStore";
 
 export function GamesHeader() {
   const searchInputId = useId();
+  const gamesStore = useGamesStore();
   const {
-    sortBy = 'popularity' as const,
+    sortBy = 'popularity',
     setSortBy,
     selectedPlatform,
     selectedGenre,
@@ -43,7 +44,7 @@ export function GamesHeader() {
     setSelectedYear,
     setSelectedCategory,
     totalGames,
-  } = useGamesStore();
+  } = gamesStore;
 
   const { query: searchQuery, setQuery: setSearchQuery } =
     useExploreSearchStore();
@@ -62,20 +63,6 @@ export function GamesHeader() {
     timeRange !== "all" ||
     sortBy !== "popularity" ||
     searchQuery !== "";
-
-  // Get active filter count for badge
-  const getActiveFilterCount = () => {
-    let count = 0;
-    if (selectedPlatform !== "all") count++;
-    if (selectedGenre !== "all") count++;
-    if (selectedCategory !== "all") count++;
-    if (selectedYear !== "all") count++;
-    if (timeRange !== "all") count++;
-    if (sortBy !== "popularity") count++;
-    return count;
-  };
-
-  const _activeFilterCount = getActiveFilterCount();
 
   // Get platform name for display
   const getPlatformName = () => {

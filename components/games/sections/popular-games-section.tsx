@@ -4,7 +4,7 @@ import { memo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { CalendarDays, TrendingUp, Flame } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { CategoryOption } from "@/types/game";
+import { CategoryOption } from "@/types";
 import { GameCarousel } from "../carousel/game-carousel";
 import { CategorySkeleton } from "../ui/category-skeleton";
 

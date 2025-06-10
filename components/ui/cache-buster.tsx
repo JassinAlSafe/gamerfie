@@ -153,8 +153,8 @@ export const enhancedSupabaseQuery = async (queryFn: () => Promise<any>) => {
         const retryResult = await queryFn();
         console.log("Retry successful after 406 error");
         return retryResult;
-      } catch (_retryError) {
-        console.warn("Retry also failed, returning empty result");
+      } catch (retryError) {
+        console.warn("Retry also failed, returning empty result:", retryError);
         // Return empty result instead of throwing
         return { data: [], error: null };
       }

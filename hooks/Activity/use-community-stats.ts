@@ -1,17 +1,6 @@
 import { useState, useEffect } from "react";
 import { createClient } from "@/utils/supabase/client";
-import { GameStatus } from "@/types/game";
-
-interface CommunityStats {
-  totalPlayers: number;
-  averagePlayTime: number;
-  averageCompletionRate: number;
-  averageAchievementRate: number;
-  playTimeDistribution: { range: string; count: number }[];
-  completionDistribution: { range: string; count: number }[];
-  achievementProgress: { date: string; count: number }[];
-  userStatuses: { status: GameStatus; count: number }[];
-}
+import { GameStatus, CommunityStats } from "@/types";
 
 export function useCommunityStats(gameId: string) {
   const [stats, setStats] = useState<CommunityStats | null>(null);

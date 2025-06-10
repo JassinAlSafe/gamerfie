@@ -12,7 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { GameStatus } from "@/types/game";
+import { GameStatus } from "@/types";
 import { cn } from "@/lib/utils";
 
 interface GameFiltersProps {

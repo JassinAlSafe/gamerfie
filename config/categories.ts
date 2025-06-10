@@ -1,5 +1,5 @@
 import { Flame, TrendingUp, Calendar } from "lucide-react";
-import { CategoryOption } from "@/types/game";
+import { CategoryOption } from "@/types";
 
 export const GAME_CATEGORIES = [
   {

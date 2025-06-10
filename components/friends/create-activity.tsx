@@ -86,7 +86,8 @@ export function CreateActivity() {
       // Reset form
       setSelectedGame(null);
       setDetails({ name: "", comment: "" });
-    } catch (_error) {
+    } catch (error) {
+      console.error("Failed to create activity:", error);
       toast.error("Failed to create activity");
     }
   };

@@ -62,7 +62,8 @@ export function FriendSearch() {
       await addFriend({ friendId: userId });
       toast.success("Friend request sent!");
       setResults(results.filter((user) => user.id !== userId));
-    } catch (_error) {
+    } catch (error) {
+      console.error("Failed to send friend request:", error);
       toast.error("Failed to send friend request");
     }
   };

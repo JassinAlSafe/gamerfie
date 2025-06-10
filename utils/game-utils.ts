@@ -171,8 +171,7 @@ export const fetchUserStats = async (
     droppedGames: 0,
   };
 
-  type GameStatus = { status: string | null };
-  data.forEach((game: GameStatus) => {
+  data.forEach((game: { status: string | null }) => {
     switch (game.status) {
       case 'playing':
         stats.currentlyPlaying += 1;

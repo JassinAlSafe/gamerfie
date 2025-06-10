@@ -1,10 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Game } from "@/types/game";
-
-// Define GameStatus locally to avoid import issues
-type GameStatus = "playing" | "completed" | "want_to_play" | "dropped";
+import { Game, GameStatus } from "@/types";
 import { useProgressStore } from "@/stores/useProgressStore";
 import { useProfile } from "@/hooks/Profile/use-profile";
 import { toast } from "react-hot-toast";

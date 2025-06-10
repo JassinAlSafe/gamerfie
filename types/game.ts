@@ -283,6 +283,18 @@ export interface GameActivity {
 
 // GameStats interface moved to types/user.ts to avoid duplication
 
+// Community Stats Interface
+export interface CommunityStats {
+  totalPlayers: number;
+  averagePlayTime: number;
+  averageCompletionRate: number;
+  averageAchievementRate: number;
+  playTimeDistribution: { range: string; count: number }[];
+  completionDistribution: { range: string; count: number }[];
+  achievementProgress: { date: string; count: number }[];
+  userStatuses: { status: GameStatus; count: number }[];
+}
+
 // Store State Types
 export interface GameFilterState {
   sortBy: SortOption;
