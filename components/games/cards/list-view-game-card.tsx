@@ -3,7 +3,7 @@
 import { Calendar, Star, Users } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
-import { Game } from "@/types/game";
+import { Game } from "@/types";
 import { useState, memo } from "react";
 
 // Add interface for RAWG API game properties that aren't in our Game type

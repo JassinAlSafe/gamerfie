@@ -10,7 +10,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { Platform, Genre } from "@/types/game";
+import { Platform, Genre } from "@/types";
 import { useGamesStore } from "@/stores/useGamesStore";
 import { useDebounce } from "@/hooks/Settings/useDebounce";
 

@@ -26,10 +26,10 @@ import {
   Twitter,
   User,
   X,
-  type Icon as LucideIcon,
+  type LucideIcon,
 } from "lucide-react";
 
-export type Icon = LucideIcon;
+export type { LucideIcon as Icon };
 
 export const Icons = {
   logo: Command,

@@ -1,7 +1,7 @@
 // "use client";
 
 // import { useMemo } from "react";
-// import { Game } from "@/types/game";
+// import { Game } from "@/types";
 // import { useChallengesStore } from "@/stores/useChallengesStore";
 // import { useProfile } from "@/hooks/Profile/use-profile";
 // import { Button } from "@/components/ui/button";

@@ -3,7 +3,7 @@ import { useGamesStore } from "@/stores/useGamesStore";
 import { useSearchStore } from "@/stores/useSearchStore";
 import { useGameDetails } from "@/hooks/Games/use-game-details";
 import { useDebounce } from "@/hooks/Settings/useDebounce";
-import { Game } from "@/types/game";
+import { Game } from "@/types";
 
 const ITEMS_PER_PAGE = 48;
 const STALE_TIME = 1000 * 60 * 5; // 5 minutes

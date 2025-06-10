@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { GameActivityFeed } from '@/types/activity';
-import { GameActivity } from '@/types/game';
+import { GameActivityFeed, GameActivity } from '@/types/activity';
 import { toast } from 'react-hot-toast';
 
 export function useGameActivities(gameId: string) {

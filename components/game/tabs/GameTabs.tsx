@@ -2,7 +2,7 @@
 
 import React from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Game } from "@/types/game";
+import { Game } from "@/types";
 import { Profile } from "@/types/profile";
 import { OverviewTab } from "./OverviewTab";
 import { MediaTab } from "./MediaTab";

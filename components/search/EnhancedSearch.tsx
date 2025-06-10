@@ -132,6 +132,23 @@ export function EnhancedSearch() {
     }
   }, [state.query, state.searchType, debouncedSearch]);
 
+  const handleSelection = useCallback(() => {
+    const totalGames = state.games.length;
+
+    if (state.selectedIndex >= 0) {
+      if (state.selectedIndex < totalGames) {
+        // Game selected
+        const game = state.games[state.selectedIndex];
+        router.push(`/game/${game.id}`);
+      } else {
+        // User selected
+        const user = state.users[state.selectedIndex - totalGames];
+        router.push(`/profile/${user.id}`);
+      }
+      handleClose();
+    }
+  }, [state.games, state.selectedIndex, state.users, router]);
+
   // Handle keyboard navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -202,23 +219,6 @@ export function EnhancedSearch() {
       selectedIndex: -1,
     }));
   };
-
-  const handleSelection = useCallback(() => {
-    const totalGames = state.games.length;
-
-    if (state.selectedIndex >= 0) {
-      if (state.selectedIndex < totalGames) {
-        // Game selected
-        const game = state.games[state.selectedIndex];
-        router.push(`/game/${game.id}`);
-      } else {
-        // User selected
-        const user = state.users[state.selectedIndex - totalGames];
-        router.push(`/profile/${user.id}`);
-      }
-      handleClose();
-    }
-  }, [state.games, state.selectedIndex, state.users, router]);
 
   const handleGameClick = (game: GameResult) => {
     router.push(`/game/${game.id}`);

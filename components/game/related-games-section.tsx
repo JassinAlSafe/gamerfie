@@ -3,7 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { Star, Users, Gamepad2, Puzzle } from "lucide-react";
-import { Game } from "@/types/game";
+import { Game } from "@/types";
 import { ensureAbsoluteUrl } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 

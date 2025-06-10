@@ -3,7 +3,7 @@
 import React from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { Game } from "@/types/game";
+import { Game } from "@/types";
 import { getCoverImageUrl } from "@/utils/image-utils";
 
 interface GameCoverProps {

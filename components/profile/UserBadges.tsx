@@ -54,7 +54,7 @@ export default function UserBadges() {
           .order("claimed_at", { ascending: false });
 
         if (error) throw error;
-        setBadges(data || []);
+        setBadges((data as any) || []);
       } catch (error) {
         console.error("Error fetching user badges:", error);
         setError("Failed to fetch badges");

@@ -8,8 +8,8 @@ export function LibraryStats() {
 
   const stats = {
     totalGames: games.length,
-    completedGames: games.filter(game => game.completed).length,
-    totalPlayTime: games.reduce((total, game) => total + (game.playTime || 0), 0),
+    completedGames: games.filter(game => (game as any).completed).length,
+    totalPlayTime: games.reduce((total, game) => total + ((game as any).playTime || 0), 0),
     averageRating: games.reduce((total, game) => total + (game.rating || 0), 0) / games.length || 0,
   };
 

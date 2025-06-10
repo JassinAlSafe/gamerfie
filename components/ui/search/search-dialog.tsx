@@ -65,9 +65,9 @@ export function SearchDialog({ open, onOpenChange }: SearchDialogProps) {
               >
                 <div className="flex flex-col">
                   <span className="font-medium">{game.name || game.title}</span>
-                  {game.category && (
+                  {(game as any).category && (
                     <span className="text-sm text-muted-foreground">
-                      {game.category}
+                      {(game as any).category}
                     </span>
                   )}
                 </div>

@@ -106,11 +106,11 @@ export function GameActivities({ gameId }: GameActivitiesProps) {
 
             {activity.details && activity.type === "achievement" && (
               <div className="mt-2 text-sm">
-                {activity.details.isBatched ? (
+                {(activity.details as any).isBatched ? (
                   <>
-                    <p>🏆 {activity.details.name}</p>
+                    <p>🏆 {(activity.details as any).name}</p>
                     <ul className="mt-1 ml-6 list-disc text-gray-400">
-                      {activity.details.achievements?.map(
+                      {(activity.details as any).achievements?.map(
                         (achievement: { name: string }, i: number) => (
                           <li key={i}>{achievement.name}</li>
                         )
@@ -118,22 +118,23 @@ export function GameActivities({ gameId }: GameActivitiesProps) {
                     </ul>
                   </>
                 ) : (
-                  <p>🏆 Unlocked: {activity.details.name}</p>
+                  <p>🏆 Unlocked: {(activity.details as any).name}</p>
                 )}
               </div>
             )}
 
             {activity.details && activity.type === "review" && (
               <p className="mt-2 text-sm">
-                &ldquo;{activity.details.comment}&rdquo;
+                &ldquo;{(activity.details as any).comment}&rdquo;
               </p>
             )}
 
-            {activity.details?.comment && activity.type !== "review" && (
-              <p className="mt-2 text-sm text-gray-400">
-                &ldquo;{activity.details.comment}&rdquo;
-              </p>
-            )}
+            {(activity.details as any)?.comment &&
+              activity.type !== "review" && (
+                <p className="mt-2 text-sm text-gray-400">
+                  &ldquo;{(activity.details as any).comment}&rdquo;
+                </p>
+              )}
           </div>
         </motion.div>
       ))}

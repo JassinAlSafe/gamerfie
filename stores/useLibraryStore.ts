@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { createClient } from '@/utils/supabase/client'
-import type { Game } from '@/types/game'
+import type { Game } from '@/types'
 
 interface LibraryState {
   games: Game[]

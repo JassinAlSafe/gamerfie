@@ -6,7 +6,7 @@ import { useInView } from "react-intersection-observer";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, LucideIcon } from "lucide-react";
-import { Game } from "@/types/game";
+import { Game } from "@/types";
 import { GameCard } from "@/components/GameCard";
 
 type CategoryOption =

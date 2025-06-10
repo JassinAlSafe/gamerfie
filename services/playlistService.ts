@@ -1,5 +1,4 @@
 import { createClient } from "@/utils/supabase/client";
-import { Database } from '@/types/supabase';
 import { Playlist, CreatePlaylistInput, UpdatePlaylistInput, PlaylistType } from '@/types/playlist';
 import { RAWGService } from './rawgService';
 import { useAuthStore } from '@/stores/useAuthStore';

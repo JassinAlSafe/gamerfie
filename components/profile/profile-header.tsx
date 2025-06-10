@@ -1,6 +1,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { AvatarUpload } from "@/components/avatar-upload";
-import { Profile, GameStats } from "@/types/user";
+import { Profile } from "@/types/profile";
+import { GameStats } from "@/types/user";
 import {
   Trophy,
   GamepadIcon as GameController,
@@ -69,7 +70,7 @@ export function ProfileHeader({
               <AvatarUpload
                 userId={profile.id}
                 username={profile.username}
-                currentAvatarUrl={profile.avatar_url}
+                currentAvatarUrl={profile.avatar_url || null}
                 onAvatarUpdate={(url) =>
                   onProfileUpdate({ ...profile, avatar_url: url })
                 }

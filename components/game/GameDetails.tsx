@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Game } from "@/types/game";
+import { Game } from "@/types";
 import { useProfile } from "@/hooks/Profile/use-profile";
 import { useProgressStore } from "@/stores/useProgressStore";
 import { useGameActivities } from "@/hooks/Games/use-game-activities";

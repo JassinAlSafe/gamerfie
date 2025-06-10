@@ -22,7 +22,7 @@ export const AnimatedCard = React.forwardRef<HTMLDivElement, AnimatedCardProps>(
         )}
         whileHover={isHoverable ? { scale: 1.02 } : undefined}
         transition={{ duration: 0.2 }}
-        {...props}
+        {...(props as any)}
       >
         <div className="absolute -inset-0.5 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl blur opacity-30 group-hover:opacity-100 transition duration-1000 group-hover:duration-200" />
         <div className="relative bg-gray-900 ring-1 ring-gray-800/50 rounded-xl">

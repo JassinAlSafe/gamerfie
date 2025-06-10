@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { IGDBService } from '@/services/igdb';
-import { Game } from '@/types/game';
+import { Game } from '@/types';
 
 interface IGDBGame {
   id: number;

@@ -1,10 +1,16 @@
-import { useMutation, useQueryClient } from 'react-query';
-import { supabase } from '@/utils/supabase-client';
-import { QueryData, ReviewUpdateData } from '@/types/game';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { createClient } from '@/utils/supabase/client';
 import toast from 'react-hot-toast';
+
+interface ReviewUpdateData {
+  gameId: string;
+  rating: number;
+  reviewText: string;
+}
 
 export function useGameMutations() {
   const queryClient = useQueryClient();
+  const supabase = createClient();
 
   const updateGameStatus = async (gameId: string, status: string) => {
     try {
@@ -28,8 +34,8 @@ export function useGameMutations() {
     }
   };
 
-  const removeFromLibrary = useMutation<string, Error, string>(
-    async (gameId) => {
+  const removeFromLibrary = useMutation({
+    mutationFn: async (gameId: string) => {
       const {
         data: { user },
       } = await supabase.auth.getUser();
@@ -43,29 +49,27 @@ export function useGameMutations() {
       if (error) throw error;
       return gameId;
     },
-    {
-      onSuccess: (gameId) => {
-        queryClient.setQueryData<QueryData>("userGames", (oldData) => {
-          if (!oldData) return oldData;
-          return {
-            ...oldData,
-            pages: oldData.pages.map((page) => ({
-              ...page,
-              userGames: page.userGames.filter((game) => game.game_id !== gameId),
-            })),
-          };
-        });
-        queryClient.invalidateQueries("gameStats");
-        toast.success("Game removed from library");
-      },
-      onError: () => {
-        toast.error("Failed to remove game from library");
-      },
-    }
-  );
+    onSuccess: (gameId: string) => {
+      queryClient.setQueryData(["userGames"], (oldData: any) => {
+        if (!oldData) return oldData;
+        return {
+          ...oldData,
+          pages: oldData.pages?.map((page: any) => ({
+            ...page,
+            userGames: page.userGames?.filter((game: any) => game.game_id !== gameId),
+          })),
+        };
+      });
+      queryClient.invalidateQueries({ queryKey: ["gameStats"] });
+      toast.success("Game removed from library");
+    },
+    onError: () => {
+      toast.error("Failed to remove game from library");
+    },
+  });
 
-  const onReviewUpdate = useMutation<ReviewUpdateData, Error, ReviewUpdateData>(
-    async ({ gameId, rating, reviewText }) => {
+  const onReviewUpdate = useMutation({
+    mutationFn: async ({ gameId, rating, reviewText }: ReviewUpdateData) => {
       const {
         data: { user },
       } = await supabase.auth.getUser();
@@ -81,29 +85,27 @@ export function useGameMutations() {
       if (error) throw error;
       return { gameId, rating, reviewText };
     },
-    {
-      onSuccess: ({ gameId, rating, reviewText }) => {
-        queryClient.setQueryData<QueryData>("userGames", (oldData) => {
-          if (!oldData) return oldData;
-          return {
-            ...oldData,
-            pages: oldData.pages.map((page) => ({
-              ...page,
-              userGames: page.userGames.map((game) =>
-                game.game_id === gameId
-                  ? { ...game, review: { rating, text: reviewText } }
-                  : game
-              ),
-            })),
-          };
-        });
-        toast.success("Review updated successfully");
-      },
-      onError: () => {
-        toast.error("Failed to update review");
-      },
-    }
-  );
+    onSuccess: ({ gameId, rating, reviewText }: ReviewUpdateData) => {
+      queryClient.setQueryData(["userGames"], (oldData: any) => {
+        if (!oldData) return oldData;
+        return {
+          ...oldData,
+          pages: oldData.pages?.map((page: any) => ({
+            ...page,
+            userGames: page.userGames?.map((game: any) =>
+              game.game_id === gameId
+                ? { ...game, review: { rating, text: reviewText } }
+                : game
+            ),
+          })),
+        };
+      });
+      toast.success("Review updated successfully");
+    },
+    onError: () => {
+      toast.error("Failed to update review");
+    },
+  });
 
   const updateReview = useMutation({
     mutationFn: async ({ gameId, review }: { gameId: string; review: string }) => {
@@ -116,7 +118,7 @@ export function useGameMutations() {
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(['userGames']);
+      queryClient.invalidateQueries({ queryKey: ['userGames'] });
     }
   });
 

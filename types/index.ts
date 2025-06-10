@@ -13,7 +13,21 @@ export * from './friend';
 export * from './comments';
 export * from './challenge';
 export * from './errors';
-export * from './igdb-types';  // Make sure this exists if you're importing from it
+
+// Export IGDB types with specific names to avoid conflicts
+export type {
+  IGDBGame,
+  IGDBCover,
+  IGDBPlatform,
+  IGDBGenre,
+  IGDBCompany,
+  IGDBProcessedGame,
+  IGDBResponse,
+  GameAPIError
+} from './igdb-types';
+
+// Export GameListResponse from IGDB types with a specific name
+export type { GameListResponse as IGDBGameListResponse } from './igdb-types';
 
 // Utility function for Supabase error checking
 export function isSupabaseError(error: unknown): error is AuthError {

@@ -50,19 +50,19 @@ export function useRAWG(
               setHasMore(false);
               return;
             }
-            result = await RAWGService.searchGames(params.search, page, initialPageSize);
+            result = await RAWGService.searchGames(params.search, page, initialPageSize) as GameQueryResult;
             break;
           case 'popular':
-            result = await RAWGService.getPopularGames(page, initialPageSize);
+            result = await RAWGService.getPopularGames(page, initialPageSize) as GameQueryResult;
             break;
           case 'upcoming':
-            result = await RAWGService.getUpcomingGames(page, initialPageSize);
+            result = await RAWGService.getUpcomingGames(page, initialPageSize) as GameQueryResult;
             break;
           case 'trending':
-            result = await RAWGService.getTrendingGames(page, initialPageSize);
+            result = await RAWGService.getTrendingGames(page, initialPageSize) as GameQueryResult;
             break;
           default:
-            result = await RAWGService.getPopularGames(page, initialPageSize);
+            result = await RAWGService.getPopularGames(page, initialPageSize) as GameQueryResult;
         }
 
         setData(prev => (appendResults ? [...prev, ...result.games] : result.games));

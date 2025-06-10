@@ -2,7 +2,7 @@
 
 import React from "react";
 import { Trophy, Clock, Target, Users } from "lucide-react";
-import { Game } from "@/types/game";
+import { Game } from "@/types";
 import { Profile } from "@/types/profile";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";

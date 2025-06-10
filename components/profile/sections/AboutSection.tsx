@@ -1,6 +1,6 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import type { Profile } from "@/types/user";
+import type { Profile } from "@/types/profile";
 
 interface AboutSectionProps {
   profile: Profile;

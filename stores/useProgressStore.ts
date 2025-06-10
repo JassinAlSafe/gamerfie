@@ -1,6 +1,5 @@
 import { create } from 'zustand';
 import { createClient } from "@/utils/supabase/client";
-import { Database } from '@/types/supabase';
 import { useFriendsStore } from "./useFriendsStore";
 
 type GameStatus = "playing" | "completed" | "want_to_play" | "dropped";
@@ -40,7 +39,31 @@ interface ProgressStore {
   updateProgress: (userId: string, gameId: string, data: ProgressData) => Promise<void>;
 }
 
-export const useProgressStore = create<ProgressStore>((set) => ({
+// Helper function for parameter validation
+const validateParams = (userId: string, gameId: string): void => {
+  if (!userId?.trim()) {
+    throw new Error('User ID is required');
+  }
+  if (!gameId?.trim()) {
+    throw new Error('Game ID is required');
+  }
+};
+
+// Helper function to normalize game ID
+const normalizeGameId = (gameId: string): string => {
+  return gameId.toString().trim();
+};
+
+// Helper function for safe error handling
+const handleError = (error: unknown, context: string): string => {
+  console.error(`${context}:`, error);
+  if (error instanceof Error) {
+    return error.message;
+  }
+  return `An unexpected error occurred during ${context}`;
+};
+
+export const useProgressStore = create<ProgressStore>((set, get) => ({
   play_time: null,
   completion_percentage: null,
   achievements_completed: null,
@@ -50,12 +73,12 @@ export const useProgressStore = create<ProgressStore>((set) => ({
   error: null,
 
   fetchProgress: async (userId: string, gameId: string) => {
-    set({ loading: true, error: null });
-    const supabase = createClient();
-
     try {
-      // Ensure gameId is a string
-      const gameIdString = gameId.toString();
+      validateParams(userId, gameId);
+      set({ loading: true, error: null });
+      
+      const supabase = createClient();
+      const gameIdString = normalizeGameId(gameId);
 
       // Fetch current progress
       const { data: currentProgress, error: progressError } = await supabase
@@ -63,19 +86,10 @@ export const useProgressStore = create<ProgressStore>((set) => ({
         .select("*")
         .eq("user_id", userId)
         .eq("game_id", gameIdString)
-        .single();
+        .maybeSingle();
 
-      // Handle the case where no progress record exists
-      let progress = null;
-      if (progressError) {
-        if (progressError.code === 'PGRST116') {
-          // No rows found - this is expected for games not yet added to library
-          progress = null;
-        } else {
-          throw progressError;
-        }
-      } else {
-        progress = currentProgress;
+      if (progressError && progressError.code !== 'PGRST116') {
+        throw progressError;
       }
 
       // Fetch playtime history
@@ -98,57 +112,64 @@ export const useProgressStore = create<ProgressStore>((set) => ({
 
       if (achievementError) throw achievementError;
 
-      // Process history data
+      // Process history data with safe parsing
       const playTimeHistory = playTimeData?.map(entry => ({
         date: new Date(entry.created_at).toLocaleDateString(),
-        hours: entry.play_time || 0
+        hours: Number(entry.play_time) || 0
       })) || [];
 
       const achievementHistory = achievementData?.map(entry => ({
         date: new Date(entry.created_at).toLocaleDateString(),
-        count: entry.achievements_completed || 0
+        count: Number(entry.achievements_completed) || 0
       })) || [];
 
-      // Set state with proper defaults for when no progress exists
+      // Set state with proper defaults
       set({
-        play_time: progress?.play_time ?? 0,
-        completion_percentage: progress?.completion_percentage ?? 0,
-        achievements_completed: progress?.achievements_completed ?? 0,
+        play_time: currentProgress?.play_time ?? 0,
+        completion_percentage: currentProgress?.completion_percentage ?? 0,
+        achievements_completed: currentProgress?.achievements_completed ?? 0,
         playTimeHistory,
         achievementHistory,
         loading: false,
         error: null,
       });
     } catch (error) {
-      console.error('Error fetching progress:', error);
-      // Set defaults on error
+      const errorMessage = handleError(error, 'fetching progress');
       set({ 
         play_time: 0,
         completion_percentage: 0,
         achievements_completed: 0,
         playTimeHistory: [],
         achievementHistory: [],
-        error: (error as Error).message, 
+        error: errorMessage, 
         loading: false 
       });
     }
   },
 
   updateGameStatus: async (userId: string, gameId: string, status: GameStatus, gameData?: GameData) => {
-    set({ loading: true });
-    const supabase = createClient();
-
     try {
-      // Ensure gameId is a string
-      const gameIdString = gameId.toString();
+      validateParams(userId, gameId);
+      if (!status) {
+        throw new Error('Game status is required');
+      }
+      
+      set({ loading: true, error: null });
+      
+      const supabase = createClient();
+      const gameIdString = normalizeGameId(gameId);
 
-      // First check if the record exists
-      const { data: existingRecord } = await supabase
+      // Check if record exists
+      const { data: existingRecord, error: fetchError } = await supabase
         .from("user_games")
         .select("*")
         .eq("user_id", userId)
         .eq("game_id", gameIdString)
-        .single();
+        .maybeSingle();
+
+      if (fetchError && fetchError.code !== 'PGRST116') {
+        throw fetchError;
+      }
 
       let updateResult;
       
@@ -173,9 +194,9 @@ export const useProgressStore = create<ProgressStore>((set) => ({
             user_id: userId,
             game_id: gameIdString,
             status,
-            play_time: gameData?.play_time,
-            completion_percentage: gameData?.completion_percentage,
-            achievements_completed: gameData?.achievements_completed,
+            play_time: gameData?.play_time || 0,
+            completion_percentage: gameData?.completion_percentage || 0,
+            achievements_completed: gameData?.achievements_completed || 0,
             last_played_at: new Date().toISOString(),
           });
       }
@@ -187,43 +208,64 @@ export const useProgressStore = create<ProgressStore>((set) => ({
       // Update local state
       set({
         loading: false,
-        play_time: gameData?.play_time ?? null,
-        completion_percentage: gameData?.completion_percentage ?? null,
-        achievements_completed: gameData?.achievements_completed ?? null,
+        play_time: gameData?.play_time ?? get().play_time,
+        completion_percentage: gameData?.completion_percentage ?? get().completion_percentage,
+        achievements_completed: gameData?.achievements_completed ?? get().achievements_completed,
+        error: null,
       });
     } catch (error) {
-      set({ error: (error as Error).message, loading: false });
+      const errorMessage = handleError(error, 'updating game status');
+      set({ error: errorMessage, loading: false });
       throw error;
     }
   },
 
   updateProgress: async (userId: string, gameId: string, data: ProgressData) => {
-    set({ loading: true });
-    const supabase = createClient();
-
     try {
-      // Ensure gameId is a string
-      const gameIdString = gameId.toString();
+      validateParams(userId, gameId);
+      if (!data || Object.keys(data).length === 0) {
+        throw new Error('Progress data is required');
+      }
+      
+      set({ loading: true, error: null });
+      
+      const supabase = createClient();
+      const gameIdString = normalizeGameId(gameId);
 
-      // First check if the game record exists, if not create it with default status
-      const { data: existingGame } = await supabase
+      // Validate progress data ranges
+      if (data.completion_percentage !== undefined && (data.completion_percentage < 0 || data.completion_percentage > 100)) {
+        throw new Error('Completion percentage must be between 0 and 100');
+      }
+      if (data.play_time !== undefined && data.play_time < 0) {
+        throw new Error('Play time cannot be negative');
+      }
+      if (data.achievements_completed !== undefined && data.achievements_completed < 0) {
+        throw new Error('Achievements completed cannot be negative');
+      }
+
+      // Check if game record exists
+      const { data: existingGame, error: fetchError } = await supabase
         .from("user_games")
         .select("*")
         .eq("user_id", userId)
         .eq("game_id", gameIdString)
-        .single();
+        .maybeSingle();
+
+      if (fetchError && fetchError.code !== 'PGRST116') {
+        throw fetchError;
+      }
 
       if (!existingGame) {
-        // Insert new record with default status if it doesn't exist
+        // Insert new record with default status
         const { error: insertError } = await supabase
           .from("user_games")
           .insert({
             user_id: userId,
             game_id: gameIdString,
-            status: 'playing', // Default to playing when updating progress
-            play_time: data.play_time,
-            completion_percentage: data.completion_percentage,
-            achievements_completed: data.achievements_completed,
+            status: 'playing',
+            play_time: data.play_time || 0,
+            completion_percentage: data.completion_percentage || 0,
+            achievements_completed: data.achievements_completed || 0,
             last_played_at: new Date().toISOString(),
           });
 
@@ -233,9 +275,9 @@ export const useProgressStore = create<ProgressStore>((set) => ({
         const { error: updateError } = await supabase
           .from("user_games")
           .update({
-            play_time: data.play_time,
-            completion_percentage: data.completion_percentage,
-            achievements_completed: data.achievements_completed,
+            play_time: data.play_time ?? existingGame.play_time,
+            completion_percentage: data.completion_percentage ?? existingGame.completion_percentage,
+            achievements_completed: data.achievements_completed ?? existingGame.achievements_completed,
             last_played_at: new Date().toISOString(),
           })
           .eq("user_id", userId)
@@ -244,21 +286,23 @@ export const useProgressStore = create<ProgressStore>((set) => ({
         if (updateError) throw updateError;
       }
 
-      // Record progress history (optional - don't fail if tables don't exist)
+      // Record progress history (optional)
       try {
-        await supabase
-          .from("game_progress_history")
-          .insert({
-            user_id: userId,
-            game_id: gameIdString,
-            play_time: data.play_time,
-            completion_percentage: data.completion_percentage,
-          });
+        if (data.play_time !== undefined || data.completion_percentage !== undefined) {
+          await supabase
+            .from("game_progress_history")
+            .insert({
+              user_id: userId,
+              game_id: gameIdString,
+              play_time: data.play_time,
+              completion_percentage: data.completion_percentage,
+            });
+        }
       } catch (historyError) {
         console.warn("Could not record progress history:", historyError);
       }
 
-      // Record achievement history if achievements were updated (optional)
+      // Record achievement history (optional)
       if (data.achievements_completed !== undefined) {
         try {
           await supabase
@@ -273,7 +317,7 @@ export const useProgressStore = create<ProgressStore>((set) => ({
         }
       }
 
-      // Update challenge progress (optional - don't fail if challenges system is not working)
+      // Update challenge progress (optional)
       try {
         const { data: participations } = await supabase
           .from("challenge_participants")
@@ -314,34 +358,34 @@ export const useProgressStore = create<ProgressStore>((set) => ({
       }
 
       // Update local state
-      set(state => ({
+      const currentState = get();
+      set({
         loading: false,
-        play_time: data.play_time ?? state.play_time,
-        completion_percentage: data.completion_percentage ?? state.completion_percentage,
-        achievements_completed: data.achievements_completed ?? state.achievements_completed,
-        playTimeHistory: [
-          ...state.playTimeHistory,
+        play_time: data.play_time ?? currentState.play_time,
+        completion_percentage: data.completion_percentage ?? currentState.completion_percentage,
+        achievements_completed: data.achievements_completed ?? currentState.achievements_completed,
+        playTimeHistory: data.play_time !== undefined ? [
+          ...currentState.playTimeHistory,
           {
             date: new Date().toLocaleDateString(),
-            hours: data.play_time || 0,
+            hours: data.play_time,
           },
-        ],
-        achievementHistory: data.achievements_completed
-          ? [
-              ...state.achievementHistory,
-              {
-                date: new Date().toLocaleDateString(),
-                count: data.achievements_completed,
-              },
-            ]
-          : state.achievementHistory,
-      }));
+        ] : currentState.playTimeHistory,
+        achievementHistory: data.achievements_completed !== undefined ? [
+          ...currentState.achievementHistory,
+          {
+            date: new Date().toLocaleDateString(),
+            count: data.achievements_completed,
+          },
+        ] : currentState.achievementHistory,
+        error: null,
+      });
 
       // Create activities for significant progress updates (optional)
       try {
         if (data.completion_percentage === 100) {
           await useFriendsStore.getState().createActivity("completed", gameIdString);
-        } else if (data.completion_percentage) {
+        } else if (data.completion_percentage !== undefined && data.completion_percentage > 0) {
           await useFriendsStore.getState().createActivity("progress", gameIdString, {
             progress: data.completion_percentage
           });
@@ -350,8 +394,8 @@ export const useProgressStore = create<ProgressStore>((set) => ({
         console.warn("Could not create activity:", activityError);
       }
     } catch (error) {
-      console.error("Error updating progress:", error);
-      set({ error: (error as Error).message, loading: false });
+      const errorMessage = handleError(error, 'updating progress');
+      set({ error: errorMessage, loading: false });
       throw error;
     }
   }

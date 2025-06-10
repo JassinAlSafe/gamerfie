@@ -4,7 +4,7 @@ import { useState, memo } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Star, Users, Flame } from "lucide-react";
-import { Game } from "@/types/game";
+import { Game } from "@/types";
 import { getCoverImageUrl } from "@/utils/image-utils";
 
 // Define CategoryOption locally to avoid import issues

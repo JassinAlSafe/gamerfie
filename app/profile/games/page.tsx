@@ -16,7 +16,7 @@ import { useSettingsStore } from "@/stores/useSettingsStore";
 // Commented out unused imports
 // import { getCoverImageUrl } from "@/utils/image-utils";
 // import { GameCoverImage } from "@/components/ui/game-cover-image";
-// import type { ProcessedGame } from "@/types/game";
+// import type { ProcessedGame } from "@/types";
 import type { GameStats } from "@/types/user";
 
 // Lazy load the GamesTab component

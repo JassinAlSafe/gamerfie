@@ -2,7 +2,7 @@
 
 import React from "react";
 import { Users, Activity, Trophy, Clock } from "lucide-react";
-import { Game } from "@/types/game";
+import { Game } from "@/types";
 import { Profile } from "@/types/profile";
 import { GameStats } from "@/components/game/game-stats";
 import { CommunityStats } from "@/components/game/community-stats";

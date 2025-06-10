@@ -3,7 +3,7 @@ import React, { useEffect } from "react";
 import { memo, useMemo, useRef } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { useWindowSize } from "@/hooks/Settings/useWindowSize";
-import { Game } from "@/types/game";
+import { Game } from "@/types";
 import { GameCard } from "@/components/GameCard"; // Update import path
 import { useGamesStore } from "@/stores/useGamesStore";
 import { Gamepad2 } from "lucide-react";

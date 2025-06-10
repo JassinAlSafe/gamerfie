@@ -50,7 +50,7 @@ export function useEnhancedSearch(options: UseEnhancedSearchOptions = {}) {
 
   const supabase = createClient();
 
-  const performSearch = async (
+  const performSearch = useCallback(async (
     query: string, 
     searchType: 'all' | 'games' | 'users' = 'all'
   ) => {
@@ -78,7 +78,7 @@ export function useEnhancedSearch(options: UseEnhancedSearchOptions = {}) {
           })
         );
       } else {
-        promises.push(Promise.resolve({ data: [] }));
+        promises.push(Promise.resolve({ data: [], error: null }));
       }
 
       // Search users if needed  
@@ -90,7 +90,7 @@ export function useEnhancedSearch(options: UseEnhancedSearchOptions = {}) {
           })
         );
       } else {
-        promises.push(Promise.resolve({ data: [] }));
+        promises.push(Promise.resolve({ data: [], error: null }));
       }
 
       const [gamesResult, usersResult] = await Promise.all(promises);
@@ -119,7 +119,7 @@ export function useEnhancedSearch(options: UseEnhancedSearchOptions = {}) {
         error: 'Search failed'
       });
     }
-  };
+  }, [gameLimit, userLimit, supabase]);
 
   // Create debounced search function
   const debouncedSearch = useRef(
@@ -138,7 +138,7 @@ export function useEnhancedSearch(options: UseEnhancedSearchOptions = {}) {
     searchType: 'all' | 'games' | 'users' = 'all'
   ) => {
     performSearch(query, searchType);
-  }, [gameLimit, userLimit, supabase]);
+  }, [performSearch]);
 
   const clearResults = useCallback(() => {
     setResults({

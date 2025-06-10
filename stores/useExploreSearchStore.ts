@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { Game } from '@/types/game';
+import { Game } from '@/types';
 
 interface ExploreSearchState {
   query: string;

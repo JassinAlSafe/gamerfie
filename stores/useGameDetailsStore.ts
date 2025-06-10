@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { Game, Platform, Genre } from '@/types/game'
+import { Game, Platform, Genre } from '@/types'
 
 interface GameDetailsState {
   games: Record<number, Game & { timestamp: number }>

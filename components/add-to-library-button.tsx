@@ -19,7 +19,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useRouter } from "next/navigation";
-// import { GameStatus } from "@/types/game";
+// import { GameStatus } from "@/types";
 import { LoadingSpinner } from "./loadingSpinner";
 import { useFriendsStore } from "@/stores/useFriendsStore";
 import { useLibraryStore } from "@/stores/useLibraryStore";

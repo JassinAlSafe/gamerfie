@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Game } from "@/types/game";
+import { Game } from "@/types";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import { getCoverImageUrl } from "@/utils/image-utils";

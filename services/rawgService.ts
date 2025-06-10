@@ -1,4 +1,4 @@
-import { Game } from "@/types/game";
+import { Game } from "@/types";
 import { RAWGGame, RAWGResponse } from "@/types/rawg";
 
 const RAWG_API_KEY = process.env.NEXT_PUBLIC_RAWG_API_KEY || "";
@@ -32,11 +32,9 @@ export class RAWGService {
   private static mapRAWGGameToGame(rawgGame: RAWGGame): Game {
     return {
       id: String(rawgGame.id),
-      title: rawgGame.name,
-      coverImage: rawgGame.background_image,
-      lastPlayed: undefined,
-      playtime: rawgGame.playtime,
-      platform: rawgGame.parent_platforms?.[0]?.platform.name as any || "PC",
+      name: rawgGame.name,
+      cover_url: rawgGame.background_image,
+      background_image: rawgGame.background_image,
       platforms: rawgGame.platforms.map((p) => ({
         id: String(p.platform.id),
         name: p.platform.name,
@@ -51,7 +49,7 @@ export class RAWGService {
       total_rating_count: rawgGame.ratings_count,
       metacritic: rawgGame.metacritic,
       status: rawgGame.tba ? "want_to_play" : undefined,
-    };
+    } as Game;
   }
 
   static async searchGames(query: string, page: number = 1, pageSize: number = 20) {

@@ -4,7 +4,7 @@ import React from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { Star } from "lucide-react";
-import { Game } from "@/types/game";
+import { Game } from "@/types";
 import { getCoverImageUrl } from "@/utils/image-utils";
 import { formatRating } from "@/utils/format-utils";
 import { useRouter } from "next/navigation";

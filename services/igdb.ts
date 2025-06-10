@@ -1,4 +1,4 @@
-import { Game } from "@/types/game";
+import { Game } from "@/types";
 import { IGDBResponse, IGDBGame } from "@/types/igdb-types";
 import { cache } from 'react';
 import { IGDB_IMAGE_SIZES } from '@/utils/image-utils';

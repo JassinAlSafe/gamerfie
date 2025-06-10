@@ -11,7 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Input } from "@/components/ui/input";
-import { Game } from "@/types/game";
+import { Game } from "@/types";
 
 // Define GameProgress interface locally
 interface GameProgress {

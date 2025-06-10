@@ -1,15 +1,15 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { GameService } from '@/services/gameService';
-import { Game } from '@/types/game';
+import { GameExtended } from '@/types/gameService';
 
 interface GlobalSearchState {
   query: string;
-  results: Game[];
+  results: GameExtended[];
   isLoading: boolean;
   isOpen: boolean;
   setQuery: (query: string) => void;
-  setResults: (results: Game[]) => void;
+  setResults: (results: GameExtended[]) => void;
   setIsLoading: (isLoading: boolean) => void;
   setIsOpen: (isOpen: boolean) => void;
   search: (query: string) => Promise<void>;

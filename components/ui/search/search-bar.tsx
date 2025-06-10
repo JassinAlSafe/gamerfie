@@ -52,7 +52,11 @@ export function SearchBar() {
                     {game.cover ? (
                       <div className="relative w-10 h-14 rounded overflow-hidden">
                         <Image
-                          src={ensureAbsoluteUrl(game.cover.url)}
+                          src={ensureAbsoluteUrl(
+                            typeof game.cover === "string"
+                              ? game.cover
+                              : game.cover.url
+                          )}
                           alt={game.name}
                           fill
                           className="object-cover"

@@ -1,21 +1,21 @@
 import { create } from 'zustand';
 import { GameService } from '@/services/gameService';
-import { Game } from '@/types/game';
+import { GameExtended } from '@/types/gameService';
 
 interface SearchState {
   query: string;
-  results: Game[];
+  results: GameExtended[];
   isLoading: boolean;
   isOpen: boolean;
   setQuery: (query: string) => void;
-  setResults: (results: Game[]) => void;
+  setResults: (results: GameExtended[]) => void;
   setIsLoading: (isLoading: boolean) => void;
   setIsOpen: (isOpen: boolean) => void;
   search: (query: string) => Promise<void>;
   reset: () => void;
 }
 
-export const useSearchStore = create<SearchState>((set, get) => ({
+export const useSearchStore = create<SearchState>((set) => ({
   query: '',
   results: [],
   isLoading: false,

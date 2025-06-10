@@ -2,10 +2,8 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { TrendingUp } from "lucide-react";
-import type { UserStats } from "@/types/user";
-
 interface StatsSectionProps {
-  stats: UserStats | null;
+  stats: any | null;
   isLoading: boolean;
   onRefresh: () => void;
 }

@@ -16,12 +16,34 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { JournalEntry } from "@/stores/useJournalStore";
 
+interface JournalGameData {
+  id: string;
+  name: string;
+  cover_url?: string;
+}
+
+interface JournalStatsData {
+  totalEntries: number;
+  typeCount: {
+    progress: number;
+    review: number;
+    daily: number;
+    list: number;
+  };
+  uniqueGamesCount: number;
+  avgRating: number;
+  mostRecent: JournalEntry | undefined;
+  mostTrackedGame: JournalGameData | null;
+  maxTrackingCount: number;
+  totalHours: number;
+}
+
 interface JournalStatsProps {
   entries: JournalEntry[];
 }
 
 export function JournalStats({ entries }: JournalStatsProps) {
-  const stats = useMemo(() => {
+  const stats = useMemo((): JournalStatsData => {
     // Count entries by type
     const typeCount = {
       progress: entries.filter((e) => e.type === "progress").length,
@@ -56,7 +78,7 @@ export function JournalStats({ entries }: JournalStatsProps) {
     const mostRecent = sortedEntries[0];
 
     // Find most tracked game
-    const gameTrackingCount = {};
+    const gameTrackingCount: Record<string, number> = {};
     entries.forEach((entry) => {
       if (entry.game?.id) {
         gameTrackingCount[entry.game.id] =
@@ -64,13 +86,13 @@ export function JournalStats({ entries }: JournalStatsProps) {
       }
     });
 
-    let mostTrackedGame = null;
+    let mostTrackedGame: JournalGameData | null = null;
     let maxCount = 0;
 
     Object.entries(gameTrackingCount).forEach(([gameId, count]) => {
       if (count > maxCount) {
         maxCount = count as number;
-        mostTrackedGame = entries.find((e) => e.game?.id === gameId)?.game;
+        mostTrackedGame = entries.find((e) => e.game?.id === gameId)?.game || null;
       }
     });
 
@@ -215,7 +237,7 @@ export function JournalStats({ entries }: JournalStatsProps) {
               </div>
               <div>
                 <div className="font-bold text-white text-lg">
-                  {stats.mostTrackedGame.name}
+                  {stats.mostTrackedGame?.name}
                 </div>
                 <div className="text-sm text-gray-400">
                   {stats.maxTrackingCount} entries
@@ -237,7 +259,7 @@ export function JournalStats({ entries }: JournalStatsProps) {
                       entries.filter(
                         (e) =>
                           e.type === "progress" &&
-                          e.game?.id === stats.mostTrackedGame.id
+                          e.game?.id === stats.mostTrackedGame?.id
                       ).length
                     }
                   </Badge>
@@ -252,7 +274,7 @@ export function JournalStats({ entries }: JournalStatsProps) {
                       entries.filter(
                         (e) =>
                           e.type === "review" &&
-                          e.game?.id === stats.mostTrackedGame.id
+                          e.game?.id === stats.mostTrackedGame?.id
                       ).length
                     }
                   </Badge>
@@ -267,7 +289,7 @@ export function JournalStats({ entries }: JournalStatsProps) {
                       entries.filter(
                         (e) =>
                           e.type === "daily" &&
-                          e.game?.id === stats.mostTrackedGame.id
+                          e.game?.id === stats.mostTrackedGame?.id
                       ).length
                     }
                   </Badge>

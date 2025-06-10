@@ -3,7 +3,7 @@
 import React from "react";
 import Image from "next/image";
 import { Trophy, Lock } from "lucide-react";
-import { Game } from "@/types/game";
+import { Game } from "@/types";
 import { Profile } from "@/types/profile";
 import { Progress } from "@/components/ui/progress";
 

@@ -25,7 +25,7 @@ function transformIGDBGame(game: IGDBGameResponse): Game {
     id: game.id,
     name: game.name,
     cover_url: game.cover_url,
-    background_image: game.background_image,
+    ...(game.background_image && { background_image: game.background_image }),
     rating: game.rating,
     first_release_date: game.first_release_date,
     platforms: game.platforms || [],
@@ -34,7 +34,7 @@ function transformIGDBGame(game: IGDBGameResponse): Game {
     storyline: game.storyline,
     total_rating: game.total_rating,
     total_rating_count: game.total_rating_count
-  };
+  } as Game;
 }
 
 // Remove duplicate useGameDetails hook and export the one from use-game-details

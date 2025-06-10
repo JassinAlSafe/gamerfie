@@ -3,7 +3,7 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { Star, Calendar, Gamepad2, Clock } from "lucide-react";
-import { Game } from "@/types/game";
+import { Game } from "@/types";
 
 import { formatRating, formatDate } from "@/utils/format-utils";
 

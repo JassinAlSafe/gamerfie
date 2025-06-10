@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { Game } from '@/types/game';
+import { Game } from '@/types';
 import { createClient } from "@/utils/supabase/client";
 import { useDebounce } from '@/hooks/Settings/use-debounce';
 import { useGamesStore } from '@/stores/useGamesStore';
@@ -93,7 +93,10 @@ export function useGameSearch(): SearchResults & SearchState {
           releaseDate: game.release_date || '',
           platforms: game.platforms || [],
           genres: [],
-          achievements: []
+          achievements: {
+            total: 0,
+            completed: 0
+          }
         }));
 
         setGames(mappedGames);

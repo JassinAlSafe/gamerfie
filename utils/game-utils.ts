@@ -11,6 +11,28 @@ export interface GameStats {
   droppedGames: number;
 }
 
+// Helper function to normalize game data for store
+const normalizeGameForStore = (game: any): Game => {
+  return {
+    ...game,
+    // Ensure cover is properly structured
+    cover: typeof game.cover === 'string' 
+      ? { id: game.cover, url: game.cover }
+      : game.cover,
+    // Ensure all required properties exist with defaults
+    summary: game.summary || '',
+    storyline: game.storyline || '',
+    total_rating_count: game.total_rating_count || 0,
+  } as Game;
+};
+
+// Helper function to extract cover URL safely
+const getCoverUrl = (cover: string | { id: string; url: string } | undefined): string | null => {
+  if (!cover) return null;
+  if (typeof cover === 'string') return cover;
+  return cover.url;
+};
+
 export const fetchGameDetails = async (gameIds: string[]) => {
   try {
     console.log('Fetching game details for IDs:', gameIds);
@@ -51,10 +73,11 @@ export const fetchGameDetails = async (gameIds: string[]) => {
 
     const fetchedGames = await response.json();
     
-    // Add fetched games to store
-    fetchedGames.forEach((game: Game) => {
+    // Add fetched games to store with proper normalization
+    fetchedGames.forEach((game: any) => {
       if (game && game.id) {
-        store.setGame(game);
+        const normalizedGame = normalizeGameForStore(game);
+        store.setGame(normalizedGame as any);
       }
     });
     
@@ -79,9 +102,7 @@ export const fetchGameDetails = async (gameIds: string[]) => {
 };
 
 export const fetchUserGames = async (
-  userId: string,
-  offset = 0,
-  limit = 24
+  userId: string
 ) => {
   if (!userId || typeof userId !== 'string') {
     throw new Error('Invalid userId provided');
@@ -198,24 +219,28 @@ export const addGame = async (game: Game, userId: string) => {
   try {
     console.log('Adding game:', game);
 
+    // Extract cover URL safely
+    const coverUrl = getCoverUrl((game as any).cover || (game as any).cover_url);
+    const processedCoverUrl = coverUrl ? 
+      (coverUrl.startsWith('//') 
+        ? `https:${coverUrl.replace('t_thumb', 't_1080p').replace('t_micro', 't_1080p')}` 
+        : coverUrl.replace('t_thumb', 't_1080p').replace('t_micro', 't_1080p'))
+      : null;
+
     // First, insert or update the game in games table
     const { error: gameError } = await supabase
       .from('games')
       .upsert({
         id: game.id,
         name: game.name,
-        cover_url: game.cover_url || (game.cover ? 
-          (game.cover.url.startsWith('//') 
-            ? `https:${game.cover.url.replace('t_thumb', 't_1080p').replace('t_micro', 't_1080p')}` 
-            : game.cover.url.replace('t_thumb', 't_1080p').replace('t_micro', 't_1080p'))
-          : null),
+        cover_url: processedCoverUrl,
         rating: game.rating || 0,
-        total_rating_count: game.total_rating_count || 0,
+        total_rating_count: (game as any).total_rating_count || 0,
         first_release_date: game.first_release_date,
         platforms: game.platforms || [],
         genres: game.genres || [],
-        summary: game.summary || '',
-        storyline: game.storyline || ''
+        summary: (game as any).summary || '',
+        storyline: (game as any).storyline || ''
       }, { 
         onConflict: 'id' 
       });

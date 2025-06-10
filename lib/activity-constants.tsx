@@ -6,6 +6,8 @@ import {
   MessageCircle,
   BookmarkPlus,
   BarChart2,
+  Activity,
+  Star,
 } from "lucide-react";
 import { ActivityType } from "@/types/friend";
 
@@ -16,6 +18,10 @@ export const activityIcons: Record<ActivityType, ReactNode> = {
   review: <MessageCircle className="w-5 h-5 text-purple-400" />,
   want_to_play: <BookmarkPlus className="w-5 h-5 text-purple-400" />,
   progress: <BarChart2 className="w-5 h-5 text-blue-400" />,
+  game_status_updated: <Activity className="w-5 h-5 text-blue-400" />,
+  achievement_unlocked: <Trophy className="w-5 h-5 text-yellow-400" />,
+  game_completed: <CheckCircle className="w-5 h-5 text-green-400" />,
+  review_added: <Star className="w-5 h-5 text-purple-400" />,
 };
 
 export const activityText: Record<ActivityType, string> = {
@@ -25,4 +31,8 @@ export const activityText: Record<ActivityType, string> = {
   review: "reviewed",
   want_to_play: "wants to play",
   progress: "made progress in",
+  game_status_updated: "updated status for",
+  achievement_unlocked: "unlocked an achievement in",
+  game_completed: "completed",
+  review_added: "added a review for",
 };

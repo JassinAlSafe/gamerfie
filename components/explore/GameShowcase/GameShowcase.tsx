@@ -1,7 +1,7 @@
 "use client";
 
 import { memo, useCallback, useEffect, useState } from "react";
-import { Game } from "@/types/game";
+import { Game } from "@/types";
 import { Playlist } from "@/types/playlist";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { PlaylistService } from "@/services/playlistService";

@@ -2,7 +2,7 @@
 
 import React, { useState, useCallback, useMemo } from "react";
 import { motion } from "framer-motion";
-import { Game } from "@/types/game";
+import { Game } from "@/types";
 import { Profile } from "@/types/profile";
 
 interface GameProgress {

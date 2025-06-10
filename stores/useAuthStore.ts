@@ -21,7 +21,7 @@ interface AuthState {
   setError: (_error: string | null) => void
   signIn: (_email: string, _password: string) => Promise<AuthResponse>
   signUp: (_email: string, _password: string, _username: string) => Promise<AuthResponse>
-  signInWithGoogle: () => Promise<AuthResponse>
+  signInWithGoogle: () => Promise<{ data: { provider: string; url: string } | null; error: any }>
   signOut: () => Promise<void>
   resetPassword: (_email: string) => Promise<void>
   updatePassword: (_newPassword: string) => Promise<void>
@@ -41,13 +41,24 @@ export const useAuthStore = create<AuthState>()(
     (set, get) => {
       const supabase = createClient()
 
-      const fetchUserProfile = async (userId: string) => {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', userId)
-          .single();
-        return profile;
+      const fetchUserProfile = async (userId: string): Promise<Profile | null> => {
+        try {
+          const { data: profile, error } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', userId)
+            .single();
+          
+          if (error) {
+            console.warn('Error fetching profile:', error);
+            return null;
+          }
+          
+          return profile;
+        } catch (error) {
+          console.warn('Failed to fetch user profile:', error);
+          return null;
+        }
       };
 
       return {
@@ -76,16 +87,21 @@ export const useAuthStore = create<AuthState>()(
               // If no profile exists, create one
               if (!profile) {
                 const username = session.user.email?.split('@')[0] || 'user';
-                const { data: newProfile } = await supabase
+                const { data: newProfile, error: insertError } = await supabase
                   .from('profiles')
                   .insert({
                     id: session.user.id,
                     username,
+                    role: 'user',
                     created_at: new Date().toISOString(),
                     updated_at: new Date().toISOString()
                   })
                   .select()
                   .single();
+
+                if (insertError) {
+                  console.warn('Failed to create profile:', insertError);
+                }
 
                 set({ 
                   user: { ...session.user, profile: newProfile || null },
@@ -118,11 +134,7 @@ export const useAuthStore = create<AuthState>()(
             if (response.error) throw response.error;
             
             if (response.data.user) {
-              const { data: profile } = await supabase
-                .from('profiles')
-                .select('*')
-                .eq('id', response.data.user.id)
-                .single();
+              const profile = await fetchUserProfile(response.data.user.id);
 
               set({ 
                 user: { ...response.data.user, profile: profile || null },
@@ -163,22 +175,28 @@ export const useAuthStore = create<AuthState>()(
                 .insert({
                   id: response.data.user.id,
                   username: _username,
+                  role: 'user',
                   created_at: new Date().toISOString(),
                   updated_at: new Date().toISOString()
                 });
 
-              if (profileError) throw profileError;
+              if (profileError) {
+                console.warn('Failed to create profile during signup:', profileError);
+              }
+
+              const newProfile: Profile = {
+                id: response.data.user.id,
+                username: _username,
+                avatar_url: null,
+                role: 'user',
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+              };
 
               set({ 
                 user: { 
                   ...response.data.user, 
-                  profile: {
-                    id: response.data.user.id,
-                    username: _username,
-                    avatar_url: null,
-                    created_at: new Date().toISOString(),
-                    updated_at: new Date().toISOString()
-                  } as Profile
+                  profile: newProfile
                 },
                 error: null 
               });
@@ -221,11 +239,7 @@ export const useAuthStore = create<AuthState>()(
             if (error) throw error;
 
             if (session?.user) {
-              const { data: profile } = await supabase
-                .from('profiles')
-                .select('*')
-                .eq('id', session.user.id)
-                .single();
+              const profile = await fetchUserProfile(session.user.id);
 
               set({ 
                 user: { ...session.user, profile: profile || null },
@@ -244,82 +258,78 @@ export const useAuthStore = create<AuthState>()(
 
         resetPassword: async (_email) => {
           try {
-            set({ isLoading: true, error: null })
-            const { error } = await supabase.auth.resetPasswordForEmail(_email)
-            if (error) throw error
+            set({ isLoading: true, error: null });
+            const { error } = await supabase.auth.resetPasswordForEmail(_email);
+            if (error) throw error;
           } catch (error) {
-            const message = error instanceof Error ? error.message : 'Failed to reset password'
-            set({ error: message })
-            throw error
+            const message = error instanceof Error ? error.message : 'Failed to reset password';
+            set({ error: message });
+            throw error;
           } finally {
-            set({ isLoading: false })
+            set({ isLoading: false });
           }
         },
 
         updatePassword: async (_newPassword) => {
           try {
-            set({ isLoading: true, error: null })
+            set({ isLoading: true, error: null });
             const { error } = await supabase.auth.updateUser({
               password: _newPassword
-            })
-            if (error) throw error
+            });
+            if (error) throw error;
           } catch (error) {
-            const message = error instanceof Error ? error.message : 'Failed to update password'
-            set({ error: message })
-            throw error
+            const message = error instanceof Error ? error.message : 'Failed to update password';
+            set({ error: message });
+            throw error;
           } finally {
-            set({ isLoading: false })
+            set({ isLoading: false });
           }
         },
 
         refreshSession: async () => {
           try {
-            set({ isLoading: true, error: null })
-            const { data: { session }, error } = await supabase.auth.getSession()
-            if (error) throw error
+            set({ isLoading: true, error: null });
+            const { data: { session }, error } = await supabase.auth.getSession();
+            if (error) throw error;
             
             if (session?.user) {
-              const { data: profile } = await supabase
-                .from('profiles')
-                .select('*')
-                .eq('id', session.user.id)
-                .single()
+              const profile = await fetchUserProfile(session.user.id);
 
               set({ 
                 user: { ...session.user, profile: profile || null },
                 error: null 
-              })
+              });
             } else {
-              set({ user: null, error: null })
+              set({ user: null, error: null });
             }
           } catch (error) {
-            const message = error instanceof Error ? error.message : 'Failed to refresh session'
-            set({ error: message })
-            throw error
+            const message = error instanceof Error ? error.message : 'Failed to refresh session';
+            set({ error: message });
+            throw error;
           } finally {
-            set({ isLoading: false })
+            set({ isLoading: false });
           }
         },
 
         // Profile management
         updateProfile: async (_profile) => {
           try {
-            const user = get().user
-            if (!user) throw new Error('No user logged in')
+            const user = get().user;
+            if (!user) throw new Error('No user logged in');
 
-            set({ isLoading: true, error: null })
+            set({ isLoading: true, error: null });
             const { error } = await supabase
               .from('profiles')
               .update({
                 ..._profile,
                 updated_at: new Date().toISOString()
               })
-              .eq('id', user.id)
+              .eq('id', user.id);
 
-            if (error) throw error
+            if (error) throw error;
 
             // Update local state
-            if (!user.profile) throw new Error('No profile found')
+            if (!user.profile) throw new Error('No profile found');
             
             set({ 
               user: { 
@@ -330,55 +340,55 @@ export const useAuthStore = create<AuthState>()(
                   updated_at: new Date().toISOString() 
                 } as Profile
               } 
-            })
+            });
           } catch (error) {
-            const message = error instanceof Error ? error.message : 'Failed to update profile'
-            set({ error: message })
-            throw error
+            const message = error instanceof Error ? error.message : 'Failed to update profile';
+            set({ error: message });
+            throw error;
           } finally {
-            set({ isLoading: false })
+            set({ isLoading: false });
           }
         },
 
         uploadAvatar: async (_file) => {
           try {
-            const user = get().user
-            if (!user) throw new Error('No user logged in')
+            const user = get().user;
+            if (!user) throw new Error('No user logged in');
 
-            set({ isLoading: true, error: null })
+            set({ isLoading: true, error: null });
             
-            const fileExt = _file.name.split('.').pop()
-            const filePath = `${user.id}/avatar.${fileExt}`
+            const fileExt = _file.name.split('.').pop();
+            const filePath = `${user.id}/avatar.${fileExt}`;
 
             // Upload file
             const { error: uploadError } = await supabase.storage
               .from('avatars')
-              .upload(filePath, _file, { upsert: true })
+              .upload(filePath, _file, { upsert: true });
 
-            if (uploadError) throw uploadError
+            if (uploadError) throw uploadError;
 
             // Get public URL
             const { data: { publicUrl } } = supabase.storage
               .from('avatars')
-              .getPublicUrl(filePath)
+              .getPublicUrl(filePath);
 
             // Update profile with new avatar URL
-            await get().updateProfile({ avatar_url: publicUrl })
+            await get().updateProfile({ avatar_url: publicUrl });
 
-            return publicUrl
+            return publicUrl;
           } catch (error) {
-            const message = error instanceof Error ? error.message : 'Failed to upload avatar'
-            set({ error: message })
-            throw error
+            const message = error instanceof Error ? error.message : 'Failed to upload avatar';
+            set({ error: message });
+            throw error;
           } finally {
-            set({ isLoading: false })
+            set({ isLoading: false });
           }
         },
 
         signInWithGoogle: async () => {
           try {
             set({ isLoading: true, error: null });
-            const { data, error } = await supabase.auth.signInWithOAuth({
+            const response = await supabase.auth.signInWithOAuth({
               provider: 'google',
               options: {
                 redirectTo: `${window.location.origin}/auth/callback`,
@@ -389,13 +399,10 @@ export const useAuthStore = create<AuthState>()(
               },
             });
 
-            if (error) throw error;
+            if (response.error) throw response.error;
 
-            // Return a response that matches the AuthResponse type
-            return {
-              data: { user: null, session: null },
-              error: null,
-            };
+            // For OAuth flows, we return the response as-is since the redirect handles the auth
+            return response;
           } catch (error) {
             const message = error instanceof Error ? error.message : 'Failed to sign in with Google';
             set({ error: message });

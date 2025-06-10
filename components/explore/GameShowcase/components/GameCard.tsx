@@ -2,7 +2,7 @@ import { memo, useState } from "react";
 import { CalendarDays, ArrowRight, Gamepad2 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { Game } from "@/types/game";
+import { Game } from "@/types";
 import { Button } from "@/components/ui/button";
 import { GameActionsMenu } from "./GameActionsMenu";
 import { getCoverImageUrl } from "@/utils/image-utils";

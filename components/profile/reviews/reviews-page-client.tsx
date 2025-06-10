@@ -67,10 +67,14 @@ export default function ReviewsPageClient() {
             <ProfileHeader
               profile={profile}
               stats={
-                gameStats ?? {
+                (gameStats as any) ?? {
                   total_played: 0,
                   played_this_year: 0,
                   backlog: 0,
+                  totalGames: 0,
+                  totalPlaytime: 0,
+                  recentlyPlayed: [],
+                  mostPlayed: [],
                 }
               }
               onProfileUpdate={() => {}}

@@ -10,7 +10,7 @@ import React, {
 } from "react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
-import { Game } from "@/types/game";
+import { Game } from "@/types";
 // Import the ScreenshotModal component lazily
 const ScreenshotModal = lazy(() =>
   import("@/components/screenshot-modal").then((mod) => ({
@@ -246,7 +246,7 @@ export function MediaTab({ game }: MediaTabProps) {
                         }}
                         whileHover={{ scale: 1.03, y: -5 }}
                         className="relative aspect-video rounded-lg overflow-hidden cursor-pointer group shadow-md"
-                        onClick={() => handleVideoClick(video.video_id)}
+                        onClick={() => video.video_id && handleVideoClick(video.video_id)}
                       >
                         {/* Video Thumbnail */}
                         <div className="absolute inset-0 bg-gray-800 flex items-center justify-center">

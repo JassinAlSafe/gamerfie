@@ -9,7 +9,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Game } from "@/types/game";
+import { Game } from "@/types";
 import { PlayCircle, Trophy, BookmarkPlus, Ban } from "lucide-react";
 
 // Define GameStatus type locally

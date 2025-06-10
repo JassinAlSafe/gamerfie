@@ -1,5 +1,5 @@
 import { QueryClient } from '@tanstack/react-query';
-import { supabase } from './supabaseClient'
+import { createClient } from '@/utils/supabase/client';
 
 const createQueryClient = () => new QueryClient({
   defaultOptions: {
@@ -8,10 +8,11 @@ const createQueryClient = () => new QueryClient({
       retry: (failureCount, error) => {
         // Auto-refresh session on 401 errors
         if (error instanceof Error && error.message.includes('401')) {
-          supabase.auth.refreshSession()
-          return failureCount < 2
+          const supabase = createClient();
+          supabase.auth.refreshSession();
+          return failureCount < 2;
         }
-        return false
+        return false;
       },
       refetchOnWindowFocus: false,
       refetchOnMount: true,

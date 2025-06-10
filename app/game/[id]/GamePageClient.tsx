@@ -4,7 +4,7 @@ import React, { Suspense } from "react";
 import { GameDetails } from "@/components/game/GameDetails";
 import { useGameDetails } from "@/hooks/Games/use-game-details";
 import { LoadingSpinner } from "@/components/loadingSpinner";
-import { GamePageProps } from "@/types/game";
+import { GamePageProps } from "@/types";
 import { motion } from "framer-motion";
 import { AlertTriangle, Gamepad2 } from "lucide-react";
 import Link from "next/link";

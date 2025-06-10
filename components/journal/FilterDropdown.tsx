@@ -24,7 +24,7 @@ interface FilterDropdownProps {
     type: string;
     date: string;
   };
-  onChange: (key: keyof typeof criteria, value: string) => void;
+  onChange: (key: keyof FilterDropdownProps['criteria'], value: string) => void;
   entries: JournalEntry[];
 }
 

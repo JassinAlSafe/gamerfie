@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { useFriendsStore } from "@/stores/useFriendsStore";
 
 export function useFriends() {
-  const { friends, isLoading, error, fetchFriends } = useFriendsStore();
+  const { friends, isLoading, fetchFriends } = useFriendsStore();
 
   useEffect(() => {
     // Only try to fetch friends if we don't already have them and aren't loading

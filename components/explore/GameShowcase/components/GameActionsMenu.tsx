@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { AuthCheck } from "@/components/auth/AuthCheck";
-import { Game } from "@/types/game";
+import { Game } from "@/types";
 // Define GameStatus type directly to avoid import issues
 type GameStatus = "playing" | "completed" | "want_to_play" | "dropped";
 import { useProgressStore } from "@/stores/useProgressStore";

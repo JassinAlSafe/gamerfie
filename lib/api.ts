@@ -229,4 +229,9 @@ export async function removeGameFromLibrary(gameId: string) {
     if (error) throw error
 }
 
+export async function fetchUserReviews(_userId: string): Promise<any[]> {
+    // TODO: Implement user reviews functionality
+    return [];
+}
+
 
