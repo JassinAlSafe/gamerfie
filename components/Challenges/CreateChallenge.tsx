@@ -7,7 +7,7 @@ import * as z from "zod";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { Textarea } from "@/components/ui/text/textarea";
 import {
   Select,
   SelectContent,
@@ -30,7 +30,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useToast } from "@/components/ui/use-toast";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { createClient } from "@/utils/supabase/client";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 
@@ -250,14 +250,14 @@ export function CreateChallenge({ onSubmit }: CreateChallengeProps) {
   };
 
   const uploadImage = async (file: File): Promise<string> => {
-    const supabase = createClientComponentClient();
+    const supabase = createClient();
     const fileExt = file.name.split(".").pop();
     const fileName = `${Math.random()}.${fileExt}`;
     const filePath = `challenge-covers/${fileName}`;
 
     console.log("Uploading image:", { fileName, filePath });
 
-    const { error: uploadError, data } = await supabase.storage
+    const { error: uploadError } = await supabase.storage
       .from("challenges")
       .upload(filePath, file);
 
@@ -290,13 +290,23 @@ export function CreateChallenge({ onSubmit }: CreateChallengeProps) {
     try {
       setIsSubmitting(true);
 
+      // If onSubmit prop is provided, use it
+      if (onSubmit) {
+        await onSubmit(data);
+        toast({
+          title: "Success",
+          description: "Challenge created successfully!",
+        });
+        return;
+      }
+
       // Upload image first if exists
       let coverUrl = null;
       if (imageFile) {
         coverUrl = await uploadImage(imageFile);
       }
 
-      const supabase = createClientComponentClient();
+      const supabase = createClient();
 
       // Get the current user's profile
       const {

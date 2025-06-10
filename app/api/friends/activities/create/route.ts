@@ -1,34 +1,41 @@
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
+import { createClient } from "@/utils/supabase/server";
 import { NextResponse } from 'next/server';
-import { FriendActivity } from '../../../../types/friend';
+import { FriendActivity, ActivityType } from '../../../../../types/activity';
 
-const COOLDOWN_PERIODS = {
+const COOLDOWN_PERIODS: Record<ActivityType, number> = {
   started_playing: 24 * 60 * 60, // 24 hours in seconds
   completed: 0, // No cooldown for completing games
   achievement: 5 * 60, // 5 minutes in seconds
   review: 0, // No cooldown for reviews
   want_to_play: 60 * 60, // 1 hour in seconds
-  progress: 30 * 60 // 30 minutes in seconds
+  progress: 30 * 60, // 30 minutes in seconds
+  game_status_updated: 0, // No cooldown
+  achievement_unlocked: 5 * 60, // 5 minutes in seconds
+  game_completed: 0, // No cooldown
+  review_added: 0 // No cooldown
 };
 
 export async function POST(request: Request) {
-  const supabase = createRouteHandlerClient({ cookies });
+  const supabase = await createClient();
 
   try {
     // Get user session
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-    if (sessionError) {
-      console.error('Session error:', sessionError);
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError) {
+      console.error('User error:', userError);
       throw new Error('Authentication error');
     }
-    if (!session?.user) {
+    if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Parse the request body
-    const { activity_type, game_id, details } = await request.json();
-    console.log('Creating activity:', { activity_type, game_id, details, user_id: session.user.id });
+    const { activity_type, game_id, details } = await request.json() as { 
+      activity_type: ActivityType; 
+      game_id: string; 
+      details?: any 
+    };
+    console.log('Creating activity:', { activity_type, game_id, details, user_id: user.id });
 
     if (!activity_type) {
       return NextResponse.json({ error: 'Activity type is required' }, { status: 400 });
@@ -40,7 +47,7 @@ export async function POST(request: Request) {
       const { data: recentActivity } = await supabase
         .from('friend_activities')
         .select('created_at')
-        .eq('user_id', session.user.id)
+        .eq('user_id', user.id)
         .eq('game_id', game_id)
         .eq('activity_type', activity_type)
         .order('created_at', { ascending: false })
@@ -65,7 +72,7 @@ export async function POST(request: Request) {
     const { data: newActivity, error: insertError } = await supabase
       .from('friend_activities')
       .insert({
-        user_id: session.user.id,
+        user_id: user.id,
         activity_type,
         game_id: game_id || null,
         details: details || {},
@@ -130,8 +137,11 @@ export async function POST(request: Request) {
     const transformedActivity: FriendActivity = {
       id: activity.id,
       type: activity.activity_type,
-      details: activity.details,
+      user_id: activity.user_id,
+      game_id: activity.game_id,
       timestamp: activity.created_at,
+      created_at: activity.created_at,
+      details: activity.details,
       user: userProfile ? {
         id: userProfile.id,
         username: userProfile.username,

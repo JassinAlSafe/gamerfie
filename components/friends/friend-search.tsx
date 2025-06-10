@@ -7,7 +7,7 @@ import { Input } from "../../components/ui/input";
 import { Button } from "../../components/ui/button";
 import { Search, UserPlus } from "lucide-react";
 import { toast } from "react-hot-toast";
-import { useDebounce } from "../../hooks/use-debounce";
+import { useDebounce } from "../../hooks/Settings/useDebounce";
 
 export function FriendSearch() {
   const [query, setQuery] = useState("");
@@ -63,6 +63,7 @@ export function FriendSearch() {
       toast.success("Friend request sent!");
       setResults(results.filter((user) => user.id !== userId));
     } catch (error) {
+      console.error("Failed to send friend request:", error);
       toast.error("Failed to send friend request");
     }
   };

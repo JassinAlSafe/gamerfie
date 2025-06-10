@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import AllGamesClient from "../../components/games/all-games-client";
+import AllGamesClient from "@/components/allgames/all-games-client";
 import { Loader2 } from "lucide-react";
 
 export default function AllGamesPage() {

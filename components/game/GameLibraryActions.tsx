@@ -16,9 +16,8 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Slider } from "@/components/ui/slider";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
-import { Database } from "@/types/supabase";
-import { GameStatus } from "@/types/game";
+import { createClient } from "@/utils/supabase/client";
+import { GameStatus } from "../../types/game";
 import { LoadingSpinner } from "@/components/loadingSpinner";
 import { useFriendsStore } from "@/stores/useFriendsStore";
 import { useChallengesStore } from "@/stores/useChallengesStore";
@@ -50,9 +49,9 @@ export function GameLibraryActions({
   const [showProgressDialog, setShowProgressDialog] = useState(false);
   const [matchingChallenges, setMatchingChallenges] = useState<any[]>([]);
   const { createActivity } = useFriendsStore();
-  const { userChallenges } = useChallengesStore();
+  const { getActiveChallenges } = useChallengesStore();
 
-  const supabase = createClientComponentClient<Database>();
+  const supabase = createClient();
 
   useEffect(() => {
     const fetchCurrentStatus = async () => {
@@ -63,24 +62,24 @@ export function GameLibraryActions({
 
       const { data } = await supabase
         .from("user_games")
-        .select("status, progress")
+        .select("status, play_time")
         .eq("user_id", user.id)
         .eq("game_id", gameId)
         .single();
 
       if (data) {
         setCurrentStatus(data.status as GameStatus);
-        setProgress(data.progress || 0);
+        setProgress(data.play_time || 0);
       }
     };
 
     fetchCurrentStatus();
-  }, [gameId]);
+  }, [gameId, supabase]);
 
   useEffect(() => {
     // Find matching active challenges based on game genres
-    const activeMatches = userChallenges.filter((challenge) => {
-      if (challenge.status !== "active") return false;
+    const activeChallenges = getActiveChallenges();
+    const activeMatches = activeChallenges.filter((challenge: any) => {
       if (!challenge.requirements?.genre) return true;
 
       const requiredGenre = challenge.requirements.genre.toLowerCase();
@@ -88,7 +87,7 @@ export function GameLibraryActions({
     });
 
     setMatchingChallenges(activeMatches);
-  }, [genres, userChallenges]);
+  }, [genres, getActiveChallenges]);
 
   const handleStatusUpdate = async (newStatus: GameStatus) => {
     try {

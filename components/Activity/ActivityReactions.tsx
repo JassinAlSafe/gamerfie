@@ -9,9 +9,10 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { FriendActivity, ActivityReaction } from "@/types/friend";
+import { FriendActivity } from "@/types/friend";
+import { ActivityReaction } from "@/types/activity";
 import { useFriendsStore } from "@/stores/useFriendsStore";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { createClient } from "@/utils/supabase/client";
 import { toast } from "react-hot-toast";
 import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
@@ -29,7 +30,7 @@ const reactionEmojis = {
 };
 
 export function ActivityReactions({ activity }: ActivityReactionsProps) {
-  const supabase = createClientComponentClient();
+  const supabase = createClient();
   const [userId, setUserId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const { addReaction, removeReaction } = useFriendsStore();
@@ -59,7 +60,7 @@ export function ActivityReactions({ activity }: ActivityReactionsProps) {
       reactions: activity.reactions,
     });
     setLocalReactions(activity.reactions || []);
-  }, [activity.reactions]);
+  }, [activity.reactions, activity.id]);
 
   const handleReaction = async (emoji: string) => {
     console.log("Handling reaction:", {
@@ -112,7 +113,7 @@ export function ActivityReactions({ activity }: ActivityReactionsProps) {
         await addReaction(activity.id, emoji);
         toast.success("Reaction added");
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Reaction error:", error);
       console.error("Error stack:", error.stack);
       toast.error("Failed to update reaction");
@@ -147,7 +148,7 @@ export function ActivityReactions({ activity }: ActivityReactionsProps) {
         </PopoverTrigger>
         <PopoverContent className="w-full p-2" align="start">
           <div className="flex flex-wrap gap-2">
-            {Object.entries(reactionEmojis).map(([emoji, label]) => {
+            {Object.entries(reactionEmojis).map(([emoji, _label]) => {
               const userReaction = localReactions.find(
                 (r) => r.user_id === userId
               );
@@ -174,7 +175,7 @@ export function ActivityReactions({ activity }: ActivityReactionsProps) {
         <div className="flex flex-wrap gap-1">
           {Object.entries(reactionCounts).map(([emoji, count]) => (
             <Badge key={emoji} variant="secondary" className="gap-1">
-              {emoji} {count}
+              {emoji} {String(count)}
             </Badge>
           ))}
         </div>

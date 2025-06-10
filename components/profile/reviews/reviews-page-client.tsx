@@ -1,6 +1,6 @@
 "use client";
 
-import { useProfile } from "@/hooks/use-profile";
+import { useProfile } from "@/hooks/Profile/use-profile";
 import { ProfileHeader } from "@/components/profile/profile-header";
 import { ProfileNav } from "@/components/profile/profile-nav";
 import ReviewsClient from "@/components/profile/reviews/reviews-client";
@@ -67,10 +67,14 @@ export default function ReviewsPageClient() {
             <ProfileHeader
               profile={profile}
               stats={
-                gameStats ?? {
+                (gameStats as any) ?? {
                   total_played: 0,
                   played_this_year: 0,
                   backlog: 0,
+                  totalGames: 0,
+                  totalPlaytime: 0,
+                  recentlyPlayed: [],
+                  mostPlayed: [],
                 }
               }
               onProfileUpdate={() => {}}

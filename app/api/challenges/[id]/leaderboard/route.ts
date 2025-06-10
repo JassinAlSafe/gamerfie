@@ -1,94 +1,54 @@
+import { createClient } from "@/utils/supabase/server";
 import { NextResponse } from "next/server";
-import { withAuth } from "../../middleware";
-import { withRateLimit } from "../../middleware/rateLimit";
-import { withCache, cacheConfigs } from "../../middleware/cache";
-import { type Profile } from "../../types";
 
-interface RouteParams {
-  params: {
-    id: string;
-  };
-}
-
-type HandlerContext = {
-  supabase: any;
-  session: {
-    user: {
-      id: string;
-    };
-  };
-};
-
-interface LeaderboardEntry {
-  rank: number;
-  user_id: string;
-  username: string;
-  avatar_url: string;
-  progress: number;
-  completed: boolean;
-}
-
-interface LeaderboardResponse {
-  challenge_id: string;
-  rankings: LeaderboardEntry[];
-}
-
-const handler = withAuth(async (
-  request: Request,
-  { params }: RouteParams,
-  { supabase }: HandlerContext
-) => {
+export async function GET(
+  _request: Request,
+  { params }: { params: { id: string } }
+) {
   try {
-    // Get all participants with their progress
-    const { data: participants, error: participantsError } = await supabase
-      .from("challenge_participants")
-      .select(`
-        user_id,
-        progress,
-        completed,
-        user:profiles!inner(
-          username,
-          avatar_url
-        )
-      `)
-      .eq("challenge_id", params.id)
-      .order("progress", { ascending: false });
+    const supabase = await createClient();
 
-    if (participantsError) {
-      console.error("Error fetching participants:", participantsError);
+    // Get current user session
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Use the optimized get_challenge_leaderboard function
+    const { data: leaderboard, error } = await supabase
+      .rpc('get_challenge_leaderboard', {
+        challenge_id: params.id
+      });
+
+    if (error) {
+      console.error('Error fetching challenge leaderboard:', error);
       return NextResponse.json(
-        { error: "Failed to fetch participants", details: participantsError },
+        { error: 'Failed to fetch challenge leaderboard' },
         { status: 500 }
       );
     }
 
-    // Transform and rank participants
-    const rankings: LeaderboardEntry[] = participants.map((participant: any, index: number) => ({
-      rank: index + 1,
-      user_id: participant.user_id,
-      username: participant.user.username,
-      avatar_url: participant.user.avatar_url,
-      progress: participant.progress,
-      completed: participant.completed,
-    }));
+    // Also get challenge overview for additional context
+    const { data: overview, error: overviewError } = await supabase
+      .from('challenge_overview')
+      .select('*')
+      .eq('id', params.id)
+      .single();
 
-    const response: LeaderboardResponse = {
-      challenge_id: params.id,
-      rankings,
-    };
+    if (overviewError) {
+      console.warn('Challenge overview not available:', overviewError);
+    }
 
-    return NextResponse.json(response);
+    return NextResponse.json({
+      leaderboard: leaderboard || [],
+      challenge: overview || null,
+      total_participants: leaderboard?.length || 0
+    });
   } catch (error) {
-    console.error("Error fetching leaderboard:", error);
+    console.error('Challenge leaderboard error:', error);
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: 'Internal server error' },
       { status: 500 }
     );
   }
-});
-
-// Apply rate limiting and caching middleware
-export const GET = withRateLimit(
-  withCache(handler, cacheConfigs.leaderboard),
-  { maxRequests: 50, windowMs: 60 * 1000 } // 50 requests per minute
-); 
+} 

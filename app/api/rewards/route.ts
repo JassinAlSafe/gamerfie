@@ -1,54 +1,55 @@
-import { cookies } from "next/headers";
-import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
+import { createClient } from "@/utils/supabase/server";
 import { NextResponse } from "next/server";
 
 export async function GET() {
   try {
-    const supabase = createRouteHandlerClient({ cookies });
+    const supabase = await createClient();
     const {
-      data: { session },
-    } = await supabase.auth.getSession();
+      data: { user },
+    } = await supabase.auth.getUser();
 
-    if (!session) {
+    if (!user) {
       return NextResponse.json(
         { error: "Not authenticated" },
         { status: 401 }
       );
     }
 
-    // Get all claimed rewards with challenge and reward details
-    const { data: rewards, error } = await supabase
-      .from("claimed_rewards")
+    // Get all claimed badges with challenge and badge details
+    const { data: claimedBadges, error } = await supabase
+      .from("user_badge_claims")
       .select(`
         *,
         challenge:challenge_id(
           title
         ),
-        reward:reward_id(
+        badge:badge_id(
           name,
           description,
-          type
+          type,
+          rarity
         )
       `)
-      .eq("user_id", session.user.id)
+      .eq("user_id", user.id)
       .order("claimed_at", { ascending: false });
 
     if (error) {
-      console.error("Error fetching rewards:", error);
+      console.error("Error fetching claimed badges:", error);
       return NextResponse.json(
-        { error: "Failed to fetch rewards" },
+        { error: "Failed to fetch claimed badges" },
         { status: 500 }
       );
     }
 
-    // Transform the data to match the ClaimedReward type
-    const formattedRewards = rewards.map((claim) => ({
-      id: claim.reward_id,
-      name: claim.reward.name,
-      description: claim.reward.description,
-      type: claim.reward.type,
+    // Transform the data to match the expected format
+    const formattedRewards = claimedBadges.map((claim) => ({
+      id: claim.badge_id,
+      name: claim.badge?.name,
+      description: claim.badge?.description,
+      type: claim.badge?.type,
+      rarity: claim.badge?.rarity,
       challenge_id: claim.challenge_id,
-      challenge_title: claim.challenge.title,
+      challenge_title: claim.challenge?.title,
       claimed_at: claim.claimed_at,
     }));
 

@@ -1,33 +1,43 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { Game, Platform, Genre } from '@/types/game';
-
-type FilterType = 'platform' | 'genre' | 'category' | 'year' | 'search' | 'sort';
-export type SortOption = 'popularity' | 'rating' | 'name' | 'release';
-export type CategoryOption = 'all' | 'recent' | 'popular' | 'upcoming' | 'classic';
+import { 
+  Game, 
+  Platform, 
+  Genre, 
+  FilterType, 
+  SortOption, 
+  CategoryOption,
+  GameFilterUpdate,
+  TimeRange
+} from '@/types';
 
 interface GamesState {
-  games: Game[];
-  totalGames: number;
-  totalPages: number;
-  currentPage: number;
-  isLoading: boolean;
-  error: string | null;
-  platforms: Platform[];
-  genres: Genre[];
+  // From GameFilterState
   sortBy: SortOption;
   selectedPlatform: string;
   selectedGenre: string;
   selectedCategory: CategoryOption;
   selectedYear: string;
-  timeRange: string;
-  hasActiveFilters: boolean;
+  timeRange: TimeRange;
   searchQuery: string;
+  
+  // From GamePaginationState
+  currentPage: number;
+  totalPages: number;
+  totalGames: number;
+  
+  // Own properties
+  games: Game[];
+  error: string | null;
+  platforms: Platform[];
+  genres: Genre[];
+  hasActiveFilters: boolean;
+  
+  // State setters
   setGames: (games: Game[]) => void;
   setTotalGames: (total: number) => void;
   setTotalPages: (total: number) => void;
   setCurrentPage: (page: number) => void;
-  setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
   setPlatforms: (platforms: Platform[]) => void;
   setGenres: (genres: Genre[]) => void;
@@ -36,24 +46,19 @@ interface GamesState {
   setSelectedGenre: (genre: string) => void;
   setSelectedCategory: (category: CategoryOption) => void;
   setSelectedYear: (year: string) => void;
-  setTimeRange: (range: string) => void;
+  setTimeRange: (range: TimeRange) => void;
   setSearchQuery: (query: string) => void;
+  
+  // Filter management
   removeFilter: (filterType: FilterType) => void;
   resetFilters: () => void;
   handleResetFilters: () => void;
+  updateHasActiveFilters: () => void;
+  
+  // Data fetching
   fetchMetadata: () => Promise<void>;
   fetchGames: () => Promise<void>;
-  updateHasActiveFilters: () => void;
-  batchUpdate: (updates: Partial<{
-    selectedCategory: CategoryOption;
-    selectedPlatform: string;
-    selectedGenre: string;
-    selectedYear: string;
-    sortBy: SortOption;
-    timeRange: string;
-    currentPage: number;
-    searchQuery: string;
-  }>) => void;
+  batchUpdate: (updates: GameFilterUpdate) => void;
 }
 
 const DEFAULT_VALUES = {
@@ -62,7 +67,7 @@ const DEFAULT_VALUES = {
   GENRE: 'all',
   CATEGORY: 'all' as CategoryOption,
   YEAR: 'all',
-  TIME_RANGE: 'all',
+  TIME_RANGE: 'all' as TimeRange,
 };
 
 export const useGamesStore = create<GamesState>()(
@@ -72,7 +77,6 @@ export const useGamesStore = create<GamesState>()(
       totalGames: 0,
       totalPages: 1,
       currentPage: 1,
-      isLoading: false,
       error: null,
       platforms: [],
       genres: [],
@@ -89,7 +93,6 @@ export const useGamesStore = create<GamesState>()(
       setTotalGames: (totalGames) => set({ totalGames }),
       setTotalPages: (totalPages) => set({ totalPages }),
       setCurrentPage: (currentPage) => set({ currentPage }),
-      setLoading: (isLoading) => set({ isLoading }),
       setError: (error) => set({ error }),
       setPlatforms: (platforms) => set({ platforms }),
       setGenres: (genres) => set({ genres }),
@@ -215,7 +218,6 @@ export const useGamesStore = create<GamesState>()(
 
       fetchMetadata: async () => {
         try {
-          set({ isLoading: true });
           const response = await fetch('/api/games/metadata');
           if (!response.ok) {
             throw new Error('Failed to fetch metadata');
@@ -223,13 +225,11 @@ export const useGamesStore = create<GamesState>()(
           const data = await response.json();
           set({
             platforms: data.platforms || [],
-            genres: data.genres || [],
-            isLoading: false
+            genres: data.genres || []
           });
         } catch (error) {
           set({
-            error: error instanceof Error ? error.message : 'Failed to fetch metadata',
-            isLoading: false
+            error: error instanceof Error ? error.message : 'Failed to fetch metadata'
           });
         }
       },
@@ -237,8 +237,6 @@ export const useGamesStore = create<GamesState>()(
       fetchGames: async () => {
         const state = get();
         try {
-          set({ isLoading: true });
-          
           const params = new URLSearchParams({
             page: state.currentPage.toString(),
             platform: state.selectedPlatform,
@@ -259,13 +257,11 @@ export const useGamesStore = create<GamesState>()(
             games: data.games,
             totalGames: data.totalGames,
             totalPages: data.totalPages,
-            isLoading: false,
             error: null
           });
         } catch (error) {
           set({
-            error: error instanceof Error ? error.message : 'Failed to fetch games',
-            isLoading: false
+            error: error instanceof Error ? error.message : 'Failed to fetch games'
           });
         }
       },
@@ -297,4 +293,4 @@ export const useGamesStore = create<GamesState>()(
       })
     }
   )
-); 
+);

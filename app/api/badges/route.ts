@@ -1,5 +1,4 @@
-import { cookies } from "next/headers";
-import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
+import { createClient } from "@/utils/supabase/server";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
@@ -7,11 +6,13 @@ const createBadgeSchema = z.object({
   name: z.string().min(3, "Name must be at least 3 characters long"),
   description: z.string().min(10, "Description must be at least 10 characters long"),
   icon_url: z.string().url().optional(),
+  type: z.enum(["challenge", "achievement", "special", "community"]).default("achievement"),
+  rarity: z.enum(["common", "rare", "epic", "legendary"]).default("common"),
 });
 
 export async function GET() {
   try {
-    const supabase = createRouteHandlerClient({ cookies });
+    const supabase = await createClient();
     const { data: badges, error } = await supabase
       .from("badges")
       .select("*")
@@ -34,14 +35,14 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const supabase = createRouteHandlerClient({ cookies });
+    const supabase = await createClient();
     
     // Check if user is authenticated
     const {
-      data: { session },
-    } = await supabase.auth.getSession();
+      data: { user },
+    } = await supabase.auth.getUser();
 
-    if (!session) {
+    if (!user) {
       return NextResponse.json(
         { error: "Not authenticated" },
         { status: 401 }
@@ -52,7 +53,7 @@ export async function POST(request: Request) {
     const { data: profile, error: profileError } = await supabase
       .from("profiles")
       .select("role")
-      .eq("id", session.user.id)
+      .eq("id", user.id)
       .single();
 
     if (profileError) {

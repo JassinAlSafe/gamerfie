@@ -1,11 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useProfile } from "@/hooks/use-profile";
+import { useProfile } from "@/hooks/Profile/use-profile";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Loader2, Save } from "lucide-react";
 import { toast } from "react-hot-toast";
@@ -82,6 +80,68 @@ export default function SettingsPage() {
     { id: "privacy", label: "Privacy" },
     { id: "notifications", label: "Notifications" },
   ];
+
+  const handleViewChange = (view: "grid" | "list") => {
+    handleSettingsChange({
+      ...settings,
+      library: {
+        ...settings.library,
+        view: view,
+        sortBy: settings.library?.sortBy || "recent",
+        sortOrder: settings.library?.sortOrder || "desc",
+      },
+    });
+  };
+
+  const handleSortByChange = (sortBy: "recent" | "name" | "rating") => {
+    handleSettingsChange({
+      ...settings,
+      library: {
+        ...settings.library,
+        sortBy,
+        view: settings.library?.view || "grid",
+        sortOrder: settings.library?.sortOrder || "desc",
+      },
+    });
+  };
+
+  const handleSortOrderChange = (sortOrder: "asc" | "desc") => {
+    handleSettingsChange({
+      ...settings,
+      library: {
+        ...settings.library,
+        sortOrder,
+        view: settings.library?.view || "grid",
+        sortBy: settings.library?.sortBy || "recent",
+      },
+    });
+  };
+
+  const handlePlaytimeToggle = (showPlaytime: boolean) => {
+    handleSettingsChange({
+      ...settings,
+      library: {
+        ...settings.library,
+        showPlaytime,
+        view: settings.library?.view || "grid",
+        sortBy: settings.library?.sortBy || "recent",
+        sortOrder: settings.library?.sortOrder || "desc",
+      },
+    });
+  };
+
+  const handleRatingsToggle = (showRatings: boolean) => {
+    handleSettingsChange({
+      ...settings,
+      library: {
+        ...settings.library,
+        showRatings,
+        view: settings.library?.view || "grid",
+        sortBy: settings.library?.sortBy || "recent",
+        sortOrder: settings.library?.sortOrder || "desc",
+      },
+    });
+  };
 
   return (
     <div className="flex flex-col min-h-[calc(100vh-4rem)] pt-16 bg-gray-950">
@@ -395,13 +455,7 @@ export default function SettingsPage() {
                         <select
                           value={settings.library?.view || "grid"}
                           onChange={(e) =>
-                            handleSettingsChange({
-                              ...settings,
-                              library: {
-                                ...settings.library,
-                                view: e.target.value as "grid" | "list",
-                              },
-                            })
+                            handleViewChange(e.target.value as "grid" | "list")
                           }
                           className="bg-gray-800 border border-gray-700 text-white rounded-md px-3 py-2 min-w-[120px]"
                         >
@@ -422,16 +476,9 @@ export default function SettingsPage() {
                         <select
                           value={settings.library?.sortBy || "recent"}
                           onChange={(e) =>
-                            handleSettingsChange({
-                              ...settings,
-                              library: {
-                                ...settings.library,
-                                sortBy: e.target.value as
-                                  | "recent"
-                                  | "name"
-                                  | "rating",
-                              },
-                            })
+                            handleSortByChange(
+                              e.target.value as "recent" | "name" | "rating"
+                            )
                           }
                           className="bg-gray-800 border border-gray-700 text-white rounded-md px-3 py-2 min-w-[120px]"
                         >
@@ -453,13 +500,9 @@ export default function SettingsPage() {
                         <select
                           value={settings.library?.sortOrder || "desc"}
                           onChange={(e) =>
-                            handleSettingsChange({
-                              ...settings,
-                              library: {
-                                ...settings.library,
-                                sortOrder: e.target.value as "asc" | "desc",
-                              },
-                            })
+                            handleSortOrderChange(
+                              e.target.value as "asc" | "desc"
+                            )
                           }
                           className="bg-gray-800 border border-gray-700 text-white rounded-md px-3 py-2 min-w-[120px]"
                         >
@@ -480,13 +523,7 @@ export default function SettingsPage() {
                         <Switch
                           checked={settings.library?.showPlaytime ?? true}
                           onCheckedChange={(checked) =>
-                            handleSettingsChange({
-                              ...settings,
-                              library: {
-                                ...settings.library,
-                                showPlaytime: checked,
-                              },
-                            })
+                            handlePlaytimeToggle(checked)
                           }
                         />
                       </div>
@@ -503,13 +540,7 @@ export default function SettingsPage() {
                         <Switch
                           checked={settings.library?.showRatings ?? true}
                           onCheckedChange={(checked) =>
-                            handleSettingsChange({
-                              ...settings,
-                              library: {
-                                ...settings.library,
-                                showRatings: checked,
-                              },
-                            })
+                            handleRatingsToggle(checked)
                           }
                         />
                       </div>
@@ -543,7 +574,10 @@ export default function SettingsPage() {
                                 ...settings,
                                 privacy: {
                                   ...settings.privacy,
-                                  profileVisibility: e.target.value,
+                                  profileVisibility: e.target.value as
+                                    | "public"
+                                    | "friends"
+                                    | "private",
                                 },
                               })
                             }

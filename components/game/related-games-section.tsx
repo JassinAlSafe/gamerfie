@@ -1,11 +1,11 @@
-import React from 'react';
-import Image from 'next/image';
-import Link from 'next/link';
-import { motion } from 'framer-motion';
-import { Star, Users, Gamepad2, Puzzle } from 'lucide-react';
-import { Game } from '@/types/game';
-import { ensureAbsoluteUrl } from '@/lib/utils';
-import { Badge } from '@/components/ui/badge';
+import React from "react";
+import Image from "next/image";
+import Link from "next/link";
+import { motion } from "framer-motion";
+import { Star, Users, Gamepad2, Puzzle } from "lucide-react";
+import { Game } from "@/types";
+import { ensureAbsoluteUrl } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
 
 interface RelatedGamesSectionProps {
   games: Game[];
@@ -17,7 +17,9 @@ export function RelatedGamesSection({ games }: RelatedGamesSectionProps) {
       <div className="text-center py-12 text-gray-400">
         <Gamepad2 className="w-12 h-12 mx-auto mb-4 opacity-50" />
         <p>No related games found.</p>
-        <p className="text-sm mt-2 text-gray-500">This game might not have any DLCs or games from the same series.</p>
+        <p className="text-sm mt-2 text-gray-500">
+          This game might not have any DLCs or games from the same series.
+        </p>
       </div>
     );
   }
@@ -33,16 +35,19 @@ export function RelatedGamesSection({ games }: RelatedGamesSectionProps) {
             className="group relative aspect-[3/4] rounded-lg overflow-hidden bg-gray-900/50"
           >
             {/* DLC Badge */}
-            {game.version_parent && (
+            {(game as any).version_parent && (
               <div className="absolute top-2 right-2 z-10">
-                <Badge variant="secondary" className="bg-purple-500/20 text-purple-300">
+                <Badge
+                  variant="secondary"
+                  className="bg-purple-500/20 text-purple-300"
+                >
                   <Puzzle className="w-3 h-3 mr-1" />
                   DLC
                 </Badge>
               </div>
             )}
 
-            {game.cover?.url ? (
+            {game.cover && typeof game.cover === "object" && game.cover.url ? (
               <Image
                 src={ensureAbsoluteUrl(game.cover.url)}
                 alt={game.name}
@@ -68,13 +73,15 @@ export function RelatedGamesSection({ games }: RelatedGamesSectionProps) {
                       <span className="text-xs">{Math.round(game.rating)}</span>
                     </div>
                   )}
-                  {game.total_rating_count && (
+                  {(game as any).total_rating_count && (
                     <div className="flex items-center text-gray-400">
                       <Users className="h-3 w-3 mr-1" />
                       <span className="text-xs">
-                        {game.total_rating_count > 1000
-                          ? `${(game.total_rating_count / 1000).toFixed(1)}k`
-                          : game.total_rating_count}
+                        {(game as any).total_rating_count > 1000
+                          ? `${(
+                              (game as any).total_rating_count / 1000
+                            ).toFixed(1)}k`
+                          : (game as any).total_rating_count}
                       </span>
                     </div>
                   )}
@@ -86,4 +93,4 @@ export function RelatedGamesSection({ games }: RelatedGamesSectionProps) {
       ))}
     </div>
   );
-} 
+}

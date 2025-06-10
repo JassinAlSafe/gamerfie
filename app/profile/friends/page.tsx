@@ -3,12 +3,12 @@
 import { Card } from "@/components/ui/card";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
 import LoadingSpinner from "@/components/loadingSpinner";
 import { ProfileHeader } from "@/components/profile/profile-header";
 import { ProfileNav } from "@/components/profile/profile-nav";
-import { useProfile } from "@/hooks/use-profile";
+import { useProfile } from "@/hooks/Profile/use-profile";
 import { Input } from "@/components/ui/input";
 import {
   Search,
@@ -39,7 +39,7 @@ export default function ProfileFriendsPage() {
   const [isSessionLoading, setIsSessionLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<Friend[]>([]);
-  const supabase = createClientComponentClient();
+  const supabase = createClient();
   const router = useRouter();
   const { addFriend, friends, fetchFriends } = useFriendsStore();
 
@@ -204,11 +204,23 @@ export default function ProfileFriendsPage() {
             <ProfileHeader
               profile={profile}
               stats={
-                gameStats ?? {
-                  total_played: 0,
-                  played_this_year: 0,
-                  backlog: 0,
-                }
+                gameStats
+                  ? {
+                      ...gameStats,
+                      totalGames: gameStats.total_played,
+                      totalPlaytime: 0,
+                      recentlyPlayed: [],
+                      mostPlayed: [],
+                    }
+                  : {
+                      total_played: 0,
+                      played_this_year: 0,
+                      backlog: 0,
+                      totalGames: 0,
+                      totalPlaytime: 0,
+                      recentlyPlayed: [],
+                      mostPlayed: [],
+                    }
               }
               onProfileUpdate={() => {}}
             />
@@ -361,7 +373,7 @@ export default function ProfileFriendsPage() {
                                                   { id: toastId }
                                                 );
                                                 searchUsers(searchQuery);
-                                              } catch (error) {
+                                              } catch {
                                                 toast.error(
                                                   "Failed to accept friend request",
                                                   { id: toastId }

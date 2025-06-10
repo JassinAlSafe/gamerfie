@@ -1,14 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
-import {
-  createClientComponentClient,
-  User,
-} from "@supabase/auth-helpers-nextjs";
+import { createClient } from "@/utils/supabase/client";
+import type { User } from "@supabase/supabase-js";
 
 // Types
 interface Profile {
@@ -67,13 +65,65 @@ export default function TestChallenge() {
   });
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
-  const supabase = createClientComponentClient();
+  const supabase = createClient();
 
-  useEffect(() => {
-    checkUser();
-  }, []);
+  const fetchChallenges = useCallback(async () => {
+    setLoading((prev) => ({ ...prev, challenges: true }));
+    try {
+      const response = await fetch("/api/challenges");
+      const responseText = await response.text();
 
-  const checkUser = async () => {
+      console.log("Raw response:", responseText);
+
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch (parseError) {
+        console.error("Failed to parse response:", parseError);
+        throw new Error("Invalid response from server");
+      }
+
+      if (!response.ok) {
+        if (data.error === "Not authenticated") {
+          toast({
+            title: "Authentication Required",
+            description: "Please sign in to view challenges",
+            variant: "destructive",
+          });
+          router.push("/signin");
+          return;
+        }
+
+        if (data.error === "User profile not found") {
+          toast({
+            title: "Profile Required",
+            description: "Please complete your profile to view challenges",
+            variant: "destructive",
+          });
+          router.push("/profile/edit");
+          return;
+        }
+
+        throw new Error(
+          data.error || data.details || "Failed to fetch challenges"
+        );
+      }
+
+      setChallenges(data);
+    } catch (error) {
+      console.error("Fetch error:", error);
+      toast({
+        title: "Error",
+        description:
+          error instanceof Error ? error.message : "Failed to fetch challenges",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading((prev) => ({ ...prev, challenges: false }));
+    }
+  }, [toast, router]);
+
+  const checkUser = useCallback(async () => {
     try {
       console.log("Checking user authentication...");
 
@@ -141,63 +191,11 @@ export default function TestChallenge() {
     } finally {
       setLoading((prev) => ({ ...prev, auth: false }));
     }
-  };
+  }, [toast, router, supabase, fetchChallenges]);
 
-  const fetchChallenges = async () => {
-    setLoading((prev) => ({ ...prev, challenges: true }));
-    try {
-      const response = await fetch("/api/challenges");
-      const responseText = await response.text();
-
-      console.log("Raw response:", responseText);
-
-      let data;
-      try {
-        data = JSON.parse(responseText);
-      } catch (parseError) {
-        console.error("Failed to parse response:", parseError);
-        throw new Error("Invalid response from server");
-      }
-
-      if (!response.ok) {
-        if (data.error === "Not authenticated") {
-          toast({
-            title: "Authentication Required",
-            description: "Please sign in to view challenges",
-            variant: "destructive",
-          });
-          router.push("/signin");
-          return;
-        }
-
-        if (data.error === "User profile not found") {
-          toast({
-            title: "Profile Required",
-            description: "Please complete your profile to view challenges",
-            variant: "destructive",
-          });
-          router.push("/profile/edit");
-          return;
-        }
-
-        throw new Error(
-          data.error || data.details || "Failed to fetch challenges"
-        );
-      }
-
-      setChallenges(data);
-    } catch (error) {
-      console.error("Fetch error:", error);
-      toast({
-        title: "Error",
-        description:
-          error instanceof Error ? error.message : "Failed to fetch challenges",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading((prev) => ({ ...prev, challenges: false }));
-    }
-  };
+  useEffect(() => {
+    checkUser();
+  }, [checkUser]);
 
   const createTestChallenge = async () => {
     if (!user || !profile) {

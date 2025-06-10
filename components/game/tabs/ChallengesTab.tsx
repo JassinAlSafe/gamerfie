@@ -2,7 +2,7 @@
 
 import React from "react";
 import { Trophy, Clock, Target, Users } from "lucide-react";
-import { Game } from "@/types/game";
+import { Game } from "@/types";
 import { Profile } from "@/types/profile";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -33,7 +33,7 @@ export function ChallengesTab({ game, profile }: ChallengesTabProps) {
       description: "Unlock all achievements",
       type: "achievement",
       goal_type: "achievements",
-      goal_value: game.achievements?.length || 0,
+      goal_value: (game as any).achievements?.length || 0,
       start_date: new Date(),
       end_date: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000), // 60 days
       participants: 567,

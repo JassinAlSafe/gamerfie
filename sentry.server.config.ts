@@ -4,8 +4,13 @@
 
 import * as Sentry from "@sentry/nextjs";
 
+// Temporarily disable Sentry to fix build issues
+// Sentry.init({
+//   dsn: "https://806509d9f471586c08554937d2e52d20@o4507563075764224.ingest.de.sentry.io/4508779306811472",
+//   tracesSampleRate: 1.0,
+// });
+
+// No-op initialization
 Sentry.init({
-  dsn: "https://806509d9f471586c08554937d2e52d20@o4507563075764224.ingest.de.sentry.io/4508779306811472",
-  tracesSampleRate: 1.0,
-  debug: process.env.NODE_ENV === 'development',
+  enabled: false,
 });

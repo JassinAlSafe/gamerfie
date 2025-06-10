@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useReviews } from "@/hooks/use-reviews";
+import { useReviews } from "@/hooks/Activity/use-reviews";
 import { GameReview } from "./game-review";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";

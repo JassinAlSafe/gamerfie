@@ -6,4 +6,6 @@ export interface Profile {
   bio?: string;
   created_at: string;
   updated_at: string;
+  settings?: Record<string, any>;
+  display_name?: string;
 } 

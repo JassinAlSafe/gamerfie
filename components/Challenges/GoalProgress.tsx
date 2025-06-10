@@ -22,7 +22,7 @@ export function GoalProgress({
   isLoading,
   className,
 }: GoalProgressProps) {
-  const [progress, setProgress] = useState(goal.current);
+  const [progress, setProgress] = useState(0);
   const [updating, setUpdating] = useState(false);
 
   const handleProgressChange = (value: number[]) => {
@@ -111,13 +111,7 @@ export function GoalProgress({
           />
           <Button
             onClick={handleUpdateProgress}
-            disabled={
-              isLoading ||
-              updating ||
-              progress === goal.current ||
-              progress < 0 ||
-              progress > 100
-            }
+            disabled={isLoading || updating || progress < 0 || progress > 100}
             className="flex-1 bg-purple-500/10 text-purple-400 border-purple-500/20 hover:bg-purple-500/20"
           >
             {updating || isLoading ? (

@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery } from "react-query";
+import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { fetchUserReviews } from "@/lib/api";
 import { Star } from "lucide-react";
@@ -14,7 +14,10 @@ export function ReviewsTab({ userId }: ReviewsTabProps) {
     data: reviews,
     isLoading,
     error,
-  } = useQuery(["userReviews", userId], () => fetchUserReviews(userId));
+  } = useQuery({
+    queryKey: ["userReviews", userId],
+    queryFn: () => fetchUserReviews(userId)
+  });
 
   if (isLoading)
     return (

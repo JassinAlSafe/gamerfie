@@ -1,5 +1,5 @@
 import { UseMutationResult } from '@tanstack/react-query';
-import { ReviewUpdateData } from './game';
+import { ReviewUpdateData } from './user';
 
 export interface GameMutationHandlers {
   updateGameStatus: UseMutationResult<

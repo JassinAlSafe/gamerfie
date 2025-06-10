@@ -2,30 +2,30 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useGameListStore } from "@/stores/useGameListStore";
-import { Avatar } from "../ui/avatar";
+import { AvatarImage, AvatarFallback, Avatar } from "../ui/avatar";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { formatDistanceToNow } from "date-fns";
 import Image from "next/image";
 import { getCoverImageUrl } from "@/utils/image-utils";
-import { useProfile } from "@/hooks/use-profile";
+import { useProfile } from "@/hooks/Profile/use-profile";
 import { MessageCircle, Share2, Heart, Gamepad2 } from "lucide-react";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
-import { Database, ListComment } from "@/types/supabase";
+import { createClient } from "@/utils/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/components/ui/use-toast";
 import Link from "next/link";
+import type { GameList, GameListItem } from "@/types/gamelist/game-list";
 
-interface Comment {
+interface ListComment {
   id: string;
   content: string;
   created_at: string;
   user_id: string;
   user: {
     username: string;
-    avatar_url: string;
+    avatar_url: string | null;
   };
 }
 
@@ -46,14 +46,14 @@ export function GameListDetails({ listId }: { listId: string }) {
   const { currentList, isLoading, error, fetchListDetails } =
     useGameListStore();
   const { profile } = useProfile();
-  const [comments, setComments] = useState<Comment[]>([]);
+  const [comments, setComments] = useState<ListComment[]>([]);
   const [newComment, setNewComment] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
 
   const fetchComments = useCallback(async () => {
-    const supabase = createClientComponentClient<Database>();
+    const supabase = createClient();
     try {
       const { data: commentsData, error: commentsError } = await supabase
         .from("list_comments")
@@ -109,7 +109,7 @@ export function GameListDetails({ listId }: { listId: string }) {
     if (!newComment.trim() || !profile) return;
 
     setIsSubmitting(true);
-    const supabase = createClientComponentClient();
+    const supabase = createClient();
 
     try {
       const { error } = await supabase.from("list_comments").insert({
@@ -139,10 +139,10 @@ export function GameListDetails({ listId }: { listId: string }) {
     try {
       await navigator.share({
         title: currentList?.title,
-        text: currentList?.description || "",
+        text: currentList?.content || "",
         url: window.location.href,
       });
-    } catch (error) {
+    } catch {
       navigator.clipboard.writeText(window.location.href);
       toast({
         title: "Link copied to clipboard",
@@ -167,29 +167,32 @@ export function GameListDetails({ listId }: { listId: string }) {
     );
   }
 
+  const list = currentList as GameList;
+
   return (
     <div className="space-y-8">
       <div className="bg-white/5 rounded-xl p-6 backdrop-blur-sm border border-white/10">
         <div className="flex items-start justify-between">
           <div className="space-y-4">
             <h1 className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-white/60">
-              {currentList.title}
+              {list.title}
             </h1>
             <div className="flex items-center gap-4">
-              <Link href={`/profile/${currentList.user_id}`} className="group">
+              <Link href={`/profile/${list.user_id}`} className="group">
                 <div className="flex items-center gap-2">
-                  <Avatar
-                    src={currentList.user?.avatar_url}
-                    fallback={currentList.user?.username?.[0] || "U"}
-                    className="group-hover:ring-2 ring-purple-500 transition-all"
-                  />
+                  <Avatar className="group-hover:ring-2 ring-purple-500 transition-all">
+                    <AvatarImage src={list.user?.avatar_url || ""} />
+                    <AvatarFallback>
+                      {list.user?.username?.[0] || "U"}
+                    </AvatarFallback>
+                  </Avatar>
                   <span className="text-sm text-gray-400 group-hover:text-white transition-colors">
-                    Created by {currentList.user?.username}
+                    Created by {list.user?.username}
                   </span>
                 </div>
               </Link>
               <span className="text-sm text-gray-400">
-                Updated {formatDate(currentList.updatedAt)}
+                Updated {formatDate(list.updatedAt)}
               </span>
             </div>
           </div>
@@ -215,21 +218,18 @@ export function GameListDetails({ listId }: { listId: string }) {
           </div>
         </div>
 
-        {currentList.description &&
-          !currentList.description.startsWith("[") && (
-            <p className="text-gray-300 mt-4 text-lg">
-              {currentList.description}
-            </p>
-          )}
+        {list.content && !list.content.startsWith("[") && (
+          <p className="text-gray-300 mt-4 text-lg">{list.content}</p>
+        )}
       </div>
 
       <div className="bg-white/5 rounded-xl p-6 backdrop-blur-sm border border-white/10">
         <h2 className="text-xl font-bold mb-4">Games in this list</h2>
-        {currentList.games.length === 0 ? (
+        {list.games.length === 0 ? (
           <EmptyGamesState />
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
-            {currentList.games.map((game) => (
+            {list.games.map((game: GameListItem) => (
               <div
                 key={game.id}
                 className="bg-white/5 rounded-lg overflow-hidden group"
@@ -274,10 +274,10 @@ export function GameListDetails({ listId }: { listId: string }) {
 
         {profile ? (
           <div className="flex gap-4 mb-8">
-            <Avatar
-              src={profile.avatar_url}
-              fallback={profile.username?.[0] || "U"}
-            />
+            <Avatar>
+              <AvatarImage src={profile.avatar_url || ""} />
+              <AvatarFallback>{profile.username?.[0] || "U"}</AvatarFallback>
+            </Avatar>
             <div className="flex-1 space-y-2">
               <Input
                 value={newComment}
@@ -312,10 +312,10 @@ export function GameListDetails({ listId }: { listId: string }) {
             <div className="space-y-4">
               {comments.map((comment) => (
                 <div key={comment.id} className="flex gap-4">
-                  <Avatar
-                    src={comment.user.avatar_url}
-                    fallback={comment.user.username[0]}
-                  />
+                  <Avatar>
+                    <AvatarImage src={comment.user.avatar_url || ""} />
+                    <AvatarFallback>{comment.user.username[0]}</AvatarFallback>
+                  </Avatar>
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
                       <span className="font-medium">

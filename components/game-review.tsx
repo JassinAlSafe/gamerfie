@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { createClient } from "@/utils/supabase/client";
 import {
   Card,
   CardContent,
@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "./ui/textarea";
+import { Textarea } from "./ui/text/textarea";
 import { Star, Edit2, Trash2 } from "lucide-react";
 import toast from "react-hot-toast";
 import { Icons } from "./ui/icons";
@@ -35,7 +35,7 @@ export function GameReview({
   const [rating, setRating] = useState(initialRating || 0);
   const [review, setReview] = useState(initialReview || "");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const supabase = createClientComponentClient();
+  const supabase = createClient();
 
   const handleSubmit = async () => {
     try {

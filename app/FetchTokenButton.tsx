@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { fetchNewToken } from "../services/tokenService";
 import { clearAuthCookies } from "../utils/cookieUtils";
-import { TokenError } from "../types/auth";
+import { TokenError } from "@/types/auth";
 
 const FetchTokenButton = () => {
   const [loading, setLoading] = useState(false);

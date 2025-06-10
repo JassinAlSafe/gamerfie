@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import { MessageSquare, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Textarea } from "@/components/ui/textarea";
+import { Textarea } from "@/components/ui/text/textarea";
 import {
   Dialog,
   DialogContent,
@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/dialog";
 import { FriendActivity } from "@/types/friend";
 import { useFriendsStore } from "@/stores/useFriendsStore";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { createClient } from "@/utils/supabase/client";
 import { toast } from "react-hot-toast";
 import { format } from "date-fns";
 
@@ -28,7 +28,7 @@ export function ActivityComments({
   activity,
   showInline = false,
 }: ActivityCommentsProps) {
-  const supabase = createClientComponentClient();
+  const supabase = createClient();
   const [userId, setUserId] = useState<string | null>(null);
   const { addComment, deleteComment } = useFriendsStore();
   const [isCommentDialogOpen, setIsCommentDialogOpen] = useState(false);

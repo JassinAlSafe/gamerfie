@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useUser } from "@/stores/user";
+import { useUser } from "../store-exports";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -9,7 +9,7 @@ import { AlertTriangle } from "lucide-react";
 import { ClaimedReward } from "@/types/challenge";
 
 export default function RewardsPage() {
-  const { user } = useUser();
+  const {} = useUser();
   const [rewards, setRewards] = useState<ClaimedReward[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

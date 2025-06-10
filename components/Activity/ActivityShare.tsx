@@ -39,6 +39,7 @@ export function ActivityShare({ activity }: ActivityShareProps) {
           toast.success("Link copied to clipboard");
           return;
         } catch (error) {
+          console.error("Failed to copy to clipboard:", error);
           toast.error("Failed to copy link");
           return;
         }

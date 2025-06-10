@@ -1,6 +1,6 @@
 "use client";
 
-import { Game } from "@/types/game";
+import { Game } from "@/types";
 import Image from "next/image";
 import Link from "next/link";
 import { Star, Clock, Trophy } from "lucide-react";
@@ -34,15 +34,15 @@ export function GridGameCard({ game }: { game: Game }) {
                   <span className="text-sm text-white">{game.rating.toFixed(1)}</span>
                 </div>
               )}
-              {game.playTime && (
+              {(game as any).playTime && (
                 <div className="flex items-center">
                   <Clock className="w-4 h-4 text-blue-400 mr-1" />
-                  <span className="text-sm text-white">{game.playTime}h</span>
+                  <span className="text-sm text-white">{(game as any).playTime}h</span>
                 </div>
               )}
             </div>
           </div>
-          {game.completed && (
+          {(game as any).completed && (
             <div className="absolute top-2 right-2 bg-green-500 rounded-full p-1">
               <Trophy className="w-4 h-4 text-white" />
             </div>
@@ -76,7 +76,7 @@ export function ListGameCard({ game }: { game: Game }) {
           <div className="flex-grow">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-semibold">{game.name}</h3>
-              {game.completed && (
+              {(game as any).completed && (
                 <Trophy className="w-5 h-5 text-green-400" />
               )}
             </div>
@@ -87,10 +87,10 @@ export function ListGameCard({ game }: { game: Game }) {
                   <span className="text-sm">{game.rating.toFixed(1)}</span>
                 </div>
               )}
-              {game.playTime && (
+              {(game as any).playTime && (
                 <div className="flex items-center">
                   <Clock className="w-4 h-4 text-blue-400 mr-1" />
-                  <span className="text-sm">{game.playTime}h</span>
+                  <span className="text-sm">{(game as any).playTime}h</span>
                 </div>
               )}
             </div>

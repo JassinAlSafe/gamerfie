@@ -1,16 +1,17 @@
 "use client";
 
-import React, { Suspense } from "react";
-import { Game } from "@/types/game";
-import { useProfile } from "@/hooks/use-profile";
+import React, { useEffect, useState } from "react";
+import { Game } from "@/types";
+import { useProfile } from "@/hooks/Profile/use-profile";
 import { useProgressStore } from "@/stores/useProgressStore";
-import { useGameActivities } from "@/hooks/use-game-activities";
+import { useGameActivities } from "@/hooks/Games/use-game-activities";
 import { useErrorStore } from "@/stores/useErrorStore";
 import { GameHero } from "./hero/GameHero";
 import { GameTabs } from "./tabs/GameTabs";
-import { LoadingSpinner } from "@/components/loadingSpinner";
 import { ErrorBoundary } from "react-error-boundary";
 import { motion, AnimatePresence } from "framer-motion";
+import { AlertCircle, RefreshCw, ArrowUp } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 function ErrorFallback({
   error,
@@ -23,17 +24,19 @@ function ErrorFallback({
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="flex flex-col items-center justify-center min-h-[50vh] p-8"
+      className="flex flex-col items-center justify-center min-h-[60vh] p-8"
     >
-      <div className="max-w-md w-full space-y-4 text-center">
-        <h2 className="text-2xl font-bold text-red-500">
-          Something went wrong
-        </h2>
-        <p className="text-gray-400">{error.message}</p>
+      <div className="max-w-md w-full space-y-6 text-center">
+        <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-500/20 text-red-500 mb-2">
+          <AlertCircle size={32} />
+        </div>
+        <h2 className="text-2xl font-bold text-white">Something went wrong</h2>
+        <p className="text-gray-400 text-sm md:text-base">{error.message}</p>
         <button
           onClick={resetErrorBoundary}
-          className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors"
+          className="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors flex items-center justify-center gap-2 mx-auto"
         >
+          <RefreshCw size={18} className="animate-spin-slow" />
           Try again
         </button>
       </div>
@@ -41,15 +44,77 @@ function ErrorFallback({
   );
 }
 
-function LoadingFallback() {
+function ScrollToTopButton() {
+  const [isVisible, setIsVisible] = useState(false);
+
+  // Show button when page is scrolled down
+  const toggleVisibility = () => {
+    if (window.scrollY > 500) {
+      setIsVisible(true);
+    } else {
+      setIsVisible(false);
+    }
+  };
+
+  // Set the scroll event listener
+  useEffect(() => {
+    window.addEventListener("scroll", toggleVisibility);
+    return () => window.removeEventListener("scroll", toggleVisibility);
+  }, []);
+
+  // Scroll to top function
+  const scrollToTop = () => {
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
+  };
+
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen p-8 bg-gray-950">
-      <LoadingSpinner size="lg" />
-      <p className="mt-4 text-gray-400 animate-pulse">
-        Loading game details...
-      </p>
-    </div>
+    <AnimatePresence>
+      {isVisible && (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.5 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.5 }}
+          className="fixed bottom-8 right-8 z-50"
+        >
+          <Button
+            onClick={scrollToTop}
+            size="icon"
+            className="h-12 w-12 rounded-full bg-purple-600 hover:bg-purple-700 text-white shadow-lg"
+            aria-label="Scroll to top"
+          >
+            <ArrowUp size={20} />
+          </Button>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
+}
+
+// Type assertion function to ensure the game object conforms to the Game interface
+function ensureGameType(game: any): Game {
+  // Handle the cover property
+  let coverObj = game.cover;
+  if (typeof game.cover === "string") {
+    coverObj = { id: "placeholder", url: game.cover };
+  }
+
+  // Create a new object with the correct structure
+  const processedGame = {
+    ...game,
+    // Override the cover property
+    cover: coverObj,
+    // Add achievements if not present
+    achievements: {
+      total: 0,
+      completed: 0,
+    },
+  };
+
+  // Use a type assertion to tell TypeScript this is a Game
+  return processedGame as unknown as Game;
 }
 
 export function GameDetails({ game }: { game: Game }) {
@@ -104,32 +169,38 @@ function GameContent({ game }: { game: Game }) {
     }
   }, [progressError, activitiesError, addError]);
 
-  const processedGame = {
-    ...game,
-    achievements: [],
-  };
+  // Process the game data
+  const gameData = ensureGameType(game);
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white">
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+      className="min-h-screen bg-gray-950 text-white relative"
+    >
+      {/* Background pattern */}
+      <div className="absolute inset-0 bg-[url('/noise.webp')] opacity-[0.03] pointer-events-none" />
+
       <GameHero
-        game={processedGame}
+        game={gameData}
         profile={profile}
         progress={{
-          playTime,
-          completionPercentage,
-          achievementsCompleted,
+          playTime: playTime ?? undefined,
+          completionPercentage: completionPercentage ?? undefined,
+          achievementsCompleted: achievementsCompleted ?? undefined,
         }}
       />
 
       <GameTabs
-        game={processedGame}
-        profile={profile}
+        game={gameData}
+        profile={profile ?? null}
         activeTab={activeTab}
         onTabChange={setActiveTab}
         progress={{
-          playTime,
-          completionPercentage,
-          achievementsCompleted,
+          playTime: playTime ?? null,
+          completionPercentage: completionPercentage ?? null,
+          achievementsCompleted: achievementsCompleted ?? null,
           loading: progressLoading,
           playTimeHistory,
           achievementHistory,
@@ -141,6 +212,9 @@ function GameContent({ game }: { game: Game }) {
           loadMore,
         }}
       />
-    </div>
+
+      {/* Scroll to top button */}
+      <ScrollToTopButton />
+    </motion.div>
   );
 }

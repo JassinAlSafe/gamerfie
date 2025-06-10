@@ -1,6 +1,19 @@
-import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { createClient } from "@supabase/supabase-js";
+
+// Define the NextAuthConfig type locally to avoid import issues
+interface NextAuthConfig {
+  providers: any[];
+  session?: {
+    strategy?: "jwt" | "database";
+  };
+  pages?: {
+    signIn?: string;
+  };
+  callbacks?: {
+    session?: (params: { session: any; token: any }) => Promise<any>;
+  };
+}
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -13,7 +26,7 @@ if (!supabaseServiceKey) {
   throw new Error("Missing SUPABASE_SERVICE_ROLE_KEY");
 }
 
-export const authOptions: NextAuthOptions = {
+export const authOptions = {
   providers: [
     CredentialsProvider({
       name: "Credentials",
@@ -50,10 +63,10 @@ export const authOptions: NextAuthOptions = {
     })
   ],
   session: {
-    strategy: "jwt",
+    strategy: "jwt" as const,
   },
   callbacks: {
-    async session({ session, token }) {
+    async session({ session, token }: { session: any; token: any }) {
       if (session?.user && token?.sub) {
         session.user.id = token.sub;
       }
@@ -63,5 +76,5 @@ export const authOptions: NextAuthOptions = {
   pages: {
     signIn: "/auth/signin",
   },
-};
+} satisfies NextAuthConfig;
 

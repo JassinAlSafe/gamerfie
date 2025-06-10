@@ -107,6 +107,7 @@ export interface Database {
           id: string
           username: string
           avatar_url: string | null
+          role: 'admin' | 'user' | null
           updated_at: string
           created_at: string
         }
@@ -114,6 +115,7 @@ export interface Database {
           id?: string
           username: string
           avatar_url?: string | null
+          role?: 'admin' | 'user' | null
           full_name?: string | null
           bio?: string | null
           created_at?: string
@@ -123,6 +125,7 @@ export interface Database {
           id?: string
           username?: string
           avatar_url?: string | null
+          role?: 'admin' | 'user' | null
           full_name?: string | null
           bio?: string | null
           updated_at?: string

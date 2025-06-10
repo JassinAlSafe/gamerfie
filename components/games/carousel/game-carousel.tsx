@@ -5,15 +5,31 @@ import { useRouter } from "next/navigation";
 import { useInView } from "react-intersection-observer";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight } from "lucide-react";
-import { GameCarouselProps } from "@/types/game";
-import { GameCard } from "@/components/games/cards/game-card";
+import { ChevronLeft, ChevronRight, LucideIcon } from "lucide-react";
+import { Game } from "@/types";
+import { GameCard } from "@/components/GameCard";
+
+type CategoryOption =
+  | "all"
+  | "popular"
+  | "trending"
+  | "upcoming"
+  | "recent"
+  | "classic";
+
+interface GameCarouselProps {
+  games: Game[];
+  category: CategoryOption;
+  title: string;
+  icon: LucideIcon;
+  color: string;
+}
 
 export const GameCarousel = memo(
   ({ games = [], category, title, icon: Icon, color }: GameCarouselProps) => {
     const scrollContainerRef = useRef<HTMLDivElement>(null);
     const router = useRouter();
-    const { ref, inView } = useInView({
+    const { ref } = useInView({
       triggerOnce: true,
       threshold: 0.1,
     });
@@ -22,7 +38,7 @@ export const GameCarousel = memo(
     const virtualizer = useVirtualizer({
       count: games?.length ?? 0,
       getScrollElement: () => scrollContainerRef.current,
-      estimateSize: () => 240 + 16, // Width + larger gap
+      estimateSize: () => 280, // Match card width
       horizontal: true,
       overscan: 3,
     });
@@ -54,8 +70,12 @@ export const GameCarousel = memo(
                 className="text-purple-400 hover:text-purple-300"
                 onClick={() =>
                   router.push(
-                    `/all-games?category=${
-                      category === "new" ? "recent" : category
+                    `/all-games?category=${category}&timeRange=${
+                      category === "upcoming"
+                        ? "upcoming"
+                        : category === "trending"
+                        ? "trending"
+                        : "popular"
                     }`
                   )
                 }
@@ -69,7 +89,8 @@ export const GameCarousel = memo(
             ref={scrollContainerRef}
             className="relative w-full overflow-x-auto scrollbar-hide px-1"
             style={{
-              height: "360px",
+              height: "420px", // Increased height
+              position: "relative", // Fix for scroll offset calculation
             }}
           >
             <div
@@ -87,12 +108,20 @@ export const GameCarousel = memo(
                     style={{
                       position: "absolute",
                       left: `${virtualItem.start}px`,
-                      width: "240px",
-                      height: "100%",
+                      width: "280px",
+                      height: "400px", // Increased height
                     }}
-                    className="pr-4" // Increased gap between cards
+                    className="pr-4"
                   >
-                    <GameCard game={game} />
+                    <div className="w-full h-full">
+                      {" "}
+                      {/* Added wrapper */}
+                      <GameCard
+                        game={game}
+                        index={virtualItem.index}
+                        category={category}
+                      />
+                    </div>
                   </div>
                 );
               })}

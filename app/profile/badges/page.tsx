@@ -2,7 +2,7 @@
 
 import { ProfileHeader } from "@/components/profile/profile-header";
 import { ProfileNav } from "@/components/profile/profile-nav";
-import { useProfile } from "@/hooks/use-profile";
+import { useProfile } from "@/hooks/Profile/use-profile";
 import LoadingSpinner from "@/components/loadingSpinner";
 import UserBadges from "@/components/profile/user-badges";
 
@@ -45,10 +45,20 @@ export default function BadgesPage() {
             <ProfileHeader
               profile={profile}
               stats={
-                gameStats ?? {
+                gameStats ? {
+                  ...gameStats,
+                  totalGames: gameStats.total_played,
+                  totalPlaytime: 0,
+                  recentlyPlayed: [],
+                  mostPlayed: []
+                } : {
                   total_played: 0,
                   played_this_year: 0,
                   backlog: 0,
+                  totalGames: 0,
+                  totalPlaytime: 0,
+                  recentlyPlayed: [],
+                  mostPlayed: []
                 }
               }
               onProfileUpdate={() => {}}

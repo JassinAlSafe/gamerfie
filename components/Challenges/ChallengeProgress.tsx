@@ -41,6 +41,7 @@ export function ChallengeProgress({
         });
       }
     } catch (error) {
+      console.error("Failed to update challenge progress:", error);
       toast({
         title: "Error",
         description: "Failed to update progress. Please try again.",
@@ -52,9 +53,9 @@ export function ChallengeProgress({
   };
 
   const calculateProgressIncrement = () => {
-    switch (challenge.goal.type) {
+    switch (challenge.goal?.type) {
       case "complete_games":
-        return Math.round((1 / challenge.goal.target) * 100);
+        return Math.round((1 / challenge.goal?.target) * 100);
       case "win_games":
         return Math.round((1 / challenge.goal.target) * 100);
       case "achieve_score":
@@ -104,7 +105,7 @@ export function ChallengeProgress({
               <span>Goal Target</span>
             </div>
             <p className="text-lg font-medium">
-              {challenge.goal.target} {challenge.goal.type.replace(/_/g, " ")}
+              {challenge.goal?.target} {challenge.goal?.type.replace(/_/g, " ")}
             </p>
           </div>
 
@@ -114,8 +115,8 @@ export function ChallengeProgress({
               <span>Current Progress</span>
             </div>
             <p className="text-lg font-medium">
-              {Math.floor((progress / 100) * challenge.goal.target)}{" "}
-              {challenge.goal.type.replace(/_/g, " ")}
+              {Math.floor((progress / 100) * (challenge.goal?.target || 0))}{" "}
+              {challenge.goal?.type.replace(/_/g, " ")}
             </p>
           </div>
 
@@ -126,9 +127,10 @@ export function ChallengeProgress({
             </div>
             <p className="text-lg font-medium">
               {Math.ceil(
-                challenge.goal.target - (progress / 100) * challenge.goal.target
+                (challenge.goal?.target || 0) -
+                  (progress / 100) * (challenge.goal?.target || 0)
               )}{" "}
-              {challenge.goal.type.replace(/_/g, " ")}
+              {challenge.goal?.type.replace(/_/g, " ")}
             </p>
           </div>
         </div>
@@ -172,10 +174,12 @@ export function ChallengeProgress({
           <div className="flex items-center gap-4">
             <div className="relative w-16 h-16 rounded-full overflow-hidden bg-black/50 backdrop-blur-sm p-2">
               {challenge.badge.icon_url?.endsWith(".svg") ? (
-                <img
+                <Image
                   src={challenge.badge.icon_url}
                   alt={challenge.badge.name}
-                  className="w-full h-full object-contain p-1"
+                  fill
+                  sizes="(max-width: 64px) 100vw, 64px"
+                  className="object-contain p-1"
                 />
               ) : (
                 <Image

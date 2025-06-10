@@ -10,7 +10,15 @@ export default function ErrorPage({
   error: Error & { digest?: string };
 }) {
   useEffect(() => {
-    Sentry.captureException(error);
+    // Only use Sentry if properly configured
+    if (
+      process.env.NEXT_PUBLIC_SENTRY_DSN &&
+      process.env.NEXT_PUBLIC_SENTRY_DSN !== "your-sentry-dsn-here"
+    ) {
+      Sentry.captureException(error);
+    } else {
+      console.error("Error:", error);
+    }
   }, [error]);
 
   return (

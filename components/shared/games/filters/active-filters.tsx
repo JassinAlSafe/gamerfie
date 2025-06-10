@@ -3,7 +3,7 @@
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { GameFilters } from "@/types/game";
+import { GameFilters } from "@/types";
 
 interface ActiveFiltersProps {
   filters: GameFilters;
@@ -17,7 +17,7 @@ export function ActiveFilters({
     platform: "all",
     genre: "all",
     category: "all",
-    sort: "popularity",
+    sortBy: "popularity",
     search: "",
   },
   onRemoveFilter,
@@ -28,13 +28,13 @@ export function ActiveFilters({
     (filters?.platform && filters.platform !== "all") ||
     (filters?.genre && filters.genre !== "all") ||
     (filters?.category && filters.category !== "all") ||
-    (filters?.sort && filters.sort !== "popularity") ||
+    (filters?.sortBy && filters.sortBy !== "popularity") ||
     (filters?.search && filters.search !== "");
 
   if (!hasActiveFilters) return null;
 
   const activeFilters = Object.entries(filters).filter(([key, value]) => {
-    if (key === "sort") return value !== "popularity";
+    if (key === "sortBy") return value !== "popularity";
     if (key === "search") return value !== "";
     return value !== "all";
   });

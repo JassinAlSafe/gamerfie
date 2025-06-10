@@ -1,22 +1,32 @@
 import { NextResponse } from 'next/server';
-import { fetchGameDetails, fetchGameAchievements, fetchRelatedGames } from '@/lib/igdb';
+import { IGDBService } from '@/services/igdb';
 
 export async function GET(
-  request: Request,
+  _request: Request,
   { params }: { params: { id: string } }
 ) {
   try {
+    console.log('Game details API called for ID:', params.id);
+
     const [gameDetails, achievements, relatedGames] = await Promise.all([
-      fetchGameDetails(params.id),
-      fetchGameAchievements(params.id),
-      fetchRelatedGames(params.id)
+      IGDBService.fetchGameDetails(params.id),
+      IGDBService.fetchGameAchievements(params.id),
+      IGDBService.fetchRelatedGames(params.id)
     ]);
 
     if (!gameDetails) {
+      console.log('No game details found for ID:', params.id);
       return new NextResponse('Game not found', { status: 404 });
     }
 
-    console.log(`Fetched ${achievements.length} achievements and ${relatedGames.length} related games for game ${params.id}`);
+    console.log('Game details fetched successfully:', {
+      id: gameDetails.id,
+      name: gameDetails.name,
+      hasCover: !!gameDetails.cover_url,
+      hasBackground: !!gameDetails.background_image,
+      achievementsCount: achievements?.length || 0,
+      relatedGamesCount: relatedGames?.length || 0
+    });
 
     const response = {
       ...gameDetails,
@@ -28,8 +38,16 @@ export async function GET(
   } catch (error) {
     console.error('Error in game details route:', error);
     return new NextResponse(
-      JSON.stringify({ error: 'Failed to fetch game details', details: error instanceof Error ? error.message : 'Unknown error' }), 
-      { status: 500 }
+      JSON.stringify({ 
+        error: 'Failed to fetch game details', 
+        details: error instanceof Error ? error.message : 'Unknown error' 
+      }), 
+      { 
+        status: 500,
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      }
     );
   }
 } 

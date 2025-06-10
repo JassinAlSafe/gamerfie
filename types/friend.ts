@@ -1,5 +1,8 @@
 import type { ActivityType, ActivityDetails, FriendActivity } from './activity';
 
+// Re-export these types so they can be imported from friend.ts
+export type { ActivityType, ActivityDetails, FriendActivity };
+
 export type FriendStatus = 'pending' | 'accepted' | 'declined';
 export type OnlineStatus = 'online' | 'offline';
 

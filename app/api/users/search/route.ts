@@ -1,56 +1,56 @@
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
+import { createClient } from '@/utils/supabase/server';
 import { NextResponse } from 'next/server';
 
-interface UserData {
-  id: string;
-  username: string;
-}
 
 export async function GET(request: Request) {
-  const supabase = createRouteHandlerClient({ cookies });
-  const { searchParams } = new URL(request.url);
-  const query = searchParams.get('q');
-
-  if (!query) {
-    return NextResponse.json([]);
-  }
-
   try {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const { searchParams } = new URL(request.url);
+    const query = searchParams.get('q');
+
+    if (!query || query.trim().length < 2) {
+      return NextResponse.json(
+        { error: 'Search query must be at least 2 characters' },
+        { status: 400 }
+      );
     }
 
-    console.log('Searching for users with query:', query);
-    console.log('Current user ID:', session.user.id);
+    const supabase = await createClient();
 
-    // Query the profiles table
+    // Check if user is authenticated
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    // Search for users by username or display_name
     const { data: users, error } = await supabase
       .from('profiles')
-      .select('id, username')
-      .neq('id', session.user.id)
-      .ilike('username', `%${query}%`)
-      .limit(5);
+      .select('id, username, display_name, avatar_url, bio')
+      .or(`username.ilike.%${query}%,display_name.ilike.%${query}%`)
+      .limit(10);
 
-    console.log('Search results:', users);
     if (error) {
-      console.error('Search error details:', error);
-      throw error;
+      console.error('Search error:', error);
+      return NextResponse.json(
+        { error: 'Search failed' },
+        { status: 500 }
+      );
     }
-    if (!users) return NextResponse.json([]);
 
-    const transformedUsers = users.map(user => ({
-      id: user.id,
-      username: user.username
-    }));
+    // Filter out current user from results
+    const filteredUsers = users?.filter(profile => profile.id !== user.id) || [];
 
-    console.log('Transformed results:', transformedUsers);
-    return NextResponse.json(transformedUsers);
+    return NextResponse.json(filteredUsers);
   } catch (error) {
-    console.error('User search error:', error);
+    console.error('Unexpected error:', error);
     return NextResponse.json(
-      { error: 'Internal Server Error' }, 
+      { error: 'Internal server error' },
       { status: 500 }
     );
   }

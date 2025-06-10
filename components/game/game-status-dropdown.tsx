@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -12,8 +11,7 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { ChevronDown } from "lucide-react";
-import { GameStatus } from "@/types/game";
-import { Database } from "@/types/supabase";
+import { GameStatus } from "../../types/game";
 import { GameNotes } from "./game-notes";
 
 interface GameStatusDropdownProps {

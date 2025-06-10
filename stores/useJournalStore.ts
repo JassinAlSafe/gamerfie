@@ -1,8 +1,14 @@
 import { create } from 'zustand'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
-import { useFriendsStore } from './useFriendsStore'
+import { createClient } from '@/utils/supabase/client'
 import { ActivityType } from '@/types/activity'
 import toast from 'react-hot-toast'
+// import { JournalGameData } from '@/types/game'
+
+interface JournalGameData {
+  id: string;
+  name: string;
+  cover_url?: string;
+}
 
 export type JournalEntryType = 'progress' | 'review' | 'daily' | 'list' | 'note' | 'achievement'
 
@@ -12,11 +18,7 @@ export interface JournalEntry {
   date: string
   title: string
   content: string
-  game?: {
-    id: string
-    name: string
-    cover_url?: string
-  }
+  game?: JournalGameData
   progress?: number
   hoursPlayed?: number
   rating?: number
@@ -79,32 +81,27 @@ export const useJournalStore = create<JournalState>((set, get) => {
     addEntry: async (entry) => {
       try {
         set({ loading: true, error: null })
-        const supabase = createClientComponentClient()
+        const supabase = createClient()
         const { data: { session } } = await supabase.auth.getSession()
         if (!session?.user) throw new Error('No authenticated user')
 
-        // Debug logging
-        console.log('Adding entry with game:', {
-          gameId: entry.game?.id,
-          gameName: entry.game?.name,
-          entryType: entry.type,
-        })
-
         // If there's a game, ensure it exists in the database
         if (entry.game?.id) {
-          console.log('Checking game:', entry.game.id)
-          const { count, error: gameCheckError } = await supabase
+          // First, try to get the game
+          const { data: existingGame, error: getGameError } = await supabase
             .from('games')
-            .select('*', { count: 'exact', head: true })
+            .select('id, name, cover_url')
             .eq('id', entry.game.id)
+            .single()
 
-          if (gameCheckError) {
-            console.error('Error checking game existence:', gameCheckError)
+          if (getGameError && getGameError.code !== 'PGRST116') { // PGRST116 is "not found"
+            console.error('Error checking game:', getGameError)
+            throw new Error('Failed to verify game existence')
           }
 
           // If game doesn't exist, add it
-          if (count === 0) {
-            console.log('Game not found, adding to database:', entry.game)
+          if (!existingGame) {
+            console.log('Adding new game to database:', entry.game)
             const { error: insertError } = await supabase
               .from('games')
               .insert({
@@ -269,7 +266,7 @@ export const useJournalStore = create<JournalState>((set, get) => {
     updateEntry: async (id: string, entry) => {
       try {
         set({ loading: true, error: null })
-        const supabase = createClientComponentClient()
+        const supabase = createClient()
         const { data: { session } } = await supabase.auth.getSession()
         if (!session?.user) throw new Error('No authenticated user')
 
@@ -458,7 +455,7 @@ export const useJournalStore = create<JournalState>((set, get) => {
     deleteEntry: async (id) => {
       try {
         set({ loading: true, error: null })
-        const supabase = createClientComponentClient()
+        const supabase = createClient()
         const { data: { session } } = await supabase.auth.getSession()
         if (!session?.user) throw new Error('No authenticated user')
 
@@ -489,21 +486,35 @@ export const useJournalStore = create<JournalState>((set, get) => {
 
     fetchEntries: async () => {
       try {
-        set({ loading: true, error: null })
-        const supabase = createClientComponentClient()
-        const { data: { session } } = await supabase.auth.getSession()
-        if (!session?.user) throw new Error('No authenticated user')
+        // Check if we already have entries data and not currently loading
+        if (get().entries.length > 0 && !get().loading) {
+          return; // Use cached data
+        }
+        
+        set({ loading: true, error: null, isLoading: true });
+        const supabase = createClient();
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (!session?.user) {
+          set({ loading: false, error: 'No authenticated user', isLoading: false });
+          return;
+        }
 
-        const { data: entries, error } = await supabase
+        // Use a more efficient query with pagination and ordering
+        const { data, error } = await supabase
           .from('journal_entries')
           .select('*')
           .eq('user_id', session.user.id)
           .order('created_at', { ascending: false })
+          .limit(50); // Limit to most recent 50 entries for initial load
 
-        if (error) throw error
+        if (error) {
+          set({ loading: false, error: error.message, isLoading: false });
+          return;
+        }
 
-        // Transform entries to match our interface
-        const transformedEntries: JournalEntry[] = entries.map(entry => ({
+        // Transform the data to match our JournalEntry interface
+        const transformedEntries = data.map(entry => ({
           id: entry.id,
           type: entry.type,
           date: entry.date,
@@ -519,14 +530,16 @@ export const useJournalStore = create<JournalState>((set, get) => {
           rating: entry.rating,
           createdAt: entry.created_at,
           updatedAt: entry.updated_at,
-        }))
+        }));
 
-        set({ entries: transformedEntries, loading: false })
+        set({ entries: transformedEntries, loading: false, isLoading: false });
       } catch (error) {
-        console.error('Error fetching journal entries:', error)
-        set({ error: (error as Error).message, loading: false })
-        toast.error('Failed to load journal entries')
-        throw error
+        console.error('Error fetching journal entries:', error);
+        set({ 
+          loading: false, 
+          error: error instanceof Error ? error.message : 'Unknown error', 
+          isLoading: false 
+        });
       }
     },
     setIsLoading: (isLoading: boolean) => set({ isLoading }),

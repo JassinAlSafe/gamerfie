@@ -1,12 +1,39 @@
 import { supabase } from "@/lib/supabase";
 import {
   Challenge,
-  CreateChallengeInput,
-  UpdateChallengeInput,
   ChallengeLeaderboard,
   ChallengeTeam,
+  ChallengeType,
   ChallengeGoal,
+  ChallengeReward,
+  Requirements,
 } from "@/types/challenge";
+
+// Create missing input types locally
+interface CreateChallengeInput {
+  title: string;
+  description: string;
+  type: ChallengeType;
+  start_date: string;
+  end_date: string;
+  requirements?: Requirements;
+  min_participants: number;
+  max_participants?: number;
+  goals?: Partial<ChallengeGoal>[];
+  rewards?: Partial<ChallengeReward>[];
+  rules?: string[];
+}
+
+interface UpdateChallengeInput {
+  title?: string;
+  description?: string;
+  type?: ChallengeType;
+  start_date?: string;
+  end_date?: string;
+  requirements?: Requirements;
+  min_participants?: number;
+  max_participants?: number;
+}
 
 export class ChallengeServices {
   static async getAllChallenges(): Promise<Challenge[]> {
@@ -77,7 +104,7 @@ export class ChallengeServices {
       .eq("user_id", session.user.id);
 
     if (error) throw error;
-    return data?.map(c => c.challenge) || [];
+    return (data?.map(c => c.challenge) || []) as unknown as Challenge[];
   }
 
   static async getChallengeById(id: string): Promise<Challenge> {
@@ -139,11 +166,11 @@ export class ChallengeServices {
     if (challengeError) throw challengeError;
 
     // Create goals
-    if (data.goals?.length > 0) {
+    if (data.goals && data.goals.length > 0) {
       const { error: goalsError } = await supabase
         .from("challenge_goals")
         .insert(
-          data.goals.map(goal => ({
+          data.goals.map((goal: Partial<ChallengeGoal>) => ({
             ...goal,
             challenge_id: challenge.id,
           }))
@@ -153,11 +180,11 @@ export class ChallengeServices {
     }
 
     // Create rewards if any
-    if (data.rewards?.length > 0) {
+    if (data.rewards && data.rewards.length > 0) {
       const { error: rewardsError } = await supabase
         .from("challenge_rewards")
         .insert(
-          data.rewards.map(reward => ({
+          data.rewards.map((reward: Partial<ChallengeReward>) => ({
             ...reward,
             challenge_id: challenge.id,
           }))
@@ -167,11 +194,11 @@ export class ChallengeServices {
     }
 
     // Create rules if any
-    if (data.rules?.length > 0) {
+    if (data.rules && data.rules.length > 0) {
       const { error: rulesError } = await supabase
         .from("challenge_rules")
         .insert(
-          data.rules.map(rule => ({
+          data.rules.map((rule: string) => ({
             rule,
             challenge_id: challenge.id,
           }))
@@ -340,16 +367,21 @@ export class ChallengeServices {
 
     if (error) throw error;
 
-    const rankings = data?.map((p, index) => ({
+    const entries = data?.map((p: any, index: number) => ({
       rank: index + 1,
       user_id: p.user.id,
       username: p.user.username,
       avatar_url: p.user.avatar_url,
+      score: p.progress,
       progress: p.progress,
-      completed: p.completed,
-      team_id: p.team_id,
+      last_updated: new Date().toISOString(),
     })) || [];
 
-    return { challenge_id: challengeId, rankings };
+    return { 
+      challenge_id: challengeId, 
+      entries,
+      total_participants: entries.length,
+      last_updated: new Date().toISOString()
+    };
   }
 } 

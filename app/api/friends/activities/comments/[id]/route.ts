@@ -1,5 +1,4 @@
-import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
-import { cookies } from "next/headers";
+import { createClient } from "@/utils/supabase/server";
 import { NextResponse } from "next/server";
 
 export async function DELETE(
@@ -7,10 +6,10 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    const supabase = createRouteHandlerClient({ cookies });
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    const supabase = await createClient();
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
     
-    if (sessionError || !session?.user) {
+    if (userError || !user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -20,7 +19,7 @@ export async function DELETE(
       .delete()
       .match({
         id: params.id,
-        user_id: session.user.id,
+        user_id: user.id,
       });
 
     if (deleteError) {

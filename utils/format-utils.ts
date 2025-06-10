@@ -75,4 +75,31 @@ export function formatRelativeTime(timestamp: string | number): string {
     return `${minutes}m ago`;
   }
   return "Just now";
+}
+
+
+/**
+ * Formats status strings (e.g., want_to_play -> Want To Play)
+ */
+export function formatStatus(status: string): string {
+  return status
+    .split("_")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+}
+
+/**
+ * Formats percentage values
+ */
+export function formatPercentage(value: number | undefined): string {
+  if (value === undefined) return "0%";
+  return `${Math.round(value)}%`;
+}
+
+/**
+ * Formats achievement counts
+ */
+export function formatAchievements(completed: number | undefined, total: number | undefined): string {
+  if (completed === undefined || total === undefined) return "0/0";
+  return `${completed}/${total}`;
 } 

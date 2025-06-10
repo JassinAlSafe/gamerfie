@@ -2,15 +2,26 @@
 
 import React from "react";
 import { motion } from "framer-motion";
-import { Star, Calendar, Gamepad2 } from "lucide-react";
-import { Game } from "@/types/game";
+import { Star, Calendar, Gamepad2, Clock } from "lucide-react";
+import { Game } from "@/types";
+
 import { formatRating, formatDate } from "@/utils/format-utils";
+
+interface GameProgress {
+  playTime: number;
+  completionPercentage?: number;
+  achievementsCompleted?: number;
+  lastPlayedAt?: string;
+  userRating?: number;
+  notes?: string;
+}
 
 interface GameQuickStatsProps {
   game: Game;
+  progress?: Partial<GameProgress>;
 }
 
-export function GameQuickStats({ game }: GameQuickStatsProps) {
+export function GameQuickStats({ game, progress }: GameQuickStatsProps) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -18,12 +29,19 @@ export function GameQuickStats({ game }: GameQuickStatsProps) {
       transition={{ duration: 0.5, delay: 0.3 }}
       className="flex flex-wrap gap-4 justify-center md:justify-start"
     >
-      {game.total_rating && (
+      {(game as any).total_rating && (
         <div className="flex items-center gap-2 bg-yellow-400/10 text-yellow-400 rounded-full px-6 py-2.5 backdrop-blur-sm border border-yellow-400/20 transition-colors duration-200 hover:bg-yellow-400/20">
           <Star className="w-5 h-5" />
           <span className="text-lg font-semibold">
-            {formatRating(game.total_rating)}
+            {formatRating((game as any).total_rating)}
           </span>
+        </div>
+      )}
+
+      {progress?.playTime !== undefined && progress.playTime > 0 && (
+        <div className="flex items-center gap-2 bg-green-400/10 text-green-400 rounded-full px-6 py-2.5 backdrop-blur-sm border border-green-400/20 transition-colors duration-200 hover:bg-green-400/20">
+          <Clock className="w-5 h-5" />
+          <span className="text-lg font-semibold">{progress.playTime}h</span>
         </div>
       )}
 

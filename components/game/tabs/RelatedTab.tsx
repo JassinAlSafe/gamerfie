@@ -4,7 +4,7 @@ import React from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { Star } from "lucide-react";
-import { Game } from "@/types/game";
+import { Game } from "@/types";
 import { getCoverImageUrl } from "@/utils/image-utils";
 import { formatRating } from "@/utils/format-utils";
 import { useRouter } from "next/navigation";
@@ -37,7 +37,9 @@ export function RelatedTab({ games }: RelatedTabProps) {
           <div className="relative aspect-[3/4] w-full">
             {game.cover ? (
               <Image
-                src={getCoverImageUrl(game.cover.url)}
+                src={getCoverImageUrl(
+                  typeof game.cover === "string" ? game.cover : game.cover.url
+                )}
                 alt={game.name}
                 fill
                 className="object-cover"
@@ -56,11 +58,11 @@ export function RelatedTab({ games }: RelatedTabProps) {
             </h3>
 
             <div className="flex items-center justify-between">
-              {game.total_rating && (
+              {(game as any).total_rating && (
                 <div className="flex items-center gap-1">
                   <Star className="w-4 h-4 text-yellow-400" />
                   <span className="text-sm font-medium text-yellow-400">
-                    {formatRating(game.total_rating)}
+                    {formatRating((game as any).total_rating)}
                   </span>
                 </div>
               )}

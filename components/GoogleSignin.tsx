@@ -1,20 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { createClient } from "@/utils/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Icons } from "@/components/ui/icons";
-import { toast } from "@/hooks/use-toast";
 
-export default function GoogleSignIn() {
-  const supabase = createClientComponentClient();
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+export default function GoogleSignin() {
+  const [loading, setLoading] = useState(false);
+  const supabase = createClient();
 
-  async function signInWithGoogle() {
-    setIsLoading(true);
-    setError(null);
-
+  const handleGoogleSignIn = async () => {
+    setLoading(true);
     try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
@@ -23,38 +18,24 @@ export default function GoogleSignIn() {
         },
       });
 
-      if (error) throw error;
-    } catch (error: unknown) {
-      if (error instanceof Error) {
-        console.error("Google sign-in error:", error.message);
-        setError(error.message);
-        toast({
-          title: "Google sign-in failed",
-          description: error.message,
-          variant: "destructive",
-        });
-      } else {
-        console.error("Google sign-in error:", error);
-        setError("An unknown error occurred");
-        toast({
-          title: "Google sign-in failed",
-          description: "An unknown error occurred",
-          variant: "destructive",
-        });
+      if (error) {
+        console.error("Error signing in with Google:", error);
       }
+    } catch (error) {
+      console.error("Error signing in with Google:", error);
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
-  }
+  };
 
   return (
-    <Button onClick={signInWithGoogle} className="w-full" disabled={isLoading}>
-      {isLoading ? (
-        <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
-      ) : (
-        <Icons.login className="mr-2 h-4 w-4" />
-      )}
-      {isLoading ? "Signing in..." : "Sign in with Google"}
+    <Button
+      onClick={handleGoogleSignIn}
+      disabled={loading}
+      variant="outline"
+      className="w-full"
+    >
+      {loading ? "Signing in..." : "Continue with Google"}
     </Button>
   );
 }

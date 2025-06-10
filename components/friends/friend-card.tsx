@@ -1,17 +1,17 @@
-import React from "react";
-import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
+import React, { memo } from "react";
+import { Avatar, AvatarFallback } from "../ui/avatar";
 import { Button } from "../ui/button";
 import { UserPlus, UserMinus, Clock } from "lucide-react";
 import { FriendCardProps } from "../../types/friend";
-import { useSession } from "@supabase/auth-helpers-react";
+import { useUser } from "@/hooks/User/useUser";
 
-export function FriendCard({
+export const FriendCard = memo(function FriendCard({
   friend,
   onStatusUpdate,
   onRemove,
 }: FriendCardProps) {
-  const session = useSession();
-  const currentUserId = session?.user?.id;
+  const { user } = useUser();
+  const currentUserId = user?.id;
 
   // Check if the current user is the sender of the friend request
   const isSender = friend.sender_id === currentUserId;
@@ -79,4 +79,4 @@ export function FriendCard({
       </div>
     </div>
   );
-}
+});

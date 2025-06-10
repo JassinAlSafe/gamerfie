@@ -2,7 +2,7 @@
 
 import { useLibraryStore } from '@/stores/useLibraryStore';
 import { useSettingsStore } from '@/stores/useSettingsStore';
-import { Game } from '@/types/game';
+import { Game } from '@/types';
 import { LoadingSpinner } from '@/components/loadingSpinner';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -32,7 +32,7 @@ interface LibraryViewProps {
 }
 
 export function LibraryView({ filters }: LibraryViewProps) {
-  const { games, isLoading, error, updateGamesOrder } = useLibraryStore();
+  const { games, loading, updateGamesOrder } = useLibraryStore();
   const { libraryView, sortBy, sortOrder } = useSettingsStore();
 
   const sensors = useSensors(
@@ -42,8 +42,7 @@ export function LibraryView({ filters }: LibraryViewProps) {
     })
   );
 
-  if (isLoading) return <LoadingSpinner />;
-  if (error) return <div className="text-center py-10"><p className="text-red-500">Error: {error}</p></div>;
+  if (loading) return <LoadingSpinner />;
   if (!games.length) {
     return (
       <div className="text-center py-10">
@@ -64,7 +63,7 @@ export function LibraryView({ filters }: LibraryViewProps) {
       const newIndex = sortedGames.findIndex((game) => game.id === over.id);
       
       const newOrder = arrayMove(sortedGames, oldIndex, newIndex);
-      updateGamesOrder(newOrder.map(game => game.id));
+      updateGamesOrder(newOrder);
     }
   }
 
@@ -135,7 +134,7 @@ function sortGames(games: Game[], sortBy: string, sortOrder: 'asc' | 'desc'): Ga
         comparison = (b.first_release_date || 0) - (a.first_release_date || 0);
         break;
       case 'playTime':
-        comparison = (b.playTime || 0) - (a.playTime || 0);
+        comparison = ((b as any).playTime || 0) - ((a as any).playTime || 0);
         break;
       case 'dateAdded':
       default:
@@ -154,7 +153,7 @@ function filterGames(games: Game[], filters: {
 }): Game[] {
   return games.filter(game => {
     // Status filter
-    if (filters.status !== 'all' && game.playStatus !== filters.status) {
+    if (filters.status !== 'all' && (game as any).playStatus !== filters.status) {
       return false;
     }
 

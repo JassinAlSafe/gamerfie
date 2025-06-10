@@ -1,9 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { createClient } from "@/utils/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Database } from "@/types/supabase";
 import { toast } from "react-hot-toast";
 
 interface GameNotesProps {
@@ -13,7 +12,7 @@ interface GameNotesProps {
 export function GameNotes({ gameId }: GameNotesProps) {
   const [notes, setNotes] = useState("");
   const [mounted, setMounted] = useState(false);
-  const supabase = createClientComponentClient<Database>();
+  const supabase = createClient();
 
   useEffect(() => {
     setMounted(true);

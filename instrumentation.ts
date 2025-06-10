@@ -1,13 +1,15 @@
-import * as Sentry from '@sentry/nextjs';
+// Temporarily disabled Sentry instrumentation to fix build issues
+// import * as Sentry from '@sentry/nextjs';
 
 export async function register() {
-  if (process.env.NEXT_RUNTIME === 'nodejs') {
-    await import('./sentry.server.config');
-  }
+  // Sentry instrumentation disabled
+  // if (process.env.NEXT_RUNTIME === 'nodejs') {
+  //   await import('./sentry.server.config');
+  // }
 
-  if (process.env.NEXT_RUNTIME === 'edge') {
-    await import('./sentry.edge.config');
-  }
+  // if (process.env.NEXT_RUNTIME === 'edge') {
+  //   await import('./sentry.edge.config');
+  // }
 }
 
-export const onRequestError = Sentry.captureRequestError;
+// export const onRequestError = Sentry.captureRequestError;

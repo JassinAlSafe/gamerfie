@@ -1,15 +1,14 @@
-import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
-import { cookies } from "next/headers";
+import { createClient } from "@/utils/supabase/server";
 import { NextResponse } from "next/server";
 
 export async function GET() {
   try {
-    const supabase = createRouteHandlerClient({ cookies });
+    const supabase = await createClient();
     const {
-      data: { session },
-    } = await supabase.auth.getSession();
+      data: { user },
+    } = await supabase.auth.getUser();
 
-    if (!session) {
+    if (!user) {
       return NextResponse.json(
         { error: "Not authenticated" },
         { status: 401 }
@@ -19,7 +18,7 @@ export async function GET() {
     const { data: profile, error: profileError } = await supabase
       .from("profiles")
       .select("id, username, avatar_url")
-      .eq("id", session.user.id)
+      .eq("id", user.id)
       .single();
 
     if (profileError) {

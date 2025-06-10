@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { createClient } from "@/utils/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,7 +21,7 @@ export function AvatarUpload({
   currentAvatarUrl,
   onAvatarUpdate,
 }: AvatarUploadProps) {
-  const supabase = createClientComponentClient();
+  const supabase = createClient();
   const [uploading, setUploading] = useState(false);
 
   const uploadAvatar = async (event: React.ChangeEvent<HTMLInputElement>) => {

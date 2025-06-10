@@ -2,17 +2,13 @@
 
 import React from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Game } from "@/types/game";
+import { Game } from "@/types";
 import { Profile } from "@/types/profile";
 import { OverviewTab } from "./OverviewTab";
-import { StatsTab } from "./StatsTab";
 import { MediaTab } from "./MediaTab";
 import { AchievementsTab } from "./AchievementsTab";
-import { ChallengesTab } from "./ChallengesTab";
 import { ActivityTab } from "./ActivityTab";
 import { RelatedTab } from "./RelatedTab";
-import { motion, AnimatePresence } from "framer-motion";
-import { cn } from "@/lib/utils";
 
 interface GameTabsProps {
   game: Game;
@@ -35,117 +31,92 @@ interface GameTabsProps {
   };
 }
 
-const TABS = [
-  { id: "overview", label: "Overview" },
-  { id: "stats", label: "Stats" },
-  { id: "media", label: "Media" },
-  { id: "achievements", label: "Achievements" },
-  { id: "challenges", label: "Challenges" },
-  { id: "activity", label: "Activity" },
-  { id: "related", label: "Related" },
-] as const;
-
 export function GameTabs({
   game,
-  profile,
+  profile: _profile,
   activeTab,
   onTabChange,
-  progress,
+  progress: _progress,
   activities,
 }: GameTabsProps) {
   return (
-    <div className="sticky top-16 z-40 bg-gray-950/80 backdrop-blur-sm border-b border-white/10">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="bg-gray-950/80 backdrop-blur-md border-t border-gray-800/50">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <Tabs value={activeTab} onValueChange={onTabChange} className="w-full">
           <div className="relative">
-            <TabsList className="w-full justify-start border-b border-white/10 bg-transparent h-auto p-0 overflow-x-auto flex-nowrap whitespace-nowrap scrollbar-hide">
-              {TABS.map((tab) => (
-                <TabsTrigger
-                  key={tab.id}
-                  value={tab.id}
-                  className={cn(
-                    "px-6 py-3 text-gray-400 data-[state=active]:text-white rounded-none bg-transparent transition-all duration-200 ease-in-out capitalize hover:text-white/80",
-                    "relative",
-                    "focus:outline-none focus:ring-0 focus:ring-offset-0"
-                  )}
-                >
-                  {tab.label}
-                  {tab.id === activeTab && (
-                    <motion.div
-                      layoutId="activeTab"
-                      className="absolute bottom-0 left-0 right-0 h-0.5 bg-white"
-                      initial={false}
-                      transition={{
-                        type: "spring",
-                        stiffness: 500,
-                        damping: 30,
-                      }}
-                    />
-                  )}
-                </TabsTrigger>
-              ))}
+            {/* Improved tab list alignment and spacing */}
+            <TabsList className="flex w-full max-w-3xl mx-auto justify-center border-b border-gray-800/50 bg-transparent h-auto py-0">
+              <TabsTrigger
+                value="overview"
+                className="flex-1 py-4 font-medium data-[state=active]:text-purple-400 data-[state=active]:border-b-2 data-[state=active]:border-purple-500 rounded-none"
+              >
+                Overview
+              </TabsTrigger>
+              <TabsTrigger
+                value="media"
+                className="flex-1 py-4 font-medium data-[state=active]:text-purple-400 data-[state=active]:border-b-2 data-[state=active]:border-purple-500 rounded-none"
+              >
+                Media
+              </TabsTrigger>
+              <TabsTrigger
+                value="achievements"
+                className="flex-1 py-4 font-medium data-[state=active]:text-purple-400 data-[state=active]:border-b-2 data-[state=active]:border-purple-500 rounded-none"
+              >
+                Achievements
+              </TabsTrigger>
+              <TabsTrigger
+                value="related"
+                className="flex-1 py-4 font-medium data-[state=active]:text-purple-400 data-[state=active]:border-b-2 data-[state=active]:border-purple-500 rounded-none"
+              >
+                Related
+              </TabsTrigger>
+              <TabsTrigger
+                value="activity"
+                className="flex-1 py-4 font-medium data-[state=active]:text-purple-400 data-[state=active]:border-b-2 data-[state=active]:border-purple-500 rounded-none"
+              >
+                Activity
+              </TabsTrigger>
             </TabsList>
-            <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-gray-950/80 pointer-events-none" />
+
+            {/* Gradient indicators for horizontal scrolling */}
+            <div className="absolute left-0 top-0 bottom-0 w-12 bg-gradient-to-r from-gray-950/80 to-transparent pointer-events-none" />
+            <div className="absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-gray-950/80 to-transparent pointer-events-none" />
           </div>
 
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={activeTab}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.2 }}
-              className="py-8"
+          {/* Tab content with consistent padding */}
+          <div className="py-8">
+            <TabsContent
+              value="overview"
+              className="focus-visible:outline-none"
             >
-              <div className="max-w-7xl mx-auto">
-                <TabsContent
-                  value="overview"
-                  className="mt-0 focus:outline-none"
-                >
-                  <OverviewTab game={game} />
-                </TabsContent>
+              <OverviewTab
+                game={game}
+                onViewMoreRelated={() => onTabChange("related")}
+              />
+            </TabsContent>
 
-                <TabsContent value="stats" className="mt-0 focus:outline-none">
-                  <StatsTab game={game} profile={profile} progress={progress} />
-                </TabsContent>
+            <TabsContent value="media" className="focus-visible:outline-none">
+              <MediaTab game={game} />
+            </TabsContent>
 
-                <TabsContent value="media" className="mt-0 focus:outline-none">
-                  <MediaTab game={game} />
-                </TabsContent>
+            <TabsContent
+              value="achievements"
+              className="focus-visible:outline-none"
+            >
+              <AchievementsTab game={game} profile={_profile} />
+            </TabsContent>
 
-                <TabsContent
-                  value="achievements"
-                  className="mt-0 focus:outline-none"
-                >
-                  <AchievementsTab game={game} profile={profile} />
-                </TabsContent>
+            <TabsContent value="related" className="focus-visible:outline-none">
+              <RelatedTab games={[]} />
+            </TabsContent>
 
-                <TabsContent
-                  value="challenges"
-                  className="mt-0 focus:outline-none"
-                >
-                  <ChallengesTab game={game} profile={profile} />
-                </TabsContent>
-
-                <TabsContent
-                  value="activity"
-                  className="mt-0 focus:outline-none"
-                >
-                  <ActivityTab
-                    gameId={game.id.toString()}
-                    activities={activities}
-                  />
-                </TabsContent>
-
-                <TabsContent
-                  value="related"
-                  className="mt-0 focus:outline-none"
-                >
-                  <RelatedTab games={game.relatedGames || []} />
-                </TabsContent>
-              </div>
-            </motion.div>
-          </AnimatePresence>
+            <TabsContent
+              value="activity"
+              className="focus-visible:outline-none"
+            >
+              <ActivityTab gameId={game.id} activities={activities} />
+            </TabsContent>
+          </div>
         </Tabs>
       </div>
     </div>

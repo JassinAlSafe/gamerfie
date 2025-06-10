@@ -1,5 +1,4 @@
-import { cookies } from "next/headers";
-import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
+import { createClient } from "@/utils/supabase/server";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
@@ -10,14 +9,14 @@ const claimBadgeSchema = z.object({
 
 export async function POST(request: Request) {
   try {
-    const supabase = createRouteHandlerClient({ cookies });
+    const supabase = await createClient();
     
     // Get current user
     const {
-      data: { session },
-    } = await supabase.auth.getSession();
+      data: { user },
+    } = await supabase.auth.getUser();
 
-    if (!session) {
+    if (!user) {
       return NextResponse.json(
         { error: "Not authenticated" },
         { status: 401 }
@@ -49,7 +48,7 @@ export async function POST(request: Request) {
       .from("challenge_participants")
       .select("completed")
       .eq("challenge_id", challengeId)
-      .eq("user_id", session.user.id)
+      .eq("user_id", user.id)
       .single();
 
     if (participantError || !participant) {
@@ -70,7 +69,7 @@ export async function POST(request: Request) {
     const { data: existingClaim } = await supabase
       .from("user_badges")
       .select("id")
-      .eq("user_id", session.user.id)
+      .eq("user_id", user.id)
       .eq("badge_id", badgeId)
       .eq("challenge_id", challengeId)
       .maybeSingle();
@@ -84,7 +83,7 @@ export async function POST(request: Request) {
     const { error: insertError } = await supabase
       .from("user_badges")
       .upsert({
-        user_id: session.user.id,
+        user_id: user.id,
         badge_id: badgeId,
         challenge_id: challengeId,
       });

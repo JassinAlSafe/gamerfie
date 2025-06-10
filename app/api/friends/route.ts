@@ -1,93 +1,105 @@
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
+import { createClient } from '@/utils/supabase/server';
 import { NextResponse } from 'next/server';
+import { getSession } from '@/lib/session';
+
+interface FriendData {
+  id: string;
+  username: string;
+  status?: string;
+  bio?: string;
+  avatar_url?: string;
+  sender_id?: string;
+  display_name?: string;
+}
 
 
-
-export async function GET(request: Request) {
-  const supabase = createRouteHandlerClient({ cookies });
-  const { searchParams } = new URL(request.url);
-  const status = searchParams.get('status');
-
+export async function GET() {
   try {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Not authenticated' },
+        { status: 401 }
+      );
     }
 
-    let query = supabase
-      .from('friends')
-      .select('*')
-      .or(`user_id.eq.${session.user.id},friend_id.eq.${session.user.id}`);
+    // Get friend requests and friendships
+    const { data: friendships, error } = await supabase
+      .from('friendships')
+      .select(`
+        *,
+        friend:profiles!friendships_friend_id_fkey(
+          id,
+          username,
+          display_name,
+          avatar_url,
+          bio
+        ),
+        sender:profiles!friendships_user_id_fkey(
+          id,
+          username,
+          display_name,
+          avatar_url,
+          bio
+        )
+      `)
+      .or(`user_id.eq.${user.id},friend_id.eq.${user.id}`);
 
-    if (status) {
-      query = query.eq('status', status);
+    if (error) {
+      console.error('Error fetching friends:', error);
+      return NextResponse.json(
+        { error: 'Failed to fetch friends' },
+        { status: 500 }
+      );
     }
 
-    const { data: friends, error } = await query;
-
-    if (error) throw error;
-    if (!friends) return NextResponse.json([]);
-
-    // Get all unique user IDs from both user_id and friend_id fields
-    const userIds = [...new Set(friends.map(f => 
-      f.user_id === session.user.id ? f.friend_id : f.user_id
-    ))];
-
-    // Fetch user details from profiles
-    const { data: users } = await supabase
-      .from('profiles')
-      .select('id, username')
-      .in('id', userIds);
-
-    if (!users) return NextResponse.json([]);
-
-    // Create a map of user details
-    const userMap = new Map(users.map(user => [user.id, user]));
-
-    // Transform the data
-    const transformedFriends = friends.map(f => {
-      const friendId = f.user_id === session.user.id ? f.friend_id : f.user_id;
-      const friendData = userMap.get(friendId);
+    const friends: FriendData[] = friendships?.map(friendship => {
+      const isRequester = friendship.user_id === user.id;
+      const friendProfile = isRequester ? friendship.friend : friendship.sender;
+      
       return {
-        id: friendId,
-        username: friendData?.username || '',
-        status: f.status,
-        bio: friendData?.bio || '',
-        avatar_url: friendData?.avatar_url,
-        sender_id: f.user_id,
-        display_name: friendData?.display_name
+        id: friendProfile.id,
+        username: friendProfile.username,
+        display_name: friendProfile.display_name,
+        avatar_url: friendProfile.avatar_url,
+        bio: friendProfile.bio,
+        status: friendship.status,
+        sender_id: friendship.user_id,
       };
-    });
+    }) || [];
 
-    return NextResponse.json(transformedFriends);
+    return NextResponse.json({ friends });
   } catch (error) {
-    console.error('Friends fetch error:', error);
+    console.error('Error in friends API:', error);
     return NextResponse.json(
-      { error: 'Internal Server Error' }, 
+      { error: 'Internal server error' },
       { status: 500 }
     );
   }
 }
 
 export async function POST(request: Request) {
-  const supabase = createRouteHandlerClient({ cookies });
+  const supabase = await createClient();
 
   try {
     const { friendId } = await request.json();
-    const { data: { session } } = await supabase.auth.getSession();
+    const { data: { user } } = await supabase.auth.getUser();
     
-    if (!session?.user) {
+    if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Check if friendship already exists in either direction
-    const { data: existingFriendship, error: checkError } = await supabase
+    const { data: existingFriendship } = await supabase
       .from('friends')
       .select('*')
       .or(
-        `and(user_id.eq.${session.user.id},friend_id.eq.${friendId}),` +
-        `and(user_id.eq.${friendId},friend_id.eq.${session.user.id})`
+        `and(user_id.eq.${user.id},friend_id.eq.${friendId}),` +
+        `and(user_id.eq.${friendId},friend_id.eq.${user.id})`
       )
       .single();
 
@@ -102,7 +114,7 @@ export async function POST(request: Request) {
     const { data: friendship, error: insertError } = await supabase
       .from('friends')
       .insert({
-        user_id: session.user.id,
+        user_id: user.id,
         friend_id: friendId,
         status: 'pending'
       })
@@ -129,12 +141,39 @@ export async function POST(request: Request) {
       username: friendProfile?.username,
       avatar_url: friendProfile?.avatar_url,
       status: friendship.status,
-      sender_id: session.user.id
+      sender_id: user.id
     });
   } catch (error) {
     console.error('Error in POST /api/friends:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(
+  _request: Request,
+  { params }: { params: { friendId: string } }
+) {
+  const supabase = await createClient();
+  try {
+    const session = await getSession();
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    await supabase
+      .from("friends")
+      .delete()
+      .eq("id", params.friendId)
+      .eq("user_id", session.user.id);
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("Error removing friend:", error);
+    return NextResponse.json(
+      { error: "Failed to remove friend" },
       { status: 500 }
     );
   }

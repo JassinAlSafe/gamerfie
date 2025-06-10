@@ -22,7 +22,6 @@ interface RewardClaimerProps {
 }
 
 export function RewardClaimer({
-  challengeId,
   rewards,
   isCompleted,
   isClaimed,

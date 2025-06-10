@@ -2,7 +2,7 @@
 
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Game } from "@/types/game";
+import { Game } from "@/types";
 import { GripVertical } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { GridGameCard, ListGameCard } from "./game-cards";

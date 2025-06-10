@@ -1,11 +1,12 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React from "react";
 import * as Sentry from "@sentry/nextjs";
 import { Button } from "@/components/ui/button";
 
 interface Props {
   children: React.ReactNode;
+  fallback?: React.ReactNode;
 }
 
 interface State {
@@ -25,13 +26,21 @@ export class ErrorBoundary extends React.Component<Props, State> {
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     Sentry.withScope((scope) => {
-      scope.setExtras(errorInfo);
+      // Convert errorInfo to a compatible object
+      const extras = Object.fromEntries(
+        Object.entries(errorInfo).map(([key, value]) => [key, String(value)])
+      );
+      scope.setExtras(extras);
       Sentry.captureException(error);
     });
   }
 
   render() {
     if (this.state.hasError) {
+      if (this.props.fallback) {
+        return this.props.fallback;
+      }
+      
       return (
         <div className="flex flex-col items-center justify-center min-h-[400px] p-4">
           <h2 className="text-xl font-semibold text-red-500 mb-4">

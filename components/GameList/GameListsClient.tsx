@@ -4,13 +4,12 @@ import { useEffect, useState } from "react";
 import { useJournalStore } from "@/stores/useJournalStore";
 import { Button } from "../ui/button";
 import { Plus } from "lucide-react";
-import { useRouter } from "next/navigation"; // Changed from 'next/router' to 'next/navigation'
-import { NewEntryModal } from "../journal/NewEntryModal";
+import { useRouter } from "next/navigation";
+import { JournalEntryDialog } from "../journal/JournalEntryDialog";
 import { formatDistanceToNow } from "date-fns";
 import Image from "next/image";
 import { getCoverImageUrl } from "@/utils/image-utils";
-import { GameList } from "@/types/gamelist/game-list";
-import { Game } from "@/types/game";
+import { GameListItem } from "@/types/gamelist/game-list";
 
 export default function GameListsClient() {
   const { entries, isLoading, error, fetchEntries } = useJournalStore();
@@ -21,11 +20,11 @@ export default function GameListsClient() {
     fetchEntries();
   }, [fetchEntries]);
 
-  //filter only list type entries and parse games from content
+  // Filter only list type entries and parse games from content
   const lists = entries
-    .filter((entry): entry is GameList => entry.type === "list")
+    .filter((entry) => entry.type === "list")
     .map((entry) => {
-      let games: Game[] = [];
+      let games: GameListItem[] = [];
       if (entry.content) {
         try {
           if (entry.content.startsWith("[")) {
@@ -41,7 +40,6 @@ export default function GameListsClient() {
       };
     });
 
-  // Conditionally render loading or error states
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -153,10 +151,10 @@ export default function GameListsClient() {
         </div>
       )}
 
-      <NewEntryModal
+      <JournalEntryDialog
         isOpen={isNewEntryModalOpen}
         onClose={() => setIsNewEntryModalOpen(false)}
-        type="list"
+        initialType="list"
       />
     </div>
   );

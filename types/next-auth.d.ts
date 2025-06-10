@@ -5,6 +5,9 @@ declare module "next-auth" {
       name?: string | null;
       email?: string | null;
       image?: string | null;
+      metadata?: any;
     };
+    supabaseAccessToken?: string;
+    supabaseRefreshToken?: string;
   }
 } 

@@ -1,5 +1,5 @@
-import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
-import { cookies } from "next/headers";
+import { createClient } from "@/utils/supabase/server";
+import { NextResponse } from "next/server";
 
 const ITEMS_PER_PAGE = 10;
 
@@ -8,62 +8,80 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const cookieStore = cookies();
-    const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
+    const supabase = await createClient();
 
     const url = new URL(request.url);
     const page = parseInt(url.searchParams.get("page") || "1");
     const offset = (page - 1) * ITEMS_PER_PAGE;
 
+    // Ensure game ID is a string
+    const gameId = params.id.toString();
+
     const { data, error, count } = await supabase
-      .from("game_activities")
+      .from("friend_activities")
       .select(
         `
         id,
-        type,
-        metadata,
+        activity_type,
+        details,
         created_at,
-        user:user_id (
+        user:profiles (
           id,
           username,
           avatar_url
         ),
-        reactions:game_activity_reactions (
-          count,
-          user_has_reacted:user_id
+        reactions:activity_reactions (
+          id,
+          emoji,
+          type,
+          user_id,
+          user:profiles (
+            id,
+            username,
+            avatar_url
+          )
         ),
-        comments:game_activity_comments (
-          count
+        comments:activity_comments (
+          id,
+          content,
+          created_at,
+          user:profiles (
+            id,
+            username,
+            avatar_url
+          )
         )
         `,
         { count: "exact" }
       )
-      .eq("game_id", params.id)
+      .eq("game_id", gameId)
       .order("created_at", { ascending: false })
       .range(offset, offset + ITEMS_PER_PAGE - 1);
 
     if (error) {
-      return new Response(JSON.stringify({ error: error.message }), {
-        status: 500,
-      });
+      console.error("Error fetching game activities:", error);
+      return NextResponse.json(
+        { error: error.message },
+        { status: 500 }
+      );
     }
 
-    return new Response(
-      JSON.stringify({
+    return NextResponse.json(
+      {
         data: data || [],
         hasMore: count ? offset + ITEMS_PER_PAGE < count : false,
-      }),
+        total: count || 0,
+      },
       {
         headers: {
-          "Content-Type": "application/json",
           "Cache-Control": "public, s-maxage=60, stale-while-revalidate=30",
         },
       }
     );
   } catch (error) {
     console.error("Error fetching game activities:", error);
-    return new Response(
-      JSON.stringify({ error: "Failed to fetch game activities" }),
+    return NextResponse.json(
+      { error: "Failed to fetch game activities" },
       { status: 500 }
     );
   }

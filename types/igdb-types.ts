@@ -3,32 +3,44 @@ import type { Platform, Genre } from './game';
 export interface IGDBCover {
     id: number;
     url: string;
-  }
-  
-  export interface IGDBPlatform {
+}
+
+export interface IGDBPlatform {
     id: number;
     name: string;
     category: number;
-  }
-  
-  export interface IGDBGenre {
+}
+
+export interface IGDBGenre {
     id: number;
     name: string;
-  }
-  
-  export interface IGDBCompany {
+}
+
+export interface IGDBCompany {
     id: number;
     name: string;
-  }
-  
-  export interface IGDBCollection {
+}
+
+export interface IGDBCollection {
     id: number;
     name: string;
     games: number[];
-  }
-  
-  /** Base interface for game data from IGDB API */
-  export interface IGDBGame {
+}
+
+export interface IGDBScreenshot {
+    id: number;
+    url: string;
+    image_id: string;
+}
+
+export interface IGDBVideo {
+    id: number;
+    name: string;
+    video_id: string;
+}
+
+/** Base interface for game data from IGDB API */
+export interface IGDBGame {
     id: number;
     name: string;
     cover?: IGDBCover;
@@ -46,13 +58,16 @@ export interface IGDBCover {
     expanded_games?: number[];
     expansions?: number[];
     standalone_expansions?: number[];
-  }
-  
-  export interface FetchedGame extends IGDBGame {
+    screenshots?: IGDBScreenshot[];
+    videos?: IGDBVideo[];
+}
+
+export interface FetchedGame extends IGDBGame {
     cover?: IGDBCover;
-  }
-  
-  export interface ProcessedGame {
+}
+
+// Renamed from ProcessedGame to IGDBProcessedGame to avoid conflict
+export interface IGDBProcessedGame {
     id: number;
     name: string;
     cover: IGDBCover | null;
@@ -61,16 +76,27 @@ export interface IGDBCover {
     summary?: string;
     first_release_date?: number;
     total_rating?: number;
-  }
-  
-  export interface GameListResponse {
-    games: ProcessedGame[];
+    screenshots?: IGDBScreenshot[];
+    videos?: IGDBVideo[];
+}
+
+export interface GameListResponse {
+    games: IGDBProcessedGame[]; // Updated to use the renamed interface
     total: number;
     page: number;
     pageSize: number;
-  }
-  
-  export type GameAPIError = {
+}
+
+export interface IGDBResponse {
+    games: IGDBProcessedGame[];
+    totalCount: number;
+    currentPage: number;
+    totalPages: number;
+    hasNextPage: boolean;
+    hasPreviousPage: boolean;
+}
+
+export type GameAPIError = {
     message: string;
     statusCode: number;
-  };
+};

@@ -1,340 +1,143 @@
 "use client";
 
-import { useProfile } from "@/hooks/use-profile";
-import { Button } from "@/components/ui/button";
+import React from "react";
 import { useRouter } from "next/navigation";
-import { Toaster } from "react-hot-toast";
-import LoadingSpinner from "@/components/loadingSpinner";
 import { ProfileHeader } from "@/components/profile/profile-header";
 import { ProfileNav } from "@/components/profile/profile-nav";
-import { useFriendsStore } from "@/stores/useFriendsStore";
-import { useEffect } from "react";
-import { Users } from "lucide-react";
-import { formatDistanceToNow } from "date-fns";
-import { activityIcons, activityText } from "@/lib/activity-constants";
-import Image from "next/image";
-import { getCoverImageUrl } from "@/utils/image-utils";
-import { useJournalStore } from "@/stores/useJournalStore";
+import { ProfileActions } from "@/components/profile/profile-actions";
+import { ProfileSection } from "@/components/profile/ProfileSection";
+import { AboutSection } from "@/components/profile/sections/AboutSection";
+import { StatsSection } from "@/components/profile/sections/StatsSection";
+import { ActivitySection } from "@/components/profile/sections/ActivitySection";
+import { GamesSection } from "@/components/profile/sections/GamesSection";
+import { FriendsSection } from "@/components/profile/sections/FriendsSection";
+import { ReviewsSection } from "@/components/profile/sections/ReviewsSection";
+import { JournalSection } from "@/components/profile/sections/JournalSection";
+import { LoadingState } from "@/components/ui/loading-state";
+import { ErrorState } from "@/components/ui/error-state";
+import { useProfileData } from "@/hooks/Profile/useProfileData";
 
-export default function ProfilePage() {
-  const { profile, isLoading, error, gameStats, updateProfile } = useProfile();
-  const { friends, activities, fetchFriends, fetchActivities } =
-    useFriendsStore();
-  const { entries, fetchEntries } = useJournalStore();
+export default function ProfilePage(): JSX.Element {
   const router = useRouter();
+  const {
+    profile,
+    isLoading,
+    error,
+    gameStats,
+    updateProfile,
+    optimizedStats,
+    statsLoading,
+    refreshStats,
+    friendsLoading,
+    activitiesLoading,
+    journalLoading,
+    totalGames,
+    acceptedFriends,
+    recentReviews,
+    recentActivities,
+    recentJournalEntries,
+  } = useProfileData();
 
-  useEffect(() => {
-    if (profile) {
-      fetchFriends();
-      fetchActivities();
-      fetchEntries();
-    }
-  }, [profile, fetchFriends, fetchActivities, fetchEntries]);
+  // Event handlers
+  const handleEditProfile = () => {
+    router.push("/profile/edit");
+  };
 
+  const handleSettingsClick = () => {
+    router.push("/settings");
+  };
+
+  // Render loading state
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <LoadingSpinner />
+        <LoadingState />
       </div>
     );
   }
 
-  if (error) {
-    if (error.message === "No authenticated user") {
-      return (
-        <div className="flex flex-col items-center justify-center min-h-screen">
-          <h1 className="text-3xl font-bold mb-6 text-white">
-            Please sign in to view your profile
-          </h1>
-          <Button
-            onClick={() => router.push("/signin")}
-            variant="default"
-            size="lg"
-          >
-            Sign In
-          </Button>
-        </div>
-      );
-    }
+  // Render error state
+  if (error || !profile || !gameStats) {
     return (
-      <div className="flex items-center justify-center min-h-screen text-red-500">
-        <p className="text-xl font-semibold">Error: {error.message}</p>
+      <div className="flex items-center justify-center min-h-screen">
+        <ErrorState error={error?.message || "Profile not found"} />
       </div>
     );
   }
-
-  if (!profile) {
-    return (
-      <div className="flex items-center justify-center min-h-screen text-white">
-        <p className="text-xl font-semibold">Profile not found</p>
-      </div>
-    );
-  }
-
-  const acceptedFriends = friends.filter(
-    (friend) => friend.status === "accepted"
-  );
-  const pendingFriends = friends.filter(
-    (friend) => friend.status === "pending"
-  );
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-950">
-      {/* Hero Section with Gradient */}
-      <div className="absolute inset-x-0 top-16 h-[300px] bg-gradient-to-b from-purple-900 via-indigo-900 to-gray-950" />
+    <div className="flex flex-col min-h-screen">
+      <div className="relative">
+        {/* Background Gradient */}
+        <div className="absolute inset-0 h-[300px] bg-gradient-to-b from-purple-900/50 via-gray-900/50 to-gray-950" />
 
-      {/* Main Content Container */}
-      <div className="relative flex flex-col flex-grow">
-        {/* Profile Header Section */}
-        <div className="pt-8">
-          <Toaster position="top-center" />
-          <div className="max-w-7xl mx-auto px-4">
-            <ProfileHeader
-              profile={profile}
-              stats={
-                gameStats ?? {
-                  total_played: 0,
-                  played_this_year: 0,
-                  backlog: 0,
-                }
-              }
-              onProfileUpdate={updateProfile}
+        {/* Profile Header */}
+        <div className="relative">
+          <ProfileHeader
+            profile={profile}
+            stats={gameStats}
+            onProfileUpdate={updateProfile}
+          />
+        </div>
+      </div>
+
+      {/* Profile Navigation */}
+      <div className="sticky top-16 z-40 bg-gray-950/90 backdrop-blur-md border-b border-white/10">
+        <ProfileNav />
+      </div>
+
+      {/* Profile Content */}
+      <div className="flex-grow bg-gradient-to-b from-gray-950 to-gray-900 py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-2xl font-bold text-white">Profile Overview</h2>
+            <ProfileActions
+              onEdit={handleEditProfile}
+              onSettings={handleSettingsClick}
             />
           </div>
-        </div>
 
-        {/* Sticky Navigation */}
-        <div className="sticky top-16 z-40 bg-gray-950/80 backdrop-blur-md border-b border-white/5 mt-8">
-          <div className="max-w-7xl mx-auto px-4">
-            <ProfileNav />
-          </div>
-        </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Left Column - About & Stats & Activity */}
+            <div className="md:col-span-2 space-y-6">
+              <ProfileSection isLoading={isLoading} section="About">
+                <AboutSection profile={profile} />
+              </ProfileSection>
 
-        {/* Content Grid */}
-        <div className="flex-grow">
-          <div className="max-w-7xl mx-auto px-4 py-8">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              {/* Left Column - About & Friends */}
-              <div className="lg:col-span-1 space-y-8">
-                {/* About Card */}
-                <div className="bg-gray-900/50 rounded-xl p-6 backdrop-blur-sm border border-white/5">
-                  <h2 className="text-xl font-bold text-white mb-4">About</h2>
-                  <p className="text-gray-300">
-                    {profile.bio || "No bio provided yet"}
-                  </p>
-                  <div className="mt-6 space-y-4">
-                    <div>
-                      <h3 className="text-sm font-medium text-gray-400">
-                        Member since
-                      </h3>
-                      <p className="text-white">
-                        {new Date(profile.created_at).toLocaleDateString()}
-                      </p>
-                    </div>
-                    <div>
-                      <h3 className="text-sm font-medium text-gray-400">
-                        Last active
-                      </h3>
-                      <p className="text-white">
-                        {new Date(profile.updated_at).toLocaleDateString()}
-                      </p>
-                    </div>
-                  </div>
-                </div>
+              <ProfileSection isLoading={statsLoading} section="Statistics">
+                <StatsSection 
+                  stats={optimizedStats} 
+                  isLoading={statsLoading}
+                  onRefresh={refreshStats}
+                />
+              </ProfileSection>
 
-                {/* Friends Card */}
-                <div className="bg-gray-900/50 rounded-xl p-6 backdrop-blur-sm border border-white/5">
-                  <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-xl font-bold text-white">Friends</h2>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => router.push("/profile/friends")}
-                      className="text-purple-400 hover:text-purple-300"
-                    >
-                      View All
-                    </Button>
-                  </div>
-                  <div className="flex items-center gap-4 mb-4">
-                    <div className="flex items-center gap-2">
-                      <Users className="w-5 h-5 text-purple-400" />
-                      <span className="text-white font-medium">
-                        {acceptedFriends.length}
-                      </span>
-                    </div>
-                    {pendingFriends.length > 0 && (
-                      <div className="text-sm text-yellow-400">
-                        {pendingFriends.length} pending request
-                        {pendingFriends.length !== 1 ? "s" : ""}
-                      </div>
-                    )}
-                  </div>
-                  <div className="space-y-3">
-                    {acceptedFriends.slice(0, 3).map((friend) => (
-                      <div
-                        key={friend.id}
-                        className="flex items-center gap-3 p-2 rounded-lg bg-gray-800/50"
-                      >
-                        <div className="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center">
-                          {friend.username?.[0]?.toUpperCase()}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium truncate text-white">
-                            {friend.username}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                    {acceptedFriends.length === 0 && (
-                      <p className="text-gray-400 text-sm">No friends yet</p>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Right Column - Recent Activity */}
-              <div className="lg:col-span-2 space-y-8">
-                {/* Recent Reviews */}
-                <div className="bg-gray-900/50 rounded-xl p-6 backdrop-blur-sm border border-white/5">
-                  <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-xl font-bold text-white">
-                      Recent Reviews
-                    </h2>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => router.push("/profile/reviews")}
-                      className="text-purple-400 hover:text-purple-300"
-                    >
-                      View All
-                    </Button>
-                  </div>
-                  <div className="space-y-4">
-                    {entries
-                      .filter((entry) => entry.type === "review")
-                      .slice(0, 3)
-                      .map((review) => (
-                        <div
-                          key={review.id}
-                          className="flex items-start gap-4 p-4 bg-gray-800/50 rounded-lg"
-                        >
-                          {review.game && (
-                            <div className="relative w-12 h-16 rounded overflow-hidden flex-shrink-0">
-                              <Image
-                                src={
-                                  review.game.cover_url
-                                    ? getCoverImageUrl(review.game.cover_url)
-                                    : "/images/placeholders/game-cover.jpg"
-                                }
-                                alt={`Cover for ${review.game.name}`}
-                                fill
-                                className="object-cover"
-                                sizes="48px"
-                                quality={90}
-                              />
-                            </div>
-                          )}
-                          <div className="flex-1 min-w-0">
-                            <h3 className="font-medium text-white line-clamp-1">
-                              {review.game?.name}
-                            </h3>
-                            <div className="flex items-center gap-2 mt-1">
-                              <div className="flex gap-1">
-                                {[...Array(10)].map((_, i) => (
-                                  <div
-                                    key={i}
-                                    className={`w-1 h-4 rounded-sm ${
-                                      i < (review.rating || 0)
-                                        ? "bg-white"
-                                        : "bg-gray-700"
-                                    }`}
-                                  />
-                                ))}
-                              </div>
-                              <span className="text-sm font-medium text-white">
-                                {review.rating}/10
-                              </span>
-                            </div>
-                            <p className="text-sm text-gray-400 mt-2 line-clamp-2">
-                              {review.content}
-                            </p>
-                          </div>
-                        </div>
-                      ))}
-                    {entries.filter((entry) => entry.type === "review")
-                      .length === 0 && (
-                      <p className="text-gray-400">No reviews yet.</p>
-                    )}
-                  </div>
-                </div>
-
-                {/* Recent Activity */}
-                <div className="bg-gray-900/50 rounded-xl p-6 backdrop-blur-sm border border-white/5">
-                  <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-xl font-bold text-white">
-                      Recent Activity
-                    </h2>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => router.push("/profile/activity")}
-                      className="text-purple-400 hover:text-purple-300"
-                    >
-                      View All
-                    </Button>
-                  </div>
-                  <div className="space-y-6">
-                    {activities.slice(0, 5).map((activity) => (
-                      <div key={activity.id} className="flex items-start gap-4">
-                        <div className="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center text-white">
-                          {activity.user.username[0].toUpperCase()}
-                        </div>
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <span className="font-medium text-white">
-                              {activity.user.username}
-                            </span>
-                            {activityIcons[activity.type]}
-                            <span className="text-gray-400">
-                              {activityText[activity.type]}
-                            </span>
-                            <span className="text-purple-400">
-                              {activity.game.name}
-                            </span>
-                          </div>
-                          <p className="text-sm text-gray-400 mt-1">
-                            {activity.timestamp
-                              ? formatDistanceToNow(
-                                  new Date(activity.timestamp),
-                                  {
-                                    addSuffix: true,
-                                  }
-                                )
-                              : "Just now"}
-                          </p>
-                          {activity.details &&
-                            activity.type === "achievement" && (
-                              <p className="mt-2 text-sm text-white">
-                                🏆 Unlocked: {activity.details.name}
-                              </p>
-                            )}
-                          {activity.details && activity.type === "review" && (
-                            <p className="mt-2 text-sm text-white">
-                              &ldquo;{activity.details.comment}&rdquo;
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                    {activities.length === 0 && (
-                      <p className="text-gray-400">
-                        No recent activity to show.
-                      </p>
-                    )}
-                  </div>
-                </div>
-              </div>
+              <ProfileSection isLoading={activitiesLoading} section="Activity">
+                <ActivitySection activities={recentActivities} />
+              </ProfileSection>
             </div>
+
+            {/* Right Column - Games & Friends */}
+            <div className="space-y-6">
+              <ProfileSection isLoading={isLoading} section="Games">
+                <GamesSection totalGames={totalGames} />
+              </ProfileSection>
+
+              <ProfileSection isLoading={friendsLoading} section="Friends">
+                <FriendsSection friends={acceptedFriends} />
+              </ProfileSection>
+            </div>
+          </div>
+
+          {/* Bottom Row - Reviews & Journal */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+            <ProfileSection isLoading={journalLoading} section="Reviews">
+              <ReviewsSection reviews={recentReviews} />
+            </ProfileSection>
+
+            <ProfileSection isLoading={journalLoading} section="Journal">
+              <JournalSection entries={recentJournalEntries} />
+            </ProfileSection>
           </div>
         </div>
       </div>

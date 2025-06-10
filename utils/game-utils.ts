@@ -1,18 +1,62 @@
-import type { Game, GameStats } from "@/types/index";
-import type { SupabaseClient } from '@supabase/supabase-js';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
-import type { Database } from '@/types/supabase';
+import { createClient } from '@/utils/supabase/client';
+import { SupabaseClient } from '@supabase/supabase-js';
+import { Game } from '@/types/game';
+import { useGameDetailsStore } from '@/stores/useGameDetailsStore';
+
+export interface GameStats {
+  total_played: number;
+  backlog: number;
+  currentlyPlaying: number;
+  completedGames: number;
+  droppedGames: number;
+}
+
+// Helper function to normalize game data for store
+const normalizeGameForStore = (game: any): Game => {
+  return {
+    ...game,
+    // Ensure cover is properly structured
+    cover: typeof game.cover === 'string' 
+      ? { id: game.cover, url: game.cover }
+      : game.cover,
+    // Ensure all required properties exist with defaults
+    summary: game.summary || '',
+    storyline: game.storyline || '',
+    total_rating_count: game.total_rating_count || 0,
+  } as Game;
+};
+
 
 export const fetchGameDetails = async (gameIds: string[]) => {
   try {
     console.log('Fetching game details for IDs:', gameIds);
+    
+    // Get store instance
+    const store = useGameDetailsStore.getState();
+    
+    // Check cache first
+    const cachedGames = gameIds
+      .map(id => store.getGame(Number(id)))
+      .filter(game => game && Date.now() - game.timestamp < 1000 * 60 * 60); // 1 hour cache
+    
+    // Find IDs that need fetching
+    const idsToFetch = gameIds.filter(id => 
+      !cachedGames.find(game => game?.id === id)
+    );
+    
+    if (idsToFetch.length === 0) {
+      console.log('All games found in cache');
+      return cachedGames.map(game => ({ ...game, timestamp: undefined }));
+    }
+    
+    console.log('Fetching missing games:', idsToFetch);
     
     const response = await fetch('/api/games/details', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ ids: gameIds })
+      body: JSON.stringify({ ids: idsToFetch })
     });
 
     if (!response.ok) {
@@ -21,24 +65,30 @@ export const fetchGameDetails = async (gameIds: string[]) => {
       throw new Error(`Failed to fetch game details: ${error}`);
     }
 
-    const data = await response.json();
+    const fetchedGames = await response.json();
     
-    if (!data || data.length === 0) {
-      console.warn('No game details returned for IDs:', gameIds);
-      return [];
-    }
-
-    // Filter out any undefined/null entries
-    const validGames = data.filter((game: Game) => game && game.id);
+    // Add fetched games to store with proper normalization
+    fetchedGames.forEach((game: any) => {
+      if (game && game.id) {
+        const normalizedGame = normalizeGameForStore(game);
+        store.setGame(normalizedGame as any);
+      }
+    });
     
-    if (validGames.length !== gameIds.length) {
+    // Return combined results
+    const allGames = gameIds
+      .map(id => store.getGame(Number(id)))
+      .filter(game => game)
+      .map(game => ({ ...game, timestamp: undefined }));
+    
+    if (allGames.length !== gameIds.length) {
       console.warn(
-        `Received ${validGames.length} valid games out of ${gameIds.length} requested:`,
-        validGames.map((g: Game) => g.id)
+        `Received ${allGames.length} valid games out of ${gameIds.length} requested:`,
+        allGames.map(g => g.id)
       );
     }
 
-    return validGames;
+    return allGames;
   } catch (error) {
     console.error('Error in fetchGameDetails:', error);
     throw error;
@@ -46,24 +96,16 @@ export const fetchGameDetails = async (gameIds: string[]) => {
 };
 
 export const fetchUserGames = async (
-  userId: string,
-  offset = 0,
-  limit = 24
+  userId: string
 ) => {
-  const supabase = createClientComponentClient<Database>();
-  
   if (!userId || typeof userId !== 'string') {
     throw new Error('Invalid userId provided');
   }
 
-  type DbGame = Database['public']['Tables']['games']['Row'];
-  type DbUserGame = Database['public']['Tables']['user_games']['Row'] & {
-    games: DbGame;
-  };
-
-  const { data, error } = await supabase
-    .from('user_games')
-    .select(`
+  // Use the query wrapper for user_games queries
+  const { SupabaseQueryWrapper } = await import('@/utils/supabase/query-wrapper');
+  const { data, error } = await SupabaseQueryWrapper.queryUserGames(userId, undefined, {
+    select: `
       game_id,
       status,
       play_time,
@@ -74,14 +116,15 @@ export const fetchUserGames = async (
       completion_percentage,
       achievements_completed,
       games (*)
-    `)
-    .eq('user_id', userId)
-    .order('created_at', { ascending: false })
-    .range(offset, offset + limit - 1);
+    `
+  });
 
-  if (error) throw error;
+  if (error) {
+    console.warn('Error fetching user games:', error);
+    return [];
+  }
 
-  return (data as unknown as DbUserGame[])?.map(userGame => ({
+  return (data as any[])?.map((userGame: any) => ({
     id: userGame.games.id,
     name: userGame.games.name,
     cover: userGame.games.cover_url ? {
@@ -143,8 +186,7 @@ export const fetchUserStats = async (
     droppedGames: 0,
   };
 
-  type GameStatus = { status: string | null };
-  data.forEach((game: GameStatus) => {
+  data.forEach((game: { status: string | null }) => {
     switch (game.status) {
       case 'playing':
         stats.currentlyPlaying += 1;
@@ -165,115 +207,12 @@ export const fetchUserStats = async (
   return stats;
 };
 
-export const addGame = async (game: Game, userId: string) => {
-  const supabase = createClientComponentClient();
-
-  try {
-    console.log('Adding game:', game);
-
-    // First, insert or update the game in games table
-    const { error: gameError } = await supabase
-      .from('games')
-      .upsert({
-        id: game.id,
-        name: game.name,
-        cover: game.cover ? {
-          id: game.cover.id,
-          url: game.cover.url.startsWith('//') 
-            ? `https:${game.cover.url.replace('t_thumb', 't_1080p').replace('t_micro', 't_1080p')}` 
-            : game.cover.url.replace('t_thumb', 't_1080p').replace('t_micro', 't_1080p')
-        } : null,
-        rating: game.rating || 0,
-        first_release_date: game.first_release_date,
-        platforms: game.platforms?.map(p => ({
-          id: p.id,
-          name: p.name
-        })) || [],
-        genres: game.genres?.map(g => ({
-          id: g.id,
-          name: g.name
-        })) || [],
-        summary: game.summary || '',
-        storyline: game.storyline || ''
-      }, { 
-        onConflict: 'id' 
-      });
-
-    if (gameError) {
-      console.error('Error inserting game:', gameError);
-      throw gameError;
-    }
-
-    // Then create the user-game relationship
-    const { error: userGameError } = await supabase
-      .from('user_games')
-      .upsert({
-        user_id: userId,
-        game_id: game.id,
-        status: 'want_to_play',
-        created_at: new Date().toISOString()
-      });
-
-    if (userGameError) {
-      console.error('Error creating user-game relationship:', userGameError);
-      throw userGameError;
-    }
-
-    // Return both the game and a success flag for the UI to handle
-    return { game, success: true };
-  } catch (error) {
-    console.error('Error adding game:', error);
-    throw error;
-  }
-};
-
-export const addGameToLibrary = async (
-  gameId: string,
-  userId: string,
-  initialStatus: string = 'want_to_play'
-) => {
-  const supabase = createClientComponentClient<Database>();
-
-  // First check if the game exists in our games table
-  const { data: existingGame } = await supabase
-    .from('games')
-    .select('id')
-    .eq('id', gameId)
-    .single();
-
-  // If game doesn't exist in our database, fetch and insert it
-  if (!existingGame) {
-    const response = await fetch(`/api/games/details`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ids: [gameId] })
-    });
-
-    if (!response.ok) {
-      throw new Error('Failed to fetch game details');
-    }
-  }
-
-  // Add the game to user's library
-  const { data, error } = await supabase
-    .from('user_games')
-    .upsert({
-      user_id: userId,
-      game_id: gameId,
-      status: initialStatus,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    });
-
-  if (error) throw error;
-  return data;
-};
 
 export const removeGameFromLibrary = async (
   gameId: string,
   userId: string
 ) => {
-  const supabase = createClientComponentClient<Database>();
+  const supabase = createClient();
 
   const { error } = await supabase
     .from('user_games')
@@ -288,7 +227,7 @@ export const checkGameInLibrary = async (
   gameId: string,
   userId: string
 ) => {
-  const supabase = createClientComponentClient<Database>();
+  const supabase = createClient();
 
   try {
     const { data: { user } } = await supabase.auth.getUser();
@@ -296,15 +235,22 @@ export const checkGameInLibrary = async (
       throw new Error('User not authenticated');
     }
 
-    const { data, error } = await supabase
-      .from('user_games')
-      .select('status')
-      .eq('user_id', userId)
-      .eq('game_id', gameId)
+    // First check if the game exists in the games table
+    const { data: gameExists } = await supabase
+      .from('games')
+      .select('id')
+      .eq('id', gameId)
       .maybeSingle();
 
-    if (error && error.code !== 'PGRST116') throw error;
-    return data;
+    // If game doesn't exist in games table, user definitely doesn't have it in library
+    if (!gameExists) {
+      return null;
+    }
+
+    // Use the query wrapper for user_games queries
+    const { SupabaseQueryWrapper } = await import('@/utils/supabase/query-wrapper');
+    const result = await SupabaseQueryWrapper.checkUserGame(userId, gameId);
+    return result;
   } catch (error) {
     console.error('Error checking game in library:', error);
     return null;

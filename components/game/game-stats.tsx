@@ -14,17 +14,9 @@ import {
   Pie,
   Cell,
 } from "recharts";
-import { motion } from "framer-motion";
 import { Trophy, Clock, Target, BarChart2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { Button } from "@/components/ui/button";
-import {
-  Tooltip as UITooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 
 interface GameStatsProps {
   playTime: number;
@@ -87,11 +79,7 @@ export function GameStats({
               <Target className="w-5 h-5 text-purple-400" />
             </div>
           </div>
-          <Progress
-            value={completionPercentage}
-            className="mt-4"
-            variant="purple"
-          />
+          <Progress value={completionPercentage} className="mt-4" />
         </Card>
 
         <Card className="p-4 bg-gray-900/50 backdrop-blur-sm border-gray-800">
@@ -106,11 +94,7 @@ export function GameStats({
               <Trophy className="w-5 h-5 text-yellow-400" />
             </div>
           </div>
-          <Progress
-            value={achievementPercentage}
-            className="mt-4"
-            variant="yellow"
-          />
+          <Progress value={achievementPercentage} className="mt-4" />
         </Card>
 
         <Card className="p-4 bg-gray-900/50 backdrop-blur-sm border-gray-800">
@@ -216,7 +200,7 @@ export function GameStats({
                   paddingAngle={5}
                   dataKey="value"
                 >
-                  {pieData.map((entry, index) => (
+                  {pieData.map((_entry, index) => (
                     <Cell
                       key={`cell-${index}`}
                       fill={COLORS[index % COLORS.length]}
@@ -259,7 +243,7 @@ export function GameStats({
                   {achievementsCompleted}/{totalAchievements}
                 </span>
               </div>
-              <Progress value={achievementPercentage} variant="yellow" />
+              <Progress value={achievementPercentage} />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="p-4 bg-gray-800/50 rounded-lg">

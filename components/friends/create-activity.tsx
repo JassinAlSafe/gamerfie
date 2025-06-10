@@ -13,9 +13,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { useDebounce } from "@/hooks/use-debounce";
-import { Search } from "lucide-react";
+import { Textarea } from "@/components/ui/text/textarea";
+import { useDebounce } from "@/hooks/Settings/use-debounce";
+import { Search, Loader2 } from "lucide-react";
 import Image from "next/image";
 
 interface Game {
@@ -87,6 +87,7 @@ export function CreateActivity() {
       setSelectedGame(null);
       setDetails({ name: "", comment: "" });
     } catch (error) {
+      console.error("Failed to create activity:", error);
       toast.error("Failed to create activity");
     }
   };
@@ -123,7 +124,11 @@ export function CreateActivity() {
             placeholder="Search for a game..."
             className="pl-10"
           />
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+          {isSearching ? (
+            <Loader2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 animate-spin" />
+          ) : (
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+          )}
         </div>
 
         {/* Search Results */}

@@ -11,7 +11,17 @@ import {
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Input } from "@/components/ui/input";
-import { Game, GameProgress } from "@/types/game";
+import { Game } from "@/types";
+
+// Define GameProgress interface locally
+interface GameProgress {
+  playTime: number;
+  completionPercentage?: number;
+  achievementsCompleted?: number;
+  lastPlayedAt?: string;
+  userRating?: number;
+  notes?: string;
+}
 
 interface CompletionDialogProps {
   open: boolean;
@@ -29,23 +39,24 @@ export function CompletionDialog({
   onProgressUpdate,
 }: CompletionDialogProps) {
   const [completionPercentage, setCompletionPercentage] = React.useState(
-    progress.completion_percentage ?? 0
+    progress.completionPercentage ?? 0
   );
-  const [playTime, setPlayTime] = React.useState(progress.play_time ?? 0);
+  const [playTime, setPlayTime] = React.useState(progress.playTime ?? 0);
 
   // Reset state when dialog opens
   React.useEffect(() => {
     if (open) {
-      setCompletionPercentage(progress.completion_percentage ?? 0);
-      setPlayTime(progress.play_time ?? 0);
+      setCompletionPercentage(progress.completionPercentage ?? 0);
+      setPlayTime(progress.playTime ?? 0);
     }
   }, [open, progress]);
 
   const handleSave = () => {
     onProgressUpdate({
-      completion_percentage: completionPercentage,
-      play_time: playTime,
+      completionPercentage: completionPercentage,
+      playTime: playTime,
     });
+    onOpenChange(false);
   };
 
   return (

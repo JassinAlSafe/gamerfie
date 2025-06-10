@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -11,10 +11,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search, Gamepad2, Plus } from "lucide-react";
 import { Challenge } from "@/types/challenge";
-import { Game } from "@/types/game";
+import { Game } from "@/types";
 import Image from "next/image";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { useGameSearch } from "@/hooks/use-game-search";
+import { useGameSearch } from "@/hooks/Games/use-game-search";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 
@@ -35,16 +35,22 @@ export function ChallengeProgressDialog({
   onGameAdd,
 }: ChallengeProgressDialogProps) {
   const [searchQuery, setSearchQuery] = useState("");
-  const { games, isLoading, error } = useGameSearch(searchQuery);
+  const { games, isLoading, error, setQuery } = useGameSearch();
+
+  // Update search query when input changes
+  useEffect(() => {
+    setQuery(searchQuery);
+  }, [searchQuery, setQuery]);
 
   // Filter games based on challenge requirements
   const filteredGames = games.filter((game) => {
-    switch (challenge.goal_type) {
+    switch (challenge.goal?.type) {
       case "complete_games":
         // Add genre/category filtering based on challenge requirements
         return true;
       case "achieve_trophies":
-        return game.achievements?.length > 0;
+        // Use type assertion to access achievements property
+        return (game as any).achievements?.total > 0;
       case "play_time":
         return true;
       case "review_games":
@@ -72,14 +78,17 @@ export function ChallengeProgressDialog({
             <div className="flex items-center gap-2 text-sm text-gray-400">
               <Gamepad2 className="w-4 h-4" />
               <span>
-                Goal: {challenge.goal_target}{" "}
-                {challenge.goal_type.replace(/_/g, " ")}
+                Goal: {challenge.goal?.target}{" "}
+                {challenge.goal?.type.replace(/_/g, " ")}
               </span>
             </div>
             <Progress
               value={
-                challenge.participants.find(
-                  (p) => p.user.id === challenge.creator.id
+                // Safely access the progress value or default to 0
+                (
+                  challenge.participants?.find(
+                    (p) => p.user_id === challenge.creator_id
+                  ) as any
                 )?.progress || 0
               }
               className="h-2"

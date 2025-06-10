@@ -33,7 +33,6 @@ interface ChallengeCardProps {
 
 export function ChallengeCard({
   title,
-  description,
   organizer,
   media,
   coverImage = "/images/placeholders/game-cover.jpg",

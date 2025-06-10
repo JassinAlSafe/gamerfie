@@ -1,182 +1,272 @@
 import { create } from 'zustand'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
-import { Database } from '@/types/supabase'
-import { Game } from '@/types/game'
+import { createClient } from '@/utils/supabase/client'
+import type { Game } from '@/types'
+import { normalizeGameData } from '@/utils/json-utils'
+import type { GameStats } from '@/types/user'
 
 interface LibraryState {
-  games: Game[];
-  loading: boolean;
-  error: string | null;
-  addGame: (game: Partial<Game>) => Promise<Game>;
-  removeGame: (gameId: string) => Promise<void>;
-  fetchUserLibrary: (userId: string) => Promise<void>;
+  games: Game[]
+  loading: boolean
+  error: string | null
+  stats: GameStats
+  
+  // Local state management
+  setGames: (games: Game[]) => void
+  setLoading: (loading: boolean) => void
+  setError: (error: string | null) => void
+  removeGame: (gameId: string) => void
+  updateGame: (gameId: string, updates: Partial<Game>) => void
+  updateGamesOrder: (games: Game[]) => void
+  
+  // Database operations
+  fetchUserLibrary: (userId: string) => Promise<void>
+  addGameToLibrary: (game: Game, userId: string) => Promise<void>
+  removeGameFromLibrary: (gameId: string, userId: string) => Promise<void>
 }
 
 export const useLibraryStore = create<LibraryState>((set, get) => ({
   games: [],
   loading: false,
   error: null,
-
-  addGame: async (game: Partial<Game>) => {
+  stats: {
+    total_played: 0,
+    played_this_year: 0,
+    backlog: 0,
+    totalGames: 0,
+    totalPlaytime: 0,
+    recentlyPlayed: [],
+    mostPlayed: [],
+  },
+  
+  setGames: (games) => set({ games }),
+  setLoading: (loading) => set({ loading }),
+  setError: (error) => set({ error }),
+  
+  removeGame: (gameId) => set((state) => ({
+    games: state.games.filter(game => game.id !== gameId)
+  })),
+  
+  updateGame: (gameId, updates) => set((state) => ({
+    games: state.games.map(game => 
+      game.id === gameId ? { ...game, ...updates } : game
+    )
+  })),
+  
+  updateGamesOrder: (games) => set({ games }),
+  
+  fetchUserLibrary: async (userId: string) => {
+    set({ loading: true, error: null })
     try {
-      set({ loading: true, error: null });
-      const supabase = createClientComponentClient<Database>();
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.user) throw new Error('No authenticated user');
-
-      // Transform IGDB cover URL to proper format
-      let coverUrl = null;
-      if (game.cover?.url) {
-        try {
-          const imageId = game.cover.url.split('/').pop()?.replace('t_thumb/', '');
-          if (!imageId) {
-            console.warn('Could not extract image ID from cover URL:', game.cover.url);
-          } else {
-            coverUrl = `https://images.igdb.com/igdb/image/upload/t_cover_big/${imageId}`;
-          }
-        } catch (error) {
-          console.error('Error processing cover URL:', error);
-          // Don't throw here, just log the error and continue without a cover
-        }
-      }
-
-      const timestamp = new Date().toISOString();
-      // First, ensure the game exists in the games table
-      const gameData = {
-        id: game.id,
-        name: game.name,
-        cover_url: coverUrl,
-        rating: game.rating,
-        first_release_date: game.first_release_date,
-        platforms: game.platforms ? JSON.stringify(game.platforms) : null,
-        genres: game.genres ? JSON.stringify(game.genres) : null,
-        summary: game.summary,
-        created_at: timestamp,
-        updated_at: timestamp
-      };
-
-      const { error: gameError, data: gameResult } = await supabase
-        .from('games')
-        .upsert(gameData)
-        .select()
-        .single();
-
-      if (gameError) {
-        console.error('Error upserting game:', gameError);
-        throw new Error(gameError.message);
-      }
-
-      // Then add the game to user's library
-      const { error: userGameError } = await supabase
+      const supabase = createClient()
+      const { data, error } = await supabase
         .from('user_games')
-        .upsert({
-          user_id: session.user.id,
-          game_id: game.id,
-          status: 'want_to_play',
-          updated_at: timestamp,
-        });
-
-      if (userGameError) {
-        console.error('Error adding game to library:', userGameError);
-        throw new Error(userGameError.message);
+        .select(`
+          *,
+          games (
+            id,
+            name,
+            cover_url,
+            platforms,
+            genres,
+            summary,
+            first_release_date,
+            created_at,
+            updated_at
+          )
+        `)
+        .eq('user_id', userId)
+        .order('updated_at', { ascending: false })
+      
+      if (error) {
+        console.warn('Games feature not available:', error.message)
+        set({ games: [], loading: false, error: error.message })
+        return
       }
+      
+      // Transform and flatten the data
+      const games = data?.map(item => {
+        if (!item.games || !item.games.id) {
+          console.warn('Invalid game data:', item);
+          return null;
+        }
+        
+        const normalizedGame = normalizeGameData(item.games);
+        if (!normalizedGame) return null;
+        
+        return {
+          ...normalizedGame,
+          // Add user-specific data
+          status: item.status,
+          user_rating: item.user_rating,
+          play_time: item.play_time,
+          progress: item.progress,
+          last_played_at: item.last_played_at,
+          updated_at: item.updated_at,
+        };
+      }).filter(Boolean) || []
+      
+      // Calculate comprehensive stats in one batch
+      const totalGames = games.length;
+      const totalPlaytime = data?.reduce((total, item) => total + (item.play_time || 0), 0) || 0;
 
-      // Update local state with the processed game data
-      const processedGame = {
-        ...gameResult,
-        cover: coverUrl ? { url: coverUrl } : null,
-      } as Game;
+      // Calculate basic counts
+      const total_played = data?.filter(item => 
+        ['playing', 'completed', 'dropped'].includes(item.status)
+      ).length || 0;
 
-      set(state => ({
-        games: [...state.games, processedGame],
-        loading: false
-      }));
+      const backlog = data?.filter(item => item.status === 'want_to_play').length || 0;
 
-      return processedGame;
-    } catch (error) {
-      console.error('Error adding game:', error);
+      // Calculate games played this year
+      const currentYear = new Date().getFullYear();
+      const played_this_year = data?.filter(item => {
+        if (!item.last_played_at) return false;
+        const lastPlayedYear = new Date(item.last_played_at).getFullYear();
+        return lastPlayedYear === currentYear;
+      }).length || 0;
+
+      // Get recently played games (last 5)
+      const recentlyPlayed = data?.filter(item => item.last_played_at)
+        .sort((a, b) => new Date(b.last_played_at).getTime() - new Date(a.last_played_at).getTime())
+        .slice(0, 5)
+        .map(item => {
+          const normalizedGame = normalizeGameData(item.games);
+          return normalizedGame ? {
+            ...normalizedGame,
+            status: item.status,
+            rating: item.user_rating || 0,
+            created_at: item.created_at,
+            updated_at: item.updated_at
+          } : null;
+        }).filter(Boolean) || [];
+
+      // Get most played games (top 5 by playtime)
+      const mostPlayed = [...(data || [])]
+        .sort((a, b) => (b.play_time || 0) - (a.play_time || 0))
+        .slice(0, 5)
+        .map(item => {
+          const normalizedGame = normalizeGameData(item.games);
+          return normalizedGame ? {
+            ...normalizedGame,
+            status: item.status,
+            rating: item.user_rating || 0,
+            created_at: item.created_at,
+            updated_at: item.updated_at
+          } : null;
+        }).filter(Boolean) || [];
+
+      const completeStats: GameStats = {
+        total_played,
+        played_this_year,
+        backlog,
+        totalGames,
+        totalPlaytime,
+        recentlyPlayed,
+        mostPlayed,
+      };
+      
+      // Single state update to prevent multiple re-renders
       set({ 
-        error: error instanceof Error ? error.message : 'Failed to add game', 
-        loading: false 
-      });
-      throw error;
+        games, 
+        stats: completeStats, 
+        loading: false,
+        error: null 
+      })
+    } catch (error) {
+      console.warn('Error fetching user library:', error)
+      set({ 
+        games: [], 
+        loading: false, 
+        error: error instanceof Error ? error.message : 'Unknown error',
+        stats: {
+          total_played: 0,
+          played_this_year: 0,
+          backlog: 0,
+          totalGames: 0,
+          totalPlaytime: 0,
+          recentlyPlayed: [],
+          mostPlayed: [],
+        }
+      })
     }
   },
-
-  removeGame: async (gameId: string) => {
-    const supabase = createClientComponentClient()
-    set({ loading: true, error: null })
-
+  
+  addGameToLibrary: async (game: Game, userId: string) => {
+    const supabase = createClient()
+    
     try {
-      console.log('Starting game removal process for gameId:', gameId);
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) throw new Error('User not authenticated')
+      set({ loading: true, error: null })
+      
+      // Upsert the game with complete data
+      const { error: gameError } = await supabase
+        .from('games')
+        .upsert({
+          id: game.id,
+          name: game.name || `Game ${game.id}`,
+          cover_url: game.cover_url || null,
+          platforms: game.platforms ? JSON.stringify(game.platforms) : null,
+          genres: game.genres ? JSON.stringify(game.genres) : null,
+          summary: game.summary || null,
+          first_release_date: game.first_release_date || null,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }, {
+          onConflict: 'id'
+        })
 
+      if (gameError) {
+        throw gameError
+      }
+      
+      // Add to user's library
+      const { error: userGameError } = await supabase
+        .from('user_games')
+        .insert({
+          user_id: userId,
+          game_id: game.id,
+          status: 'want_to_play',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+      
+      if (userGameError) {
+        // If duplicate, that's fine - game already in library
+        if (userGameError.code !== '23505') {
+          throw userGameError
+        }
+      }
+      
+      // Refresh the library
+      await get().fetchUserLibrary(userId)
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to add game to library'
+      set({ error: errorMessage, loading: false })
+      throw error
+    }
+  },
+  
+  removeGameFromLibrary: async (gameId: string, userId: string) => {
+    const supabase = createClient()
+    
+    try {
+      set({ loading: true, error: null })
+      
       const { error } = await supabase
         .from('user_games')
         .delete()
-        .eq('user_id', user.id)
-        .eq('game_id', gameId)
-
+        .match({ user_id: userId, game_id: gameId })
+      
       if (error) {
-        console.error('Error removing game from database:', error);
-        throw error;
+        throw error
       }
-
-      console.log('Successfully removed game from database');
-
-      // Update local state
-      set(state => {
-        console.log('Updating local state - removing game:', gameId);
-        const updatedGames = state.games.filter(game => game.id !== gameId);
-        console.log('Updated games count:', updatedGames.length);
-        return {
-          games: updatedGames,
-          loading: false
-        };
-      });
-
-      console.log('Game removal process completed successfully');
+      
+      // Remove from local state immediately for better UX
+      get().removeGame(gameId)
+      set({ loading: false })
     } catch (error) {
-      console.error('Error removing game:', error)
-      set({ error: 'Failed to remove game', loading: false })
+      const errorMessage = error instanceof Error ? error.message : 'Failed to remove game from library'
+      set({ error: errorMessage, loading: false })
       throw error
     }
   },
 
-  fetchUserLibrary: async () => {
-    try {
-      const supabase = createClientComponentClient<Database>();
-      const { data: session } = await supabase.auth.getSession();
-      
-      if (!session?.session?.user) throw new Error('Not authenticated');
-
-      const { data, error } = await supabase
-        .from('user_games')
-        .select('*')
-        .eq('user_id', session.session.user.id)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-
-      // Transform the data without attempting to parse
-      const transformedData = data.map(item => ({
-        ...item,
-        // Only parse if the field is a string and starts with '[' or '{'
-        metadata: typeof item.metadata === 'string' 
-          ? JSON.parse(item.metadata) 
-          : item.metadata || {},
-        notes: typeof item.notes === 'string'
-          ? JSON.parse(item.notes)
-          : item.notes || {},
-      }));
-
-      set({ library: transformedData, error: null });
-      return transformedData;
-    } catch (error) {
-      console.error('Error fetching library:', error);
-      set({ error: error as Error });
-      throw error;
-    }
-  },
 }))

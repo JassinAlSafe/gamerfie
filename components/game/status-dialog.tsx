@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { Game, GameStatus } from "@/types/game";
+import { Game, GameStatus } from "@/types";
 import { useProgressStore } from "@/stores/useProgressStore";
-import { useProfile } from "@/hooks/use-profile";
+import { useProfile } from "@/hooks/Profile/use-profile";
 import { toast } from "react-hot-toast";
 import { LoadingSpinner } from "@/components/loadingSpinner";
 import {
@@ -15,7 +15,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
+import { Textarea } from "@/components/ui/text/textarea";
 import { PlayCircle, Trophy, BookmarkPlus, Ban } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
@@ -54,13 +54,7 @@ export function StatusDialog({
     setIsSubmitting(true);
 
     try {
-      await updateGameStatus(
-        profile.id.toString(),
-        game.id.toString(),
-        status,
-        undefined,
-        comment.trim() || undefined
-      );
+      await updateGameStatus(profile.id.toString(), game.id.toString(), status);
 
       onStatusChange(status);
       setIsOpen(false);
