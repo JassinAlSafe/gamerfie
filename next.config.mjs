@@ -1,7 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
-    domains: ["images.igdb.com", "media.rawg.io"],
     remotePatterns: [
       {
         protocol: "https",
@@ -25,11 +24,20 @@ const nextConfig = {
         protocol: "https",
         hostname: "static.wikia.nocookie.net",
       },
+      {
+        protocol: "https",
+        hostname: "lh3.googleusercontent.com",
+      },
+      {
+        protocol: "https",
+        hostname: "avatars.githubusercontent.com",
+      },
     ],
     dangerouslyAllowSVG: true,
     contentDispositionType: "attachment",
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
-    unoptimized: process.env.NODE_ENV === "development",
+    formats: ['image/webp', 'image/avif'],
+    minimumCacheTTL: 60,
   },
   reactStrictMode: true,
   env: {

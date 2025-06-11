@@ -12,20 +12,29 @@ export const TextGenerateEffect = ({
   className?: string;
   as?: "span" | "div" | "p";
 }) => {
-  const [displayText, setDisplayText] = useState("");
-  const [isGenerating, setIsGenerating] = useState(true);
+  const [displayText, setDisplayText] = useState(words); // Start with full text for SSR
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [hasMounted, setHasMounted] = useState(false);
 
   useEffect(() => {
+    setHasMounted(true);
+    setDisplayText("");
+    setIsGenerating(true);
+  }, []);
+
+  useEffect(() => {
+    if (!hasMounted) return;
+    
     const timeout = setTimeout(() => {
       if (displayText.length < words.length && isGenerating) {
         setDisplayText(words.slice(0, displayText.length + 1));
       } else {
         setIsGenerating(false);
       }
-    }, 30); // Slower typing speed (was previously 10)
+    }, 30);
 
     return () => clearTimeout(timeout);
-  }, [displayText, words, isGenerating]);
+  }, [displayText, words, isGenerating, hasMounted]);
 
   return (
     <motion.span
@@ -33,14 +42,15 @@ export const TextGenerateEffect = ({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
+      suppressHydrationWarning
     >
       <Component>{displayText}</Component>
-      {isGenerating && (
+      {isGenerating && hasMounted && (
         <motion.span
           initial={{ opacity: 0 }}
           animate={{ opacity: [0, 1, 0] }}
           transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }}
-          className="inline-block ml-1 border-r-2 border-primary h-4 w-[2px]"
+          className="inline-block ml-1 border-r-2 border-purple-400 h-4 w-[2px]"
         />
       )}
     </motion.span>
