@@ -4,21 +4,6 @@ import { UnifiedGameService } from '@/services/unifiedGameService';
 export type GameCategory = 'all' | 'recent' | 'upcoming' | 'popular' | 'trending' | 'classic' | 'indie' | 'anticipated';
 export type GameSortOption = 'popularity' | 'rating' | 'name' | 'release';
 
-interface GameFilters {
-  page: number;
-  limit: number;
-  search: string;
-  sortBy: GameSortOption;
-  platformId?: number;
-  genreId?: number;
-  releaseYear?: {
-    start: number;
-    end: number;
-  };
-  timeRange?: 'new_releases' | 'upcoming' | 'classic';
-  isIndie?: boolean;
-  isAnticipated?: boolean;
-}
 
 const validateParams = (params: URLSearchParams) => {
   const errors: string[] = [];
@@ -74,11 +59,7 @@ export async function GET(request: NextRequest) {
 
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '24');
-    const platform = searchParams.get('platform');
-    const genre = searchParams.get('genre');
     const category = searchParams.get('category') as GameCategory;
-    const year = searchParams.get('year');
-    const sort = (searchParams.get('sort') || 'popularity') as GameSortOption;
     const search = searchParams.get('search') || '';
 
     console.log('Fetching games with unified service...');

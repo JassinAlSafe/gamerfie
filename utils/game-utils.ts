@@ -49,7 +49,7 @@ export const fetchGameDetails = async (gameIds: string[]) => {
     
     // Check which games we already have in store
     const cachedGames = validIds
-      .map(id => store.getGame(Number(id)))
+      .map(id => store.getGame(id))
       .filter(game => game);
     
     const cachedIds = new Set(cachedGames.map(game => game?.id?.toString()).filter(Boolean));
@@ -63,7 +63,9 @@ export const fetchGameDetails = async (gameIds: string[]) => {
     console.log('Fetching missing games:', idsToFetch);
     
     // Use UnifiedGameService to fetch missing games
-    const fetchedGames = await Promise.all(
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    // @ts-ignore: Variable used for side effects only
+    const _fetchedGames = await Promise.all(
       idsToFetch.map(async (id) => {
         try {
           const game = await UnifiedGameService.getGameDetails(id);
@@ -81,12 +83,9 @@ export const fetchGameDetails = async (gameIds: string[]) => {
       })
     );
 
-    // Filter out null results
-    const validFetchedGames = fetchedGames.filter(game => game !== null);
-    
     // Return combined results
     const allGames = validIds
-      .map(id => store.getGame(Number(id)))
+      .map(id => store.getGame(id))
       .filter(game => game)
       .map(game => ({ ...game, timestamp: undefined }));
     

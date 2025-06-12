@@ -155,7 +155,7 @@ export const useFriendsStore = create<FriendsStore>((set, get) => {
         const data = await response.json();
         
         // Transform to expected format with proper type checking
-        const transformedActivities: FriendActivity[] = (data.activities || []).map((activity) => ({
+        const transformedActivities: FriendActivity[] = (data.activities || []).map((activity: any) => ({
           id: activity.id,
           type: activity.activity_type,
           user_id: activity.user_id,
@@ -174,7 +174,11 @@ export const useFriendsStore = create<FriendsStore>((set, get) => {
             id: activity.game_id,
             name: activity.game_name,
             cover_url: activity.game_cover_url,
-          } : null,
+          } : {
+            id: activity.game_id || 'unknown',
+            name: 'Unknown Game',
+            cover_url: null,
+          },
         }));
 
         set({ activities: transformedActivities, isLoadingActivities: false });
@@ -204,7 +208,7 @@ export const useFriendsStore = create<FriendsStore>((set, get) => {
           }
           
           // Transform fallback data to expected format
-          const transformedActivities: FriendActivity[] = (activities || []).map((activity) => ({
+          const transformedActivities: FriendActivity[] = (activities || []).map((activity: any) => ({
             id: activity.id,
             type: activity.activity_type || activity.type,
             user_id: activity.user_id,
@@ -227,7 +231,11 @@ export const useFriendsStore = create<FriendsStore>((set, get) => {
               id: activity.game.id,
               name: activity.game.name,
               cover_url: activity.game.cover_url,
-            } : null,
+            } : {
+              id: activity.game_id || 'unknown',
+              name: 'Unknown Game',
+              cover_url: null,
+            },
           }));
           
           set({ activities: transformedActivities, isLoadingActivities: false });

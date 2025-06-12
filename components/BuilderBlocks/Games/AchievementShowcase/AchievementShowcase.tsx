@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useEffect, useState } from "react";
+import { memo, useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Trophy, Star, Zap, Award, ChevronRight, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -17,63 +17,87 @@ interface Achievement {
 }
 
 interface AchievementShowcaseProps {
-  achievements: Achievement[];
-  totalAchievements: number;
-  recentAchievements: Achievement[];
+  achievements?: Achievement[];
+  totalAchievements?: number;
+  recentAchievements?: Achievement[];
   className?: string;
 }
 
+// Mock data for when no props are provided
+const mockAchievements: Achievement[] = [
+  {
+    id: "1",
+    name: "First Steps",
+    description: "Complete your first game",
+    rarity: "common",
+    unlockedAt: new Date(Date.now() - 86400000), // 1 day ago
+    isNew: true
+  },
+  {
+    id: "2", 
+    name: "Speed Runner",
+    description: "Complete a game in under 10 hours",
+    rarity: "rare",
+    unlockedAt: new Date(Date.now() - 172800000) // 2 days ago
+  },
+  {
+    id: "3",
+    name: "Game Master",
+    description: "Achieve 100% completion",
+    rarity: "epic", 
+    unlockedAt: new Date(Date.now() - 604800000) // 1 week ago
+  }
+];
+
 export const AchievementShowcase = memo(function AchievementShowcase({
-  achievements,
-  totalAchievements,
-  recentAchievements,
+  achievements = mockAchievements,
+  totalAchievements = 50,
+  recentAchievements = mockAchievements,
   className
 }: AchievementShowcaseProps) {
   const [mounted, setMounted] = useState(false);
   const [selectedAchievement, setSelectedAchievement] = useState<Achievement | null>(null);
+  const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
+  useEffect(() => {
+    const updateSize = () => {
+      if (containerRef.current) {
+        const rect = containerRef.current.getBoundingClientRect();
+        setContainerSize({ width: rect.width, height: rect.height });
+      }
+    };
+
+    updateSize();
+    window.addEventListener('resize', updateSize);
+    return () => window.removeEventListener('resize', updateSize);
+  }, [mounted]);
+
   if (!mounted) {
     return <AchievementShowcaseSkeleton className={className} />;
   }
 
-  const unlockedCount = achievements.length;
+  const unlockedCount = achievements?.length || 0;
   const completionRate = totalAchievements > 0 ? (unlockedCount / totalAchievements) * 100 : 0;
-  const recentUnlocked = recentAchievements.slice(0, 3);
+  const recentUnlocked = (recentAchievements || []).slice(0, 3);
 
-  const _getRarityColor = (rarity: Achievement["rarity"]) => {
-    switch (rarity) {
-      case "common": return "from-gray-400 to-gray-600";
-      case "rare": return "from-blue-400 to-blue-600";
-      case "epic": return "from-purple-400 to-purple-600";
-      case "legendary": return "from-yellow-400 to-orange-500";
-      default: return "from-gray-400 to-gray-600";
-    }
-  };
-
-  const _getRarityIcon = (rarity: Achievement["rarity"]) => {
-    switch (rarity) {
-      case "common": return Star;
-      case "rare": return Award;
-      case "epic": return Trophy;
-      case "legendary": return Sparkles;
-      default: return Star;
-    }
-  };
 
   return (
-    <div className={cn(
-      "relative p-6 rounded-2xl border border-border/30 bg-gradient-to-br from-card/50 to-card/80 backdrop-blur-sm group hover:shadow-lg transition-all duration-300",
-      className
-    )}>
+    <div 
+      ref={containerRef}
+      className={cn(
+        "relative p-4 rounded-2xl border border-border/30 bg-gradient-to-br from-card/50 to-card/80 backdrop-blur-sm group hover:shadow-lg transition-all duration-300 h-full flex flex-col",
+        className
+      )}>
       {/* Background Effects */}
       <div className="absolute inset-0 bg-gradient-to-br from-yellow-500/5 via-transparent to-purple-500/5 rounded-2xl" />
       
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-4 flex-shrink-0">
         <div className="flex items-center gap-3">
           <div className="p-2 rounded-lg bg-gradient-to-br from-yellow-400/20 to-orange-500/20">
             <Trophy className="h-5 w-5 text-yellow-500" />
@@ -128,7 +152,7 @@ export const AchievementShowcase = memo(function AchievementShowcase({
       </div>
 
       {/* Recent Achievements */}
-      <div className="space-y-3 mb-4">
+      <div className="space-y-2 mb-3 flex-1 min-h-0 overflow-hidden">
         <h4 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
           <Zap className="h-4 w-4" />
           Recently Unlocked
@@ -136,12 +160,13 @@ export const AchievementShowcase = memo(function AchievementShowcase({
         
         <AnimatePresence mode="popLayout">
           {recentUnlocked.length > 0 ? (
-            recentUnlocked.map((achievement, index) => (
+            recentUnlocked.slice(0, containerSize.height > 350 ? 3 : 2).map((achievement, index) => (
               <AchievementItem
                 key={achievement.id}
                 achievement={achievement}
                 index={index}
                 onClick={() => setSelectedAchievement(achievement)}
+                isCompact={containerSize.height <= 350}
               />
             ))
           ) : (
@@ -160,7 +185,7 @@ export const AchievementShowcase = memo(function AchievementShowcase({
       <motion.button
         whileHover={{ scale: 1.02 }}
         whileTap={{ scale: 0.98 }}
-        className="w-full flex items-center justify-center gap-2 py-2 px-4 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors text-sm font-medium text-muted-foreground hover:text-foreground"
+        className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors text-sm font-medium text-muted-foreground hover:text-foreground flex-shrink-0"
       >
         View All Achievements
         <ChevronRight className="h-4 w-4" />
@@ -196,11 +221,13 @@ export const AchievementShowcase = memo(function AchievementShowcase({
 const AchievementItem = memo(function AchievementItem({
   achievement,
   index,
-  onClick
+  onClick,
+  isCompact = false
 }: {
   achievement: Achievement;
   index: number;
   onClick: () => void;
+  isCompact?: boolean;
 }) {
   const RarityIcon = getRarityIcon(achievement.rarity);
   
@@ -210,18 +237,22 @@ const AchievementItem = memo(function AchievementItem({
       animate={{ opacity: 1, x: 0 }}
       transition={{ delay: index * 0.1 }}
       onClick={onClick}
-      className="flex items-center gap-3 p-3 rounded-lg bg-muted/20 hover:bg-muted/40 transition-all duration-200 cursor-pointer group border border-transparent hover:border-border/50"
+      className={cn(
+        "flex items-center gap-3 rounded-lg bg-muted/20 hover:bg-muted/40 transition-all duration-200 cursor-pointer group border border-transparent hover:border-border/50",
+        isCompact ? "p-2" : "p-3"
+      )}
     >
       <div className={cn(
-        "p-2 rounded-lg bg-gradient-to-br",
-        getRarityColor(achievement.rarity)
+        "rounded-lg bg-gradient-to-br",
+        getRarityColor(achievement.rarity),
+        isCompact ? "p-1.5" : "p-2"
       )}>
-        <RarityIcon className="h-4 w-4 text-white" />
+        <RarityIcon className={cn("text-white", isCompact ? "h-3 w-3" : "h-4 w-4")} />
       </div>
       
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
-          <p className="text-sm font-medium text-foreground truncate">
+          <p className={cn("font-medium text-foreground truncate", isCompact ? "text-xs" : "text-sm")}>
             {achievement.name}
           </p>
           {achievement.isNew && (
@@ -235,9 +266,11 @@ const AchievementItem = memo(function AchievementItem({
             </motion.div>
           )}
         </div>
-        <p className="text-xs text-muted-foreground truncate">
-          {achievement.description}
-        </p>
+        {!isCompact && (
+          <p className="text-xs text-muted-foreground truncate">
+            {achievement.description}
+          </p>
+        )}
       </div>
       
       <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors" />

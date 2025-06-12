@@ -3,10 +3,23 @@ import type { CSSProperties } from "react";
 export const GRID_BREAKPOINTS = { lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 };
 export const GRID_COLS = { lg: 4, md: 3, sm: 2, xs: 1, xxs: 1 };
 
+// Widget sizing constraints
+export const WIDGET_CONSTRAINTS = {
+  achievements: { minW: 2, minH: 2, w: 2, h: 2 },
+  library: { minW: 2, minH: 2, w: 2, h: 2 },
+  journal: { minW: 2, minH: 2, w: 2, h: 2 },
+  weeklyStats: { minW: 1, minH: 1, w: 1, h: 1 },
+  welcome: { minW: 1, minH: 1, w: 1, h: 1 },
+  friends: { minW: 1, minH: 1, w: 1, h: 1 },
+  activity: { minW: 1, minH: 1, w: 1, h: 1 },
+  progress: { minW: 1, minH: 2, w: 1, h: 2 },
+  streaks: { minW: 1, minH: 2, w: 1, h: 2 },
+} as const;
+
 // Grid layout configuration
 export const GRID_CONFIG = {
   className: "layout",
-  rowHeight: 180,
+  rowHeight: 200,
   margin: [16, 16] as [number, number],
   containerPadding: [16, 16] as [number, number],
   // Enable CSS transforms for better performance
@@ -42,13 +55,13 @@ export const GRID_CONFIG = {
   // Ensure proper collision detection
   allowOverlap: false,
   // Ensure proper margin handling
-  containerPaddingX: 16,
-  containerPaddingY: 16,
+  containerPaddingX: 12,
+  containerPaddingY: 12,
   // Ensure proper item positioning
   isResizable: true,
   isDraggable: true,
-  // Ensure proper item sizing
-  maxRows: 12,
+  // Ensure proper item sizing - increased for larger widgets
+  maxRows: 16,
   // Improve drag performance
   isDroppable: false,
 } as const;
@@ -81,7 +94,7 @@ export const TRANSITION_STYLES: Record<"moving" | "static", CSSProperties> = {
   },
 };
 
-export type GridItemType = "welcome" | "friends" | "activity" | "library" | "journal";
+export type GridItemType = "welcome" | "friends" | "activity" | "library" | "journal" | "achievements" | "progress" | "streaks" | "weeklyStats";
 
 export interface GridItem {
   id: string;

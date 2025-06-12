@@ -45,7 +45,7 @@ export function FriendsContent() {
     if (user) {
       fetchFriends();
     }
-  }, [user]);
+  }, [user, fetchFriends]);
 
   // Loading timeout detection
   useEffect(() => {
