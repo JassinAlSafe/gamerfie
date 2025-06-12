@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useEffect, useState } from "react";
+import React, { memo, useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Sun, 
@@ -169,35 +169,38 @@ export const WelcomeHeader = memo(function WelcomeHeader({
 });
 
 // Quick stat badge component
-const QuickStatBadge = memo(function QuickStatBadge({
-  stat,
-  index
-}: {
-  stat: {
-    key: string;
-    label: string;
-    value: string | number;
-    icon: React.ReactNode;
-    color: string;
-  };
-  index: number;
-}) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: -10 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: 10 }}
-      transition={{ delay: index * 0.1 }}
-      className="flex flex-col items-center text-center bg-white/10 backdrop-blur-sm rounded-xl p-3 border border-white/20 hover:bg-white/20 transition-colors"
-    >
-      <div className={cn("p-1.5 rounded-lg mb-2", stat.color)}>
-        {stat.icon}
-      </div>
-      <span className="text-white font-semibold text-sm">{stat.value}</span>
-      <span className="text-white/70 text-xs">{stat.label}</span>
-    </motion.div>
-  );
-});
+const QuickStatBadge = memo(
+  React.forwardRef<
+    HTMLDivElement,
+    {
+      stat: {
+        key: string;
+        label: string;
+        value: string | number;
+        icon: React.ReactNode;
+        color: string;
+      };
+      index: number;
+    }
+  >(function QuickStatBadge({ stat, index }, ref) {
+    return (
+      <motion.div
+        ref={ref}
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: 10 }}
+        transition={{ delay: index * 0.1 }}
+        className="flex flex-col items-center text-center bg-white/10 backdrop-blur-sm rounded-xl p-3 border border-white/20 hover:bg-white/20 transition-colors"
+      >
+        <div className={cn("p-1.5 rounded-lg mb-2", stat.color)}>
+          {stat.icon}
+        </div>
+        <span className="text-white font-semibold text-sm">{stat.value}</span>
+        <span className="text-white/70 text-xs">{stat.label}</span>
+      </motion.div>
+    );
+  })
+);
 
 // Progress indicator component
 const ProgressIndicator = memo(function ProgressIndicator({

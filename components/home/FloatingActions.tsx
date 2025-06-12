@@ -28,7 +28,7 @@ export const FloatingActions = memo(function FloatingActions({
     {
       icon: Gamepad2,
       label: "Add Game",
-      href: "/explore",
+      href: "/all-games",
       color: "from-blue-500 to-blue-600",
       hoverColor: "hover:from-blue-600 hover:to-blue-700"
     },
@@ -42,7 +42,7 @@ export const FloatingActions = memo(function FloatingActions({
     {
       icon: Trophy,
       label: "Achievements",
-      href: "/profile/badges",
+      href: "/achievements",
       color: "from-yellow-500 to-orange-500",
       hoverColor: "hover:from-yellow-600 hover:to-orange-600"
     },
@@ -87,7 +87,7 @@ export const FloatingActions = memo(function FloatingActions({
                 {/* Label */}
                 <motion.div
                   whileHover={{ scale: 1.05 }}
-                  className="px-3 py-2 bg-card/90 backdrop-blur-sm border border-border/50 rounded-lg shadow-lg text-sm font-medium text-foreground whitespace-nowrap"
+                  className="px-4 py-2 bg-gray-900/90 backdrop-blur-sm border border-white/10 rounded-full shadow-lg text-sm font-medium text-white whitespace-nowrap"
                 >
                   {action.label}
                 </motion.div>
@@ -98,13 +98,13 @@ export const FloatingActions = memo(function FloatingActions({
                     whileHover={{ scale: 1.1 }}
                     whileTap={{ scale: 0.95 }}
                     className={cn(
-                      "w-12 h-12 rounded-full bg-gradient-to-r shadow-lg flex items-center justify-center text-white transition-all duration-200",
+                      "w-14 h-14 rounded-full bg-gradient-to-r shadow-lg flex items-center justify-center text-white transition-all duration-200",
                       action.color,
                       action.hoverColor
                     )}
                     onClick={() => setIsOpen(false)}
                   >
-                    <action.icon className="h-5 w-5" />
+                    <action.icon className="h-6 w-6" />
                   </motion.button>
                 </Link>
               </motion.div>
@@ -119,7 +119,7 @@ export const FloatingActions = memo(function FloatingActions({
         whileTap={{ scale: 0.95 }}
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
-          "w-14 h-14 rounded-full bg-gradient-to-r from-purple-500 to-blue-500 shadow-lg flex items-center justify-center text-white transition-all duration-300",
+          "w-16 h-16 rounded-full bg-gradient-to-r from-purple-500 to-blue-500 shadow-lg flex items-center justify-center text-white transition-all duration-300",
           isOpen && "rotate-45"
         )}
       >

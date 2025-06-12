@@ -15,13 +15,12 @@ import { AchievementShowcase } from "@/components/BuilderBlocks/Games/Achievemen
 import { PlayStreaks } from "@/components/BuilderBlocks/Games/PlayStreaks/PlayStreaks";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ErrorBoundary } from "@/components/error-boundary";
-import { Button } from "@/components/ui/button";
 import { TrendingUp, TrendingDown } from "lucide-react";
-import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { useBadges } from "@/hooks/Profile/useBadges";
 import { usePlayStreaks } from "@/hooks/Activity/usePlayStreaks";
 import { useWeeklyStats } from "@/hooks/Activity/useWeeklyStats";
+import { QuickActionsCard } from "./QuickActionsCard";
 
 interface AuthenticatedHomeProps {
   user: User;
@@ -215,34 +214,7 @@ const AuthenticatedHomeComponent = memo(function AuthenticatedHome({
               />
 
               {/* Quick Actions Card */}
-              <div className="p-6 rounded-2xl border border-border/30 bg-gradient-to-br from-card/50 to-card/80 backdrop-blur-sm">
-                <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
-                  <div className="h-5 w-1 bg-gradient-to-b from-green-500 to-emerald-500 rounded-full" />
-                  Quick Actions
-                </h3>
-                <div className="space-y-3">
-                  <QuickActionButton
-                    icon="🎮"
-                    label="Add New Game"
-                    href="/profile/games"
-                  />
-                  <QuickActionButton
-                    icon="👥"
-                    label="Find Friends"
-                    href="/friends"
-                  />
-                  <QuickActionButton
-                    icon="🏆"
-                    label="View Achievements"
-                    href="/profile/badges"
-                  />
-                  <QuickActionButton
-                    icon="📝"
-                    label="Write Review"
-                    href="/profile/reviews"
-                  />
-                </div>
-              </div>
+              <QuickActionsCard />
 
               {/* Activity Summary */}
               <div className="p-6 rounded-2xl border border-border/30 bg-gradient-to-br from-card/50 to-card/80 backdrop-blur-sm">
@@ -394,29 +366,6 @@ const BentoGridFallback = memo(function BentoGridFallback() {
         </div>
       </div>
     </div>
-  );
-});
-
-// Quick Action Button Component
-const QuickActionButton = memo(function QuickActionButton({
-  icon,
-  label,
-  href
-}: {
-  icon: string;
-  label: string;
-  href: string;
-}) {
-  return (
-    <Link href={href}>
-      <Button
-        variant="ghost"
-        className="w-full justify-start h-auto p-3 rounded-lg bg-muted/20 hover:bg-muted/40 transition-all duration-200 border border-transparent hover:border-border/50"
-      >
-        <span className="text-lg mr-3">{icon}</span>
-        <span className="font-medium">{label}</span>
-      </Button>
-    </Link>
   );
 });
 

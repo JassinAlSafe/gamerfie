@@ -63,7 +63,7 @@ export const useAuthStore = create<AuthState>()(
 
       return {
         user: null,
-        isLoading: true,
+        isLoading: false, // Start with false to prevent infinite loading
         error: null,
         isInitialized: false,
 
@@ -73,9 +73,10 @@ export const useAuthStore = create<AuthState>()(
         setError: (_error) => set({ error: _error }),
         
         initialize: async () => {
-          if (get().isInitialized) return;
+          const currentState = get();
+          if (currentState.isInitialized) return;
           
-          try {
+          const initWithTimeout = async () => {
             set({ isLoading: true, error: null });
             const { data: { session }, error: sessionError } = await supabase.auth.getSession();
             
@@ -114,8 +115,17 @@ export const useAuthStore = create<AuthState>()(
                 });
               }
             }
+          };
+
+          try {
+            // Add timeout to prevent infinite loading
+            const timeout = new Promise((_, reject) => 
+              setTimeout(() => reject(new Error('Auth initialization timeout after 10 seconds')), 10000)
+            );
+            
+            await Promise.race([initWithTimeout(), timeout]);
           } catch (error) {
-            console.warn('Session initialization warning:', error);
+            console.warn('Session initialization error or timeout:', error);
             set({ user: null });
           } finally {
             set({ isLoading: false, isInitialized: true });
