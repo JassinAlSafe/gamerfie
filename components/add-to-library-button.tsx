@@ -272,15 +272,18 @@ export function AddToLibraryButton({
       // Add game to library with complete data
       try {
         // Add game to library using LibraryStore with full game data
-        await addGameToLibrary({
-          id: gameId,
-          name: gameName,
-          cover_url: cover,
-          genres: formattedGenres,
-          platforms: formattedPlatforms,
-          first_release_date: releaseDate,
-          summary: undefined // Add summary if available in props later
-        }, user.id);
+        await addGameToLibrary(
+          {
+            id: gameId,
+            name: gameName,
+            cover_url: cover,
+            genres: formattedGenres,
+            platforms: formattedPlatforms,
+            first_release_date: releaseDate,
+            summary: undefined, // Add summary if available in props later
+          },
+          user.id
+        );
 
         toast.success("Game added to library");
 
@@ -311,7 +314,9 @@ export function AddToLibraryButton({
             setGameStatus((result as any).status as GameStatus);
           }
           toast.info("Game is already in your library", {
-            description: `Current status: ${result ? (result as any).status : "unknown"}`,
+            description: `Current status: ${
+              result ? (result as any).status : "unknown"
+            }`,
           });
         } else {
           addError(

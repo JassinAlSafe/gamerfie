@@ -1,76 +1,326 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { AnimatedCard } from "@/components/ui/animated-card";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, TrendingUp, Star } from "lucide-react";
+import {
+  ArrowRight,
+  TrendingUp,
+  Users,
+  Calendar,
+  Gamepad2,
+  Star,
+  Wifi,
+  WifiOff,
+  Database,
+  Zap,
+} from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
+import { Skeleton } from "@/components/ui/skeleton";
+import { getCoverImageUrl } from "@/utils/image-utils";
+import { getValidYear, getValidPlayingCount } from "@/utils/format-utils";
+import { useTrendingGames } from "@/hooks/Games/use-trending-games";
+import { Badge } from "@/components/ui/badge";
 
-const gameData = [
-  { title: "The Witcher 3", players: "2.3k", rating: "4.8", image: "🎮", trend: "+12%" },
-  { title: "Cyberpunk 2077", players: "1.8k", rating: "4.6", image: "🔥", trend: "+8%" },
-  { title: "Elden Ring", players: "3.1k", rating: "4.9", image: "⚔️", trend: "+15%" }
-];
+function GameShowcaseSkeleton() {
+  return (
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3 sm:gap-4 lg:gap-6">
+      {Array.from({ length: 12 }).map((_, i) => (
+        <div key={i} className="space-y-3">
+          <Skeleton className="aspect-[3/4] w-full rounded-lg bg-gray-800/50" />
+          <div className="space-y-2 px-1">
+            <Skeleton className="h-4 w-full bg-gray-800/50" />
+            <Skeleton className="h-3 w-3/4 bg-gray-800/50" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function GameCard({ game, index }: { game: any; index: number }) {
+  const formatCount = (count: number) => {
+    if (count >= 1000000) {
+      return `${(count / 1000000).toFixed(1)}M`;
+    }
+    if (count >= 1000) {
+      return `${(count / 1000).toFixed(1)}k`;
+    }
+    return count.toString();
+  };
+
+  const formatRating = (rating: number) => {
+    return (rating / 20).toFixed(1); // Convert from 0-100 to 0-5 scale
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, delay: index * 0.05 }}
+      viewport={{ once: true }}
+      className="group cursor-pointer relative"
+    >
+      <Link href={`/game/${game.id}`}>
+        <div className="relative overflow-hidden rounded-lg bg-gray-900/50 backdrop-blur-sm border border-gray-800/50 hover:border-purple-500/30 transition-all duration-300 hover:scale-[1.02] min-h-[280px] flex flex-col">
+          {/* Game Cover */}
+          <div className="aspect-[3/4] relative overflow-hidden flex-shrink-0">
+            {game.cover?.url || game.cover_url ? (
+              <Image
+                src={getCoverImageUrl(game.cover?.url || game.cover_url)}
+                alt={game.name}
+                fill
+                className="object-cover transition-transform duration-300 group-hover:scale-105"
+                sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 16vw"
+                priority={index === 0} // Add priority to first image for LCP
+              />
+            ) : (
+              <div className="w-full h-full bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center">
+                <Gamepad2 className="w-12 h-12 text-gray-500" />
+              </div>
+            )}
+
+            {/* Overlay with stats */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+              <div className="absolute bottom-3 left-3 right-3 space-y-2">
+                {game.stats && (
+                  <div className="flex items-center justify-between text-xs text-white/80">
+                    <div className="flex items-center gap-1">
+                      <Users className="w-3 h-3" />
+                      <span>{formatCount(game.stats.user_count || 0)}</span>
+                    </div>
+                    {game.rating && (
+                      <div className="flex items-center gap-1">
+                        <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                        <span>{formatRating(game.rating)}</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Game Info */}
+          <div className="p-3 space-y-2 flex-grow flex flex-col justify-between">
+            <h3 className="font-semibold text-white text-sm line-clamp-2 group-hover:text-purple-300 transition-colors">
+              {game.name}
+            </h3>
+
+            <div className="flex items-center justify-between text-xs text-gray-400">
+              {/* Playing count - Remove redundant trending indicator */}
+              {getValidPlayingCount(game.stats?.currently_playing) ? (
+                <div className="flex items-center gap-1">
+                  <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                  <span>
+                    {formatCount(
+                      getValidPlayingCount(game.stats?.currently_playing)!
+                    )}{" "}
+                    playing
+                  </span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-1">
+                  <div className="w-2 h-2 bg-purple-400 rounded-full"></div>
+                  <span className="text-purple-400">Popular</span>
+                </div>
+              )}
+
+              {/* Release year */}
+              {getValidYear(game.first_release_date) ? (
+                <div className="flex items-center gap-1">
+                  <Calendar className="w-3 h-3" />
+                  <span>{getValidYear(game.first_release_date)}</span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-1 text-gray-500">
+                  <Calendar className="w-3 h-3" />
+                  <span>TBA</span>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </Link>
+    </motion.div>
+  );
+}
 
 export function GameShowcase() {
+  const {
+    games: trendingGames,
+    isLoading,
+    error,
+    connectivity,
+    sources,
+    lastUpdated,
+    retry,
+  } = useTrendingGames({
+    limit: 12,
+    source: "auto",
+    enablePolling: false, // Disable polling to reduce API calls
+    pollInterval: 5 * 60 * 1000, // Refresh every 5 minutes
+  });
+
   return (
-    <section className="py-16 lg:py-24 xl:py-32">
+    <section className="py-12 sm:py-16 lg:py-24 relative">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
           viewport={{ once: true }}
-          className="text-center mb-12 lg:mb-16"
+          className="text-center mb-8 sm:mb-12"
         >
-          <h2 className="text-4xl md:text-6xl font-bold mb-6">
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-bold mb-4 sm:mb-6">
             <span className="bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
-              Popular on Gamerfie
+              Trending on Gamerfie
             </span>
           </h2>
-          <p className="text-gray-400 text-xl max-w-3xl mx-auto">
-            See what games our community is playing, rating, and completing right now.
+          <p className="text-gray-400 text-base sm:text-lg lg:text-xl max-w-3xl mx-auto">
+            Discover the hottest games our community is playing right now.
           </p>
         </motion.div>
 
-        {/* Game Grid - Modern Card Layout */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 mb-12 lg:mb-16">
-          {gameData.map((game, index) => (
-            <motion.div
-              key={game.title}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: index * 0.1 }}
-              viewport={{ once: true }}
-            >
-              <AnimatedCard variant="feature" className="p-6 lg:p-8 cursor-pointer group h-full hover:scale-[1.02] transition-transform duration-300">
-                <div className="flex items-center space-x-4 lg:space-x-6">
-                  <div className="text-4xl lg:text-5xl">{game.image}</div>
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between mb-2">
-                      <h3 className="font-bold text-white group-hover:text-purple-300 transition-colors text-lg lg:text-xl">
-                        {game.title}
-                      </h3>
-                      <div className="flex items-center text-green-400 text-sm bg-green-400/10 px-2 py-1 rounded-full border border-green-400/20">
-                        <TrendingUp className="h-3 w-3 mr-1" />
-                        <span className="font-medium">{game.trend}</span>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between text-sm lg:text-base text-gray-400 mt-3">
-                      <div className="flex items-center bg-gray-800/50 px-3 py-1 rounded-full">
-                        <div className="w-2 h-2 bg-green-400 rounded-full mr-2 animate-pulse"></div>
-                        <span className="font-medium">{game.players} playing</span>
-                      </div>
-                      <div className="flex items-center bg-yellow-400/10 px-3 py-1 rounded-full border border-yellow-400/20">
-                        <Star className="h-3 w-3 text-yellow-400 mr-1 fill-current" />
-                        <span className="font-medium text-yellow-400">{game.rating}</span>
-                      </div>
-                    </div>
-                  </div>
+        {/* Trending Games Section */}
+        <div className="mb-12 sm:mb-16 relative">
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.6 }}
+            viewport={{ once: true }}
+            className="flex items-center justify-between mb-6 sm:mb-8"
+          >
+            <div className="flex items-center gap-2">
+              <TrendingUp className="w-5 h-5 text-green-500" />
+              <h3 className="text-xl sm:text-2xl font-bold text-white">
+                Trending Games
+              </h3>
+            </div>
+
+            {/* API Status Indicator */}
+            <div className="flex items-center gap-2">
+              {sources && sources.length > 0 && (
+                <div className="flex items-center gap-1 text-xs text-gray-400">
+                  <span>Sources:</span>
+                  {sources.map((source) => (
+                    <Badge
+                      key={source}
+                      variant="outline"
+                      className="text-xs px-2 py-0.5 border-gray-600 text-gray-300"
+                    >
+                      {source === "igdb" ? "IGDB" : "RAWG"}
+                    </Badge>
+                  ))}
                 </div>
-              </AnimatedCard>
-            </motion.div>
-          ))}
+              )}
+
+              <div className="flex items-center gap-1">
+                {connectivity?.igdb ? (
+                  <div className="flex items-center gap-1">
+                    <Database className="w-3 h-3 text-green-400" />
+                    <span className="text-xs text-green-400">IGDB</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-1">
+                    <Database className="w-3 h-3 text-red-400" />
+                    <span className="text-xs text-red-400">IGDB</span>
+                  </div>
+                )}
+
+                {connectivity?.rawg ? (
+                  <div className="flex items-center gap-1">
+                    <Zap className="w-3 h-3 text-green-400" />
+                    <span className="text-xs text-green-400">RAWG</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-1">
+                    <Zap className="w-3 h-3 text-red-400" />
+                    <span className="text-xs text-red-400">RAWG</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          </motion.div>
+
+          {isLoading ? (
+            <GameShowcaseSkeleton />
+          ) : error || !trendingGames || trendingGames.length === 0 ? (
+            <div className="text-center py-12 space-y-4">
+              <div className="space-y-2">
+                {connectivity?.igdb === false &&
+                connectivity?.rawg === false ? (
+                  <>
+                    <WifiOff className="w-12 h-12 text-red-400 mx-auto" />
+                    <p className="text-gray-400 mb-4">
+                      Game databases are temporarily unavailable
+                    </p>
+                    <p className="text-sm text-gray-500">
+                      We're working to restore the service. Please try again in
+                      a few minutes.
+                    </p>
+                  </>
+                ) : connectivity?.igdb === false ||
+                  connectivity?.rawg === false ? (
+                  <>
+                    <Wifi className="w-12 h-12 text-yellow-400 mx-auto" />
+                    <p className="text-gray-400 mb-4">
+                      Some game services are temporarily unavailable
+                    </p>
+                    <div className="text-sm text-gray-500">
+                      Available sources: {connectivity?.igdb && "IGDB"}{" "}
+                      {connectivity?.rawg && "RAWG"}
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <Gamepad2 className="w-12 h-12 text-gray-400 mx-auto" />
+                    <p className="text-gray-400 mb-4">
+                      No trending games available right now
+                    </p>
+                    <p className="text-sm text-gray-500">
+                      Check back later or explore our game catalog
+                    </p>
+                  </>
+                )}
+              </div>
+              <div className="flex gap-2 justify-center">
+                <Button
+                  variant="outline"
+                  onClick={retry}
+                  className="border-purple-500/50 text-purple-300 hover:bg-purple-500/10"
+                  disabled={isLoading}
+                >
+                  {isLoading ? "Loading..." : "Try Again"}
+                </Button>
+                <Link href="/explore">
+                  <Button
+                    variant="default"
+                    className="bg-purple-600 hover:bg-purple-700"
+                  >
+                    Browse All Games
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3 sm:gap-4 lg:gap-6 relative">
+                {trendingGames.slice(0, 12).map((game, index) => (
+                  <GameCard key={game.id} game={game} index={index} />
+                ))}
+              </div>
+
+              {/* Last Updated Info */}
+              {lastUpdated && (
+                <div className="text-center mt-6">
+                  <p className="text-xs text-gray-500">
+                    Last updated: {lastUpdated.toLocaleTimeString()}
+                  </p>
+                </div>
+              )}
+            </>
+          )}
         </div>
 
         <motion.div
@@ -84,10 +334,10 @@ export function GameShowcase() {
             <Button
               variant="outline"
               size="lg"
-              className="border-purple-500/50 text-purple-300 hover:bg-purple-500/10 px-8 py-3 rounded-xl"
+              className="border-purple-500/50 text-purple-300 hover:bg-purple-500/10 px-6 sm:px-8 py-3 rounded-xl text-sm sm:text-base"
             >
               Explore All Games
-              <ArrowRight className="ml-2 h-4 w-4" />
+              <ArrowRight className="ml-2 w-4 h-4" />
             </Button>
           </Link>
         </motion.div>

@@ -159,7 +159,7 @@ export const GameActionsMenu = memo(
               className="w-full justify-start text-white/80 hover:text-white hover:bg-white/10"
               asChild
             >
-              <a href={`/games/${game.id}`}>
+              <a href={`/game/${game.id}`}>
                 <Gamepad2 className="mr-2 h-4 w-4" />
                 Go to game
               </a>
@@ -170,7 +170,7 @@ export const GameActionsMenu = memo(
               className="w-full justify-start text-white/80 hover:text-white hover:bg-white/10"
               asChild
             >
-              <a href={`/games/${game.id}/guide`}>
+              <a href={`/game/${game.id}/guide`}>
                 <BookMarked className="mr-2 h-4 w-4" />
                 Go to guide
               </a>

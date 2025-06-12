@@ -46,6 +46,10 @@ const validateIds = (ids: unknown): string[] => {
 };
 
 export async function POST(request: Request) {
+  // DEPRECATED: This endpoint is deprecated in favor of UnifiedGameService.getGameDetails()
+  // It will be removed in a future version. Please update your code to use the service directly.
+  console.warn('[DEPRECATED] /api/games/details endpoint is deprecated. Use UnifiedGameService.getGameDetails() instead.');
+  
   try {
     console.log('Starting /api/games/details request');
     const { ids } = await request.json();

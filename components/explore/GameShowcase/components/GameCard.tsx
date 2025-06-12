@@ -9,9 +9,10 @@ import { getCoverImageUrl } from "@/utils/image-utils";
 
 interface GameCardProps {
   game: Game;
+  priority?: boolean;
 }
 
-export const GameCard = memo(({ game }: GameCardProps) => {
+export const GameCard = memo(({ game, priority = false }: GameCardProps) => {
   const [imageError, setImageError] = useState(false);
   const coverUrl = (game as any).coverImage || game.cover_url;
   const processedCoverUrl = coverUrl ? getCoverImageUrl(coverUrl) : undefined;
@@ -28,7 +29,7 @@ export const GameCard = memo(({ game }: GameCardProps) => {
             className="object-cover transition-transform duration-300 group-hover:scale-105"
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
             onError={() => setImageError(true)}
-            priority={false}
+            priority={priority}
             quality={80}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
@@ -58,7 +59,7 @@ export const GameCard = memo(({ game }: GameCardProps) => {
           </div>
         )}
       </div>
-      <Link href={`/games/${game.id}`}>
+      <Link href={`/game/${game.id}`}>
         <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/60">
           <Button className="px-4 py-2 rounded-lg bg-white/10 text-white hover:bg-white/20 transition-colors flex items-center gap-2">
             Learn More

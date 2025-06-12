@@ -1,55 +1,42 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@/utils/supabase/server';
+import { UnifiedGameService } from '@/services/unifiedGameService';
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const supabase = await createClient();
+    const { searchParams } = new URL(request.url);
+    const limit = parseInt(searchParams.get('limit') || '12');
 
-    // Use the optimized popular_games view instead of complex queries
-    const { data: popularGames, error } = await supabase
-      .from('popular_games')
-      .select('*')
-      .order('total_users', { ascending: false })
-      .limit(50);
+    console.log('Fetching popular games via unified service...', { limit });
 
-    if (error) {
-      console.error('Error fetching popular games:', error);
-      return NextResponse.json(
-        { error: 'Failed to fetch popular games' },
-        { status: 500 }
-      );
+    // Use unified service for popular games with IGDB priority
+    const games = await UnifiedGameService.getPopularGames(limit, 'auto');
+    
+    if (!games || games.length === 0) {
+      console.log('No popular games found from unified service');
+      return NextResponse.json({
+        games: [],
+        message: 'No popular games available at the moment',
+        total: 0
+      });
     }
 
-    // Transform the data to match expected format
-    const transformedGames = popularGames?.map(game => ({
-      id: game.id,
-      name: game.name,
-      cover_url: game.cover_url,
-      rating: game.rating,
-      total_rating_count: game.total_rating_count,
-      first_release_date: game.first_release_date,
-      platforms: game.platforms,
-      genres: game.genres,
-      summary: game.summary,
-      storyline: game.storyline,
-      stats: {
-        user_count: game.total_users,
-        avg_rating: game.avg_user_rating,
-        completed_count: game.completed_count,
-        currently_playing: game.currently_playing
-      }
-    })) || [];
+    console.log(`Successfully fetched ${games.length} popular games from unified service`);
 
-    return NextResponse.json(transformedGames, {
+    return NextResponse.json(games, {
       headers: {
         'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600'
       }
     });
   } catch (error) {
     console.error('Popular games error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    
+    // Return an empty array instead of throwing to allow graceful degradation
+    return NextResponse.json({
+      games: [],
+      error: 'Popular games temporarily unavailable',
+      message: 'Please try again later'
+    }, { 
+      status: 200  // Return 200 to allow frontend to handle gracefully
+    });
   }
 }

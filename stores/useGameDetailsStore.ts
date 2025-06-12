@@ -3,12 +3,12 @@ import { persist } from 'zustand/middleware'
 import { Game, Platform, Genre } from '@/types'
 
 interface GameDetailsState {
-  games: Record<number, Game & { timestamp: number }>
+  games: Record<string, Game & { timestamp: number }>
   isLoading: boolean
   error: string | null
   setGame: (game: Game) => void
-  getGame: (id: number) => (Game & { timestamp: number }) | undefined
-  fetchGame: (id: number) => Promise<void>
+  getGame: (id: string) => (Game & { timestamp: number }) | undefined
+  fetchGame: (id: string) => Promise<void>
   clearCache: () => void
   clearStaleCache: (maxAge?: number) => void
 }
@@ -40,57 +40,53 @@ export const useGameDetailsStore = create<GameDetailsState>()(
             return;
           }
 
-          // Use the games/details endpoint
-          const response = await fetch('/api/games/details', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              ids: [id]
-            })
-          });
-
+          console.log(`Fetching game details for ID: ${id}`);
+          
+          // Use API route instead of direct service to avoid CORS issues
+          const response = await fetch(`/api/games/${id}`);
           if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.error || 'Failed to fetch game');
+            throw new Error(`Failed to fetch game details: ${response.status} ${response.statusText}`);
           }
           
-          const [game] = await response.json();
-          if (!game) throw new Error('Game not found');
+          const game = await response.json();
+          
+          if (!game) {
+            throw new Error('Game not found');
+          }
 
-          console.log('Raw game data:', {
-            platforms: game.platforms,
-            platformsType: typeof game.platforms,
-            isArray: Array.isArray(game.platforms)
+          console.log('Successfully fetched game via API route:', {
+            id: game.id,
+            name: game.name,
+            dataSource: game.dataSource
           });
 
-          // Process the game data to match our Game type
-          const processedGame = {
+          // Process the game data to ensure compatibility
+          const processedGame: Game = {
             ...game,
-            // Ensure all required fields are present
-            id: game.id.toString(),
-            name: game.name,
-            cover_url: game.cover_url || null,
-            rating: game.rating || 0,
-            first_release_date: game.first_release_date || null,
+            // Ensure platforms are in correct format
             platforms: Array.isArray(game.platforms) 
-              ? game.platforms.map((p: string | Platform) => typeof p === 'string' ? { id: p, name: p } : p)
-              : typeof game.platforms === 'object' && game.platforms !== null
-                ? [game.platforms].map((p: string | Platform) => typeof p === 'string' ? { id: p, name: p } : p)
-                : [],
-            genres: Array.isArray(game.genres)
-              ? game.genres.map((g: string | Genre) => typeof g === 'string' ? { id: g, name: g } : g)
+              ? game.platforms.map((p: string | Platform) => 
+                  typeof p === 'string' ? { id: p, name: p } : p
+                )
               : [],
-            summary: game.summary || null,
-            storyline: game.storyline || null
+            // Ensure genres are in correct format  
+            genres: Array.isArray(game.genres)
+              ? game.genres.map((g: string | Genre) => 
+                  typeof g === 'string' ? { id: g, name: g } : g
+                )
+              : [],
+            // Set defaults for missing fields - convert null to undefined
+            summary: game.summary || undefined,
+            storyline: game.storyline || undefined,
+            rating: game.rating || 0,
+            first_release_date: game.first_release_date || undefined
           };
 
-          console.log('Processed game data:', {
+          console.log('Processed game data for store:', {
             id: processedGame.id,
             name: processedGame.name,
-            genresType: typeof processedGame.genres,
-            genres: processedGame.genres
+            platformsCount: processedGame.platforms?.length || 0,
+            genresCount: processedGame.genres?.length || 0
           });
 
           set((state) => ({ 
@@ -101,7 +97,7 @@ export const useGameDetailsStore = create<GameDetailsState>()(
             isLoading: false 
           }));
         } catch (error) {
-          console.error('Error fetching game:', error);
+          console.error('Error fetching game via API route:', error);
           set({ 
             error: error instanceof Error ? error.message : 'Failed to fetch game',
             isLoading: false 

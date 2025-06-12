@@ -1,6 +1,7 @@
 "use client";
 
 import { Inter } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 import FloatingHeader from "@/components/ui/header/FloatingHeader";
 import { Footer } from "@/components/Footer";
@@ -12,7 +13,28 @@ import * as Sentry from "@sentry/nextjs";
 import { usePathname } from "next/navigation";
 import { CacheBuster } from "@/components/ui/cache-buster";
 
-const inter = Inter({ subsets: ["latin"] });
+// Optimized font loading with display swap for better performance
+const inter = Inter({
+  subsets: ["latin"],
+  display: "swap",
+  preload: true,
+  variable: "--font-inter",
+});
+
+// Local Geist fonts for better performance
+const geistSans = localFont({
+  src: "./fonts/GeistVF.woff",
+  variable: "--font-geist-sans",
+  weight: "100 900",
+  display: "swap",
+});
+
+const geistMono = localFont({
+  src: "./fonts/GeistMonoVF.woff",
+  variable: "--font-geist-mono",
+  weight: "100 900",
+  display: "swap",
+});
 
 // Only initialize Sentry if DSN is properly configured
 if (
@@ -52,7 +74,9 @@ export default function RootLayout({
 
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={inter.className}>
+      <body
+        className={`${inter.className} ${geistSans.variable} ${geistMono.variable}`}
+      >
         <QueryClientProvider client={queryClient}>
           <SupabaseProvider initialSession={null}>
             <ThemeProvider

@@ -113,13 +113,12 @@ export const GameCarousel = memo(
                     }}
                     className="pr-4"
                   >
-                    <div className="w-full h-full">
-                      {" "}
-                      {/* Added wrapper */}
+                    <div className="w-full h-full relative">
                       <GameCard
                         game={game}
                         index={virtualItem.index}
                         category={category}
+                        priority={virtualItem.index < 3}
                       />
                     </div>
                   </div>

@@ -4,13 +4,16 @@ import { useGameDetailsStore } from '@/stores/useGameDetailsStore';
 export function useGameDetails(gameId: string | number) {
   const { games, isLoading, error, fetchGame } = useGameDetailsStore();
 
-  useEffect(() => {
-    if (gameId) {
-      fetchGame(Number(gameId));
-    }
-  }, [gameId, fetchGame]);
+  // Convert gameId to string for consistent handling
+  const stringGameId = String(gameId);
 
-  const game = games[Number(gameId)];
+  useEffect(() => {
+    if (stringGameId) {
+      fetchGame(stringGameId);
+    }
+  }, [stringGameId, fetchGame]);
+
+  const game = games[stringGameId];
 
   return {
     game: game ? { ...game, timestamp: undefined } : null, // Remove timestamp from returned game

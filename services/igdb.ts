@@ -57,6 +57,13 @@ export class IGDBService {
   private static cachedToken: string | null = null;
   private static tokenExpiry: number | null = null;
 
+  private static getProxyUrl(): string {
+    const isServer = typeof window === 'undefined';
+    return isServer 
+      ? `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/igdb-proxy`
+      : '/api/igdb-proxy';
+  }
+
   private static getIGDBToken = cache(async () => {
     try {
       // Return cached token if still valid (with 5 minute buffer)
@@ -194,7 +201,6 @@ export class IGDBService {
   ): Promise<IGDBResponse> {
     try {
       const offset = (page - 1) * limit;
-      const headers = await this.getHeaders();
 
       // Build the base query conditions - only require that games have a cover
       const conditions: string[] = ['cover != null'];
@@ -256,11 +262,15 @@ export class IGDBService {
       // Get total count first
       const countQuery = `where ${conditions.join(' & ')};`;
 
-      const countResponse = await fetch("https://api.igdb.com/v4/games/count", {
-        method: "POST",
-        headers,
-        body: countQuery,
-        next: { revalidate: 60 }
+      const countResponse = await fetch(this.getProxyUrl(), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          endpoint: 'games/count',
+          query: countQuery.trim()
+        })
       });
 
       if (!countResponse.ok) {
@@ -291,11 +301,15 @@ export class IGDBService {
         offset ${offset};
       `;
 
-      const gamesResponse = await fetch("https://api.igdb.com/v4/games", {
-        method: "POST",
-        headers,
-        body: query,
-        next: { revalidate: 60 }
+      const gamesResponse = await fetch(this.getProxyUrl(), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          endpoint: 'games',
+          query: query.trim()
+        })
       });
 
       if (!gamesResponse.ok) {
@@ -321,19 +335,28 @@ export class IGDBService {
 
   static async getPopularGames(limit: number = 10): Promise<Game[]> {
     try {
-      const headers = await this.getHeaders();
-      const response = await fetch('https://api.igdb.com/v4/games', {
+      const query = `
+        fields name, cover.*, cover.url, cover.image_id, first_release_date, rating, genres.*, platforms.*, summary, screenshots.*, videos.*, artworks.*;
+        where rating != null & rating > 75 & cover != null;
+        sort total_rating_count desc;
+        limit ${limit};
+      `;
+
+      const response = await fetch(this.getProxyUrl(), {
         method: 'POST',
-        headers,
-        body: `
-          fields name, cover.*, cover.url, cover.image_id, first_release_date, rating, genres.*, platforms.*, summary, screenshots.*, videos.*, artworks.*;
-          where rating != null & rating > 75 & cover != null;
-          sort total_rating_count desc;
-          limit ${limit};
-        `
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          endpoint: 'games',
+          query: query.trim()
+        })
       });
 
-      if (!response.ok) throw new Error('Failed to fetch popular games');
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Failed to fetch popular games: ${errorText}`);
+      }
       const games = await response.json();
       return games.map(this.processGame);
     } catch (error) {
@@ -344,22 +367,34 @@ export class IGDBService {
 
   static async getTrendingGames(limit: number = 10): Promise<Game[]> {
     try {
-      const headers = await this.getHeaders();
       const now = Math.floor(Date.now() / 1000);
-      const threeMonthsAgo = now - (90 * 24 * 60 * 60);
+      const sixMonthsAgo = now - (180 * 24 * 60 * 60); // Increased from 3 to 6 months
 
-      const response = await fetch('https://api.igdb.com/v4/games', {
+      const query = `
+        fields name, cover.*, cover.url, cover.image_id, first_release_date, rating, genres.*, platforms.*, summary, screenshots.*, videos.*, artworks.*;
+        where first_release_date >= ${sixMonthsAgo} & first_release_date <= ${now} & cover != null & total_rating_count > 10;
+        sort total_rating_count desc;
+        limit ${limit};
+      `;
+
+      console.log('IGDB: Making trending games request', { limit });
+
+      const response = await fetch(this.getProxyUrl(), {
         method: 'POST',
-        headers,
-        body: `
-          fields name, cover.*, cover.url, cover.image_id, first_release_date, rating, genres.*, platforms.*, summary, screenshots.*, videos.*, artworks.*;
-          where first_release_date >= ${threeMonthsAgo} & first_release_date <= ${now} & cover != null;
-          sort total_rating_count desc;
-          limit ${limit};
-        `
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          endpoint: 'games',
+          query: query.trim()
+        })
       });
 
-      if (!response.ok) throw new Error('Failed to fetch trending games');
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Failed to fetch trending games: ${errorText}`);
+      }
+      
       const games = await response.json();
       return games.map(this.processGame);
     } catch (error) {
@@ -370,7 +405,6 @@ export class IGDBService {
 
   static async getUpcomingGames(limit: number = 10): Promise<Game[]> {
     try {
-      const headers = await this.getHeaders();
       const now = Math.floor(Date.now() / 1000);
       const threeMonthsAhead = now + (90 * 24 * 60 * 60);
 
@@ -384,15 +418,20 @@ export class IGDBService {
         limit ${limit};
       `;
 
-      const response = await fetch("https://api.igdb.com/v4/games", {
-        method: "POST",
-        headers,
-        body: query,
-        next: { revalidate: 60 }
+      const response = await fetch(this.getProxyUrl(), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          endpoint: 'games',
+          query: query.trim()
+        })
       });
 
       if (!response.ok) {
-        throw new Error('Failed to fetch upcoming games');
+        const errorText = await response.text();
+        throw new Error(`Failed to fetch upcoming games: ${errorText}`);
       }
 
       const games = await response.json();
@@ -406,17 +445,23 @@ export class IGDBService {
   static async fetchGameDetails(gameId: string) {
     try {
       console.log('Fetching game details from IGDB for ID:', gameId);
-      const headers = await this.getHeaders();
       
-      const response = await fetch('https://api.igdb.com/v4/games', {
+      const query = `
+        fields name, cover.*, first_release_date, rating, total_rating, total_rating_count, 
+        genres.*, platforms.*, summary, storyline, involved_companies.company.name, 
+        involved_companies.developer, involved_companies.publisher, screenshots.*, videos.*, artworks.*;
+        where id = ${gameId};
+      `;
+
+      const response = await fetch(this.getProxyUrl(), {
         method: 'POST',
-        headers,
-        body: `
-          fields name, cover.*, first_release_date, rating, total_rating, total_rating_count, 
-          genres.*, platforms.*, summary, storyline, involved_companies.company.name, 
-          involved_companies.developer, involved_companies.publisher, screenshots.*, videos.*, artworks.*;
-          where id = ${gameId};
-        `,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          endpoint: 'games',
+          query: query.trim()
+        })
       });
 
       if (!response.ok) {
@@ -425,7 +470,8 @@ export class IGDBService {
         throw new Error('Failed to fetch game details');
       }
 
-      const [game] = await response.json();
+      const games = await response.json();
+      const [game] = games;
       if (!game) {
         console.log('No game found in IGDB response');
         return null;

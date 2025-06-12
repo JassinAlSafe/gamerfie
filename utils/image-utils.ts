@@ -3,17 +3,20 @@ export const IGDB_IMAGE_SIZES = {
   COVER: {
     SMALL: 't_thumb',
     MEDIUM: 't_cover_big',
-    LARGE: 't_cover_big_2x'  // Highest quality for covers
+    LARGE: 't_cover_big_2x',
+    ORIGINAL: 't_original'  // Highest quality for covers
   },
   SCREENSHOT: {
     MEDIUM: 't_720p',
     LARGE: 't_1080p',
-    ULTRA: 't_screenshot_huge' // Highest quality for screenshots
+    ULTRA: 't_screenshot_huge',
+    ORIGINAL: 't_original' // Highest quality for screenshots
   },
   ARTWORK: {
     MEDIUM: 't_720p',
     LARGE: 't_1080p',
-    ULTRA: 't_screenshot_huge' // Best for artworks
+    ULTRA: 't_screenshot_huge',
+    ORIGINAL: 't_original' // Best for artworks
   }
 } as const;
 
@@ -48,9 +51,9 @@ export function getHighQualityImageUrl(url: string): string {
     if (processedUrl.includes("/t_")) {
       // Check if it's a screenshot/artwork or cover
       if (processedUrl.includes('screenshot') || processedUrl.includes('artwork')) {
-        processedUrl = processedUrl.replace(/\/t_[^/]+\//, `/${IGDB_IMAGE_SIZES.SCREENSHOT.ULTRA}/`);
+        processedUrl = processedUrl.replace(/\/t_[^/]+\//, `/${IGDB_IMAGE_SIZES.SCREENSHOT.ORIGINAL}/`);
       } else {
-        processedUrl = processedUrl.replace(/\/t_[^/]+\//, `/${IGDB_IMAGE_SIZES.COVER.LARGE}/`);
+        processedUrl = processedUrl.replace(/\/t_[^/]+\//, `/${IGDB_IMAGE_SIZES.COVER.ORIGINAL}/`);
       }
     } else {
       const parts = processedUrl.split("/upload/");
@@ -75,17 +78,33 @@ export function getHighQualityImageUrl(url: string): string {
 }
 
 /**
- * Converts a thumbnail URL to a cover image URL
+ * Converts a thumbnail URL to a cover image URL with highest quality
  */
 export function getCoverImageUrl(url: string | null | undefined): string {
   if (!url) return "/placeholder.jpg";
 
-  // Handle RAWG URLs
-  if (url.includes('media.rawg.io')) {
-    return ensureHttps(url);
+  // Handle special RAWG background image marker
+  if (url.startsWith('rawg-bg:')) {
+    // This indicates a RAWG background image (screenshot) being used as temporary cover
+    // Extract the actual URL and return it, but mark it as not ideal
+    const actualUrl = url.replace('rawg-bg:', '');
+    return ensureHttps(actualUrl);
   }
 
-  // Handle IGDB URLs
+  // Handle RAWG URLs - get highest quality version
+  if (url.includes('media.rawg.io')) {
+    let processedUrl = ensureHttps(url);
+    
+    // RAWG URLs often have size parameters - try to get full size
+    // Convert crop or resize parameters to get full image
+    processedUrl = processedUrl.replace(/\/resize\/\d+x\d+\//, '/');
+    processedUrl = processedUrl.replace(/\/crop\/\d+x\d+\//, '/');
+    
+    // If it's a background image, it's usually already high quality
+    return processedUrl;
+  }
+
+  // Handle IGDB URLs - these are proper game covers
   if (url.includes('igdb.com')) {
     let processedUrl = url;
     
@@ -94,11 +113,11 @@ export function getCoverImageUrl(url: string | null | undefined): string {
 
     // For IGDB, use the highest quality cover size
     if (processedUrl.includes("/t_")) {
-      processedUrl = processedUrl.replace(/\/t_[^/]+\//, `/${IGDB_IMAGE_SIZES.COVER.LARGE}/`);
+      processedUrl = processedUrl.replace(/\/t_[^/]+\//, `/${IGDB_IMAGE_SIZES.COVER.ORIGINAL}/`);
     } else {
       const parts = processedUrl.split("/upload/");
       if (parts.length === 2) {
-        processedUrl = `${parts[0]}/upload/${IGDB_IMAGE_SIZES.COVER.LARGE}/${parts[1]}`;
+        processedUrl = `${parts[0]}/upload/${IGDB_IMAGE_SIZES.COVER.ORIGINAL}/${parts[1]}`;
       }
     }
 
@@ -110,6 +129,21 @@ export function getCoverImageUrl(url: string | null | undefined): string {
 
   // For other URLs, ensure HTTPS and return
   return url.startsWith('http') ? url : `https://${url}`;
+}
+
+/**
+ * Checks if a cover URL is a proper game cover (not a screenshot)
+ */
+export function isProperGameCover(url: string | null | undefined): boolean {
+  if (!url) return false;
+  
+  // IGDB URLs are always proper covers
+  if (url.includes('igdb.com')) return true;
+  
+  // RAWG background images are screenshots, not covers
+  if (url.startsWith('rawg-bg:') || url.includes('media.rawg.io')) return false;
+  
+  return true;
 }
 
 /**

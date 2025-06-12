@@ -18,6 +18,50 @@ export function formatDate(timestamp: number): string {
 }
 
 /**
+ * Safely gets the year from a Unix timestamp, returns null for invalid dates
+ */
+export function getValidYear(timestamp?: number): number | null {
+  if (!timestamp || timestamp <= 0) return null;
+  try {
+    const date = new Date(timestamp * 1000);
+    const year = date.getFullYear();
+    // Validate year is reasonable (not 1970 or other invalid dates)
+    if (year < 1975 || year > new Date().getFullYear() + 5) return null;
+    return year;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Safely formats a Unix timestamp, returns fallback for invalid dates
+ */
+export function formatDateSafe(timestamp?: number, fallback: string = "TBA"): string {
+  if (!timestamp || timestamp <= 0) return fallback;
+  try {
+    const date = new Date(timestamp * 1000);
+    const year = date.getFullYear();
+    // Validate year is reasonable
+    if (year < 1975 || year > new Date().getFullYear() + 5) return fallback;
+    return date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+  } catch {
+    return fallback;
+  }
+}
+
+/**
+ * Safely gets a valid playing count, returns null for invalid counts
+ */
+export function getValidPlayingCount(count?: number): number | null {
+  if (!count || count <= 0) return null;
+  return count;
+}
+
+/**
  * Formats playtime in minutes to a readable string
  */
 export function formatPlaytime(minutes: number): string {

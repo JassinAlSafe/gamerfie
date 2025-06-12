@@ -236,7 +236,10 @@ export const useAuthStore = create<AuthState>()(
             // Use getUser() instead of getSession() for security
             const { data: { user }, error } = await supabase.auth.getUser();
             
-            if (error) throw error;
+            // Only log meaningful errors, not auth session missing errors
+            if (error && !error.message?.includes('Auth session missing')) {
+              console.warn('Auth check warning:', error);
+            }
 
             if (user) {
               const profile = await fetchUserProfile(user.id);
@@ -249,7 +252,10 @@ export const useAuthStore = create<AuthState>()(
               set({ user: null, error: null });
             }
           } catch (error) {
-            console.warn('Auth check warning:', error);
+            // Only log meaningful errors, not expected auth session missing errors
+            if (error instanceof Error && !error.message?.includes('Auth session missing')) {
+              console.warn('Auth check warning:', error);
+            }
             set({ user: null });
           }
         },
@@ -386,10 +392,15 @@ export const useAuthStore = create<AuthState>()(
         signInWithGoogle: async () => {
           try {
             set({ isLoading: true, error: null });
+            
+            // Determine the correct redirect URL based on environment
+            const isDev = process.env.NODE_ENV === 'development';
+            const baseUrl = isDev ? 'http://localhost:3000' : window.location.origin;
+            
             const response = await supabase.auth.signInWithOAuth({
               provider: 'google',
               options: {
-                redirectTo: `${window.location.origin}/auth/callback`,
+                redirectTo: `${baseUrl}/auth/callback`,
                 queryParams: {
                   access_type: 'offline',
                   prompt: 'consent',

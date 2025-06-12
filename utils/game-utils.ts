@@ -2,6 +2,7 @@ import { createClient } from '@/utils/supabase/client';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { Game } from '@/types/game';
 import { useGameDetailsStore } from '@/stores/useGameDetailsStore';
+import { UnifiedGameService } from '@/services/unifiedGameService';
 
 export interface GameStats {
   total_played: number;
@@ -28,21 +29,31 @@ const normalizeGameForStore = (game: any): Game => {
 
 
 export const fetchGameDetails = async (gameIds: string[]) => {
+  if (!gameIds || gameIds.length === 0) {
+    return [];
+  }
+
+  // Validate that all IDs are numbers
+  const validIds = gameIds.filter(id => {
+    const numId = Number(id);
+    return !isNaN(numId) && numId > 0;
+  });
+
+  if (validIds.length === 0) {
+    console.warn('No valid game IDs provided');
+    return [];
+  }
+
   try {
-    console.log('Fetching game details for IDs:', gameIds);
-    
-    // Get store instance
     const store = useGameDetailsStore.getState();
     
-    // Check cache first
-    const cachedGames = gameIds
+    // Check which games we already have in store
+    const cachedGames = validIds
       .map(id => store.getGame(Number(id)))
-      .filter(game => game && Date.now() - game.timestamp < 1000 * 60 * 60); // 1 hour cache
+      .filter(game => game);
     
-    // Find IDs that need fetching
-    const idsToFetch = gameIds.filter(id => 
-      !cachedGames.find(game => game?.id === id)
-    );
+    const cachedIds = new Set(cachedGames.map(game => game?.id?.toString()).filter(Boolean));
+    const idsToFetch = validIds.filter(id => !cachedIds.has(id));
     
     if (idsToFetch.length === 0) {
       console.log('All games found in cache');
@@ -51,39 +62,37 @@ export const fetchGameDetails = async (gameIds: string[]) => {
     
     console.log('Fetching missing games:', idsToFetch);
     
-    const response = await fetch('/api/games/details', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ ids: idsToFetch })
-    });
+    // Use UnifiedGameService to fetch missing games
+    const fetchedGames = await Promise.all(
+      idsToFetch.map(async (id) => {
+        try {
+          const game = await UnifiedGameService.getGameDetails(id);
+          if (game) {
+            // Add fetched game to store with proper normalization
+            const normalizedGame = normalizeGameForStore(game);
+            store.setGame(normalizedGame as any);
+            return game;
+          }
+          return null;
+        } catch (error) {
+          console.error(`Error fetching game ${id}:`, error);
+          return null;
+        }
+      })
+    );
 
-    if (!response.ok) {
-      const error = await response.text();
-      console.error('Error response from /api/games/details:', error);
-      throw new Error(`Failed to fetch game details: ${error}`);
-    }
-
-    const fetchedGames = await response.json();
-    
-    // Add fetched games to store with proper normalization
-    fetchedGames.forEach((game: any) => {
-      if (game && game.id) {
-        const normalizedGame = normalizeGameForStore(game);
-        store.setGame(normalizedGame as any);
-      }
-    });
+    // Filter out null results
+    const validFetchedGames = fetchedGames.filter(game => game !== null);
     
     // Return combined results
-    const allGames = gameIds
+    const allGames = validIds
       .map(id => store.getGame(Number(id)))
       .filter(game => game)
       .map(game => ({ ...game, timestamp: undefined }));
     
-    if (allGames.length !== gameIds.length) {
+    if (allGames.length !== validIds.length) {
       console.warn(
-        `Received ${allGames.length} valid games out of ${gameIds.length} requested:`,
+        `Received ${allGames.length} valid games out of ${validIds.length} requested:`,
         allGames.map(g => g.id)
       );
     }

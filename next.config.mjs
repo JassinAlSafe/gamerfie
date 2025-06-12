@@ -1,6 +1,65 @@
+import withPlugins from "next-compose-plugins";
+import withBundleAnalyzer from "@next/bundle-analyzer";
+
+// Bundle analyzer configuration
+const bundleAnalyzer = withBundleAnalyzer({
+  enabled: process.env.ANALYZE === "true",
+});
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Enable source maps for bundle analysis (only when analyzing)
+  productionBrowserSourceMaps: process.env.ANALYZE === "true",
+
+  // Performance optimizations
+  experimental: {
+    optimizePackageImports: ["lodash", "@chakra-ui/react", "react-icons"],
+    optimizeCss: true,
+  },
+
+  // Bundle size optimizations
+  compiler: {
+    removeConsole:
+      process.env.NODE_ENV === "production"
+        ? {
+            exclude: ["error"],
+          }
+        : false,
+  },
+
+  // Webpack optimizations for smaller bundles
+  webpack: (config, { isServer }) => {
+    // Only apply optimizations that don't conflict with Next.js defaults
+    if (!isServer) {
+      // Enhance split chunks without overriding Next.js defaults
+      config.optimization.splitChunks = {
+        ...config.optimization.splitChunks,
+        cacheGroups: {
+          ...config.optimization.splitChunks?.cacheGroups,
+          vendor: {
+            test: /[\\/]node_modules[\\/]/,
+            name: "vendors",
+            chunks: "all",
+            priority: 20,
+          },
+          common: {
+            name: "common",
+            minChunks: 2,
+            chunks: "all",
+            priority: 10,
+            reuseExistingChunk: true,
+          },
+        },
+      };
+    }
+
+    return config;
+  },
+
   images: {
+    formats: ["image/webp", "image/avif"],
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
+    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
     remotePatterns: [
       {
         protocol: "https",
@@ -33,13 +92,17 @@ const nextConfig = {
         hostname: "avatars.githubusercontent.com",
       },
     ],
-    dangerouslyAllowSVG: true,
-    contentDispositionType: "attachment",
+    dangerouslyAllowSVG: false,
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
-    formats: ['image/webp', 'image/avif'],
-    minimumCacheTTL: 60,
+    minimumCacheTTL: 60 * 60 * 24 * 30, // 30 days
   },
+
   reactStrictMode: true,
+
+  // Compression and caching
+  compress: true,
+  poweredByHeader: false,
+
   env: {
     NEXT_PUBLIC_TWITCH_CLIENT_ID: process.env.NEXT_PUBLIC_TWITCH_CLIENT_ID,
     TWITCH_CLIENT_SECRET: process.env.TWITCH_CLIENT_SECRET,
@@ -51,4 +114,4 @@ const nextConfig = {
   },
 };
 
-export default nextConfig;
+export default withPlugins([bundleAnalyzer], nextConfig);

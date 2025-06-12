@@ -28,7 +28,7 @@ export function SearchDialog({ open, onOpenChange }: SearchDialogProps) {
         console.log("SearchDialog: navigating to game", selectedGame.id);
         onOpenChange(false);
         reset();
-        router.push(`/games/${selectedGame.id}`);
+        router.push(`/game/${selectedGame.id}`);
       } else {
         console.log(
           "SearchDialog: No game found with name/title:",

@@ -26,19 +26,26 @@ export const safeJsonParse = <T = any>(
 /**
  * Safely parse platforms data from various formats
  * @param platforms - Platforms data (string, array, or null)
- * @returns Array of platform objects
+ * @returns Array of platform objects with string IDs
  */
 export const safeParsePlatforms = (
   platforms: string | Array<{ id: string | number; name: string }> | null | undefined
-): Array<{ id: string | number; name: string }> => {
+): Array<{ id: string; name: string }> => {
   if (!platforms) return [];
   
   if (Array.isArray(platforms)) {
-    return platforms;
+    return platforms.map(platform => ({
+      ...platform,
+      id: String(platform.id) // Convert ID to string
+    }));
   }
   
   if (typeof platforms === 'string') {
-    return safeJsonParse(platforms, []);
+    const parsed = safeJsonParse(platforms, []);
+    return parsed.map((platform: any) => ({
+      ...platform,
+      id: String(platform.id) // Convert ID to string
+    }));
   }
   
   return [];
@@ -47,19 +54,26 @@ export const safeParsePlatforms = (
 /**
  * Safely parse genres data from various formats
  * @param genres - Genres data (string, array, or null)
- * @returns Array of genre objects
+ * @returns Array of genre objects with string IDs
  */
 export const safeParseGenres = (
   genres: string | Array<{ id: string | number; name: string }> | null | undefined
-): Array<{ id: string | number; name: string }> => {
+): Array<{ id: string; name: string }> => {
   if (!genres) return [];
   
   if (Array.isArray(genres)) {
-    return genres;
+    return genres.map(genre => ({
+      ...genre,
+      id: String(genre.id) // Convert ID to string
+    }));
   }
   
   if (typeof genres === 'string') {
-    return safeJsonParse(genres, []);
+    const parsed = safeJsonParse(genres, []);
+    return parsed.map((genre: any) => ({
+      ...genre,
+      id: String(genre.id) // Convert ID to string
+    }));
   }
   
   return [];

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { IGDBService } from '@/services/igdb';
+import { UnifiedGameService } from '@/services/unifiedGameService';
 
-export type GameCategory = 'all' | 'recent' | 'upcoming' | 'popular' | 'classic' | 'indie' | 'anticipated';
+export type GameCategory = 'all' | 'recent' | 'upcoming' | 'popular' | 'trending' | 'classic' | 'indie' | 'anticipated';
 export type GameSortOption = 'popularity' | 'rating' | 'name' | 'release';
 
 interface GameFilters {
@@ -48,7 +48,7 @@ const validateParams = (params: URLSearchParams) => {
 
   // Validate category
   const category = params.get('category');
-  const validCategories: GameCategory[] = ['all', 'recent', 'upcoming', 'popular', 'classic', 'indie', 'anticipated'];
+  const validCategories: GameCategory[] = ['all', 'recent', 'upcoming', 'popular', 'trending', 'classic', 'indie', 'anticipated'];
   if (category && !validCategories.includes(category as GameCategory)) {
     errors.push(`Invalid category. Must be one of: ${validCategories.join(', ')}`);
   }
@@ -81,72 +81,84 @@ export async function GET(request: NextRequest) {
     const sort = (searchParams.get('sort') || 'popularity') as GameSortOption;
     const search = searchParams.get('search') || '';
 
-    // Check IGDB credentials before making requests
-    if (!process.env.NEXT_PUBLIC_TWITCH_CLIENT_ID || !process.env.TWITCH_CLIENT_SECRET) {
-      console.error('Missing IGDB credentials:', {
-        hasClientId: !!process.env.NEXT_PUBLIC_TWITCH_CLIENT_ID,
-        hasClientSecret: !!process.env.TWITCH_CLIENT_SECRET
-      });
-      return NextResponse.json(
-        { error: 'IGDB API credentials are not configured' },
-        { status: 500 }
+    console.log('Fetching games with unified service...');
+    
+    // Handle search queries using UnifiedGameService
+    if (search.trim()) {
+      console.log(`Searching for games with query: "${search}"`);
+      
+      const searchResult = await UnifiedGameService.searchGames(
+        search.trim(), 
+        page, 
+        limit,
+        {
+          strategy: 'combined',
+          useCache: true,
+          source: 'auto'
+        }
       );
+      
+      const response = {
+        games: searchResult.games,
+        totalCount: searchResult.total,
+        currentPage: searchResult.page,
+        totalPages: Math.ceil(searchResult.total / limit),
+        hasNextPage: searchResult.hasNextPage,
+        hasPreviousPage: searchResult.hasPreviousPage,
+        sources: searchResult.sources
+      };
+
+      console.log('Search API response:', {
+        totalGames: response.totalCount,
+        gamesReturned: response.games.length,
+        currentPage: response.currentPage,
+        totalPages: response.totalPages,
+        sources: response.sources
+      });
+
+      return NextResponse.json(response, {
+        headers: {
+          'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
+          'Vary': 'Accept-Encoding, x-search'
+        }
+      });
     }
 
-    // Build IGDB filters based on parameters
-    const filters: GameFilters = {
-      page,
-      limit,
-      search: search.trim(),
-      sortBy: sort
+    // Handle category-specific requests using UnifiedGameService
+    let games = [];
+    let totalCount = 0;
+    
+    if (category === 'popular' || !category) {
+      games = await UnifiedGameService.getPopularGames(limit, 'auto');
+      totalCount = games.length; // Popular games don't have pagination
+    } else if (category === 'trending') {
+      games = await UnifiedGameService.getTrendingGames(limit, 'auto');
+      totalCount = games.length; // Trending games don't have pagination
+    } else if (category === 'upcoming') {
+      games = await UnifiedGameService.getUpcomingGames(limit, 'auto');
+      totalCount = games.length; // Upcoming games don't have pagination
+    } else {
+      // For other categories, fall back to popular games
+      console.log(`Category "${category}" not implemented, falling back to popular games`);
+      games = await UnifiedGameService.getPopularGames(limit, 'auto');
+      totalCount = games.length;
+    }
+
+    // For simple category requests, we'll simulate pagination
+    // Since UnifiedGameService methods don't support complex filtering yet
+    const startIndex = (page - 1) * limit;
+    const endIndex = startIndex + limit;
+    const paginatedGames = games.slice(startIndex, endIndex);
+    
+    const response = {
+      games: paginatedGames,
+      totalCount,
+      currentPage: page,
+      totalPages: Math.ceil(totalCount / limit),
+      hasNextPage: endIndex < totalCount,
+      hasPreviousPage: page > 1,
     };
 
-    // Add platform filter if specified
-    if (platform && platform !== 'all') {
-      filters.platformId = parseInt(platform);
-    }
-
-    // Add genre filter if specified
-    if (genre && genre !== 'all') {
-      filters.genreId = parseInt(genre);
-    }
-
-    // Add year filter if specified
-    if (year && year !== 'all') {
-      const yearStart = new Date(`${year}-01-01`).getTime() / 1000;
-      const yearEnd = new Date(`${year}-12-31`).getTime() / 1000;
-      filters.releaseYear = {
-        start: yearStart,
-        end: yearEnd
-      };
-    }
-
-    // Add category-specific filters
-    if (category && category !== 'all') {
-      switch (category) {
-        case 'recent':
-          filters.timeRange = 'new_releases';
-          break;
-        case 'upcoming':
-          filters.timeRange = 'upcoming';
-          break;
-        case 'popular':
-          filters.sortBy = 'popularity';
-          break;
-        case 'classic':
-          filters.timeRange = 'classic';
-          break;
-        case 'indie':
-          filters.isIndie = true;
-          break;
-        case 'anticipated':
-          filters.isAnticipated = true;
-          break;
-      }
-    }
-
-    console.log('Fetching games with filters:', filters);
-    const response = await IGDBService.getGames(page, limit, filters);
     console.log('Games API response:', {
       totalGames: response.totalCount,
       gamesReturned: response.games.length,
@@ -155,7 +167,7 @@ export async function GET(request: NextRequest) {
     });
 
     // Add cache headers (5 minutes for normal requests, 1 hour for search requests)
-    const maxAge = search ? 3600 : 300;
+    const maxAge = 300;
     const headers = {
       'Cache-Control': `public, s-maxage=${maxAge}, stale-while-revalidate=${maxAge * 2}`,
       'Vary': 'Accept-Encoding, x-search'
@@ -166,11 +178,11 @@ export async function GET(request: NextRequest) {
     console.error('Error in games API:', error);
     
     if (error instanceof Error) {
-      // Handle IGDB authentication errors
-      if (error.message.includes('TWITCH_CLIENT') || error.message.includes('token')) {
+      // Handle specific error types
+      if (error.message.includes('service unavailable') || error.message.includes('unavailable')) {
         return NextResponse.json(
-          { error: 'IGDB authentication failed. Please check API credentials.' },
-          { status: 500 }
+          { error: 'Game service is temporarily unavailable. Please try again later.' },
+          { status: 503 }
         );
       }
       
@@ -179,14 +191,6 @@ export async function GET(request: NextRequest) {
         return NextResponse.json(
           { error: 'Too many requests. Please try again later.' },
           { status: 429 }
-        );
-      }
-      
-      // Handle service unavailability
-      if (error.message.includes('service unavailable')) {
-        return NextResponse.json(
-          { error: 'Game service is temporarily unavailable. Please try again later.' },
-          { status: 503 }
         );
       }
 

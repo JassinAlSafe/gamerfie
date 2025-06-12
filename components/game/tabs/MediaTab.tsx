@@ -246,7 +246,9 @@ export function MediaTab({ game }: MediaTabProps) {
                         }}
                         whileHover={{ scale: 1.03, y: -5 }}
                         className="relative aspect-video rounded-lg overflow-hidden cursor-pointer group shadow-md"
-                        onClick={() => video.video_id && handleVideoClick(video.video_id)}
+                        onClick={() =>
+                          video.video_id && handleVideoClick(video.video_id)
+                        }
                       >
                         {/* Video Thumbnail */}
                         <div className="absolute inset-0 bg-gray-800 flex items-center justify-center">
@@ -293,18 +295,22 @@ export function MediaTab({ game }: MediaTabProps) {
         </Tabs>
       </motion.div>
 
-      {/* Screenshot Modal - Lazy loaded */}
-      {isScreenshotModalOpen && (
-        <Suspense fallback={null}>
-          <ScreenshotModal
-            isOpen={isScreenshotModalOpen}
-            onClose={handleCloseScreenshotModal}
-            screenshots={(game as any).screenshots || []}
-            currentIndex={currentScreenshotIndex}
-            onIndexChange={setCurrentScreenshotIndex}
-          />
-        </Suspense>
-      )}
+      {/* Screenshot Modal with Suspense */}
+      <Suspense
+        fallback={
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+            <Loader2 className="w-8 h-8 text-purple-500 animate-spin" />
+          </div>
+        }
+      >
+        <ScreenshotModal
+          isOpen={isScreenshotModalOpen}
+          onClose={handleCloseScreenshotModal}
+          screenshots={gameScreenshots || []}
+          currentIndex={currentScreenshotIndex}
+          onIndexChange={setCurrentScreenshotIndex}
+        />
+      </Suspense>
 
       {/* Video Dialog */}
       <Dialog open={videoDialogOpen} onOpenChange={handleVideoDialogChange}>

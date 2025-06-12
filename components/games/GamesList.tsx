@@ -1,18 +1,17 @@
-import { Game, GameStatus } from "@/types";
-import { GameMutationHandlers } from "@/types/mutations";
-import { useState } from "react";
+import React, { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Star, MoreVertical, Trash2 } from "lucide-react";
+import { Game, GameStatus } from "@/types";
+import { getCoverImageUrl } from "@/utils/image-utils";
+import { getValidYear } from "@/utils/format-utils";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { getCoverImageUrl } from "@/utils/image-utils";
 
 interface LibraryGameCardProps {
   game: Game;
@@ -62,16 +61,16 @@ function LibraryGameCard({
   };
 
   return (
-    <div className="group relative block w-full overflow-hidden rounded-xl bg-gradient-to-b from-gray-900/90 to-gray-950 shadow-lg ring-1 ring-gray-800/10 transition-all duration-300 hover:ring-purple-500/20 hover:ring-2 hover:shadow-purple-500/10">
+    <div className="group relative overflow-hidden rounded-xl bg-gradient-to-b from-gray-900/90 to-gray-950 shadow-lg ring-1 ring-gray-800/10 transition-all duration-300 hover:ring-purple-500/20 hover:ring-2 hover:shadow-purple-500/10 min-h-[360px] flex flex-col">
       <div className="absolute top-2 right-2 z-10">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
               variant="ghost"
-              size="icon"
-              className="bg-gray-900/80 hover:bg-gray-900 opacity-0 group-hover:opacity-100 transition-opacity"
+              size="sm"
+              className="h-8 w-8 p-0 bg-black/50 hover:bg-black/70 text-white opacity-0 group-hover:opacity-100 transition-opacity"
             >
-              <MoreVertical className="w-4 h-4" />
+              <MoreVertical className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
@@ -82,26 +81,22 @@ function LibraryGameCard({
               Mark as Completed
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => onStatusChange("want_to_play")}>
-              Mark as Want to Play
+              Add to Wishlist
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => onStatusChange("dropped")}>
               Mark as Dropped
             </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              className="text-red-500 focus:text-red-500"
-              onClick={onRemove}
-            >
-              <Trash2 className="w-4 h-4 mr-2" />
+            <DropdownMenuItem onClick={onRemove} className="text-red-600">
+              <Trash2 className="mr-2 h-4 w-4" />
               Remove from Library
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
 
-      <Link href={`/game/${game.id}`} className="block">
+      <Link href={`/game/${game.id}`} className="block flex-grow">
         <div className="relative flex flex-col h-full">
-          <div className="relative aspect-[3/4] w-full overflow-hidden">
+          <div className="relative aspect-[3/4] w-full overflow-hidden flex-shrink-0">
             <Image
               src={coverUrl}
               alt={`Cover image for ${game.name}`}
@@ -120,7 +115,7 @@ function LibraryGameCard({
             <div className="absolute inset-0 bg-gradient-to-t from-gray-950 via-gray-950/50 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-90" />
           </div>
 
-          <div className="absolute bottom-0 left-0 right-0 p-4 transition-transform duration-300">
+          <div className="absolute bottom-0 left-0 right-0 p-4 transition-transform duration-300 flex-grow flex flex-col justify-end">
             <div className="mb-2">
               <span className="inline-block px-2 py-1 text-xs font-medium rounded-full bg-purple-500/20 text-purple-300">
                 {formatStatus(status)}
@@ -130,9 +125,13 @@ function LibraryGameCard({
               {game.name}
             </h3>
             <div className="flex items-center justify-between">
-              {"first_release_date" in game && game.first_release_date && (
+              {getValidYear(game.first_release_date) ? (
                 <p className="text-sm text-gray-200 group-hover:text-white transition-colors duration-300">
-                  {new Date(game.first_release_date * 1000).getFullYear()}
+                  {getValidYear(game.first_release_date)}
+                </p>
+              ) : (
+                <p className="text-sm text-gray-500 group-hover:text-gray-400 transition-colors duration-300">
+                  TBA
                 </p>
               )}
               <div className="flex items-center gap-2 text-sm text-gray-200 group-hover:text-white transition-colors duration-300">
@@ -149,6 +148,22 @@ function LibraryGameCard({
       </Link>
     </div>
   );
+}
+
+interface GameMutationHandlers {
+  updateGameStatus: {
+    mutate: (params: { gameId: string; status: GameStatus }) => void;
+  };
+  removeFromLibrary: {
+    mutate: (gameId: string) => void;
+  };
+  updateReview: {
+    mutate: (params: {
+      gameId: string;
+      review: string;
+      rating: number;
+    }) => void;
+  };
 }
 
 interface GamesListProps {

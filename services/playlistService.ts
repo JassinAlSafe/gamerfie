@@ -1,6 +1,6 @@
 import { createClient } from "@/utils/supabase/client";
 import { Playlist, CreatePlaylistInput, UpdatePlaylistInput, PlaylistType } from '@/types/playlist';
-import { RAWGService } from './rawgService';
+import { UnifiedGameService } from './unifiedGameService';
 import { useAuthStore } from '@/stores/useAuthStore';
 
 interface DatabasePlaylistGame {
@@ -163,15 +163,30 @@ export class PlaylistService {
     if (error) throw error;
     if (!playlist) return null;
 
-    // Fetch games data from RAWG
+    // Fetch games data using unified service for better covers and metadata
     const gameIds = (playlist as DatabasePlaylist).playlist_games.map((pg: DatabasePlaylistGame) => pg.game_id);
     const games = await Promise.all(
-      gameIds.map((id: string) => RAWGService.getGameDetails(id))
+      gameIds.map(async (id: string) => {
+        try {
+          const game = await UnifiedGameService.getGameDetails(id);
+          if (game) {
+            // Preserve the original ID for playlist games to maintain correct routing
+            return { ...game, id };
+          }
+          return null;
+        } catch (error) {
+          console.warn(`Failed to fetch game details for ID ${id}:`, error);
+          return null;
+        }
+      })
     );
+
+    // Filter out null results
+    const validGames = games.filter((game): game is NonNullable<typeof game> => game !== null);
 
     return {
       ...this.mapDatabasePlaylist(playlist as DatabasePlaylist),
-      games: games.sort((a, b) => {
+      games: validGames.sort((a, b) => {
         const aOrder = (playlist as DatabasePlaylist).playlist_games.find((pg: DatabasePlaylistGame) => pg.game_id === a.id)?.display_order ?? 0;
         const bOrder = (playlist as DatabasePlaylist).playlist_games.find((pg: DatabasePlaylistGame) => pg.game_id === b.id)?.display_order ?? 0;
         return aOrder - bOrder;
@@ -205,12 +220,27 @@ export class PlaylistService {
       playlists.map(async (playlist: DatabasePlaylist) => {
         const gameIds = playlist.playlist_games.map((pg: DatabasePlaylistGame) => pg.game_id);
         const games = await Promise.all(
-          gameIds.map((id: string) => RAWGService.getGameDetails(id))
+          gameIds.map(async (id: string) => {
+            try {
+              const game = await UnifiedGameService.getGameDetails(id);
+              if (game) {
+                // Preserve the original ID for playlist games to maintain correct routing
+                return { ...game, id };
+              }
+              return null;
+            } catch (error) {
+              console.warn(`Failed to fetch game details for ID ${id}:`, error);
+              return null;
+            }
+          })
         );
+
+        // Filter out null results
+        const validGames = games.filter((game): game is NonNullable<typeof game> => game !== null);
 
         return {
           ...this.mapDatabasePlaylist(playlist),
-          games: games.sort((a, b) => {
+          games: validGames.sort((a, b) => {
             const aOrder = playlist.playlist_games.find((pg: DatabasePlaylistGame) => pg.game_id === a.id)?.display_order ?? 0;
             const bOrder = playlist.playlist_games.find((pg: DatabasePlaylistGame) => pg.game_id === b.id)?.display_order ?? 0;
             return aOrder - bOrder;

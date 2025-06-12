@@ -34,8 +34,16 @@ export const authConfig = {
     Google({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+      authorization: {
+        params: {
+          redirect_uri: process.env.NODE_ENV === 'development' 
+            ? 'http://localhost:3000/api/auth/callback/google'
+            : undefined
+        }
+      }
     }),
   ],
+  trustHost: true,
   pages: {
     signIn: '/signin',
   },
@@ -43,6 +51,17 @@ export const authConfig = {
     authorized({ auth, request: { nextUrl } }) {
       const isLoggedIn = !!auth?.user
       const isOnDashboard = nextUrl.pathname.startsWith('/home')
+      
+      // Debug logging in development
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Auth Debug:', {
+          pathname: nextUrl.pathname,
+          host: nextUrl.host,
+          isLoggedIn,
+          isOnDashboard
+        })
+      }
+      
       if (isOnDashboard) {
         if (isLoggedIn) return true
         return false

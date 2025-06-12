@@ -7,7 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "analyze": "ANALYZE=true next build",
+    "analyze:bundle": "npm run analyze && echo '\\n📊 Bundle analysis complete! Check the browser for visualization.'"
   },
   "dependencies": {
     "@auth/supabase-adapter": "^1.7.4",
@@ -85,6 +87,7 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.1",
     "@eslint/js": "^9.28.0",
+    "@next/bundle-analyzer": "^15.3.3",
     "@types/cookie": "^0.6.0",
     "@types/lodash": "^4.17.13",
     "@types/node": "^20",
@@ -96,6 +99,7 @@
     "eslint": "^8.57.1",
     "eslint-config-next": "^14.2.8",
     "eslint-plugin-unused-imports": "^4.1.4",
+    "next-compose-plugins": "^2.2.1",
     "postcss": "^8",
     "tailwind-scrollbar": "^3.1.0",
     "tailwindcss": "^3.4.1",

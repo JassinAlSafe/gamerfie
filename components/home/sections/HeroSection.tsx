@@ -15,9 +15,9 @@ interface HeroSectionProps {
 
 export function HeroSection({ stats }: HeroSectionProps) {
   return (
-    <section className="min-h-screen flex flex-col justify-center items-center text-center py-16 lg:py-20 relative">
-      {/* Floating Elements */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+    <section className="min-h-screen flex flex-col justify-center items-center text-center py-8 sm:py-12 lg:py-16 xl:py-20 relative px-4 sm:px-6">
+      {/* Floating Elements - Hidden on mobile for better performance */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none hidden sm:block">
         {[
           { icon: "🎮", top: "20%", left: "10%", delay: 0, duration: 6 },
           { icon: "🔥", top: "30%", right: "15%", delay: 1, duration: 8 },
@@ -28,7 +28,7 @@ export function HeroSection({ stats }: HeroSectionProps) {
         ].map((item, index) => (
           <motion.div
             key={index}
-            className="absolute text-2xl opacity-30"
+            className="absolute text-xl lg:text-2xl opacity-30"
             style={{
               top: item.top,
               left: item.left,
@@ -62,14 +62,14 @@ export function HeroSection({ stats }: HeroSectionProps) {
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.8, delay: 0.2 }}
         >
-          <Badge variant="outline" className="border-purple-500/50 text-purple-300 px-6 py-3 bg-black/20 backdrop-blur-sm hover:border-purple-400/70 hover:bg-purple-500/10 transition-all duration-300 cursor-default">
-            <span className="mr-2 text-lg">🎮</span>
+          <Badge variant="outline" className="border-purple-500/50 text-purple-300 px-4 py-2 sm:px-6 sm:py-3 bg-black/20 backdrop-blur-sm hover:border-purple-400/70 hover:bg-purple-500/10 transition-all duration-300 cursor-default text-sm sm:text-base">
+            <span className="mr-2 text-base sm:text-lg">🎮</span>
             <span className="font-medium tracking-wide">The Ultimate Gaming Platform</span>
           </Badge>
         </motion.div>
         
         <motion.h1 
-          className="text-5xl md:text-7xl lg:text-8xl font-bold"
+          className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-bold leading-tight"
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1, delay: 0.3 }}
@@ -98,14 +98,14 @@ export function HeroSection({ stats }: HeroSectionProps) {
         </motion.h1>
 
         <motion.div 
-          className="max-w-2xl mx-auto"
+          className="max-w-2xl mx-auto px-4"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.6 }}
         >
           <TextGenerateEffect
             words="Your ultimate gaming companion. Track your progress, connect with fellow gamers, and unlock achievements across your entire gaming library."
-            className="text-gray-300 text-lg md:text-xl leading-relaxed"
+            className="text-gray-300 text-base sm:text-lg md:text-xl leading-relaxed"
           />
         </motion.div>
 

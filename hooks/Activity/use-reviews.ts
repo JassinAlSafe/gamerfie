@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { createClient } from "@/utils/supabase/client";
 import type { Review } from "@/types/review";
 import toast from "react-hot-toast";
+import { UnifiedGameService } from '@/services/unifiedGameService';
 
 export function useReviews() {
   const [reviews, setReviews] = useState<Review[]>([]);
@@ -22,26 +23,17 @@ export function useReviews() {
 
       if (reviewsError) throw reviewsError;
 
-      // Fetch game details for each review
+      // Fetch game details for each review using UnifiedGameService
       const reviewsWithDetails = await Promise.all(
         reviews.map(async (review) => {
           try {
-            const response = await fetch("/api/games/details", {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({ gameId: review.game_id }),
-            });
-
-            if (!response.ok) throw new Error("Failed to fetch game details");
-
-            const gameData = await response.json();
+            const gameData = await UnifiedGameService.getGameDetails(review.game_id.toString());
+            
             return {
               ...review,
               game_details: {
-                name: gameData[0].name,
-                cover: gameData[0].cover,
+                name: gameData?.name || `Game ${review.game_id}`,
+                cover: gameData?.cover,
               },
             };
           } catch (error) {

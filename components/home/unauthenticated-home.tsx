@@ -34,8 +34,8 @@ export function UnauthenticatedHome() {
 
       {/* Content */}
       <div className="relative z-10">
-        <TracingBeam className="px-6">
-          <div className="max-w-7xl mx-auto">
+        <TracingBeam className="px-4 sm:px-6">
+          <div className="max-w-7xl mx-auto space-y-8 sm:space-y-12 lg:space-y-16">
             <HeroSection stats={typedHomeData.stats} />
             <GameShowcase />
             <TestimonialsSection />

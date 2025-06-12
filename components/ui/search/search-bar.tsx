@@ -42,7 +42,7 @@ export function SearchBar() {
                   key={game.id}
                   value={game.name || game.title || ""}
                   onSelect={() => {
-                    router.push(`/games/${game.id}`);
+                    router.push(`/game/${game.id}`);
                     setIsOpen(false);
                     reset();
                   }}

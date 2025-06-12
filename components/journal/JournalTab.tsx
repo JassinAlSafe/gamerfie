@@ -1,9 +1,14 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, lazy, Suspense } from "react";
 import { useJournalStore } from "@/stores/useJournalStore";
 import { NewEntryButton } from "./NewEntryButton";
-import { JournalEntryDialog } from "./JournalEntryDialog";
+// Dynamic import for the modal dialog
+const JournalEntryDialog = lazy(() =>
+  import("./JournalEntryDialog").then((module) => ({
+    default: module.JournalEntryDialog,
+  }))
+);
 import { FilterDropdown } from "./FilterDropdown";
 import { TimelineView } from "./TimelineView";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -369,11 +374,13 @@ export function JournalTab() {
         </TabsContent>
       </Tabs>
 
-      <JournalEntryDialog
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        initialType={activeTab === "all" ? undefined : (activeTab as any)}
-      />
+      <Suspense fallback={<div>Loading...</div>}>
+        <JournalEntryDialog
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          initialType={activeTab === "all" ? undefined : (activeTab as any)}
+        />
+      </Suspense>
     </div>
   );
 }

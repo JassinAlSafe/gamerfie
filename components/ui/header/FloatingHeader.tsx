@@ -15,28 +15,46 @@ export default function FloatingHeader() {
   const { initialize, isInitialized, checkUser } = useAuthStore();
   const { isMobileMenuOpen, toggleMobileMenu } = useUIStore();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [hasInitialized, setHasInitialized] = useState(false);
 
-  // Initialize auth state
+  // Initialize auth state once
   useEffect(() => {
     const initAuth = async () => {
-      if (!isInitialized) {
-        await initialize();
+      if (!hasInitialized && !isInitialized) {
+        try {
+          await initialize();
+          // Only check user after successful initialization
+          await checkUser();
+        } catch (error) {
+          // Silently fail initialization - user might not be logged in
+          console.debug(
+            "Auth initialization failed (user might not be logged in):",
+            error
+          );
+        } finally {
+          setHasInitialized(true);
+        }
       }
-      // Check user state after initialization
-      await checkUser();
     };
 
     initAuth();
-  }, [initialize, isInitialized, checkUser]);
+  }, [initialize, isInitialized, checkUser, hasInitialized]);
 
-  // Refresh user state periodically
+  // Refresh user state periodically only if initialized
   useEffect(() => {
-    const interval = setInterval(() => {
-      checkUser();
-    }, 60000); // Check every minute
+    if (!hasInitialized) return;
+
+    const interval = setInterval(async () => {
+      try {
+        await checkUser();
+      } catch (error) {
+        // Silently handle periodic check failures
+        console.debug("Periodic auth check failed:", error);
+      }
+    }, 5 * 60 * 1000); // Check every 5 minutes instead of 1 minute
 
     return () => clearInterval(interval);
-  }, [checkUser]);
+  }, [checkUser, hasInitialized]);
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => {

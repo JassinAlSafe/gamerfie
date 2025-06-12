@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, memo } from "react";
+import React, { useState, memo } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Star, Users, Flame } from "lucide-react";
+import { Star, Users, Clock } from "lucide-react";
 import { Game } from "@/types";
 import { getCoverImageUrl } from "@/utils/image-utils";
+import { getValidYear } from "@/utils/format-utils";
 
 // Define CategoryOption locally to avoid import issues
 type CategoryOption =
@@ -20,13 +21,15 @@ interface GameCardProps {
   game: Game;
   index?: number;
   category?: CategoryOption;
+  priority?: boolean;
 }
 
 export const GameCard = memo(function GameCard({
   game,
-  category = "popular",
+  index: _index,
+  category: _category,
   priority = false,
-}: Omit<GameCardProps, "inView"> & { priority?: boolean }) {
+}: GameCardProps) {
   const [isLoading, setLoading] = useState(true);
   const [imageError, setImageError] = useState(false);
 
@@ -51,61 +54,50 @@ export const GameCard = memo(function GameCard({
   })();
 
   const renderMetrics = () => {
-    if (category === "upcoming") {
-      const hypeCount =
-        (game as any).follows_count || (game as any).hype_count || 0;
-      return (
-        <div className="flex items-center gap-2 text-sm text-gray-200">
-          <Flame className="w-4 h-4 text-purple-400" aria-hidden="true" />
-          <span>
-            {hypeCount > 1000
-              ? `${(hypeCount / 1000).toFixed(1)}k Anticipated`
-              : hypeCount > 0
-              ? `${hypeCount} Anticipated`
-              : "Coming Soon"}
+    const metrics = [];
+
+    if (game.rating && game.rating > 0) {
+      metrics.push(
+        <div key="rating" className="flex items-center gap-1 text-yellow-400">
+          <Star className="w-3 h-3 fill-yellow-400" />
+          <span className="text-xs font-medium">{game.rating.toFixed(1)}</span>
+        </div>
+      );
+    }
+
+    if ((game as any).total_rating_count) {
+      metrics.push(
+        <div key="votes" className="flex items-center gap-1 text-gray-400">
+          <Users className="w-3 h-3" />
+          <span className="text-xs">
+            {(game as any).total_rating_count > 1000
+              ? `${((game as any).total_rating_count / 1000).toFixed(1)}k`
+              : (game as any).total_rating_count}
           </span>
         </div>
       );
     }
 
-    // For trending and popular games
-    const rating = (game as any).total_rating || game.rating;
-    const ratingCount =
-      (game as any).total_rating_count || (game as any).rating_count;
+    if ((game as any).playTime) {
+      metrics.push(
+        <div key="playtime" className="flex items-center gap-1 text-blue-400">
+          <Clock className="w-3 h-3" />
+          <span className="text-xs">{(game as any).playTime}h</span>
+        </div>
+      );
+    }
 
-    return (
-      <div className="flex items-center gap-2 text-sm text-gray-200">
-        {rating ? (
-          <>
-            <Star
-              className="w-4 h-4 text-yellow-500 fill-yellow-500"
-              aria-hidden="true"
-            />
-            <span>{Math.round(rating)}</span>
-            {ratingCount && (
-              <div className="flex items-center gap-1 ml-2">
-                <Users className="w-4 h-4 text-blue-500" aria-hidden="true" />
-                <span>
-                  {ratingCount > 1000
-                    ? `${(ratingCount / 1000).toFixed(1)}k`
-                    : ratingCount}
-                </span>
-              </div>
-            )}
-          </>
-        ) : null}
-      </div>
-    );
+    return <div className="flex items-center gap-2">{metrics.slice(0, 2)}</div>;
   };
 
   return (
     <Link
       href={`/game/${game.id}`}
-      className="group isolate block w-full overflow-hidden rounded-xl bg-gradient-to-b from-gray-900/90 to-gray-950 shadow-lg ring-1 ring-gray-800/10 transition-all duration-300 hover:ring-purple-500/20 hover:ring-2 hover:shadow-purple-500/10 focus:outline-none focus:ring-2 focus:ring-purple-500/50"
+      className="group isolate block w-full overflow-hidden rounded-xl bg-gradient-to-b from-gray-900/90 to-gray-950 shadow-lg ring-1 ring-gray-800/10 transition-all duration-300 hover:ring-purple-500/20 hover:ring-2 hover:shadow-purple-500/10 focus:outline-none focus:ring-2 focus:ring-purple-500/50 min-h-[320px] flex flex-col"
       aria-label={`View details for ${game.name}`}
     >
       <div className="relative flex flex-col h-full">
-        <div className="relative aspect-[3/4] w-full overflow-hidden">
+        <div className="relative aspect-[3/4] w-full overflow-hidden flex-shrink-0">
           <Image
             src={coverUrl}
             alt={`Cover image for ${game.name}`}
@@ -125,14 +117,18 @@ export const GameCard = memo(function GameCard({
           <div className="absolute inset-0 bg-gradient-to-t from-gray-950 via-gray-950/50 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-90" />
         </div>
 
-        <div className="absolute bottom-0 left-0 right-0 p-4 transition-transform duration-300">
+        <div className="absolute bottom-0 left-0 right-0 p-4 transition-transform duration-300 flex-grow flex flex-col justify-end">
           <h3 className="font-semibold text-white truncate mb-2 text-lg group-hover:text-purple-300 transition-colors duration-300">
             {game.name}
           </h3>
           <div className="flex items-center justify-between">
-            {"first_release_date" in game && game.first_release_date && (
+            {getValidYear(game.first_release_date) ? (
               <p className="text-sm text-gray-200 group-hover:text-white transition-colors duration-300">
-                {new Date(game.first_release_date * 1000).getFullYear()}
+                {getValidYear(game.first_release_date)}
+              </p>
+            ) : (
+              <p className="text-sm text-gray-500 group-hover:text-gray-400 transition-colors duration-300">
+                TBA
               </p>
             )}
             <div className="group-hover:text-white transition-colors duration-300">

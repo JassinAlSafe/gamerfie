@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { Game } from "@/types";
 import { useState, memo } from "react";
+import { getValidYear } from "@/utils/format-utils";
 
 // Add interface for RAWG API game properties that aren't in our Game type
 interface RAWGGameProperties {
@@ -79,14 +80,21 @@ export const ListViewGameCard = memo(function ListViewGameCard({
           )}
 
           {/* First release date - IGDB format */}
-          {game.first_release_date && (
+          {getValidYear(game.first_release_date) && (
             <div className="flex items-center gap-1">
               <Calendar className="h-3 w-3" aria-hidden="true" />
-              <span>
-                {new Date(game.first_release_date * 1000).getFullYear()}
-              </span>
+              <span>{getValidYear(game.first_release_date)}</span>
             </div>
           )}
+
+          {/* Show TBA if no valid date */}
+          {!("released" in game && game.released) &&
+            !getValidYear(game.first_release_date) && (
+              <div className="flex items-center gap-1 text-gray-500">
+                <Calendar className="h-3 w-3" aria-hidden="true" />
+                <span>TBA</span>
+              </div>
+            )}
 
           {/* Rating */}
           {game.rating && game.rating > 0 && (
