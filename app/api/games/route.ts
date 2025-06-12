@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { UnifiedGameService } from '@/services/unifiedGameService';
 
+// Force dynamic rendering due to search params
+export const dynamic = 'force-dynamic';
+
 export type GameCategory = 'all' | 'recent' | 'upcoming' | 'popular' | 'trending' | 'classic' | 'indie' | 'anticipated';
 export type GameSortOption = 'popularity' | 'rating' | 'name' | 'release';
 
@@ -105,38 +108,36 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Handle category-specific requests using UnifiedGameService
+    // Handle category-specific requests using UnifiedGameService with proper pagination
     let games = [];
-    let totalCount = 0;
+    let totalCount = 1000; // Set high limit for infinite scroll
+    
+    // Calculate how many games to fetch based on page and limit
+    const totalToFetch = page * limit;
     
     if (category === 'popular' || !category) {
-      games = await UnifiedGameService.getPopularGames(limit, 'auto');
-      totalCount = games.length; // Popular games don't have pagination
+      games = await UnifiedGameService.getPopularGames(totalToFetch, 'auto');
     } else if (category === 'trending') {
-      games = await UnifiedGameService.getTrendingGames(limit, 'auto');
-      totalCount = games.length; // Trending games don't have pagination
+      games = await UnifiedGameService.getTrendingGames(totalToFetch, 'auto');
     } else if (category === 'upcoming') {
-      games = await UnifiedGameService.getUpcomingGames(limit, 'auto');
-      totalCount = games.length; // Upcoming games don't have pagination
+      games = await UnifiedGameService.getUpcomingGames(totalToFetch, 'auto');
     } else {
       // For other categories, fall back to popular games
       console.log(`Category "${category}" not implemented, falling back to popular games`);
-      games = await UnifiedGameService.getPopularGames(limit, 'auto');
-      totalCount = games.length;
+      games = await UnifiedGameService.getPopularGames(totalToFetch, 'auto');
     }
 
-    // For simple category requests, we'll simulate pagination
-    // Since UnifiedGameService methods don't support complex filtering yet
+    // Return only the current page's games for efficient loading
     const startIndex = (page - 1) * limit;
     const endIndex = startIndex + limit;
     const paginatedGames = games.slice(startIndex, endIndex);
     
     const response = {
       games: paginatedGames,
-      totalCount,
+      totalCount: Math.max(totalCount, games.length), // Ensure we show there are more games
       currentPage: page,
       totalPages: Math.ceil(totalCount / limit),
-      hasNextPage: endIndex < totalCount,
+      hasNextPage: games.length >= totalToFetch, // Has more if we got the full requested amount
       hasPreviousPage: page > 1,
     };
 

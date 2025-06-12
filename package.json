@@ -55,6 +55,7 @@
     "cmdk": "^1.0.4",
     "cobe": "^0.6.3",
     "cookie": "^1.0.2",
+    "critters": "^0.0.23",
     "date-fns": "^3.6.0",
     "embla-carousel-react": "^8.3.0",
     "framer-motion": "^11.14.4",

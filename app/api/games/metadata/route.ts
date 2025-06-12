@@ -1,6 +1,9 @@
 import { IGDBService } from '@/services/igdb';
 import { NextResponse } from 'next/server';
 
+// Force dynamic rendering due to external API calls
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   try {
     // Fetch platforms and genres from IGDB

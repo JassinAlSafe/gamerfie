@@ -1,6 +1,5 @@
 import { Game } from "@/types";
 import { IGDBResponse, IGDBGame } from "@/types/igdb-types";
-import { cache } from 'react';
 import { IGDB_IMAGE_SIZES } from '@/utils/image-utils';
 
 interface GameFilters {
@@ -64,7 +63,7 @@ export class IGDBService {
       : '/api/igdb-proxy';
   }
 
-  private static getIGDBToken = cache(async () => {
+  private static async getIGDBToken(): Promise<string> {
     try {
       // Return cached token if still valid (with 5 minute buffer)
       if (this.cachedToken && this.tokenExpiry && Date.now() < this.tokenExpiry - 5 * 60 * 1000) {
@@ -127,7 +126,7 @@ export class IGDBService {
       console.error('Error getting IGDB token:', error);
       throw error;
     }
-  });
+  }
 
   static async getHeaders() {
     try {
