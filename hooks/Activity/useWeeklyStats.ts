@@ -46,7 +46,7 @@ export function useWeeklyStats(userId?: string) {
       // Get current week's gaming activity
       const { data: currentWeekGames, error: currentWeekError } = await supabase
         .from('user_games')
-        .select('playtime_minutes, updated_at, game_id')
+        .select('play_time, updated_at, game_id')
         .eq('user_id', userId)
         .gte('updated_at', oneWeekAgo.toISOString());
 
@@ -59,7 +59,7 @@ export function useWeeklyStats(userId?: string) {
       // Get previous week's gaming activity for comparison
       const { data: previousWeekGames, error: previousWeekError } = await supabase
         .from('user_games')
-        .select('playtime_minutes, updated_at, game_id')
+        .select('play_time, updated_at, game_id')
         .eq('user_id', userId)
         .gte('updated_at', twoWeeksAgo.toISOString())
         .lt('updated_at', oneWeekAgo.toISOString());
@@ -100,8 +100,8 @@ export function useWeeklyStats(userId?: string) {
 
       const currentWeekPlaytime = Math.round(
         (currentWeekGames || []).reduce((total, game) => 
-          total + (game.playtime_minutes || 0), 0
-        ) / 60
+          total + (game.play_time || 0), 0
+        )
       );
 
       const currentWeekFriendsCount = (currentWeekFriends || []).length;
@@ -113,8 +113,8 @@ export function useWeeklyStats(userId?: string) {
 
       const previousWeekPlaytime = Math.round(
         (previousWeekGames || []).reduce((total, game) => 
-          total + (game.playtime_minutes || 0), 0
-        ) / 60
+          total + (game.play_time || 0), 0
+        )
       );
 
       const previousWeekFriendsCount = (previousWeekFriends || []).length;

@@ -11,6 +11,7 @@ interface ShellProps {
     | "xl"
     | "2xl"
     | "3xl"
+    | "6xl"
     | "full"
     | "7xl"
     | "8xl"
@@ -24,7 +25,12 @@ const maxWidthClasses = {
   lg: "max-w-6xl",
   xl: "max-w-7xl",
   "2xl": "max-w-[1400px]",
+  "3xl": "max-w-[1600px]",
+  "6xl": "max-w-[1800px]",
   full: "max-w-full",
+  "7xl": "max-w-[2000px]",
+  "8xl": "max-w-[2200px]",
+  "9xl": "max-w-[2400px]",
 };
 
 const paddingClasses = {

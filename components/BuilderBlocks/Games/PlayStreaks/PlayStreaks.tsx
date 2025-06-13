@@ -1,37 +1,52 @@
 "use client";
 
-import { memo, useEffect, useState } from "react";
+import { memo, useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Flame, Zap, Calendar, Target, TrendingUp, Award } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface PlayStreaksProps {
-  currentStreak: number;
-  longestStreak: number;
-  weeklyGoal: number;
-  weeklyProgress: number;
-  dailyActivity: boolean[];
-  lastPlayedDays: number;
+  currentStreak?: number;
+  longestStreak?: number;
+  weeklyGoal?: number;
+  weeklyProgress?: number;
+  dailyActivity?: boolean[];
+  lastPlayedDays?: number;
   className?: string;
 }
 
 export const PlayStreaks = memo(function PlayStreaks({
-  currentStreak,
-  longestStreak,
-  weeklyGoal,
-  weeklyProgress,
-  dailyActivity,
-  _lastPlayedDays,
+  currentStreak = 5,
+  longestStreak = 14,
+  weeklyGoal = 7,
+  weeklyProgress = 4,
+  dailyActivity = [true, true, false, true, true, false, true],
+  lastPlayedDays: _lastPlayedDays = 0,
   className
 }: PlayStreaksProps) {
   const [mounted, setMounted] = useState(false);
   const [showStreak, setShowStreak] = useState(false);
+  const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setMounted(true);
     const timer = setTimeout(() => setShowStreak(true), 500);
     return () => clearTimeout(timer);
   }, []);
+
+  useEffect(() => {
+    const updateSize = () => {
+      if (containerRef.current) {
+        const rect = containerRef.current.getBoundingClientRect();
+        setContainerSize({ width: rect.width, height: rect.height });
+      }
+    };
+
+    updateSize();
+    window.addEventListener('resize', updateSize);
+    return () => window.removeEventListener('resize', updateSize);
+  }, [mounted]);
 
   if (!mounted) {
     return <PlayStreaksSkeleton className={className} />;
@@ -43,10 +58,12 @@ export const PlayStreaks = memo(function PlayStreaks({
   const isHotStreak = currentStreak >= 7;
 
   return (
-    <div className={cn(
-      "relative p-6 rounded-2xl border border-border/30 bg-gradient-to-br from-card/50 to-card/80 backdrop-blur-sm group hover:shadow-lg transition-all duration-300",
-      className
-    )}>
+    <div 
+      ref={containerRef}
+      className={cn(
+        "relative p-4 rounded-2xl border border-border/30 bg-gradient-to-br from-card/50 to-card/80 backdrop-blur-sm group hover:shadow-lg transition-all duration-300 h-full flex flex-col",
+        className
+      )}>
       {/* Background Effects */}
       <div className="absolute inset-0 bg-gradient-to-br from-orange-500/5 via-transparent to-red-500/5 rounded-2xl" />
       {isHotStreak && (
@@ -54,7 +71,7 @@ export const PlayStreaks = memo(function PlayStreaks({
       )}
 
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-4 flex-shrink-0">
         <div className="flex items-center gap-3">
           <motion.div
             animate={isHotStreak ? { scale: [1, 1.1, 1] } : {}}
@@ -118,7 +135,7 @@ export const PlayStreaks = memo(function PlayStreaks({
       </div>
 
       {/* Activity Heatmap */}
-      <div className="mb-6">
+      <div className="mb-4 flex-shrink-0">
         <div className="flex items-center justify-between mb-3">
           <h4 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
             <Calendar className="h-4 w-4" />
@@ -159,7 +176,7 @@ export const PlayStreaks = memo(function PlayStreaks({
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-2 gap-4 mb-4">
+      <div className="grid grid-cols-2 gap-3 mb-3 flex-shrink-0">
         <StatItem
           icon={<Award className="h-4 w-4" />}
           label="Best Streak"
@@ -177,7 +194,7 @@ export const PlayStreaks = memo(function PlayStreaks({
       </div>
 
       {/* Streak Progress */}
-      <div className="space-y-2">
+      <div className="space-y-2 flex-shrink-0">
         <div className="flex items-center justify-between text-xs text-muted-foreground">
           <span>Streak Progress</span>
           <span>{currentStreak}/30 days</span>
@@ -201,7 +218,7 @@ export const PlayStreaks = memo(function PlayStreaks({
       </div>
 
       {/* Milestone Indicators */}
-      <div className="flex items-center justify-center gap-1 mt-4 pt-4 border-t border-border/30">
+      <div className="flex items-center justify-center gap-1 mt-3 pt-3 border-t border-border/30 flex-shrink-0">
         {[3, 7, 14, 21, 30].map((milestone) => (
           <motion.div
             key={milestone}
@@ -221,12 +238,12 @@ export const PlayStreaks = memo(function PlayStreaks({
 
       {/* Motivational Message */}
       <AnimatePresence>
-        {isHotStreak && (
+        {isHotStreak && containerSize.height > 300 && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            className="mt-3 p-2 rounded-lg bg-gradient-to-r from-orange-500/10 to-red-500/10 border border-orange-500/20"
+            className="mt-2 p-2 rounded-lg bg-gradient-to-r from-orange-500/10 to-red-500/10 border border-orange-500/20 flex-shrink-0"
           >
             <div className="flex items-center gap-2 text-xs">
               <TrendingUp className="h-3 w-3 text-orange-500" />

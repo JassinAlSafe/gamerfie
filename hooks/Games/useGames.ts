@@ -5,7 +5,7 @@ import { useGameDetails } from "@/hooks/Games/use-game-details";
 import { useDebounce } from "@/hooks/Settings/useDebounce";
 import { Game } from "@/types";
 
-const ITEMS_PER_PAGE = 48;
+const ITEMS_PER_PAGE = 24;
 const STALE_TIME = 1000 * 60 * 5; // 5 minutes
 
 interface GameResponse {
@@ -45,18 +45,29 @@ export function useGamesInfinite() {
         timeRange: store.timeRange || 'all'
       });
 
-      const response = await fetch(`/api/games?${params.toString()}`);
+      const response = await fetch(`/api/games?${params.toString()}`, {
+        // Add headers for faster response
+        headers: {
+          'Accept': 'application/json',
+          'Cache-Control': 'public, max-age=60', // Cache for 1 minute
+        }
+      });
       if (!response.ok) throw new Error("Failed to fetch games");
       const data = await response.json();
       
       return {
         ...data,
-        hasMore: data.currentPage < data.totalPages
+        hasMore: data.hasNextPage || data.currentPage < data.totalPages
       };
     },
     getNextPageParam: (lastPage) => lastPage.hasMore ? lastPage.currentPage + 1 : undefined,
     initialPageParam: 1,
     staleTime: STALE_TIME,
+    gcTime: STALE_TIME * 2, // Keep in cache longer
+    refetchOnWindowFocus: false, // Don't refetch on window focus for better performance
+    retry: 2, // Retry failed requests
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000), // Exponential backoff
+    maxPages: 20, // Limit max pages to prevent memory issues
   });
 
   return {

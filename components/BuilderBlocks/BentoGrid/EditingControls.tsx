@@ -8,7 +8,7 @@ import { toast } from "react-hot-toast";
 import { useState, useEffect } from "react";
 
 export function EditingControls() {
-  const { isEditing, setIsEditing, resetLayout } = useLayoutStore();
+  const { isEditing, setIsEditing, clearCachedLayouts } = useLayoutStore();
   const [showTooltip, setShowTooltip] = useState(false);
 
   // Show tooltip briefly when entering edit mode
@@ -36,7 +36,7 @@ export function EditingControls() {
 
   if (!isEditing) {
     return (
-      <div className="absolute bottom-4 right-4 z-50">
+      <div className="absolute bottom-4 left-4 z-50">
         <Button
           variant="outline"
           size="sm"
@@ -55,7 +55,7 @@ export function EditingControls() {
       {/* Floating tooltip for instructions */}
       <div
         className={cn(
-          "fixed bottom-20 right-4 z-50 max-w-xs p-3 rounded-lg bg-background/90 backdrop-blur-md border border-purple-500/20 shadow-lg transition-opacity duration-300",
+          "absolute bottom-16 left-4 z-50 max-w-xs p-3 rounded-lg bg-background/90 backdrop-blur-md border border-purple-500/20 shadow-lg transition-opacity duration-300",
           showTooltip ? "opacity-100" : "opacity-0 pointer-events-none"
         )}
       >
@@ -83,11 +83,21 @@ export function EditingControls() {
       </div>
 
       {/* Floating controls */}
-      <div className="fixed bottom-4 right-4 z-50 flex items-center gap-2">
+      <div className="absolute bottom-4 left-16 z-50 flex items-center gap-2">
         <Button
           variant="outline"
           size="sm"
-          onClick={() => resetLayout()}
+          onClick={() => {
+            clearCachedLayouts();
+            toast.success("Layout reset successfully", {
+              icon: "🔄",
+              style: {
+                background: "#1a1b1e",
+                color: "#fff",
+                border: "1px solid rgba(234, 179, 8, 0.1)",
+              },
+            });
+          }}
           className="rounded-full h-10 px-4 bg-background/80 backdrop-blur-sm border-yellow-500/20 hover:bg-yellow-500/10 shadow-md"
         >
           <RotateCcw className="h-4 w-4 mr-2 text-yellow-500" />

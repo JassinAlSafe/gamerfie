@@ -10,18 +10,8 @@ import { ProfileCard } from "./ProfileCard";
 import { WelcomeHeader } from "./WelcomeHeader";
 import { FloatingActions } from "./FloatingActions";
 import { BentoGrid } from "@/components/BuilderBlocks/BentoGrid/index";
-import { GameProgressRing } from "@/components/BuilderBlocks/Games/GameProgressRing/GameProgressRing";
-import { AchievementShowcase } from "@/components/BuilderBlocks/Games/AchievementShowcase/AchievementShowcase";
-import { PlayStreaks } from "@/components/BuilderBlocks/Games/PlayStreaks/PlayStreaks";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ErrorBoundary } from "@/components/error-boundary";
-import { Button } from "@/components/ui/button";
-import { TrendingUp, TrendingDown } from "lucide-react";
-import Link from "next/link";
-import { cn } from "@/lib/utils";
-import { useBadges } from "@/hooks/Profile/useBadges";
-import { usePlayStreaks } from "@/hooks/Activity/usePlayStreaks";
-import { useWeeklyStats } from "@/hooks/Activity/useWeeklyStats";
 
 interface AuthenticatedHomeProps {
   user: User;
@@ -34,9 +24,6 @@ const AuthenticatedHomeComponent = memo(function AuthenticatedHome({
   const { activities = [], isLoading: activitiesLoading } =
     useRecentActivities(5);
   const { stats, loading: statsLoading, fetchUserLibrary } = useLibraryStore();
-  const { badges, recentBadges, totalBadges, isLoading: badgesLoading } = useBadges(user?.id);
-  const { currentStreak, longestStreak, dailyActivity, lastPlayedDays, weeklyPlaytime, weeklyGamesPlayed: _weeklyGamesPlayed, isLoading: _streaksLoading } = usePlayStreaks(user?.id);
-  const { gamesPlayed, hoursPlayed, friendsAdded, gamesPlayedChange, hoursPlayedChange, friendsAddedChange, isGamesPlayedPositive, isHoursPlayedPositive, isFriendsAddedPositive, isLoading: _weeklyStatsLoading } = useWeeklyStats(user?.id);
 
   // Stable loading state management
   const [isInitialLoad, setIsInitialLoad] = useState(true);
@@ -54,7 +41,7 @@ const AuthenticatedHomeComponent = memo(function AuthenticatedHome({
 
   // Manage stable loading state to prevent flickering
   useEffect(() => {
-    const hasAnyData = !friendsLoading || !activitiesLoading || !statsLoading || !badgesLoading;
+    const hasAnyData = !friendsLoading || !activitiesLoading || !statsLoading;
 
     if (hasAnyData && isInitialLoad) {
       // Once any data starts loading, mark as having data
@@ -62,9 +49,9 @@ const AuthenticatedHomeComponent = memo(function AuthenticatedHome({
     }
 
     // Only hide loading after ALL critical data is loaded
-    if (!statsLoading && !badgesLoading && !isInitialLoad) {
+    if (!statsLoading && !isInitialLoad) {
       setIsInitialLoad(false);
-    } else if (!statsLoading && !badgesLoading && hasDataLoaded) {
+    } else if (!statsLoading && hasDataLoaded) {
       // Set a small delay to prevent flickering
       const timer = setTimeout(() => {
         setIsInitialLoad(false);
@@ -75,7 +62,6 @@ const AuthenticatedHomeComponent = memo(function AuthenticatedHome({
     friendsLoading,
     activitiesLoading,
     statsLoading,
-    badgesLoading,
     isInitialLoad,
     hasDataLoaded,
   ]);
@@ -123,15 +109,6 @@ const AuthenticatedHomeComponent = memo(function AuthenticatedHome({
     );
   }
 
-  // Transform badges data for the AchievementShowcase component
-  const achievementsData = badges.map(userBadge => ({
-    id: userBadge.badge.id,
-    name: userBadge.badge.name,
-    description: userBadge.badge.description,
-    rarity: userBadge.badge.rarity,
-    unlockedAt: new Date(userBadge.claimed_at),
-    isNew: userBadge.isNew || false
-  }));
 
   return (
     <Shell maxWidth="7xl" padding="md">
@@ -141,137 +118,42 @@ const AuthenticatedHomeComponent = memo(function AuthenticatedHome({
           <WelcomeHeader
             user={user}
             totalGames={profileStats.totalGames}
-            weeklyPlaytime={weeklyPlaytime}
-            currentStreak={currentStreak}
+            weeklyPlaytime={0}
+            currentStreak={0}
           />
         </section>
 
-        {/* Enhanced Dashboard Grid */}
+        {/* Main Dashboard - BentoGrid Only */}
         <section className="relative">
-          <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 md:gap-6">
-            {/* Left Column - Main Widgets */}
-            <div className="xl:col-span-2 space-y-4 md:space-y-6">
-              {/* Profile Card */}
-              <ProfileCard
-                user={user}
-                stats={profileStats}
-                friends={friends}
-                isLoading={statsLoading}
-              />
+          <div className="space-y-4 md:space-y-6">
+            {/* Profile Card */}
+            <ProfileCard
+              user={user}
+              stats={profileStats}
+              friends={friends}
+              isLoading={statsLoading}
+            />
 
-              {/* Quick Stats Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
-                <GameProgressRing
-                  completedGames={profileStats.completedGames}
-                  totalGames={profileStats.totalGames}
-                  totalPlaytime={weeklyPlaytime}
-                  weeklyGoal={10}
-                />
-                <PlayStreaks
-                  currentStreak={currentStreak}
-                  longestStreak={longestStreak}
-                  weeklyGoal={10}
-                  weeklyProgress={weeklyPlaytime}
-                  dailyActivity={dailyActivity}
-                  lastPlayedDays={lastPlayedDays}
-                />
-              </div>
-
-              {/* Main Dashboard */}
-              <div className="mb-4">
-                <h2 className="text-lg font-semibold text-foreground/90 flex items-center gap-2">
-                  <div className="h-5 w-1 bg-gradient-to-b from-purple-500 to-blue-500 rounded-full" />
-                  Your Gaming Dashboard
-                </h2>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Track your progress, connect with friends, and discover new games
-                </p>
-              </div>
-
-              <ErrorBoundary fallback={<BentoGridFallback />}>
-                <Suspense fallback={<BentoGridSkeleton />}>
-                  <BentoGridStable
-                    user={user}
-                    friends={recentFriends}
-                    activities={typedActivities}
-                  />
-                </Suspense>
-              </ErrorBoundary>
+            {/* Main Dashboard */}
+            <div className="mb-4">
+              <h2 className="text-lg font-semibold text-foreground/90 flex items-center gap-2">
+                <div className="h-5 w-1 bg-gradient-to-b from-purple-500 to-blue-500 rounded-full" />
+                Your Gaming Dashboard
+              </h2>
+              <p className="text-sm text-muted-foreground mt-1">
+                Track your progress, connect with friends, and discover new games
+              </p>
             </div>
 
-            {/* Right Column - Secondary Widgets */}
-            <div className="space-y-4 md:space-y-6">
-              <AchievementShowcase
-                achievements={achievementsData}
-                totalAchievements={totalBadges}
-                recentAchievements={recentBadges.map(userBadge => ({
-                  id: userBadge.badge.id,
-                  name: userBadge.badge.name,
-                  description: userBadge.badge.description,
-                  rarity: userBadge.badge.rarity,
-                  unlockedAt: new Date(userBadge.claimed_at),
-                  isNew: true
-                }))}
-              />
-
-              {/* Quick Actions Card */}
-              <div className="p-6 rounded-2xl border border-border/30 bg-gradient-to-br from-card/50 to-card/80 backdrop-blur-sm">
-                <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
-                  <div className="h-5 w-1 bg-gradient-to-b from-green-500 to-emerald-500 rounded-full" />
-                  Quick Actions
-                </h3>
-                <div className="space-y-3">
-                  <QuickActionButton
-                    icon="🎮"
-                    label="Add New Game"
-                    href="/profile/games"
-                  />
-                  <QuickActionButton
-                    icon="👥"
-                    label="Find Friends"
-                    href="/friends"
-                  />
-                  <QuickActionButton
-                    icon="🏆"
-                    label="View Achievements"
-                    href="/profile/badges"
-                  />
-                  <QuickActionButton
-                    icon="📝"
-                    label="Write Review"
-                    href="/profile/reviews"
-                  />
-                </div>
-              </div>
-
-              {/* Activity Summary */}
-              <div className="p-6 rounded-2xl border border-border/30 bg-gradient-to-br from-card/50 to-card/80 backdrop-blur-sm">
-                <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
-                  <div className="h-5 w-1 bg-gradient-to-b from-blue-500 to-purple-500 rounded-full" />
-                  This Week
-                </h3>
-                <div className="space-y-4">
-                  <WeeklyStat
-                    label="Games Played"
-                    value={gamesPlayed}
-                    change={gamesPlayedChange}
-                    isPositive={isGamesPlayedPositive}
-                  />
-                  <WeeklyStat
-                    label="Hours Played"
-                    value={hoursPlayed}
-                    change={hoursPlayedChange}
-                    isPositive={isHoursPlayedPositive}
-                  />
-                  <WeeklyStat
-                    label="Friends Added"
-                    value={friendsAdded}
-                    change={friendsAddedChange}
-                    isPositive={isFriendsAddedPositive}
-                  />
-                </div>
-              </div>
-            </div>
+            <ErrorBoundary fallback={<BentoGridFallback />}>
+              <Suspense fallback={<BentoGridSkeleton />}>
+                <BentoGridStable
+                  user={user}
+                  friends={recentFriends}
+                  activities={typedActivities}
+                />
+              </Suspense>
+            </ErrorBoundary>
           </div>
         </section>
 
@@ -397,63 +279,6 @@ const BentoGridFallback = memo(function BentoGridFallback() {
   );
 });
 
-// Quick Action Button Component
-const QuickActionButton = memo(function QuickActionButton({
-  icon,
-  label,
-  href
-}: {
-  icon: string;
-  label: string;
-  href: string;
-}) {
-  return (
-    <Link href={href}>
-      <Button
-        variant="ghost"
-        className="w-full justify-start h-auto p-3 rounded-lg bg-muted/20 hover:bg-muted/40 transition-all duration-200 border border-transparent hover:border-border/50"
-      >
-        <span className="text-lg mr-3">{icon}</span>
-        <span className="font-medium">{label}</span>
-      </Button>
-    </Link>
-  );
-});
-
-// Weekly Stat Component
-const WeeklyStat = memo(function WeeklyStat({
-  label,
-  value,
-  change,
-  isPositive
-}: {
-  label: string;
-  value: number;
-  change: string;
-  isPositive: boolean;
-}) {
-  return (
-    <div className="flex items-center justify-between">
-      <div>
-        <p className="text-sm font-medium text-foreground">{label}</p>
-        <p className="text-lg font-bold text-foreground">{value}</p>
-      </div>
-      <div className={cn(
-        "flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full",
-        isPositive 
-          ? "text-emerald-600 bg-emerald-100 dark:bg-emerald-900/30" 
-          : "text-red-600 bg-red-100 dark:bg-red-900/30"
-      )}>
-        {isPositive ? (
-          <TrendingUp className="h-3 w-3" />
-        ) : (
-          <TrendingDown className="h-3 w-3" />
-        )}
-        <span>{change}</span>
-      </div>
-    </div>
-  );
-});
 
 export function AuthenticatedHome({ user }: AuthenticatedHomeProps) {
   return <AuthenticatedHomeComponent user={user} />;

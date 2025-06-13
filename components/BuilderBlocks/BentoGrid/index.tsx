@@ -8,7 +8,7 @@ import { Responsive, WidthProvider, Layout } from "react-grid-layout";
 import { useLayoutStore } from "@/stores/useLayoutStore";
 import { EditingControls } from "./EditingControls";
 import { useGridItems } from "./useGridItems";
-import { GRID_CONFIG } from "./constants";
+import { GRID_CONFIG, WIDGET_CONSTRAINTS } from "./constants";
 import { GridItem } from "./GridItem";
 import { useState, useCallback, useEffect, useRef, memo } from "react";
 import "react-grid-layout/css/styles.css";
@@ -45,11 +45,6 @@ const BentoGridComponent = memo(function BentoGrid({
   const [mounted, setMounted] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Simple mount effect without complex resize handling
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
   const handleDragStop = useCallback(() => {
     setIsDragging(false);
     document.body.style.cursor = "";
@@ -64,6 +59,47 @@ const BentoGridComponent = memo(function BentoGrid({
       return a.y - b.y;
     });
   }, []);
+
+  // Generate layout for missing items
+  const generateLayoutForItems = useCallback((items: any[]) => {
+    const existingLayout = layouts[currentBreakpoint] || [];
+    const missingItems = items.filter(item => 
+      !existingLayout.find(layout => layout.i === item.id)
+    );
+    
+    if (missingItems.length === 0) return existingLayout;
+
+    // Calculate next position
+    const maxY = existingLayout.length > 0 
+      ? Math.max(...existingLayout.map(item => item.y + item.h))
+      : 0;
+    
+    const newLayouts = missingItems.map((item, index) => {
+      const constraints = WIDGET_CONSTRAINTS[item.type as keyof typeof WIDGET_CONSTRAINTS] || { w: 1, h: 1, minW: 1, minH: 1 };
+      return {
+        i: item.id,
+        x: (index % GRID_CONFIG.cols[currentBreakpoint as keyof typeof GRID_CONFIG.cols]) || 0,
+        y: maxY + Math.floor(index / (GRID_CONFIG.cols[currentBreakpoint as keyof typeof GRID_CONFIG.cols] || 1)),
+        w: constraints.w,
+        h: constraints.h,
+        minW: constraints.minW,
+        minH: constraints.minH,
+      };
+    });
+
+    return [...existingLayout, ...newLayouts];
+  }, [layouts, currentBreakpoint]);
+
+  // Simple mount effect without complex resize handling
+  useEffect(() => {
+    setMounted(true);
+    
+    // Generate layout for any missing items
+    const updatedLayout = generateLayoutForItems(gridItems);
+    if (updatedLayout.length !== (layouts[currentBreakpoint] || []).length) {
+      setLayout(currentBreakpoint, updatedLayout);
+    }
+  }, [gridItems, generateLayoutForItems, setLayout, currentBreakpoint, layouts]);
 
   const handleLayoutChange = useCallback(
     (currentLayout: Layout[]) => {

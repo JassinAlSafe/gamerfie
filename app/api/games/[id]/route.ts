@@ -113,14 +113,14 @@ export async function GET(
             };
           }
         }
-      } catch (_rawgError) {
+      } catch {
         console.log(`RAWG failed, trying IGDB directly for ID: ${gameId}`);
         try {
           gameDetails = await IGDBService.fetchGameDetails(gameId);
           if (gameDetails) {
             gameDetails.dataSource = 'igdb';
           }
-        } catch (_igdbError) {
+        } catch {
           console.log(`Both RAWG and IGDB failed for ID: ${gameId}`);
         }
       }

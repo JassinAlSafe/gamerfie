@@ -64,12 +64,24 @@ export function useBadges(userId?: string) {
 
       const userBadges = (data || [])
         .filter(item => item.badge) // Filter out null badges
-        .map(item => ({
-          badge: item.badge as Badge,
-          claimed_at: item.claimed_at,
-          challenge_id: item.challenge_id,
-          isNew: new Date(item.claimed_at) > weekAgo
-        }));
+        .map(item => {
+          // Handle case where badge might be an array (due to join)
+          const badge = Array.isArray(item.badge) ? item.badge[0] : item.badge;
+          return {
+            badge: {
+              id: badge.id,
+              name: badge.name,
+              description: badge.description,
+              icon_url: badge.icon_url,
+              type: badge.type,
+              rarity: badge.rarity,
+              created_at: badge.created_at,
+            } as Badge,
+            claimed_at: item.claimed_at,
+            challenge_id: item.challenge_id,
+            isNew: new Date(item.claimed_at) > weekAgo
+          };
+        });
 
       setBadges(userBadges);
     } catch (err) {

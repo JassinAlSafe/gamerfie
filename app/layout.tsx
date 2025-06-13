@@ -12,6 +12,8 @@ import SupabaseProvider from "@/components/providers/supabase-provider";
 import * as Sentry from "@sentry/nextjs";
 import { usePathname } from "next/navigation";
 import { CacheBuster } from "@/components/ui/cache-buster";
+import { AuthInitializer } from "@/components/auth/AuthInitializer";
+import { FloatingActions } from "@/components/home/FloatingActions";
 
 // Optimized font loading with display swap for better performance
 const inter = Inter({
@@ -86,11 +88,13 @@ export default function RootLayout({
               forcedTheme="dark"
             >
               <div className="min-h-screen flex flex-col">
+                <AuthInitializer />
                 <CacheBuster />
                 {!isAuthPage && <FloatingHeader />}
                 <main className={!isAuthPage ? "flex-1 pt-16" : "flex-1"}>
                   {children}
                 </main>
+                {!isAuthPage && <FloatingActions />}
                 {!isAuthPage && (
                   <div className="mt-auto">
                     <Footer />

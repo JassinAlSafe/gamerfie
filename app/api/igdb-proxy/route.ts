@@ -1,5 +1,8 @@
 import { NextResponse } from 'next/server';
 
+// Force dynamic rendering due to external API calls
+export const dynamic = 'force-dynamic';
+
 export async function POST(request: Request) {
   try {
     const { endpoint, query } = await request.json();

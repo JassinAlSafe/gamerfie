@@ -1,29 +1,31 @@
 "use client";
 
-import { memo, useEffect, useState } from "react";
+import { memo, useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Trophy, Target, Zap, Clock, TrendingUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface GameProgressRingProps {
-  completedGames: number;
-  totalGames: number;
-  totalPlaytime: number;
+  completedGames?: number;
+  totalGames?: number;
+  totalPlaytime?: number;
   weeklyGoal?: number;
   className?: string;
   size?: "sm" | "md" | "lg";
 }
 
 export const GameProgressRing = memo(function GameProgressRing({
-  completedGames,
-  totalGames,
-  totalPlaytime,
+  completedGames = 12,
+  totalGames = 24,
+  totalPlaytime = 8.5,
   weeklyGoal = 10,
   className,
   size = "md"
 }: GameProgressRingProps) {
   const [mounted, setMounted] = useState(false);
   const [animationProgress, setAnimationProgress] = useState(0);
+  const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -34,6 +36,19 @@ export const GameProgressRing = memo(function GameProgressRing({
     return () => clearTimeout(timer);
   }, []);
 
+  useEffect(() => {
+    const updateSize = () => {
+      if (containerRef.current) {
+        const rect = containerRef.current.getBoundingClientRect();
+        setContainerSize({ width: rect.width, height: rect.height });
+      }
+    };
+
+    updateSize();
+    window.addEventListener('resize', updateSize);
+    return () => window.removeEventListener('resize', updateSize);
+  }, [mounted]);
+
   if (!mounted) {
     return <GameProgressRingSkeleton size={size} className={className} />;
   }
@@ -41,9 +56,29 @@ export const GameProgressRing = memo(function GameProgressRing({
   const completionRate = totalGames > 0 ? (completedGames / totalGames) * 100 : 0;
   const weeklyProgress = Math.min((totalPlaytime / weeklyGoal) * 100, 100);
   
+  // Calculate optimal ring size based on container
+  const calculateRingSize = () => {
+    if (!mounted || !containerSize.width || !containerSize.height) {
+      return { ring: 100, stroke: 6, center: 50 };
+    }
+    
+    // Reserve space for padding (32px), stats grid (80px), and achievement indicators (60px)
+    const reservedHeight = 32 + 80 + 60;
+    const availableHeight = containerSize.height - reservedHeight;
+    const availableWidth = containerSize.width - 32;
+    
+    // Use the smaller dimension to ensure the ring fits
+    const maxRingSize = Math.min(availableHeight, availableWidth);
+    const ring = Math.max(70, Math.min(maxRingSize, 120));
+    const stroke = Math.max(4, Math.min(ring * 0.06, 8));
+    const center = ring / 2;
+    
+    return { ring, stroke, center };
+  };
+
   const sizes = {
     sm: { ring: 80, stroke: 6, center: 40 },
-    md: { ring: 120, stroke: 8, center: 60 },
+    md: calculateRingSize(),
     lg: { ring: 160, stroke: 10, center: 80 }
   };
 
@@ -55,16 +90,18 @@ export const GameProgressRing = memo(function GameProgressRing({
   const weeklyStrokeDashoffset = circumference - (weeklyProgress / 100) * circumference * animationProgress;
 
   return (
-    <div className={cn(
-      "relative flex flex-col items-center justify-center p-6 rounded-2xl border border-border/30 bg-gradient-to-br from-card/50 to-card/80 backdrop-blur-sm group hover:shadow-lg transition-all duration-300",
-      className
-    )}>
+    <div 
+      ref={containerRef}
+      className={cn(
+        "relative flex flex-col items-center justify-center p-4 rounded-2xl border border-border/30 bg-gradient-to-br from-card/50 to-card/80 backdrop-blur-sm group hover:shadow-lg transition-all duration-300 h-full",
+        className
+      )}>
       {/* Background Effects */}
       <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 via-transparent to-blue-500/5 rounded-2xl" />
       <div className="absolute -top-10 -right-10 w-20 h-20 bg-gradient-to-br from-purple-500/20 to-blue-500/20 rounded-full blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
 
       {/* Main Progress Ring */}
-      <div className="relative mb-4">
+      <div className="relative mb-3 flex-shrink-0 flex items-center justify-center">
         <svg width={ring} height={ring} className="transform -rotate-90">
           {/* Background circle */}
           <circle
@@ -81,9 +118,9 @@ export const GameProgressRing = memo(function GameProgressRing({
           <circle
             cx={center}
             cy={center}
-            r={radius + stroke + 2}
+            r={Math.max(radius - 4, radius * 0.85)}
             stroke="currentColor"
-            strokeWidth={4}
+            strokeWidth={3}
             fill="transparent"
             strokeDasharray={strokeDasharray}
             strokeDashoffset={weeklyStrokeDashoffset}
@@ -126,8 +163,8 @@ export const GameProgressRing = memo(function GameProgressRing({
             className="text-center"
           >
             <div className="flex items-center gap-1 mb-1">
-              <Trophy className="h-4 w-4 text-yellow-500" />
-              <span className="text-2xl font-bold bg-gradient-to-r from-purple-500 to-blue-500 bg-clip-text text-transparent">
+              <Trophy className="h-3 w-3 text-yellow-500" />
+              <span className="text-xl font-bold bg-gradient-to-r from-purple-500 to-blue-500 bg-clip-text text-transparent">
                 {completionRate.toFixed(0)}%
               </span>
             </div>
@@ -151,7 +188,7 @@ export const GameProgressRing = memo(function GameProgressRing({
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-2 gap-4 w-full">
+      <div className="grid grid-cols-2 gap-3 w-full flex-1 min-h-0">
         <StatItem
           icon={<Target className="h-4 w-4" />}
           label="Completed"
@@ -170,7 +207,7 @@ export const GameProgressRing = memo(function GameProgressRing({
       </div>
 
       {/* Achievement Indicators */}
-      <div className="flex items-center gap-2 mt-4 pt-4 border-t border-border/30 w-full">
+      <div className="flex items-center gap-2 mt-3 pt-3 border-t border-border/30 w-full flex-shrink-0">
         <div className="flex items-center gap-1 text-xs text-muted-foreground">
           <TrendingUp className="h-3 w-3" />
           <span>
@@ -200,7 +237,7 @@ export const GameProgressRing = memo(function GameProgressRing({
 // Stat item component
 const StatItem = memo(function StatItem({
   icon,
-  _label,
+  label: _label,
   value,
   subValue,
   color,
@@ -214,12 +251,12 @@ const StatItem = memo(function StatItem({
   progress?: number;
 }) {
   return (
-    <div className="text-center">
-      <div className={cn("flex items-center justify-center mb-2", color)}>
+    <div className="text-center flex flex-col justify-center h-full">
+      <div className={cn("flex items-center justify-center mb-1", color)}>
         {icon}
       </div>
-      <p className="text-sm font-semibold text-foreground">{value}</p>
-      <p className="text-xs text-muted-foreground">{subValue}</p>
+      <p className="text-sm font-semibold text-foreground leading-tight">{value}</p>
+      <p className="text-xs text-muted-foreground leading-tight">{subValue}</p>
       {progress !== undefined && (
         <div className="mt-1 h-1 bg-muted/30 rounded-full overflow-hidden">
           <motion.div

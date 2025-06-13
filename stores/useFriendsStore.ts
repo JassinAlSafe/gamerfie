@@ -48,20 +48,20 @@ export const useFriendsStore = create<FriendsStore>((set, get) => {
     setFilter: (filter) => set({ filter }),
 
     fetchFriends: async () => {
-      try {
+      const fetchWithTimeout = async () => {
         set({ isLoading: true, error: null });
         
         const user = await getCurrentUser();
 
-        // Fetch friends from the friends table
-        const { data: friendships, error } = await supabase
+        // Fetch friends relationships
+        const { data: friendships, error: friendsError } = await supabase
           .from('friends')
           .select('*')
-          .or(`user_id.eq.${user.id},friend_id.eq.${user.id}`);
+          .or(`user_id.eq.${user.id},friend_id.eq.${user.id}`)
+          .order('created_at', { ascending: false });
 
-        if (error) {
-          // If table doesn't exist or relationship is broken, gracefully handle it
-          console.warn('Friends feature not available:', error.message);
+        if (friendsError) {
+          console.warn('Friends feature not available:', friendsError.message);
           set({ friends: [], isLoading: false });
           return;
         }
@@ -100,7 +100,7 @@ export const useFriendsStore = create<FriendsStore>((set, get) => {
         // Create a map of profiles for quick lookup
         const profilesMap = new Map(profiles?.map(profile => [profile.id, profile]) || []);
 
-                 const friends: Friend[] = friendships
+        const friends: Friend[] = friendships
            .map((friendship) => {
              // Determine which ID is the friend (not the current user)
              const friendId = friendship.user_id === user.id 
@@ -110,22 +110,32 @@ export const useFriendsStore = create<FriendsStore>((set, get) => {
              const friendProfile = profilesMap.get(friendId);
              if (!friendProfile) return null;
 
-             return {
+             const friend: Friend = {
                id: friendProfile.id,
                username: friendProfile.username,
-               display_name: friendProfile.display_name,
-               bio: friendProfile.bio,
+               display_name: friendProfile.display_name || undefined,
+               bio: friendProfile.bio || undefined,
                avatar_url: friendProfile.avatar_url || undefined,
-               status: friendship.status,
+               status: friendship.status as FriendStatus,
                online_status: 'offline' as const,
                sender_id: friendship.user_id,
-             } as Friend;
+             };
+             return friend;
            })
            .filter((friend): friend is Friend => friend !== null);
 
         set({ friends, isLoading: false });
+      };
+
+      try {
+        // Add timeout to prevent infinite loading
+        const timeout = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Friends fetch timeout after 8 seconds')), 8000)
+        );
+        
+        await Promise.race([fetchWithTimeout(), timeout]);
       } catch (error) {
-        console.warn('Error fetching friends (table may not exist):', error);
+        console.warn('Error fetching friends (timeout or table issue):', error);
         // Set empty friends array if there's any error
         set({ friends: [], isLoading: false, error: null });
       }
@@ -164,29 +174,73 @@ export const useFriendsStore = create<FriendsStore>((set, get) => {
             id: activity.game_id,
             name: activity.game_name,
             cover_url: activity.game_cover_url,
-          } : null,
+          } : {
+            id: activity.game_id || 'unknown',
+            name: 'Unknown Game',
+            cover_url: null,
+          },
         }));
 
         set({ activities: transformedActivities, isLoadingActivities: false });
       } catch (error) {
         console.warn('Error fetching optimized activities:', error);
         
-        // Fallback to direct database query
+        // Fallback to direct database query if API fails
         try {
           const user = await getCurrentUser();
 
           const { data: activities, error: activitiesError } = await supabase
             .from('friend_activities')
-            .select('*')
+            .select(`
+              *,
+              user:profiles!user_id(id, username, avatar_url),
+              game:games!game_id(id, name, cover_url)
+            `)
             .eq('user_id', user.id)
             .order('created_at', { ascending: false })
             .limit(20);
 
-          if (activitiesError) throw activitiesError;
+          if (activitiesError) {
+            // If friend_activities table doesn't exist, that's okay - just set empty array
+            console.warn('Activities feature not available:', activitiesError.message);
+            set({ activities: [], isLoadingActivities: false });
+            return;
+          }
           
-          set({ activities: activities || [], isLoadingActivities: false });
+          // Transform fallback data to expected format
+          const transformedActivities: FriendActivity[] = (activities || []).map((activity: any) => ({
+            id: activity.id,
+            type: activity.activity_type || activity.type,
+            user_id: activity.user_id,
+            game_id: activity.game_id,
+            timestamp: activity.created_at,
+            created_at: activity.created_at,
+            details: activity.details || {},
+            reactions: [],
+            comments: [],
+            user: activity.user ? {
+              id: activity.user.id,
+              username: activity.user.username || 'Unknown User',
+              avatar_url: activity.user.avatar_url,
+            } : {
+              id: activity.user_id,
+              username: 'Unknown User',
+              avatar_url: null,
+            },
+            game: activity.game ? {
+              id: activity.game.id,
+              name: activity.game.name,
+              cover_url: activity.game.cover_url,
+            } : {
+              id: activity.game_id || 'unknown',
+              name: 'Unknown Game',
+              cover_url: null,
+            },
+          }));
+          
+          set({ activities: transformedActivities, isLoadingActivities: false });
         } catch (fallbackError) {
-          console.warn('Fallback activities fetch failed:', fallbackError);
+          console.warn('Activities feature not available:', fallbackError);
           set({ activities: [], isLoadingActivities: false });
         }
       }

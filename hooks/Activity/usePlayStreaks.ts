@@ -38,7 +38,7 @@ export function usePlayStreaks(userId?: string) {
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
       const { data: activities, error: activitiesError } = await supabase
-        .from('activities')
+        .from('friend_activities')
         .select('created_at, type')
         .eq('user_id', userId)
         .gte('created_at', thirtyDaysAgo.toISOString())
@@ -56,7 +56,7 @@ export function usePlayStreaks(userId?: string) {
 
       const { data: weeklyProgress, error: progressError } = await supabase
         .from('user_games')
-        .select('playtime_minutes, updated_at')
+        .select('play_time, updated_at')
         .eq('user_id', userId)
         .gte('updated_at', oneWeekAgo.toISOString());
 
@@ -117,9 +117,9 @@ export function usePlayStreaks(userId?: string) {
         ? Math.floor((new Date().getTime() - new Date(lastActivity.created_at).getTime()) / (1000 * 60 * 60 * 24))
         : 0;
 
-      // Calculate weekly stats
+      // Calculate weekly stats (play_time is in hours, convert to minutes for calculation)
       const weeklyPlaytime = (weeklyProgress || [])
-        .reduce((total, game) => total + (game.playtime_minutes || 0), 0);
+        .reduce((total, game) => total + ((game.play_time || 0) * 60), 0);
       
       const weeklyGamesPlayed = new Set(
         (weeklyProgress || []).map(game => game.updated_at)

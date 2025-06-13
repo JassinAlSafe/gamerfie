@@ -1,21 +1,28 @@
 "use client";
 
-import { memo, useEffect, useState } from "react";
+import React, { memo, useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { 
-  Sun, 
-  Moon, 
-  Sunrise, 
+import {
+  Sun,
+  Moon,
+  Sunrise,
   Sunset,
   Gamepad2,
   Star,
   Zap,
   Calendar,
   Clock,
-  TrendingUp
+  TrendingUp,
 } from "lucide-react";
-import { User } from "@supabase/supabase-js";
+import { User as SupabaseUser } from "@supabase/supabase-js";
 import { cn } from "@/lib/utils";
+import type { Database } from "@/types/supabase";
+
+// Extended User type that includes profile (same as auth store)
+type Profile = Database["public"]["Tables"]["profiles"]["Row"];
+type User = SupabaseUser & {
+  profile?: Profile | null;
+};
 
 interface WelcomeHeaderProps {
   user: User;
@@ -30,7 +37,7 @@ export const WelcomeHeader = memo(function WelcomeHeader({
   totalGames = 0,
   weeklyPlaytime = 0,
   currentStreak = 0,
-  className
+  className,
 }: WelcomeHeaderProps) {
   const [mounted, setMounted] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -48,8 +55,21 @@ export const WelcomeHeader = memo(function WelcomeHeader({
   }
 
   const hour = currentTime.getHours();
-  const username = user.user_metadata?.display_name || user.email?.split('@')[0] || 'Gamer';
-  const { greeting, icon: TimeIcon, color, bgGradient, message } = getTimeBasedContent(hour);
+  // Get display_name from the user's profile (stored in profiles table)
+  // user.profile comes from the auth store which fetches the full profile
+  // Using type assertion since display_name exists in DB but not in generated types
+  const username =
+    (user.profile as any)?.display_name ||
+    user.user_metadata?.display_name ||
+    user.email?.split("@")[0] ||
+    "Gamer";
+  const {
+    greeting,
+    icon: TimeIcon,
+    color,
+    bgGradient,
+    message,
+  } = getTimeBasedContent(hour);
   const quickStats = getQuickStats(totalGames, weeklyPlaytime, currentStreak);
 
   return (
@@ -89,9 +109,7 @@ export const WelcomeHeader = memo(function WelcomeHeader({
                 <h1 className="text-2xl font-bold text-white">
                   {greeting}, {username}!
                 </h1>
-                <p className="text-white/80 text-sm">
-                  {message}
-                </p>
+                <p className="text-white/80 text-sm">{message}</p>
               </div>
             </motion.div>
 
@@ -104,11 +122,22 @@ export const WelcomeHeader = memo(function WelcomeHeader({
             >
               <div className="flex items-center gap-1">
                 <Clock className="h-4 w-4" />
-                <span>{currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                <span>
+                  {currentTime.toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </span>
               </div>
               <div className="flex items-center gap-1">
                 <Calendar className="h-4 w-4" />
-                <span>{currentTime.toLocaleDateString([], { weekday: 'long', month: 'short', day: 'numeric' })}</span>
+                <span>
+                  {currentTime.toLocaleDateString([], {
+                    weekday: "long",
+                    month: "short",
+                    day: "numeric",
+                  })}
+                </span>
               </div>
             </motion.div>
           </div>
@@ -122,11 +151,7 @@ export const WelcomeHeader = memo(function WelcomeHeader({
           >
             <AnimatePresence mode="popLayout">
               {quickStats.map((stat, index) => (
-                <QuickStatBadge
-                  key={stat.key}
-                  stat={stat}
-                  index={index}
-                />
+                <QuickStatBadge key={stat.key} stat={stat} index={index} />
               ))}
             </AnimatePresence>
           </motion.div>
@@ -169,35 +194,38 @@ export const WelcomeHeader = memo(function WelcomeHeader({
 });
 
 // Quick stat badge component
-const QuickStatBadge = memo(function QuickStatBadge({
-  stat,
-  index
-}: {
-  stat: {
-    key: string;
-    label: string;
-    value: string | number;
-    icon: React.ReactNode;
-    color: string;
-  };
-  index: number;
-}) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: -10 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: 10 }}
-      transition={{ delay: index * 0.1 }}
-      className="flex flex-col items-center text-center bg-white/10 backdrop-blur-sm rounded-xl p-3 border border-white/20 hover:bg-white/20 transition-colors"
-    >
-      <div className={cn("p-1.5 rounded-lg mb-2", stat.color)}>
-        {stat.icon}
-      </div>
-      <span className="text-white font-semibold text-sm">{stat.value}</span>
-      <span className="text-white/70 text-xs">{stat.label}</span>
-    </motion.div>
-  );
-});
+const QuickStatBadge = memo(
+  React.forwardRef<
+    HTMLDivElement,
+    {
+      stat: {
+        key: string;
+        label: string;
+        value: string | number;
+        icon: React.ReactNode;
+        color: string;
+      };
+      index: number;
+    }
+  >(function QuickStatBadge({ stat, index }, ref) {
+    return (
+      <motion.div
+        ref={ref}
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: 10 }}
+        transition={{ delay: index * 0.1 }}
+        className="flex flex-col items-center text-center bg-white/10 backdrop-blur-sm rounded-xl p-3 border border-white/20 hover:bg-white/20 transition-colors"
+      >
+        <div className={cn("p-1.5 rounded-lg mb-2", stat.color)}>
+          {stat.icon}
+        </div>
+        <span className="text-white font-semibold text-sm">{stat.value}</span>
+        <span className="text-white/70 text-xs">{stat.label}</span>
+      </motion.div>
+    );
+  })
+);
 
 // Progress indicator component
 const ProgressIndicator = memo(function ProgressIndicator({
@@ -206,7 +234,7 @@ const ProgressIndicator = memo(function ProgressIndicator({
   max,
   icon,
   color,
-  suffix = ""
+  suffix = "",
 }: {
   label: string;
   value: number;
@@ -225,7 +253,8 @@ const ProgressIndicator = memo(function ProgressIndicator({
           <span className="text-xs font-medium">{label}</span>
         </div>
         <span className="text-white text-sm font-semibold">
-          {value}{suffix}
+          {value}
+          {suffix}
         </span>
       </div>
       <div className="h-1.5 bg-white/20 rounded-full overflow-hidden">
@@ -248,10 +277,11 @@ function getTimeBasedContent(hour: number) {
       icon: hour < 7 ? Sunrise : Sun,
       color: {
         text: "text-yellow-400",
-        bg: "bg-yellow-400/20"
+        bg: "bg-yellow-400/20",
       },
-      bgGradient: "bg-gradient-to-br from-yellow-500/20 via-orange-500/10 to-red-500/5",
-      message: "Ready to start your gaming day?"
+      bgGradient:
+        "bg-gradient-to-br from-yellow-500/20 via-orange-500/10 to-red-500/5",
+      message: "Ready to start your gaming day?",
     };
   } else if (hour >= 12 && hour < 17) {
     return {
@@ -259,10 +289,11 @@ function getTimeBasedContent(hour: number) {
       icon: Sun,
       color: {
         text: "text-blue-400",
-        bg: "bg-blue-400/20"
+        bg: "bg-blue-400/20",
       },
-      bgGradient: "bg-gradient-to-br from-blue-500/20 via-cyan-500/10 to-teal-500/5",
-      message: "Perfect time for some gaming!"
+      bgGradient:
+        "bg-gradient-to-br from-blue-500/20 via-cyan-500/10 to-teal-500/5",
+      message: "Perfect time for some gaming!",
     };
   } else if (hour >= 17 && hour < 21) {
     return {
@@ -270,10 +301,11 @@ function getTimeBasedContent(hour: number) {
       icon: Sunset,
       color: {
         text: "text-orange-400",
-        bg: "bg-orange-400/20"
+        bg: "bg-orange-400/20",
       },
-      bgGradient: "bg-gradient-to-br from-orange-500/20 via-red-500/10 to-pink-500/5",
-      message: "Time to unwind with your favorite games"
+      bgGradient:
+        "bg-gradient-to-br from-orange-500/20 via-red-500/10 to-pink-500/5",
+      message: "Time to unwind with your favorite games",
     };
   } else {
     return {
@@ -281,16 +313,22 @@ function getTimeBasedContent(hour: number) {
       icon: hour < 5 ? Moon : Star,
       color: {
         text: "text-purple-400",
-        bg: "bg-purple-400/20"
+        bg: "bg-purple-400/20",
       },
-      bgGradient: "bg-gradient-to-br from-purple-500/20 via-indigo-500/10 to-blue-500/5",
-      message: hour < 5 ? "Late night gaming session?" : "Evening gaming awaits!"
+      bgGradient:
+        "bg-gradient-to-br from-purple-500/20 via-indigo-500/10 to-blue-500/5",
+      message:
+        hour < 5 ? "Late night gaming session?" : "Evening gaming awaits!",
     };
   }
 }
 
 // Helper function to get quick stats
-function getQuickStats(totalGames: number, weeklyPlaytime: number, currentStreak: number) {
+function getQuickStats(
+  totalGames: number,
+  weeklyPlaytime: number,
+  currentStreak: number
+) {
   const stats = [];
 
   if (totalGames > 0) {
@@ -299,7 +337,7 @@ function getQuickStats(totalGames: number, weeklyPlaytime: number, currentStreak
       label: "Games",
       value: totalGames,
       icon: <Gamepad2 className="h-4 w-4 text-white" />,
-      color: "bg-blue-500/30"
+      color: "bg-blue-500/30",
     });
   }
 
@@ -309,7 +347,7 @@ function getQuickStats(totalGames: number, weeklyPlaytime: number, currentStreak
       label: "Hours",
       value: `${weeklyPlaytime}h`,
       icon: <Clock className="h-4 w-4 text-white" />,
-      color: "bg-green-500/30"
+      color: "bg-green-500/30",
     });
   }
 
@@ -319,7 +357,7 @@ function getQuickStats(totalGames: number, weeklyPlaytime: number, currentStreak
       label: "Streak",
       value: `${currentStreak}d`,
       icon: <Zap className="h-4 w-4 text-white" />,
-      color: "bg-orange-500/30"
+      color: "bg-orange-500/30",
     });
   }
 
@@ -330,7 +368,7 @@ function getQuickStats(totalGames: number, weeklyPlaytime: number, currentStreak
       label: "Welcome",
       value: "🎮",
       icon: <Star className="h-4 w-4 text-white" />,
-      color: "bg-purple-500/30"
+      color: "bg-purple-500/30",
     });
   }
 
@@ -339,15 +377,17 @@ function getQuickStats(totalGames: number, weeklyPlaytime: number, currentStreak
 
 // Loading skeleton
 const WelcomeHeaderSkeleton = memo(function WelcomeHeaderSkeleton({
-  className
+  className,
 }: {
   className?: string;
 }) {
   return (
-    <div className={cn(
-      "rounded-2xl border border-border/30 bg-gradient-to-br from-muted/50 to-muted/30 p-6 animate-pulse",
-      className
-    )}>
+    <div
+      className={cn(
+        "rounded-2xl border border-border/30 bg-gradient-to-br from-muted/50 to-muted/30 p-6 animate-pulse",
+        className
+      )}
+    >
       <div className="flex items-start justify-between">
         <div className="flex-1">
           <div className="flex items-center gap-3 mb-2">

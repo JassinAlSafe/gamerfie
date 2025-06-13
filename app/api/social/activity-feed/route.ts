@@ -1,6 +1,9 @@
 import { createClient } from "@/utils/supabase/server";
 import { NextResponse } from "next/server";
 
+// Force dynamic rendering due to cookies and request.url usage
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: Request) {
   try {
     const supabase = await createClient();
@@ -33,11 +36,14 @@ export async function GET(request: Request) {
     const friendIds = friends?.map(f => f.friend_id) || [];
     const userIds = [user.id, ...friendIds];
 
-    // Use the optimized social_activity_feed view for better performance
-    // Filter to show activities from friends + current user
+    // Get activities from friend_activities table with user and game data
     const { data: activities, error, count } = await supabase
-      .from('social_activity_feed')
-      .select('*', { count: 'exact' })
+      .from('friend_activities')
+      .select(`
+        *,
+        user:profiles!user_id(id, username, avatar_url),
+        game:games!game_id(id, name, cover_url)
+      `, { count: 'exact' })
       .in('user_id', userIds)
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1);
@@ -50,8 +56,24 @@ export async function GET(request: Request) {
       );
     }
 
+    // Transform the response to match the expected format
+    const transformedActivities = (activities || []).map((activity: any) => ({
+      id: activity.id,
+      activity_type: activity.activity_type,
+      user_id: activity.user_id,
+      game_id: activity.game_id,
+      created_at: activity.created_at,
+      details: activity.details || {},
+      reactions: [], // Can be expanded later
+      comments: [], // Can be expanded later
+      username: activity.user?.username,
+      avatar_url: activity.user?.avatar_url,
+      game_name: activity.game?.name,
+      game_cover_url: activity.game?.cover_url,
+    }));
+
     return NextResponse.json({
-      activities: activities || [],
+      activities: transformedActivities,
       hasMore: count ? offset + limit < count : false,
       total: count || 0,
     });

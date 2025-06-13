@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
 import { UnifiedGameService } from '@/services/unifiedGameService';
 
+// Force dynamic rendering due to request.url usage
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
