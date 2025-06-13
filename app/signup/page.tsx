@@ -3,6 +3,9 @@ import { Icons } from "@/components/ui/icons";
 import { SignUpForm } from "../components/auth/SignUpForm";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
+import { AuthErrorBoundary } from "@/components/auth/AuthErrorBoundary";
+import { Suspense } from "react";
+import { AuthFormSkeleton } from "@/components/auth/AuthSkeleton";
 
 export default function SignUpPage() {
   return (
@@ -45,7 +48,11 @@ export default function SignUpPage() {
               Enter your details below to create your account
             </p>
           </div>
-          <SignUpForm />
+          <AuthErrorBoundary>
+            <Suspense fallback={<AuthFormSkeleton />}>
+              <SignUpForm />
+            </Suspense>
+          </AuthErrorBoundary>
           <p className="text-center text-sm text-muted-foreground">
             Already have an account?{" "}
             <Link
