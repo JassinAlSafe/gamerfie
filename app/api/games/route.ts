@@ -110,7 +110,7 @@ export async function GET(request: NextRequest) {
 
     // Handle category-specific requests using UnifiedGameService with proper pagination
     let games = [];
-    let totalCount = 1000; // Set high limit for infinite scroll
+    const totalCount = 1000; // Set high limit for infinite scroll
     
     // Calculate how many games to fetch based on page and limit
     const totalToFetch = page * limit;
