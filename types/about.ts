@@ -1,32 +1,18 @@
-// About Section Types
-export type AboutSectionType = 'text' | 'list' | 'image' | 'link' | 'video';
+// About Section Types - Simplified and clean
+export type AboutSectionType = 'text' | 'list' | 'feature' | 'stats';
 
-// About interfaces
+// Core About interfaces
 export interface AboutSection {
-  id?: string;
   title: string;
   content: string | string[];
   type: AboutSectionType;
-  order?: number;
-  metadata?: {
-    url?: string;
-    alt?: string;
-    thumbnail?: string;
-  };
+  icon?: string;
+  stats?: {
+    label: string;
+    value: string;
+  }[];
 }
 
 export interface AboutContent {
   sections: AboutSection[];
-  lastUpdated?: string;
-}
-
-// Request/Response types
-export interface UpdateAboutRequest {
-  sections: Omit<AboutSection, 'id'>[];
-}
-
-export interface AboutResponse {
-  content: AboutContent;
-  status: 'published' | 'draft';
-  version?: number;
 }

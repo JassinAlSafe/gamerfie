@@ -3,6 +3,7 @@ import type { User as SupabaseUser, AuthResponse } from '@supabase/supabase-js'
 import { createClient } from '@/utils/supabase/client'
 import { persist } from 'zustand/middleware'
 import type { Database } from '@/types/supabase'
+import { fetchUserProfileOptimized, ProfileCache, preWarmAuth } from '@/lib/auth-optimization'
 
 type Profile = Database['public']['Tables']['profiles']['Row']
 type User = SupabaseUser & {
@@ -34,6 +35,10 @@ interface AuthState {
   // Profile Management
   updateProfile: (_profile: Partial<Profile>) => Promise<void>
   uploadAvatar: (_file: File) => Promise<string>
+  
+  // Performance Optimizations
+  preWarmAuth: () => Promise<void>
+  clearCache: () => void
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -42,23 +47,8 @@ export const useAuthStore = create<AuthState>()(
       const supabase = createClient()
 
       const fetchUserProfile = async (userId: string): Promise<Profile | null> => {
-        try {
-          const { data: profile, error } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', userId)
-            .single();
-          
-          if (error) {
-            console.warn('Error fetching profile:', error);
-            return null;
-          }
-          
-          return profile;
-        } catch (error) {
-          console.warn('Failed to fetch user profile:', error);
-          return null;
-        }
+        // Use optimized caching version
+        return await fetchUserProfileOptimized(userId);
       };
 
       return {
@@ -139,25 +129,34 @@ export const useAuthStore = create<AuthState>()(
         // Auth actions
         signIn: async (_email, _password) => {
           try {
+            console.log('Auth store: Starting signin for:', _email);
             set({ isLoading: true, error: null });
             const response = await supabase.auth.signInWithPassword({
               email: _email,
               password: _password,
             });
             
-            if (response.error) throw response.error;
+            console.log('Auth store: Signin response:', response);
+            
+            if (response.error) {
+              console.error('Auth store: Signin error:', response.error);
+              throw response.error;
+            }
             
             if (response.data.user) {
+              console.log('Auth store: User signed in, fetching profile...');
               const profile = await fetchUserProfile(response.data.user.id);
 
               set({ 
                 user: { ...response.data.user, profile: profile || null },
                 error: null 
               });
+              console.log('Auth store: Signin complete');
             }
             
             return response;
           } catch (error) {
+            console.error('Auth store: Signin caught error:', error);
             const message = error instanceof Error ? error.message : 'Failed to sign in';
             set({ error: message });
             throw error;
@@ -411,34 +410,60 @@ export const useAuthStore = create<AuthState>()(
 
         signInWithGoogle: async () => {
           try {
+            console.log('Auth store: Starting Google OAuth...');
             set({ isLoading: true, error: null });
             
             // Determine the correct redirect URL based on environment
             const isDev = process.env.NODE_ENV === 'development';
             const baseUrl = isDev ? 'http://localhost:3000' : window.location.origin;
+            const redirectUrl = `${baseUrl}/auth/callback`;
+            
+            console.log('Auth store: Redirect URL:', redirectUrl);
             
             const response = await supabase.auth.signInWithOAuth({
               provider: 'google',
               options: {
-                redirectTo: `${baseUrl}/auth/callback`,
+                redirectTo: redirectUrl,
                 queryParams: {
                   access_type: 'offline',
-                  prompt: 'consent',
+                  prompt: 'select_account',
                 },
               },
             });
 
-            if (response.error) throw response.error;
+            console.log('Auth store: OAuth response:', response);
+
+            if (response.error) {
+              console.error('Auth store: OAuth error:', response.error);
+              throw new Error(`Google authentication failed: ${response.error.message}`);
+            }
 
             // For OAuth flows, we return the response as-is since the redirect handles the auth
             return response;
           } catch (error) {
+            console.error('Auth store: Caught error:', error);
             const message = error instanceof Error ? error.message : 'Failed to sign in with Google';
             set({ error: message });
             throw error;
           } finally {
             set({ isLoading: false });
           }
+        },
+
+        // Performance optimizations
+        preWarmAuth: async () => {
+          try {
+            const result = await preWarmAuth();
+            if (result.isAuthenticated && result.user) {
+              set({ user: result.user, isInitialized: true });
+            }
+          } catch (error) {
+            console.warn('Pre-warm auth failed:', error);
+          }
+        },
+
+        clearCache: () => {
+          ProfileCache.clear();
         }
       }
     },

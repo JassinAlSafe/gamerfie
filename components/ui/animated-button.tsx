@@ -22,9 +22,9 @@ export const AnimatedButton = React.forwardRef<HTMLButtonElement, AnimatedButton
     };
 
     const variantStyles = {
-      default: `bg-${glowColor}-600 hover:bg-${glowColor}-700 text-white`,
-      outline: `border-2 border-${glowColor}-500 text-${glowColor}-500 hover:bg-${glowColor}-500/10`,
-      ghost: `text-${glowColor}-500 hover:bg-${glowColor}-500/10`
+      default: `bg-${glowColor}-600 hover:bg-${glowColor}-700 text-white shadow-md hover:shadow-lg`,
+      outline: `border-2 border-${glowColor}-500 text-${glowColor}-500 hover:bg-${glowColor}-500/10 hover:border-${glowColor}-400`,
+      ghost: `text-${glowColor}-500 hover:bg-${glowColor}-500/10 hover:text-${glowColor}-400`
     };
 
     return (
@@ -37,8 +37,9 @@ export const AnimatedButton = React.forwardRef<HTMLButtonElement, AnimatedButton
           "group",
           className
         )}
-        whileHover={{ scale: 1.02 }}
+        whileHover={{ scale: 1.02, y: -1 }}
         whileTap={{ scale: 0.98 }}
+        transition={{ type: "spring", stiffness: 400, damping: 17 }}
         {...(props as any)}
       >
         <span className="relative z-10">{children}</span>
