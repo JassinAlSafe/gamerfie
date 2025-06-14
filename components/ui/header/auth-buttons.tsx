@@ -5,24 +5,12 @@ import { AnimatedButton } from "../animated-button";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/components/ui/use-toast";
-import { useEffect, useState } from "react";
+import React from "react";
 
-export function AuthButtons() {
+export const AuthButtons = React.memo(function AuthButtons() {
   const router = useRouter();
   const { toast } = useToast();
-  const { user, signOut, initialize, isInitialized } = useAuthStore();
-  const [hasInitialized, setHasInitialized] = useState(false);
-
-  useEffect(() => {
-    const initAuth = async () => {
-      if (!isInitialized && !hasInitialized) {
-        setHasInitialized(true);
-        await initialize();
-      }
-    };
-
-    initAuth();
-  }, [initialize, isInitialized, hasInitialized]);
+  const { user, signOut, isInitialized } = useAuthStore();
 
   const handleSignOut = async () => {
     try {
@@ -61,4 +49,4 @@ export function AuthButtons() {
       </AnimatedButton>
     </div>
   );
-}
+});

@@ -638,6 +638,66 @@ export class UnifiedGameService {
   }
 
   /**
+   * Get recent games with fallback strategy
+   */
+  static async getRecentGames(limit: number = 10, source?: DataSource): Promise<Game[]> {
+    const preferences = await this.getUserPreferences();
+    const targetSource = source || preferences.preferredSource;
+    
+    try {
+      console.log(`Attempting to fetch recent games from ${targetSource} source`);
+      
+      if (targetSource === 'igdb' || targetSource === 'auto') {
+        const games = await IGDBService.getRecentGames(limit);
+        console.log(`Successfully fetched ${games.length} recent games from IGDB`);
+        // Ensure consistent ID prefixing for IGDB games
+        return games.map(game => ({
+          ...game,
+          id: `igdb_${game.id}`,
+          source_id: game.id,
+          dataSource: 'igdb' as const
+        }));
+      } else {
+        const result = await RAWGService.getRecentGames(1, limit);
+        console.log(`Successfully fetched ${result.games.length} recent games from RAWG`);
+        // Ensure consistent ID prefixing for RAWG games
+        return result.games.map(game => ({
+          ...game,
+          id: `rawg_${game.id}`,
+          source_id: game.id,
+          dataSource: 'rawg' as const
+        }));
+      }
+    } catch (primaryError) {
+      console.warn('Primary source failed, falling back:', primaryError);
+      
+      if (preferences.fallbackEnabled && targetSource !== 'rawg') {
+        try {
+          const result = await RAWGService.getRecentGames(1, limit);
+          console.log(`Fallback successful: fetched ${result.games.length} recent games from RAWG`);
+          // Ensure consistent ID prefixing for RAWG fallback games
+          return result.games.map(game => ({
+            ...game,
+            id: `rawg_${game.id}`,
+            source_id: game.id,
+            dataSource: 'rawg' as const
+          }));
+        } catch (fallbackError) {
+          console.error('Fallback also failed:', fallbackError);
+          
+          // Instead of throwing, return empty array with warning
+          console.warn('All recent game sources failed, returning empty array');
+          return [];
+        }
+      }
+      
+      // If no fallback is enabled or fallback failed, return empty array
+      console.warn('No fallback available or disabled, returning empty array');
+      return [];
+    }
+  }
+
+  /**
    * Clear cache
    */
   static clearCache(): void {

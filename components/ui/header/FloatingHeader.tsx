@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo, useCallback } from "react";
 import Link from "next/link";
 import { Menu, X } from "lucide-react";
 import { useAuthStore } from "@/stores/useAuthStore";
@@ -12,7 +12,7 @@ import { MobileMenu } from "./mobile-menu";
 import { Button } from "@/components/ui/button";
 
 export default function FloatingHeader() {
-  const { initialize, isInitialized, checkUser } = useAuthStore();
+  const { initialize, isInitialized, checkUser, user } = useAuthStore();
   const { isMobileMenuOpen, toggleMobileMenu } = useUIStore();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [hasInitialized, setHasInitialized] = useState(false);
@@ -40,9 +40,9 @@ export default function FloatingHeader() {
     initAuth();
   }, [initialize, isInitialized, checkUser, hasInitialized]);
 
-  // Refresh user state periodically only if initialized
+  // Refresh user state periodically only if user is logged in and initialized
   useEffect(() => {
-    if (!hasInitialized) return;
+    if (!hasInitialized || !user) return;
 
     const interval = setInterval(async () => {
       try {
@@ -51,10 +51,10 @@ export default function FloatingHeader() {
         // Silently handle periodic check failures
         console.debug("Periodic auth check failed:", error);
       }
-    }, 5 * 60 * 1000); // Check every 5 minutes instead of 1 minute
+    }, 10 * 60 * 1000); // Check every 10 minutes only for logged in users
 
     return () => clearInterval(interval);
-  }, [checkUser, hasInitialized]);
+  }, [checkUser, hasInitialized, user]);
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
@@ -68,11 +68,28 @@ export default function FloatingHeader() {
     return () => document.removeEventListener("keydown", down);
   }, []);
 
-  const renderMobileMenuButton = () => (
+  const navigationItems = useMemo(() => [
+    { href: "/", label: "Home" },
+    { href: "/explore", label: "Explore" },
+    { href: "/all-games", label: "All Games" },
+    { href: "/about", label: "About" },
+  ], []);
+
+  const handleSearchOpen = useCallback(() => {
+    setIsSearchOpen(true);
+  }, []);
+
+  const handleSearchToggle = useCallback((open: boolean) => {
+    setIsSearchOpen(open);
+  }, []);
+
+  const renderMobileMenuButton = useMemo(() => (
     <Button
       onClick={toggleMobileMenu}
       variant="ghost"
       className="md:hidden p-2 text-gray-400 hover:text-white"
+      aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
+      aria-expanded={isMobileMenuOpen}
     >
       {isMobileMenuOpen ? (
         <X className="h-6 w-6" />
@@ -80,7 +97,7 @@ export default function FloatingHeader() {
         <Menu className="h-6 w-6" />
       )}
     </Button>
-  );
+  ), [isMobileMenuOpen, toggleMobileMenu]);
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50">
@@ -99,7 +116,7 @@ export default function FloatingHeader() {
                 <Button
                   variant="ghost"
                   className="relative w-full h-10 justify-start text-sm text-muted-foreground sm:pr-12"
-                  onClick={() => setIsSearchOpen(true)}
+                  onClick={handleSearchOpen}
                 >
                   <span className="hidden sm:inline-flex">Search games...</span>
                   <span className="inline-flex sm:hidden">Search...</span>
@@ -110,18 +127,11 @@ export default function FloatingHeader() {
               </div>
               <SearchDialog
                 open={isSearchOpen}
-                onOpenChange={setIsSearchOpen}
+                onOpenChange={handleSearchToggle}
               />
 
-              <nav className="hidden md:flex items-center">
-                <AnimatedNav
-                  items={[
-                    { href: "/", label: "Home" },
-                    { href: "/explore", label: "Explore" },
-                    { href: "/all-games", label: "All Games" },
-                    { href: "/about", label: "About" },
-                  ]}
-                />
+              <nav className="hidden md:flex items-center" role="navigation" aria-label="Main navigation">
+                <AnimatedNav items={navigationItems} />
               </nav>
 
               <div className="flex items-center">
@@ -129,7 +139,7 @@ export default function FloatingHeader() {
               </div>
             </div>
 
-            {renderMobileMenuButton()}
+            {renderMobileMenuButton}
           </div>
         </div>
       </div>

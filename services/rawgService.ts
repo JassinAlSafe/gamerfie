@@ -180,6 +180,41 @@ export class RAWGService {
     }
   }
 
+  static async getRecentGames(page: number = 1, pageSize: number = 20) {
+    try {
+      // Get games released in the last 6 months
+      const sixMonthsAgo = new Date();
+      sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+      
+      const response = await this.fetchFromRAWG<RAWGResponse<RAWGGame>>("/games", {
+        dates: `${sixMonthsAgo.toISOString().split("T")[0]},${new Date().toISOString().split("T")[0]}`,
+        ordering: "-released,-rating",        // Order by release date first, then rating
+        page,
+        page_size: pageSize,
+        exclude_additions: true,              // Exclude DLCs
+        exclude_parents: true,                // Exclude parent games
+        rating: "3.0,5.0",                    // Decent user ratings
+        platforms: "18,1,7,186,187,4,5,6",    // Major platforms only
+      });
+
+      if (!response || !response.results) {
+        throw new Error('Invalid response from RAWG API');
+      }
+
+      return {
+        games: response.results.filter(Boolean).map(this.mapRAWGGameToGame),
+        total: response.count || 0,
+        page,
+        pageSize,
+        hasNextPage: !!response.next,
+        hasPreviousPage: !!response.previous
+      };
+    } catch (error) {
+      console.error('Error fetching recent games from RAWG:', error);
+      throw error;
+    }
+  }
+
   static async getGameScreenshots(gameId: string) {
     const response = await this.fetchFromRAWG<RAWGResponse<{ id: number; image: string }>>(`/games/${gameId}/screenshots`);
     return response.results;

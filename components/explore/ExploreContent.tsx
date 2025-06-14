@@ -1,12 +1,12 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { Suspense, useState, useEffect } from "react";
+import { Suspense, useState, useEffect, memo } from "react";
 import { TracingBeam } from "@/components/ui/tracing-beam";
 import { ErrorBoundary } from "react-error-boundary";
-import { useExplore } from "@/hooks/Games/useExplore";
-import { GAME_CATEGORIES } from "@/config/categories";
-import { PopularGamesSection } from "../games/sections/popular-games-section";
+import { useExploreOptimized } from "@/hooks/useExploreOptimized";
+// GAME_CATEGORIES removed - using CATEGORY_CONFIGS instead
+import { GameSection } from "../shared/GameSection/GameSection";
 import HeroSection from "./HeroSection/HeroSection";
 import {
   HeroSkeleton,
@@ -14,7 +14,7 @@ import {
 } from "./GameCategoriesSkeleton/GameCategoriesSkeleton";
 import { ErrorFallback } from "../games/ui/error-display";
 import { Separator } from "@/components/ui/separator";
-import { Trophy, Flame, Star, Users2 } from "lucide-react";
+import { Trophy, Flame, Star, Users2, TrendingUp, CalendarDays, Zap } from "lucide-react";
 
 import { GameShowcase } from "./GameShowcase/GameShowcase";
 import { PlaylistService } from "@/services/playlistService";
@@ -33,13 +33,13 @@ interface StatCardProps {
   gradient: string;
 }
 
-function StatCard({
+const StatCard = memo(({
   icon,
   title,
   value,
   description,
   gradient,
-}: StatCardProps) {
+}: StatCardProps) => {
   return (
     <div
       className={`relative rounded-xl border border-white/5 p-6 overflow-hidden ${gradient}`}
@@ -57,9 +57,11 @@ function StatCard({
       </div>
     </div>
   );
-}
+});
 
-function CommunityStats() {
+StatCard.displayName = "StatCard";
+
+const CommunityStats = memo(() => {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
       <StatCard
@@ -92,16 +94,88 @@ function CommunityStats() {
       />
     </div>
   );
-}
+});
 
-export function ExploreContent() {
+CommunityStats.displayName = "CommunityStats";
+
+// Optimized category configuration
+const CATEGORY_CONFIGS = [
+  { 
+    source: "trending" as const, 
+    title: "Trending Now", 
+    icon: TrendingUp, 
+    iconColor: "text-green-500" 
+  },
+  { 
+    source: "popular" as const, 
+    title: "Popular Games", 
+    icon: Flame, 
+    iconColor: "text-orange-500" 
+  },
+  { 
+    source: "upcoming" as const, 
+    title: "Coming Soon", 
+    icon: CalendarDays, 
+    iconColor: "text-purple-500" 
+  },
+  { 
+    source: "recent" as const, 
+    title: "Recently Released", 
+    icon: Zap, 
+    iconColor: "text-blue-500" 
+  },
+] as const;
+
+const PlaylistSection = memo(({ playlists, isLoading }: { 
+  playlists: Playlist[]; 
+  isLoading: boolean; 
+}) => (
+  <section className="space-y-8">
+    <div className="text-center space-y-4">
+      <h2 className="text-3xl font-bold text-white">
+        Featured Collections
+      </h2>
+      <p className="text-white/60 max-w-2xl mx-auto">
+        Discover curated collections of games handpicked by our
+        community
+      </p>
+    </div>
+    {isLoading ? (
+      <div className="text-center py-12">
+        <div className="text-white/60">Loading playlists...</div>
+      </div>
+    ) : (
+      <div className="space-y-8">
+        {playlists.map((playlist) => (
+          <GameShowcase
+            key={playlist.id}
+            playlistId={playlist.id}
+            title={playlist.title}
+            description={playlist.description}
+            date={new Date(playlist.createdAt).toLocaleDateString()}
+            type={playlist.type}
+          />
+        ))}
+        {playlists.length === 0 && (
+          <div className="text-center py-12">
+            <p className="text-white/60">No playlists available.</p>
+          </div>
+        )}
+      </div>
+    )}
+  </section>
+));
+
+PlaylistSection.displayName = "PlaylistSection";
+
+export const ExploreContent = memo(() => {
   const {
     searchQuery,
     handleSearchChange,
     handleKeyPress,
     searchButton,
     categoryButtons,
-  } = useExplore();
+  } = useExploreOptimized();
 
   const [playlists, setPlaylists] = useState<Playlist[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -139,15 +213,23 @@ export function ExploreContent() {
 
           <Suspense fallback={<GameCategoriesSkeleton />}>
             <div className="space-y-12">
-              {GAME_CATEGORIES.map(({ id }) => (
+              {CATEGORY_CONFIGS.map(({ source, title, icon, iconColor }) => (
                 <ErrorBoundary
-                  key={id}
+                  key={source}
                   FallbackComponent={ErrorFallback}
                   onReset={() => {
                     // Reset error state
                   }}
                 >
-                  <PopularGamesSection category={id} />
+                  <GameSection
+                    source={source}
+                    title={title}
+                    icon={icon}
+                    iconColor={iconColor}
+                    limit={12}
+                    animated
+                    priority={source === "trending"}
+                  />
                 </ErrorBoundary>
               ))}
             </div>
@@ -170,41 +252,12 @@ export function ExploreContent() {
           </section>
 
           {/* Game Showcase Section */}
-          <section className="space-y-8">
-            <div className="text-center space-y-4">
-              <h2 className="text-3xl font-bold text-white">
-                Featured Collections
-              </h2>
-              <p className="text-white/60 max-w-2xl mx-auto">
-                Discover curated collections of games handpicked by our
-                community
-              </p>
-            </div>
-            {isLoading ? (
-              <div>Loading playlists...</div>
-            ) : (
-              <div className="space-y-8">
-                {playlists.map((playlist) => (
-                  <GameShowcase
-                    key={playlist.id}
-                    playlistId={playlist.id}
-                    title={playlist.title}
-                    description={playlist.description}
-                    date={new Date(playlist.createdAt).toLocaleDateString()}
-                    type={playlist.type}
-                  />
-                ))}
-                {playlists.length === 0 && (
-                  <div className="text-center py-12">
-                    <p className="text-white/60">No playlists available.</p>
-                  </div>
-                )}
-              </div>
-            )}
-          </section>
+          <PlaylistSection playlists={playlists} isLoading={isLoading} />
         </div>
       </TracingBeam>
       <BackToTopButton />
     </div>
   );
-}
+});
+
+ExploreContent.displayName = "ExploreContent";

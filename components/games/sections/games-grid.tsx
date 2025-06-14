@@ -4,7 +4,7 @@ import { memo, useMemo, useRef } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { useWindowSize } from "@/hooks/Settings/useWindowSize";
 import { Game } from "@/types";
-import { GameCard } from "@/components/GameCard"; // Update import path
+import { GameCard } from "@/components/shared/GameCard/GameCard";
 import { useGamesStore } from "@/stores/useGamesStore";
 import { Gamepad2 } from "lucide-react";
 import { useViewModeStore } from "@/stores/useViewModeStore";

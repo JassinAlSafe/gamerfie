@@ -1,4 +1,4 @@
-import { useQuery, UseQueryResult } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useCallback } from "react";
 import { Game } from "@/types";
 
@@ -13,10 +13,13 @@ interface GameFetchOptions {
   cacheTime?: number;
 }
 
-interface GameFetchResult extends UseQueryResult<Game[], Error> {
+interface GameFetchResult {
   games: Game[];
   isEmpty: boolean;
   hasData: boolean;
+  isLoading: boolean;
+  error: Error | null;
+  refetch: () => void;
 }
 
 /**
@@ -85,7 +88,7 @@ export function useGameFetch({
     queryKey: ["games", source, limit, playlistId].filter(Boolean),
     queryFn: fetchGames,
     staleTime,
-    cacheTime,
+    gcTime: cacheTime,
     refetchOnWindowFocus: enableRefetch,
     retry: (failureCount, error) => {
       // Don't retry more than 2 times
@@ -108,9 +111,11 @@ export function useGameFetch({
   const games = queryResult.data || [];
   
   return {
-    ...queryResult,
     games,
     isEmpty: games.length === 0,
     hasData: games.length > 0,
+    isLoading: queryResult.isLoading,
+    error: queryResult.error,
+    refetch: queryResult.refetch,
   };
 }
