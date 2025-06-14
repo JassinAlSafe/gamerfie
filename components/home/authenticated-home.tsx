@@ -8,7 +8,6 @@ import { useLibraryStore } from "@/stores/useLibraryStore";
 import { useEffect, useMemo, memo, Suspense, useRef, useState } from "react";
 import { ProfileCard } from "./ProfileCard";
 import { WelcomeHeader } from "./WelcomeHeader";
-import { FloatingActions } from "./FloatingActions";
 import { BentoGrid } from "@/components/BuilderBlocks/BentoGrid/index";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ErrorBoundary } from "@/components/error-boundary";
@@ -157,8 +156,6 @@ const AuthenticatedHomeComponent = memo(function AuthenticatedHome({
           </div>
         </section>
 
-        {/* Floating Actions */}
-        <FloatingActions />
       </div>
     </Shell>
   );
