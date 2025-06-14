@@ -3,6 +3,9 @@ import { Icons } from "@/components/ui/icons";
 import { SignInForm } from "../components/auth/SignInForm";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
+import { AuthErrorBoundary } from "@/components/auth/AuthErrorBoundary";
+import { Suspense } from "react";
+import { AuthFormSkeleton } from "@/components/auth/AuthSkeleton";
 
 export default function SignInPage() {
   return (
@@ -44,7 +47,11 @@ export default function SignInPage() {
               Enter your details below to access your account
             </p>
           </div>
-          <SignInForm />
+          <AuthErrorBoundary>
+            <Suspense fallback={<AuthFormSkeleton />}>
+              <SignInForm />
+            </Suspense>
+          </AuthErrorBoundary>
           <p className="text-center text-sm text-muted-foreground">
             Don&apos;t have an account?{" "}
             <Link

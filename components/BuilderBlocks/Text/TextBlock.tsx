@@ -2,6 +2,8 @@
 
 import ASCIIText from "./ASCIIText/ASCIIText";
 import { cn } from "@/lib/utils";
+import { useAuthStore } from "@/stores/useAuthStore";
+import { useMemo } from "react";
 
 interface TextBlockProps {
   className?: string;
@@ -23,6 +25,51 @@ export function TextBlock({
   planeBaseHeight = 10,
   enableWaves = true,
 }: TextBlockProps) {
+  const { user } = useAuthStore();
+
+  const processedText = useMemo(() => {
+    if (!text) return text;
+
+    let processedText = text;
+
+    // Replace user placeholders
+    if (user?.profile) {
+      // Now we can directly access display_name from the properly typed profile
+      processedText = processedText.replace(
+        /\{user\.display_name\}/g,
+        user.profile.display_name || user.profile.username || "User"
+      );
+      processedText = processedText.replace(
+        /\{user\.username\}/g,
+        user.profile.username || "User"
+      );
+      processedText = processedText.replace(
+        /\{user\.email\}/g,
+        user.email || "user@example.com"
+      );
+    } else {
+      // Fallback when user is not logged in
+      processedText = processedText.replace(/\{user\.display_name\}/g, "Guest");
+      processedText = processedText.replace(/\{user\.username\}/g, "Guest");
+      processedText = processedText.replace(
+        /\{user\.email\}/g,
+        "guest@example.com"
+      );
+    }
+
+    // Add more dynamic replacements as needed
+    processedText = processedText.replace(
+      /\{date\}/g,
+      new Date().toLocaleDateString()
+    );
+    processedText = processedText.replace(
+      /\{time\}/g,
+      new Date().toLocaleTimeString()
+    );
+
+    return processedText;
+  }, [text, user]);
+
   return (
     <div
       className={cn(
@@ -33,7 +80,7 @@ export function TextBlock({
     >
       <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
         <ASCIIText
-          text={text}
+          text={processedText}
           asciiFontSize={asciiFontSize}
           textFontSize={textFontSize}
           textColor={textColor}

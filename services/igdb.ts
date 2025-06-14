@@ -441,6 +441,45 @@ export class IGDBService {
     }
   }
 
+  static async getRecentGames(limit: number = 10): Promise<Game[]> {
+    try {
+      const now = Math.floor(Date.now() / 1000);
+      const sixMonthsAgo = now - (180 * 24 * 60 * 60); // 6 months ago
+
+      const query = `
+        fields name, cover.*, cover.url, cover.image_id, rating, total_rating_count, genres.*, platforms.*, first_release_date, summary, screenshots.*, videos.*, artworks.*;
+        where cover != null 
+        & first_release_date >= ${sixMonthsAgo}
+        & first_release_date <= ${now}
+        & total_rating_count > 5;
+        sort first_release_date desc;
+        limit ${limit};
+      `;
+
+      const response = await fetch(this.getProxyUrl(), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          endpoint: 'games',
+          query: query.trim()
+        })
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Failed to fetch recent games: ${errorText}`);
+      }
+
+      const games = await response.json();
+      return games.map(this.processGame);
+    } catch (error) {
+      console.error("Error fetching recent games:", error);
+      throw error;
+    }
+  }
+
   static async fetchGameDetails(gameId: string) {
     try {
       console.log('Fetching game details from IGDB for ID:', gameId);

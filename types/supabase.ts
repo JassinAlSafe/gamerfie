@@ -1,171 +1,151 @@
-export interface Database {
+export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[]
+
+export type Database = {
   public: {
     Tables: {
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          bio: string | null
+          created_at: string
+          display_name: string | null
+          email: string | null
+          id: string
+          role: Database["public"]["Enums"]["user_role"]
+          settings: Json | null
+          updated_at: string
+          username: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string
+          display_name?: string | null
+          email?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["user_role"]
+          settings?: Json | null
+          updated_at?: string
+          username: string
+        }
+        Update: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string
+          display_name?: string | null
+          email?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["user_role"]
+          settings?: Json | null
+          updated_at?: string
+          username?: string
+        }
+      }
       games: {
         Row: {
+          cover_url: string | null
+          created_at: string
+          first_release_date: number | null
+          genres: Json | null
           id: string
           name: string
-          cover_url: string | null
-          cover: {
-            id: number
-            url: string
-          } | null
+          platforms: Json | null
           rating: number | null
-          first_release_date: number | null
-          platforms: string[] | null
-          genres: string[] | null
-          summary: string | null
           storyline: string | null
-          created_at: string
+          summary: string | null
+          total_rating_count: number | null
           updated_at: string
         }
         Insert: {
-          id?: string
-          name: string
           cover_url?: string | null
-          cover: {
-            id: number
-            url: string
-          } | null
-          rating?: number | null
-          first_release_date?: number | null
-          platforms?: string[] | null
-          genres?: string[] | null
-          summary?: string | null
-          storyline?: string | null
           created_at?: string
+          first_release_date?: number | null
+          genres?: Json | null
+          id: string
+          name: string
+          platforms?: Json | null
+          rating?: number | null
+          storyline?: string | null
+          summary?: string | null
+          total_rating_count?: number | null
           updated_at?: string
         }
         Update: {
+          cover_url?: string | null
+          created_at?: string
+          first_release_date?: number | null
+          genres?: Json | null
           id?: string
           name?: string
-          cover_url?: string | null
-          cover?: {
-            id: number
-            url: string
-          } | null
+          platforms?: Json | null
           rating?: number | null
-          first_release_date?: number | null
-          platforms?: string[] | null
-          genres?: string[] | null
-          summary?: string | null
           storyline?: string | null
+          summary?: string | null
+          total_rating_count?: number | null
           updated_at?: string
         }
       }
       user_games: {
         Row: {
-          id: string
-          user_id: string | null
-          game_id: string | null
-          status: string | null
-          play_time: number | null
-          user_rating: number | null
-          completed_at: string | null
-          notes: string | null
-          last_played_at: string | null
-          display_order: number | null
-          created_at: string
-          updated_at: string
-          completion_percentage: number | null
           achievements_completed: number | null
-        }
-        Insert: {
-          id?: string
-          user_id?: string | null
-          game_id?: string | null
-          status?: string | null
-          play_time?: number | null
-          user_rating?: number | null
-          completed_at?: string | null
-          notes?: string | null
-          last_played_at?: string | null
-          display_order?: number | null
-          created_at?: string
-          updated_at?: string
-          completion_percentage?: number | null
-          achievements_completed?: number | null
-        }
-        Update: {
-          id?: string
-          user_id?: string | null
-          game_id?: string | null
-          status?: string | null
-          play_time?: number | null
-          user_rating?: number | null
-          completed_at?: string | null
-          notes?: string | null
-          last_played_at?: string | null
-          display_order?: number | null
-          updated_at?: string
-          completion_percentage?: number | null
-          achievements_completed?: number | null
-        }
-      }
-      profiles: {
-        Row: {
+          completed_at: string | null
+          completion_percentage: number | null
+          created_at: string
+          display_order: number | null
+          game_id: string
           id: string
-          username: string
-          avatar_url: string | null
-          role: 'admin' | 'user' | null
+          last_played_at: string | null
+          notes: string | null
+          play_time: number | null
+          status: Database["public"]["Enums"]["game_status"] | null
           updated_at: string
-          created_at: string
+          user_id: string
+          user_rating: number | null
         }
         Insert: {
-          id?: string
-          username: string
-          avatar_url?: string | null
-          role?: 'admin' | 'user' | null
-          full_name?: string | null
-          bio?: string | null
+          achievements_completed?: number | null
+          completed_at?: string | null
+          completion_percentage?: number | null
           created_at?: string
+          display_order?: number | null
+          game_id: string
+          id?: string
+          last_played_at?: string | null
+          notes?: string | null
+          play_time?: number | null
+          status?: Database["public"]["Enums"]["game_status"] | null
           updated_at?: string
+          user_id: string
+          user_rating?: number | null
         }
         Update: {
+          achievements_completed?: number | null
+          completed_at?: string | null
+          completion_percentage?: number | null
+          created_at?: string
+          display_order?: number | null
+          game_id?: string
           id?: string
-          username?: string
-          avatar_url?: string | null
-          role?: 'admin' | 'user' | null
-          full_name?: string | null
-          bio?: string | null
+          last_played_at?: string | null
+          notes?: string | null
+          play_time?: number | null
+          status?: Database["public"]["Enums"]["game_status"] | null
           updated_at?: string
-        }
-      }
-      list_comments: {
-        Row: {
-          id: string
-          list_id: string
-          user_id: string
-          content: string
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          list_id: string
-          user_id: string
-          content: string
-          created_at: string
-          updated_at: string
-        }
-        Update: {
-          id?: string
-          list_id?: string
           user_id?: string
-          content?: string
-          updated_at?: string
+          user_rating?: number | null
         }
       }
     }
-    Functions: {
-      increment_participants_count: {
-        Args: { challenge_id: string }
-        Returns: void
-      }
-      decrement_participants_count: {
-        Args: { challenge_id: string }
-        Returns: void
-      }
+    Enums: {
+      user_role: "user" | "admin" | "moderator"
+      game_status: "playing" | "completed" | "want_to_play" | "dropped"
+      friend_status: "pending" | "accepted" | "blocked" | "declined"
     }
   }
 }

@@ -6,7 +6,7 @@ import { Playlist } from "@/types/playlist";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { PlaylistService } from "@/services/playlistService";
 import { useRouter } from "next/navigation";
-import { GameCard } from "./components/GameCard";
+import { GameCard } from "../../shared/GameCard/GameCard";
 import { PlaylistHeader } from "./components/PlaylistHeader";
 import { GameShowcaseSkeleton } from "./components/GameShowcaseSkeleton";
 
@@ -106,8 +106,14 @@ export const GameShowcase = memo(
         />
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
-          {games.slice(0, 5).map((game) => (
-            <GameCard key={game.id} game={game} />
+          {games.slice(0, 5).map((game, index) => (
+            <GameCard 
+              key={game.id} 
+              game={game} 
+              variant="showcase" 
+              priority={index < 2}
+              showActions
+            />
           ))}
         </div>
       </div>

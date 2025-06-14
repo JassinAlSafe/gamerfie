@@ -7,7 +7,7 @@ import { useVirtualizer } from "@tanstack/react-virtual";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, LucideIcon } from "lucide-react";
 import { Game } from "@/types";
-import { GameCard } from "@/components/GameCard";
+import { GameCard } from "@/components/shared/GameCard/GameCard";
 
 type CategoryOption =
   | "all"
@@ -116,6 +116,7 @@ export const GameCarousel = memo(
                     <div className="w-full h-full relative">
                       <GameCard
                         game={game}
+                        variant="carousel"
                         index={virtualItem.index}
                         category={category}
                         priority={virtualItem.index < 3}

@@ -88,11 +88,15 @@ export const useAuthStore = create<AuthState>()(
               // If no profile exists, create one
               if (!profile) {
                 const username = session.user.email?.split('@')[0] || 'user';
+                const displayName = session.user.user_metadata?.display_name || session.user.user_metadata?.full_name || username;
                 const { data: newProfile, error: insertError } = await supabase
                   .from('profiles')
                   .insert({
                     id: session.user.id,
                     username,
+                    display_name: displayName,
+                    email: session.user.email || null,
+                    avatar_url: session.user.user_metadata?.avatar_url,
                     role: 'user',
                     created_at: new Date().toISOString(),
                     updated_at: new Date().toISOString()
@@ -185,6 +189,8 @@ export const useAuthStore = create<AuthState>()(
                 .insert({
                   id: response.data.user.id,
                   username: _username,
+                  display_name: _username,
+                  email: response.data.user.email || null,
                   role: 'user',
                   created_at: new Date().toISOString(),
                   updated_at: new Date().toISOString()
@@ -197,7 +203,11 @@ export const useAuthStore = create<AuthState>()(
               const newProfile: Profile = {
                 id: response.data.user.id,
                 username: _username,
+                display_name: _username,
+                bio: null,
                 avatar_url: null,
+                email: response.data.user.email || null,
+                settings: null,
                 role: 'user',
                 created_at: new Date().toISOString(),
                 updated_at: new Date().toISOString()
