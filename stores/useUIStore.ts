@@ -4,12 +4,15 @@ import { persist } from 'zustand/middleware'
 interface UIState {
   isMobileMenuOpen: boolean
   isProfileMenuOpen: boolean
+  isBetaBannerVisible: boolean
   theme: 'light' | 'dark' | 'system'
   setMobileMenu: (isOpen: boolean) => void
   setProfileMenu: (isOpen: boolean) => void
+  setBetaBanner: (isVisible: boolean) => void
   setTheme: (theme: 'light' | 'dark' | 'system') => void
   toggleMobileMenu: () => void
   toggleProfileMenu: () => void
+  dismissBetaBanner: () => void
   closeAllMenus: () => void
   computedTheme: 'light' | 'dark'
   initTheme: () => () => void
@@ -20,10 +23,12 @@ export const useUIStore = create<UIState>()(
     (set, get) => ({
       isMobileMenuOpen: false,
       isProfileMenuOpen: false,
+      isBetaBannerVisible: true,
       theme: 'dark',
       computedTheme: 'dark',
       setMobileMenu: (isOpen) => set({ isMobileMenuOpen: isOpen }),
       setProfileMenu: (isOpen) => set({ isProfileMenuOpen: isOpen }),
+      setBetaBanner: (isVisible) => set({ isBetaBannerVisible: isVisible }),
       setTheme: (theme) => {
         set({ theme });
         if (theme !== 'system') {
@@ -42,6 +47,10 @@ export const useUIStore = create<UIState>()(
         isProfileMenuOpen: !state.isProfileMenuOpen,
         isMobileMenuOpen: false 
       })),
+      dismissBetaBanner: () => {
+        set({ isBetaBannerVisible: false });
+        localStorage.setItem('beta-banner-dismissed', 'true');
+      },
       closeAllMenus: () => set({ 
         isMobileMenuOpen: false, 
         isProfileMenuOpen: false 
@@ -49,6 +58,12 @@ export const useUIStore = create<UIState>()(
       initTheme: () => {
         // Force dark theme initially
         set({ computedTheme: 'dark' });
+        
+        // Initialize beta banner state from localStorage
+        const isDismissed = localStorage.getItem('beta-banner-dismissed');
+        if (isDismissed === 'true') {
+          set({ isBetaBannerVisible: false });
+        }
         
         const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
         const handleChange = (e: MediaQueryListEvent) => {

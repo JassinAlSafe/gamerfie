@@ -13,7 +13,8 @@ import { Button } from "@/components/ui/button";
 
 export default function FloatingHeader() {
   const { initialize, isInitialized, checkUser, user } = useAuthStore();
-  const { isMobileMenuOpen, toggleMobileMenu } = useUIStore();
+  const { isMobileMenuOpen, toggleMobileMenu, isBetaBannerVisible } =
+    useUIStore();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [hasInitialized, setHasInitialized] = useState(false);
 
@@ -106,7 +107,11 @@ export default function FloatingHeader() {
   );
 
   return (
-    <header className="fixed top-10 left-0 right-0 header-fixed">
+    <header
+      className={`fixed left-0 right-0 header-fixed transition-all duration-300 ${
+        isBetaBannerVisible ? "top-10" : "top-0"
+      }`}
+    >
       <div className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 header-backdrop">
         <div className="container mx-auto max-w-[1920px] header-container px-4 sm:px-6 md:px-6 lg:px-8">
           <div className="relative flex header-height h-16 items-center justify-between">

@@ -1,25 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { X, MessageSquare, AlertCircle } from "lucide-react";
 import Link from "next/link";
+import { useUIStore } from "@/stores/useUIStore";
 
 export function BetaBanner() {
-  const [isVisible, setIsVisible] = useState(true);
+  const { isBetaBannerVisible, dismissBetaBanner } = useUIStore();
 
-  useEffect(() => {
-    const isDismissed = localStorage.getItem("beta-banner-dismissed");
-    if (isDismissed === "true") {
-      setIsVisible(false);
-    }
-  }, []);
-
-  const handleDismiss = () => {
-    setIsVisible(false);
-    localStorage.setItem("beta-banner-dismissed", "true");
-  };
-
-  if (!isVisible) return null;
+  if (!isBetaBannerVisible) return null;
 
   return (
     <div className="fixed top-0 left-0 right-0 bg-gradient-to-r from-purple-900/90 to-violet-900/90 backdrop-blur-sm border-b border-purple-500/20 px-4 py-2 text-white text-sm z-50">
@@ -49,7 +37,7 @@ export function BetaBanner() {
         </div>
 
         <button
-          onClick={handleDismiss}
+          onClick={dismissBetaBanner}
           className="ml-3 p-1 hover:bg-purple-700/50 rounded-full transition-colors"
           aria-label="Dismiss banner"
         >

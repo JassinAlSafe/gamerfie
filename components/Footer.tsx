@@ -2,23 +2,22 @@
 import React from "react";
 import Link from "next/link";
 import {
-  IconBrandFacebook,
+  IconBrandThreads,
   IconBrandInstagram,
   IconBrandDiscord,
   IconBrandLinkedin,
   IconDeviceGamepad2,
-} from "@tabler/icons-react";
+} from "./ui/custom-icons";
 
 export function Footer() {
   return (
     <footer className="relative bg-gradient-to-t from-gray-950 to-gray-900 border-t border-gray-800/50">
       {/* Subtle top glow */}
       <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-96 h-px bg-gradient-to-r from-transparent via-purple-500/30 to-transparent"></div>
-      
+
       <div className="container mx-auto px-4 py-16">
         {/* Main Footer Content */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16">
-          
           {/* Brand Section */}
           <div className="lg:col-span-4">
             <div className="flex items-center space-x-3 mb-6">
@@ -30,16 +29,33 @@ export function Footer() {
               </h3>
             </div>
             <p className="text-gray-400 leading-relaxed mb-8 max-w-sm">
-              Your ultimate gaming companion for tracking progress, discovering new games, and connecting with fellow gamers worldwide.
+              Your ultimate gaming companion for tracking progress, discovering
+              new games, and connecting with fellow gamers worldwide.
             </p>
-            
+
             {/* Social Links */}
             <div className="flex space-x-3">
               {[
-                { icon: IconBrandLinkedin, href: "https://www.linkedin.com/company/amedesign-swe/", label: "LinkedIn" },
-                { icon: IconBrandFacebook, href: "https://facebook.com/gamerfie", label: "Facebook" },
-                { icon: IconBrandInstagram, href: "https://instagram.com/gamerfie", label: "Instagram" },
-                { icon: IconBrandDiscord, href: "https://discord.gg/gamerfie", label: "Discord" },
+                {
+                  icon: IconBrandLinkedin,
+                  href: "https://www.linkedin.com/company/amedesign-swe/",
+                  label: "LinkedIn",
+                },
+                {
+                  icon: IconBrandThreads,
+                  href: "https://threads.net/@gamerfie",
+                  label: "Threads",
+                },
+                {
+                  icon: IconBrandInstagram,
+                  href: "https://instagram.com/gamerfie",
+                  label: "Instagram",
+                },
+                {
+                  icon: IconBrandDiscord,
+                  href: "https://discord.gg/gamerfie",
+                  label: "Discord",
+                },
               ].map(({ icon: Icon, href, label }) => (
                 <Link
                   key={label}
@@ -57,10 +73,11 @@ export function Footer() {
 
           {/* Navigation Links */}
           <div className="lg:col-span-6 grid grid-cols-2 md:grid-cols-3 gap-8">
-            
             {/* Platform */}
             <div>
-              <h4 className="text-white font-semibold mb-6 text-sm uppercase tracking-wider">Platform</h4>
+              <h4 className="text-white font-semibold mb-6 text-sm uppercase tracking-wider">
+                Platform
+              </h4>
               <ul className="space-y-4">
                 {[
                   { label: "Home", href: "/" },
@@ -70,8 +87,8 @@ export function Footer() {
                   { label: "Community", href: "/community" },
                 ].map(({ label, href }) => (
                   <li key={label}>
-                    <Link 
-                      href={href} 
+                    <Link
+                      href={href}
                       className="text-gray-400 hover:text-white transition-colors duration-300 text-sm group relative"
                     >
                       <span className="relative">
@@ -86,7 +103,9 @@ export function Footer() {
 
             {/* Support */}
             <div>
-              <h4 className="text-white font-semibold mb-6 text-sm uppercase tracking-wider">Support</h4>
+              <h4 className="text-white font-semibold mb-6 text-sm uppercase tracking-wider">
+                Support
+              </h4>
               <ul className="space-y-4">
                 {[
                   { label: "FAQ", href: "/info/faq" },
@@ -95,8 +114,8 @@ export function Footer() {
                   { label: "Accessibility", href: "/accessibility" },
                 ].map(({ label, href }) => (
                   <li key={label}>
-                    <Link 
-                      href={href} 
+                    <Link
+                      href={href}
                       className="text-gray-400 hover:text-white transition-colors duration-300 text-sm group relative"
                     >
                       <span className="relative">
@@ -111,7 +130,9 @@ export function Footer() {
 
             {/* Legal */}
             <div>
-              <h4 className="text-white font-semibold mb-6 text-sm uppercase tracking-wider">Legal</h4>
+              <h4 className="text-white font-semibold mb-6 text-sm uppercase tracking-wider">
+                Legal
+              </h4>
               <ul className="space-y-4">
                 {[
                   { label: "Privacy Policy", href: "/info/privacy" },
@@ -119,8 +140,8 @@ export function Footer() {
                   { label: "Sitemap", href: "/sitemap" },
                 ].map(({ label, href }) => (
                   <li key={label}>
-                    <Link 
-                      href={href} 
+                    <Link
+                      href={href}
                       className="text-gray-400 hover:text-white transition-colors duration-300 text-sm group relative"
                     >
                       <span className="relative">
@@ -136,7 +157,9 @@ export function Footer() {
 
           {/* Newsletter/CTA Section */}
           <div className="lg:col-span-2">
-            <h4 className="text-white font-semibold mb-6 text-sm uppercase tracking-wider">Stay Updated</h4>
+            <h4 className="text-white font-semibold mb-6 text-sm uppercase tracking-wider">
+              Stay Updated
+            </h4>
             <p className="text-gray-400 text-sm mb-6 leading-relaxed">
               Get the latest gaming news and platform updates.
             </p>
@@ -145,7 +168,9 @@ export function Footer() {
               className="group inline-flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white text-sm font-medium rounded-lg transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-purple-500/25"
             >
               <span>Join Community</span>
-              <span className="group-hover:translate-x-1 transition-transform duration-300">→</span>
+              <span className="group-hover:translate-x-1 transition-transform duration-300">
+                →
+              </span>
             </Link>
           </div>
         </div>
@@ -154,7 +179,8 @@ export function Footer() {
         <div className="mt-16 pt-8 border-t border-gray-800/50">
           <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
             <p className="text-gray-500 text-sm">
-              © {new Date().getFullYear()} Game Vault by AmeDesign. All rights reserved.
+              © {new Date().getFullYear()} Game Vault by AmeDesign. All rights
+              reserved.
             </p>
             <div className="flex items-center space-x-1 text-gray-500 text-sm">
               <span>Made with</span>
