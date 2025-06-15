@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect } from "react";
-import * as Sentry from "@sentry/nextjs";
 import { Button } from "@/components/ui/button";
 
 export default function ErrorPage({
@@ -15,7 +14,7 @@ export default function ErrorPage({
       process.env.NEXT_PUBLIC_SENTRY_DSN &&
       process.env.NEXT_PUBLIC_SENTRY_DSN !== "your-sentry-dsn-here"
     ) {
-      Sentry.captureException(error);
+      console.error("Error:", error);
     } else {
       console.error("Error:", error);
     }

@@ -5,7 +5,7 @@ import { createClient } from "@/utils/supabase/client";
 import { createActivity } from '@/lib/activity/activity';
 import { GameList, GameListItem, GameListStore } from '@/types/gamelist/game-list';
 
-import * as Sentry from "@sentry/nextjs";
+
 
 export const useGameListStore = create<GameListStore>((set, get) => {
   const supabase = createClient();
@@ -367,13 +367,7 @@ export const useGameListStore = create<GameListStore>((set, get) => {
 
         set({ currentList: list });
       } catch (error) {
-        Sentry.captureException(error, {
-          tags: {
-            action: 'fetchListDetails',
-            listId
-          }
-        });
-        console.error('Error fetching list details:', error);
+        console.error('Error fetching list details:', error, { listId });
         const errorMessage = error instanceof Error ? error.message : 'Failed to fetch list details';
         set({ error: errorMessage });
         throw error;

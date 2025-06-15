@@ -9,7 +9,6 @@ import { ThemeProvider } from "next-themes";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useState } from "react";
 import SupabaseProvider from "@/components/providers/supabase-provider";
-import * as Sentry from "@sentry/nextjs";
 import { usePathname } from "next/navigation";
 import { CacheBuster } from "@/components/ui/cache-buster";
 import { AuthInitializer } from "@/components/auth/AuthInitializer";
@@ -38,18 +37,6 @@ const geistMono = localFont({
   display: "swap",
 });
 
-// Only initialize Sentry if DSN is properly configured
-if (
-  process.env.NEXT_PUBLIC_SENTRY_DSN &&
-  process.env.NEXT_PUBLIC_SENTRY_DSN !== "your-sentry-dsn-here"
-) {
-  Sentry.init({
-    dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
-    tracesSampleRate: 1.0,
-    debug: process.env.NODE_ENV === "development",
-  });
-}
-
 const authPages = ["/signin", "/signup", "/forgot-password"];
 
 export default function RootLayout({
@@ -76,6 +63,98 @@ export default function RootLayout({
 
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        {/* SEO Meta Tags */}
+        <title>
+          Game Vault - Ultimate Video Game Tracking & Gaming Community Platform
+        </title>
+        <meta
+          name="description"
+          content="Track your video game progress, discover new games, and connect with gamers worldwide. The ultimate gaming community platform for achievement tracking, game reviews, and gaming statistics."
+        />
+        <meta
+          name="keywords"
+          content="video game tracker, game tracking website, gaming progress tracker, video game library management, gaming community platform, game achievement tracker, track video games, gaming statistics, game collection manager, gaming journal, game review platform, video game database, gaming social network, achievement hunting, game completion tracker"
+        />
+
+        {/* Open Graph / Facebook */}
+        <meta property="og:type" content="website" />
+        <meta
+          property="og:title"
+          content="Game Vault - Ultimate Video Game Tracking Platform"
+        />
+        <meta
+          property="og:description"
+          content="Track your gaming journey, discover new games, and connect with fellow gamers. Your complete gaming companion."
+        />
+        <meta property="og:site_name" content="Game Vault" />
+        <meta property="og:locale" content="en_US" />
+
+        {/* Twitter */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta
+          name="twitter:title"
+          content="Game Vault - Track Your Gaming Journey"
+        />
+        <meta
+          name="twitter:description"
+          content="The ultimate platform for tracking video games, achievements, and connecting with the gaming community."
+        />
+
+        {/* Additional SEO */}
+        <meta
+          name="robots"
+          content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1"
+        />
+        <meta name="googlebot" content="index, follow" />
+        <meta name="author" content="Game Vault Team" />
+        <meta name="theme-color" content="#7c3aed" />
+        <meta name="msapplication-TileColor" content="#7c3aed" />
+
+        {/* Viewport */}
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+        {/* Preconnect for performance */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link
+          rel="preconnect"
+          href="https://fonts.gstatic.com"
+          crossOrigin=""
+        />
+        <link rel="preconnect" href="https://api.igdb.com" />
+        <link rel="preconnect" href="https://api.rawg.io" />
+
+        {/* Canonical URL */}
+        <link rel="canonical" href="https://gamevault.app" />
+
+        {/* Structured Data */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "WebApplication",
+              name: "Game Vault",
+              description:
+                "Ultimate video game tracking and gaming community platform",
+              url: "https://gamevault.app",
+              applicationCategory: "GameApplication",
+              operatingSystem: "Web",
+              offers: {
+                "@type": "Offer",
+                price: "0",
+                priceCurrency: "USD",
+              },
+              author: {
+                "@type": "Organization",
+                name: "Game Vault",
+              },
+              keywords:
+                "video games, game tracking, gaming community, achievements, game reviews",
+            }),
+          }}
+        />
+      </head>
       <body
         className={`${inter.className} ${geistSans.variable} ${geistMono.variable}`}
       >

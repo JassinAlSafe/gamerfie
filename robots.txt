@@ -1,0 +1,41 @@
+User-agent: *
+Allow: /
+
+# Allow search engines to crawl all pages
+Allow: /api/
+Allow: /auth/
+Allow: /info/
+Allow: /profile/
+Allow: /games/
+Allow: /explore/
+Allow: /all-games/
+Allow: /popular-games/
+Allow: /friends/
+Allow: /playlists/
+
+# Disallow admin and sensitive areas
+Disallow: /admin/
+Disallow: /api/auth/
+Disallow: /settings/
+Disallow: /_next/
+Disallow: /static/
+
+# Sitemaps
+Sitemap: https://gamevault.app/sitemap.xml
+Sitemap: https://gamevault.app/games-sitemap.xml
+
+# Crawl-delay for respectful crawling
+Crawl-delay: 1
+
+# Specific rules for major search engines
+User-agent: Googlebot
+Allow: /
+Crawl-delay: 1
+
+User-agent: Bingbot
+Allow: /
+Crawl-delay: 2
+
+User-agent: Slurp
+Allow: /
+Crawl-delay: 2 
