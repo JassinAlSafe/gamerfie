@@ -11,7 +11,7 @@ export default function Sitemap() {
             links={[
               { href: '/', label: 'Home' },
               { href: '/explore', label: 'Explore' },
-              { href: '/about', label: 'About' },
+              { href: '/info/about', label: 'About' },
             ]}
           />
           <SitemapSection

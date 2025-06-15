@@ -9,10 +9,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Loader2, Eye, EyeOff, Check } from "lucide-react";
+import { Loader2, Eye, EyeOff, Check, UserCheck } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { useAuthActions } from "@/hooks/useAuthOptimized";
 import { cn } from "@/lib/utils";
+import {
+  detectExistingUser,
+  type UserDetectionResult,
+} from "@/lib/auth-optimization";
+import { ProgressiveAuthLoader } from "./ProgressiveAuthLoader";
 
 const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg role="img" viewBox="0 0 24 24" {...props}>
@@ -55,13 +60,95 @@ export function AuthForm({ mode, onSuccess }: AuthFormProps) {
   });
   const [errors, setErrors] = useState<ValidationErrors>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
-  
+  const [userDetection, setUserDetection] =
+    useState<UserDetectionResult | null>(null);
+  const [isDetecting, setIsDetecting] = useState(false);
+
   // Debounce form data for validation
   const debouncedFormData = useDebounce(formData, 300);
+  const debouncedEmail = useDebounce(formData.email, 800); // Longer debounce for user detection
 
   const router = useRouter();
   const { toast } = useToast();
   const { signIn, signUp, signInWithGoogle } = useAuthActions();
+
+  // Check for auth errors in URL parameters
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const error = urlParams.get("error");
+    const authSuccess = urlParams.get("auth");
+
+    if (error) {
+      let errorMessage = "Authentication failed. Please try again.";
+
+      switch (error) {
+        case "oauth_failed":
+          errorMessage = "Google sign-in failed. Please try again.";
+          break;
+        case "auth_failed":
+          errorMessage =
+            "Authentication failed. Please check your credentials.";
+          break;
+        case "no_session":
+          errorMessage = "Could not establish session. Please try again.";
+          break;
+        case "callback_failed":
+          errorMessage = "Authentication callback failed. Please try again.";
+          break;
+        case "no_code":
+          errorMessage = "Invalid authentication request. Please try again.";
+          break;
+      }
+
+      toast({
+        title: "Authentication Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
+
+      // Clean up URL parameters
+      router.replace(window.location.pathname);
+    }
+
+    if (authSuccess === "success") {
+      toast({
+        title: "Welcome back!",
+        description: "You have successfully signed in.",
+      });
+
+      // Clean up URL parameters
+      router.replace(window.location.pathname);
+    }
+  }, [toast, router]);
+
+  // Smart user detection on email input
+  useEffect(() => {
+    if (debouncedEmail && debouncedEmail.includes("@") && !errors.email) {
+      setIsDetecting(true);
+      detectExistingUser(debouncedEmail)
+        .then((detection) => {
+          setUserDetection(detection);
+
+          // Show helpful message based on detection
+          if (detection.exists && mode === "signup") {
+            toast({
+              title: "Account Found",
+              description:
+                "This email is already registered. Try signing in instead.",
+              variant: "default",
+            });
+          }
+        })
+        .catch((error) => {
+          console.warn("User detection failed:", error);
+        })
+        .finally(() => {
+          setIsDetecting(false);
+        });
+    } else {
+      setUserDetection(null);
+    }
+  }, [debouncedEmail, errors.email, mode, toast]);
 
   const validateEmail = useCallback((email: string) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -70,69 +157,90 @@ export function AuthForm({ mode, onSuccess }: AuthFormProps) {
     return "";
   }, []);
 
-  const validatePassword = useCallback((password: string) => {
-    if (!password) return "Password is required";
-    if (mode === "signup" && password.length < 8) return "Password must be at least 8 characters";
-    return "";
-  }, [mode]);
+  const validatePassword = useCallback(
+    (password: string) => {
+      if (!password) return "Password is required";
+      if (mode === "signup" && password.length < 8)
+        return "Password must be at least 8 characters";
+      return "";
+    },
+    [mode]
+  );
 
-  const validateUsername = useCallback((username: string) => {
-    if (mode === "signup" && !username) return "Username is required";
-    if (mode === "signup" && username.length < 3) return "Username must be at least 3 characters";
-    return "";
-  }, [mode]);
+  const validateUsername = useCallback(
+    (username: string) => {
+      if (mode === "signup" && !username) return "Username is required";
+      if (mode === "signup" && username.length < 3)
+        return "Username must be at least 3 characters";
+      return "";
+    },
+    [mode]
+  );
 
-  const validateField = useCallback((name: string, value: string) => {
-    switch (name) {
-      case "email":
-        return validateEmail(value);
-      case "password":
-        return validatePassword(value);
-      case "username":
-        return validateUsername(value);
-      case "displayName":
-        return mode === "signup" && !value ? "Display name is required" : "";
-      default:
-        return "";
-    }
-  }, [mode, validateEmail, validatePassword, validateUsername]);
+  const validateField = useCallback(
+    (name: string, value: string) => {
+      switch (name) {
+        case "email":
+          return validateEmail(value);
+        case "password":
+          return validatePassword(value);
+        case "username":
+          return validateUsername(value);
+        case "displayName":
+          return mode === "signup" && !value ? "Display name is required" : "";
+        default:
+          return "";
+      }
+    },
+    [mode, validateEmail, validatePassword, validateUsername]
+  );
 
   // Auto-validate with debounced values
   useEffect(() => {
-    Object.keys(touched).forEach(fieldName => {
+    Object.keys(touched).forEach((fieldName) => {
       if (touched[fieldName]) {
         const value = debouncedFormData[fieldName as keyof FormData] as string;
         const error = validateField(fieldName, value);
-        setErrors(prev => ({ ...prev, [fieldName]: error }));
+        setErrors((prev) => ({ ...prev, [fieldName]: error }));
       }
     });
   }, [debouncedFormData, touched, validateField]);
 
-  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value, type, checked } = e.target;
-    const fieldValue = type === "checkbox" ? checked : value;
-    
-    setFormData(prev => ({ ...prev, [name]: fieldValue }));
-  }, []);
+  const handleInputChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const { name, value, type, checked } = e.target;
+      const fieldValue = type === "checkbox" ? checked : value;
 
-  const handleBlur = useCallback((e: React.FocusEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setTouched(prev => ({ ...prev, [name]: true }));
-    
-    const error = validateField(name, value);
-    setErrors(prev => ({ ...prev, [name]: error }));
-  }, [validateField]);
+      setFormData((prev) => ({ ...prev, [name]: fieldValue }));
+    },
+    []
+  );
+
+  const handleBlur = useCallback(
+    (e: React.FocusEvent<HTMLInputElement>) => {
+      const { name, value } = e.target;
+      setTouched((prev) => ({ ...prev, [name]: true }));
+
+      const error = validateField(name, value);
+      setErrors((prev) => ({ ...prev, [name]: error }));
+    },
+    [validateField]
+  );
 
   const validateForm = useCallback(() => {
-    const fields = mode === "signup" 
-      ? ["email", "password", "username", "displayName"]
-      : ["email", "password"];
-    
+    const fields =
+      mode === "signup"
+        ? ["email", "password", "username", "displayName"]
+        : ["email", "password"];
+
     const newErrors: ValidationErrors = {};
     let isValid = true;
 
-    fields.forEach(field => {
-      const error = validateField(field, formData[field as keyof FormData] as string);
+    fields.forEach((field) => {
+      const error = validateField(
+        field,
+        formData[field as keyof FormData] as string
+      );
       if (error) {
         newErrors[field as keyof ValidationErrors] = error;
         isValid = false;
@@ -145,45 +253,70 @@ export function AuthForm({ mode, onSuccess }: AuthFormProps) {
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    
+
     if (!validateForm()) return;
-    
+
     setIsLoading(true);
 
     try {
       if (mode === "signin") {
+        console.log("Attempting signin with:", formData.email);
         const response = await signIn(formData.email, formData.password);
-        if (response.error) throw response.error;
 
-        toast({
-          title: "Welcome back!",
-          description: "You've successfully signed in.",
-        });
-        
-        if (onSuccess) {
-          onSuccess();
-        } else {
-          router.push("/");
+        if (response.error) {
+          console.error("Signin error:", response.error);
+          throw response.error;
+        }
+
+        if (response.data?.user) {
+          toast({
+            title: "Welcome back!",
+            description: "You've successfully signed in.",
+          });
+
+          if (onSuccess) {
+            onSuccess();
+          } else {
+            // Use smart redirect
+            const { getSmartRedirect } = await import(
+              "@/lib/auth-optimization"
+            );
+            const redirectTo = getSmartRedirect(response.data.user);
+            router.push(redirectTo);
+          }
         }
       } else {
+        console.log(
+          "Attempting signup with:",
+          formData.email,
+          formData.username
+        );
         const response = await signUp(
           formData.email,
           formData.password,
           formData.username!
         );
-        if (response.error) throw response.error;
+
+        if (response.error) {
+          console.error("Signup error:", response.error);
+          throw response.error;
+        }
 
         toast({
           title: "Account created",
           description: "Please check your email to verify your account",
         });
-        
+
         router.push("/signin");
       }
     } catch (error) {
+      console.error("Auth error:", error);
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : `Failed to ${mode === "signin" ? "sign in" : "create account"}`,
+        description:
+          error instanceof Error
+            ? error.message
+            : `Failed to ${mode === "signin" ? "sign in" : "create account"}`,
         variant: "destructive",
       });
     } finally {
@@ -194,14 +327,33 @@ export function AuthForm({ mode, onSuccess }: AuthFormProps) {
   const handleGoogleAuth = async () => {
     setIsLoading(true);
     try {
-      await signInWithGoogle();
+      console.log("Starting Google OAuth flow...");
+      // Directly trigger Google OAuth
+      const result = await signInWithGoogle();
+
+      console.log("Google OAuth result:", result);
+
+      if (result.error) {
+        console.error("Google OAuth error:", result.error);
+        throw result.error;
+      }
+
+      if (result.data?.url) {
+        console.log("Redirecting to Google OAuth URL:", result.data.url);
+        // OAuth will handle its own redirects
+        // Don't reset loading state here since we're redirecting
+      }
     } catch (error) {
+      console.error("Google auth error:", error);
+      // If immediate error, show toast and reset loading state
       toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : `Failed to ${mode === "signin" ? "sign in" : "sign up"} with Google`,
+        title: "Authentication Error",
+        description:
+          error instanceof Error
+            ? error.message
+            : `Failed to authenticate with Google`,
         variant: "destructive",
       });
-    } finally {
       setIsLoading(false);
     }
   };
@@ -216,25 +368,37 @@ export function AuthForm({ mode, onSuccess }: AuthFormProps) {
     return strength;
   };
 
-  const passwordStrength = mode === "signup" ? getPasswordStrength(formData.password) : 0;
+  const passwordStrength =
+    mode === "signup" ? getPasswordStrength(formData.password) : 0;
 
   return (
     <div className="grid gap-6">
+      {/* Progressive loading indicator */}
+      <ProgressiveAuthLoader show={isLoading} />
+
       <div className="grid gap-2">
         <Button
           variant="outline"
           type="button"
           disabled={isLoading}
           onClick={handleGoogleAuth}
-          className="w-full"
+          className="w-full h-12 bg-white hover:bg-gray-50 border-gray-200 hover:border-gray-300 text-gray-700 font-medium transition-all duration-200 shadow-sm hover:shadow-md"
         >
           {isLoading ? (
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            <>
+              <Loader2 className="mr-3 h-5 w-5 animate-spin text-purple-600" />
+              <span>Connecting...</span>
+            </>
           ) : (
-            <GoogleIcon className="mr-2 h-4 w-4" />
+            <>
+              <GoogleIcon className="mr-3 h-5 w-5" />
+              <span>Continue with Google</span>
+            </>
           )}
-          Continue with Google
         </Button>
+        <p className="text-xs text-center text-muted-foreground mt-2">
+          One click authentication with your Google account
+        </p>
       </div>
 
       <div className="relative">
@@ -268,16 +432,65 @@ export function AuthForm({ mode, onSuccess }: AuthFormProps) {
               onBlur={handleBlur}
               className={cn(
                 "input-custom",
-                errors.email && touched.email && "border-destructive focus:border-destructive"
+                errors.email &&
+                  touched.email &&
+                  "border-destructive focus:border-destructive"
               )}
               required
             />
-            {!errors.email && touched.email && formData.email && (
-              <Check className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-green-500" />
+            {/* Smart user detection indicators */}
+            {isDetecting && (
+              <Loader2 className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 animate-spin text-blue-500" />
             )}
+            {!isDetecting &&
+              !errors.email &&
+              touched.email &&
+              formData.email &&
+              userDetection && (
+                <>
+                  {userDetection.exists ? (
+                    <UserCheck
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-blue-500"
+                      aria-label="Existing user found"
+                    />
+                  ) : (
+                    <Check
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-green-500"
+                      aria-label="Email available"
+                    />
+                  )}
+                </>
+              )}
+            {!isDetecting &&
+              !userDetection &&
+              !errors.email &&
+              touched.email &&
+              formData.email && (
+                <Check className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-green-500" />
+              )}
           </div>
           {errors.email && touched.email && (
             <p className="text-xs text-destructive">{errors.email}</p>
+          )}
+          {/* Smart user detection feedback */}
+          {userDetection && !errors.email && (
+            <div className="text-xs">
+              {userDetection.exists ? (
+                <p className="text-blue-600 flex items-center gap-1">
+                  <UserCheck className="h-3 w-3" />
+                  {mode === "signup"
+                    ? "Account exists. Consider signing in instead."
+                    : "Welcome back! Enter your password below."}
+                </p>
+              ) : (
+                mode === "signup" && (
+                  <p className="text-green-600 flex items-center gap-1">
+                    <Check className="h-3 w-3" />
+                    Email available for registration
+                  </p>
+                )
+              )}
+            </div>
           )}
         </div>
 
@@ -302,7 +515,9 @@ export function AuthForm({ mode, onSuccess }: AuthFormProps) {
                   onBlur={handleBlur}
                   className={cn(
                     "input-custom",
-                    errors.username && touched.username && "border-destructive focus:border-destructive"
+                    errors.username &&
+                      touched.username &&
+                      "border-destructive focus:border-destructive"
                   )}
                   required
                 />
@@ -333,13 +548,17 @@ export function AuthForm({ mode, onSuccess }: AuthFormProps) {
                   onBlur={handleBlur}
                   className={cn(
                     "input-custom",
-                    errors.displayName && touched.displayName && "border-destructive focus:border-destructive"
+                    errors.displayName &&
+                      touched.displayName &&
+                      "border-destructive focus:border-destructive"
                   )}
                   required
                 />
-                {!errors.displayName && touched.displayName && formData.displayName && (
-                  <Check className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-green-500" />
-                )}
+                {!errors.displayName &&
+                  touched.displayName &&
+                  formData.displayName && (
+                    <Check className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-green-500" />
+                  )}
               </div>
               {errors.displayName && touched.displayName && (
                 <p className="text-xs text-destructive">{errors.displayName}</p>
@@ -367,9 +586,15 @@ export function AuthForm({ mode, onSuccess }: AuthFormProps) {
               id="password"
               name="password"
               type={showPassword ? "text" : "password"}
-              placeholder={mode === "signin" ? "Enter your password" : "Create a secure password"}
+              placeholder={
+                mode === "signin"
+                  ? "Enter your password"
+                  : "Create a secure password"
+              }
               autoCapitalize="none"
-              autoComplete={mode === "signin" ? "current-password" : "new-password"}
+              autoComplete={
+                mode === "signin" ? "current-password" : "new-password"
+              }
               autoCorrect="off"
               disabled={isLoading}
               value={formData.password}
@@ -377,7 +602,9 @@ export function AuthForm({ mode, onSuccess }: AuthFormProps) {
               onBlur={handleBlur}
               className={cn(
                 "input-custom pr-10",
-                errors.password && touched.password && "border-destructive focus:border-destructive"
+                errors.password &&
+                  touched.password &&
+                  "border-destructive focus:border-destructive"
               )}
               required
             />
@@ -430,8 +657,8 @@ export function AuthForm({ mode, onSuccess }: AuthFormProps) {
               id="rememberMe"
               name="rememberMe"
               checked={formData.rememberMe}
-              onCheckedChange={(checked: boolean) => 
-                setFormData(prev => ({ ...prev, rememberMe: checked }))
+              onCheckedChange={(checked: boolean) =>
+                setFormData((prev) => ({ ...prev, rememberMe: checked }))
               }
             />
             <Label htmlFor="rememberMe" className="text-sm">

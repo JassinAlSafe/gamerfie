@@ -1,0 +1,70 @@
+/* Responsive utilities for header */
+@media (max-width: 374px) {
+  /* Extra small devices */
+  .header-container {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+  
+  .header-height {
+    height: 4rem; /* 64px */
+  }
+}
+
+@media (min-width: 375px) and (max-width: 474px) {
+  /* Small mobile devices */
+  .header-container {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+  
+  .header-height {
+    height: 4rem; /* 64px */
+  }
+}
+
+@media (min-width: 475px) and (max-width: 639px) {
+  /* Large mobile devices (xs breakpoint) */
+  .header-height {
+    height: 4rem; /* 64px */
+  }
+}
+
+@media (min-width: 640px) and (max-width: 767px) {
+  /* Small tablets */
+  .header-height {
+    height: 4rem; /* 64px */
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+  /* Medium tablets */
+  .header-nav-hidden {
+    display: none;
+  }
+}
+
+/* Prevent layout shift during auth state changes */
+.auth-buttons-container {
+  min-width: fit-content;
+}
+
+/* Ensure proper touch targets on mobile */
+@media (max-width: 767px) {
+  .mobile-touch-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+/* Header z-index management */
+.header-fixed {
+  z-index: 9999;
+}
+
+/* Backdrop blur fallback */
+@supports not (backdrop-filter: blur(12px)) {
+  .header-backdrop {
+    background-color: rgba(17, 24, 39, 0.95);
+  }
+}

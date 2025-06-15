@@ -36,7 +36,7 @@ export const MobileMenu = React.memo(function MobileMenu() {
   return (
     <div 
       ref={menuRef}
-      className="md:hidden bg-gray-900/95 backdrop-blur-md border-t border-white/10 animate-slide-down"
+      className="lg:hidden bg-gray-900/95 backdrop-blur-md border-t border-white/10 animate-slide-down shadow-lg"
       style={{
         animation: 'slideDown 0.2s ease-out'
       }}
@@ -56,31 +56,31 @@ export const MobileMenu = React.memo(function MobileMenu() {
           animation: slideDown 0.2s ease-out;
         }
       `}</style>
-      <nav className="px-4 pt-2 pb-4" role="navigation" aria-label="Mobile navigation">
+      <nav className="px-3 sm:px-4 pt-2 pb-4" role="navigation" aria-label="Mobile navigation">
         <Link
           href="/"
-          className="block py-2 text-gray-300 hover:text-white"
+          className="block py-2.5 px-2 rounded-lg text-gray-300 hover:text-white hover:bg-white/10 transition-all duration-200"
           onClick={closeAllMenus}
         >
           Home
         </Link>
         <Link
           href="/explore"
-          className="block py-2 text-gray-300 hover:text-white"
+          className="block py-2.5 px-2 rounded-lg text-gray-300 hover:text-white hover:bg-white/10 transition-all duration-200"
           onClick={closeAllMenus}
         >
           Explore
         </Link>
         <Link
           href="/all-games"
-          className="block py-2 text-gray-300 hover:text-white"
+          className="block py-2.5 px-2 rounded-lg text-gray-300 hover:text-white hover:bg-white/10 transition-all duration-200"
           onClick={closeAllMenus}
         >
           All Games
         </Link>
         <Link
-          href="/about"
-          className="block py-2 text-gray-300 hover:text-white"
+          href="/info/about"
+          className="block py-2.5 px-2 rounded-lg text-gray-300 hover:text-white hover:bg-white/10 transition-all duration-200"
           onClick={closeAllMenus}
         >
           About
@@ -89,33 +89,38 @@ export const MobileMenu = React.memo(function MobileMenu() {
           <>
             <Link
               href="/profile"
-              className="block py-2 text-gray-300 hover:text-white"
+              className="block py-2.5 px-2 rounded-lg text-gray-300 hover:text-white hover:bg-white/10 transition-all duration-200"
               onClick={closeAllMenus}
             >
               Profile
             </Link>
             <button
               onClick={() => handleNavigation("/signout")}
-              className="block w-full text-left py-2 text-red-400 hover:text-red-300"
+              className="block w-full text-left py-2.5 px-2 rounded-lg text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-all duration-200"
             >
               Sign Out
             </button>
           </>
         ) : (
-          <>
+          <div className="mt-6 pt-4 border-t border-white/10 space-y-3">
+            <div className="text-center text-gray-400 text-sm font-medium mb-4">
+              Get Started
+            </div>
             <button
               onClick={() => handleNavigation("/signin")}
-              className="block w-full text-left py-2 text-gray-300 hover:text-white"
+              className="w-full px-4 py-3 text-center rounded-lg text-gray-300 hover:text-white hover:bg-white/10 border border-white/20 hover:border-white/40 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-white/50 focus:ring-offset-1 focus:ring-offset-gray-900 font-medium"
+              aria-label="Sign in to your account"
             >
               Sign In
             </button>
             <button
               onClick={() => handleNavigation("/signup")}
-              className="block w-full text-left py-2 text-purple-400 hover:text-purple-300"
+              className="w-full px-4 py-3 text-center rounded-lg bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white shadow-lg hover:shadow-purple-500/25 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-1 focus:ring-offset-gray-900 font-medium"
+              aria-label="Create a new account"
             >
               Sign Up
             </button>
-          </>
+          </div>
         )}
       </nav>
     </div>

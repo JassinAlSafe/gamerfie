@@ -1,17 +1,38 @@
+import React from "react";
+import { AboutSection as AboutSectionType } from "@/types/about";
+import { TextSection } from "./TextSection";
+import { FeatureSection } from "./FeatureSection";
 
-import { AboutSection as AboutSectionType } from '@/types/about';
+export const AboutSection = React.memo(
+  ({ title, content, type, icon }: AboutSectionType) => {
+    const getSectionContent = () => {
+      switch (type) {
+        case "text":
+          return <TextSection title={title} content={content as string} />;
+        case "feature":
+          return (
+            <FeatureSection
+              title={title}
+              content={content as string[]}
+              icon={icon}
+            />
+          );
+        case "stats":
+          return <TextSection title={title} content={content as string} />;
+        case "list":
+          return (
+            <TextSection
+              title={title}
+              content={Array.isArray(content) ? content.join(", ") : content}
+            />
+          );
+        default:
+          return <TextSection title={title} content={content as string} />;
+      }
+    };
 
-export const AboutSection = ({ title, content, type }: AboutSectionType) => (
-  <section className="mb-12">
-    <h2 className="text-2xl sm:text-4xl font-semibold text-white mb-4">{title}</h2>
-    {type === 'text' ? (
-      <p className="text-lg text-gray-300">{content as string}</p>
-    ) : (
-      <ul className="list-disc list-inside text-lg text-gray-300">
-        {(content as string[]).map((item, index) => (
-          <li key={index}>{item}</li>
-        ))}
-      </ul>
-    )}
-  </section>
+    return <div>{getSectionContent()}</div>;
+  }
 );
+
+AboutSection.displayName = "AboutSection";
