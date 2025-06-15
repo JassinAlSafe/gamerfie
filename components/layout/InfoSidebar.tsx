@@ -3,6 +3,7 @@ import React, { useState, useEffect, useCallback, useMemo } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { createPortal } from "react-dom";
+import { cn } from "@/lib/utils";
 import {
   IconInfoCircle,
   IconHelp,
@@ -130,42 +131,47 @@ const NavigationListItem: React.FC<NavigationListItemProps> = ({
   const Icon = item.icon;
   const isExternal = item.href.startsWith("http");
 
-  const linkClasses = `
-    group flex items-center px-3 py-3 rounded-xl text-sm font-medium transition-all duration-200
-    ${
-      isActive
-        ? "bg-gradient-to-r from-purple-500/20 to-blue-500/20 text-white border border-purple-500/30"
-        : "text-gray-400 hover:text-white hover:bg-gray-800/50"
-    }
-  `;
+  const linkClasses = useMemo(
+    () =>
+      cn(
+        "group flex items-center px-3 py-3 rounded-xl text-sm font-medium transition-all duration-200",
+        isActive
+          ? "bg-gradient-to-r from-purple-500/20 to-blue-500/20 text-white border border-purple-500/30"
+          : "text-gray-400 hover:text-white hover:bg-gray-800/50"
+      ),
+    [isActive]
+  );
 
-  const content = (
-    <>
-      <Icon
-        className={`
-        h-5 w-5 mr-3 transition-colors duration-200
-        ${
-          isActive
-            ? "text-purple-400"
-            : "text-gray-500 group-hover:text-gray-300"
-        }
-      `}
-      />
-      <div className="flex-1 min-w-0">
-        <div className="font-medium">{item.label}</div>
-        {item.description && (
-          <div className="text-xs text-gray-500 group-hover:text-gray-400 mt-0.5">
-            {item.description}
-          </div>
+  const iconClasses = useMemo(
+    () =>
+      cn(
+        "h-5 w-5 mr-3 transition-colors duration-200",
+        isActive ? "text-purple-400" : "text-gray-500 group-hover:text-gray-300"
+      ),
+    [isActive]
+  );
+
+  const content = useMemo(
+    () => (
+      <>
+        <Icon className={iconClasses} />
+        <div className="flex-1 min-w-0">
+          <div className="font-medium">{item.label}</div>
+          {item.description && (
+            <div className="text-xs text-gray-500 group-hover:text-gray-400 mt-0.5">
+              {item.description}
+            </div>
+          )}
+        </div>
+        {isActive && (
+          <div
+            className="w-2 h-2 bg-purple-400 rounded-full"
+            aria-hidden="true"
+          />
         )}
-      </div>
-      {isActive && (
-        <div
-          className="w-2 h-2 bg-purple-400 rounded-full"
-          aria-hidden="true"
-        ></div>
-      )}
-    </>
+      </>
+    ),
+    [Icon, iconClasses, item.label, item.description, isActive]
   );
 
   const handleClick = useCallback(() => {
@@ -219,31 +225,31 @@ interface NavigationSectionProps {
   onClose?: () => void;
 }
 
-const NavigationSection: React.FC<NavigationSectionProps> = ({
-  groups,
-  isActiveItem,
-  onClose,
-}) => (
-  <nav className="space-y-8">
-    {groups.map((group) => (
-      <div key={group.title}>
-        <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-4 px-3">
-          {group.title}
-        </h3>
-        <ul className="space-y-1" role="list">
-          {group.items.map((item) => (
-            <NavigationListItem
-              key={item.href}
-              item={item}
-              isActive={isActiveItem(item.href)}
-              onClose={onClose}
-            />
-          ))}
-        </ul>
-      </div>
-    ))}
-  </nav>
+const NavigationSection: React.FC<NavigationSectionProps> = React.memo(
+  ({ groups, isActiveItem, onClose }) => (
+    <nav className="space-y-8">
+      {groups.map((group) => (
+        <div key={group.title}>
+          <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-4 px-3">
+            {group.title}
+          </h3>
+          <ul className="space-y-1" role="list">
+            {group.items.map((item) => (
+              <NavigationListItem
+                key={item.href}
+                item={item}
+                isActive={isActiveItem(item.href)}
+                onClose={onClose}
+              />
+            ))}
+          </ul>
+        </div>
+      ))}
+    </nav>
+  )
 );
+
+NavigationSection.displayName = "NavigationSection";
 
 export function InfoSidebar({ isOpen = true, onClose }: InfoSidebarProps) {
   const pathname = usePathname();
@@ -320,7 +326,7 @@ export function InfoSidebar({ isOpen = true, onClose }: InfoSidebarProps) {
   const DesktopSidebar = useMemo(
     () => (
       <aside
-        className="w-80 bg-gradient-to-b from-gray-950 to-gray-900 border-r border-gray-800/50 flex-shrink-0 sticky top-0 h-screen flex flex-col hidden lg:flex"
+        className="w-80 bg-gradient-to-b from-gray-950 to-gray-900 border-r border-gray-800/50 flex-shrink-0 sticky top-0 h-screen  flex-col hidden lg:flex"
         role="complementary"
         aria-label="Information navigation"
       >
@@ -340,11 +346,9 @@ export function InfoSidebar({ isOpen = true, onClose }: InfoSidebarProps) {
     [sidebarHeader, sidebarFooter, isActiveItem]
   );
 
-  // Mobile sidebar (rendered via portal)
-  const MobileSidebar = useMemo(() => {
-    if (!mounted) return null;
-
-    return (
+  // Mobile sidebar content
+  const mobileSidebarContent = useMemo(
+    () => (
       <>
         {/* Mobile Overlay */}
         {isOpen && (
@@ -366,11 +370,11 @@ export function InfoSidebar({ isOpen = true, onClose }: InfoSidebarProps) {
         {/* Mobile Sidebar */}
         <aside
           className={`
-            fixed inset-y-0 left-0 w-full bg-gradient-to-b from-gray-950 to-gray-900 border-r border-gray-800/50
-            transform transition-transform duration-300 ease-in-out z-[100000]
-            ${isOpen ? "translate-x-0" : "-translate-x-full"}
-            lg:hidden flex flex-col h-screen
-          `}
+          fixed inset-y-0 left-0 w-full bg-gradient-to-b from-gray-950 to-gray-900 border-r border-gray-800/50
+          transform transition-transform duration-300 ease-in-out z-[100000]
+          ${isOpen ? "translate-x-0" : "-translate-x-full"}
+          lg:hidden flex flex-col h-screen
+        `}
           role="complementary"
           aria-label="Information navigation"
           aria-hidden={!isOpen}
@@ -411,15 +415,9 @@ export function InfoSidebar({ isOpen = true, onClose }: InfoSidebarProps) {
           {sidebarFooter}
         </aside>
       </>
-    );
-  }, [
-    mounted,
-    isOpen,
-    handleOverlayClick,
-    onClose,
-    isActiveItem,
-    sidebarFooter,
-  ]);
+    ),
+    [isOpen, handleOverlayClick, onClose, isActiveItem, sidebarFooter]
+  );
 
   return (
     <>
@@ -430,7 +428,7 @@ export function InfoSidebar({ isOpen = true, onClose }: InfoSidebarProps) {
       {mounted &&
         typeof window !== "undefined" &&
         document?.body &&
-        createPortal(MobileSidebar, document.body)}
+        createPortal(mobileSidebarContent, document.body)}
     </>
   );
 }

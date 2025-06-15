@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useSupabase } from "@/components/providers/supabase-provider";
 import { Button } from "@/components/ui/button";
@@ -24,7 +24,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/text/textarea";
 import { useToast } from "@/components/ui/use-toast";
-import { Loader2, Plus, Trash2, Edit, Eye } from "lucide-react";
+import { Loader2, Plus, Trash2, Edit } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   Select,
@@ -43,8 +43,13 @@ interface NewsPost {
   excerpt?: string;
   content: string;
   featured_image?: string;
-  category: 'Product Update' | 'Feature' | 'Announcement' | 'Security' | 'Community';
-  status: 'draft' | 'published';
+  category:
+    | "Product Update"
+    | "Feature"
+    | "Announcement"
+    | "Security"
+    | "Community";
+  status: "draft" | "published";
   badge?: string;
   published_at?: string;
   created_at: string;
@@ -61,8 +66,13 @@ interface CreateNewsForm {
   excerpt: string;
   content: string;
   featured_image: string;
-  category: 'Product Update' | 'Feature' | 'Announcement' | 'Security' | 'Community';
-  status: 'draft' | 'published';
+  category:
+    | "Product Update"
+    | "Feature"
+    | "Announcement"
+    | "Security"
+    | "Community";
+  status: "draft" | "published";
   badge: string;
 }
 
@@ -107,17 +117,7 @@ export default function NewsManagementPage() {
   const [isCreating, setIsCreating] = useState(false);
   const [editingPost, setEditingPost] = useState<NewsPost | null>(null);
 
-  useEffect(() => {
-    checkAdminStatus();
-  }, []);
-
-  useEffect(() => {
-    if (isAdmin) {
-      fetchPosts();
-    }
-  }, [isAdmin, showDrafts]);
-
-  const checkAdminStatus = async () => {
+  const checkAdminStatus = useCallback(async () => {
     try {
       const {
         data: { session },
@@ -150,14 +150,15 @@ export default function NewsManagementPage() {
       console.error("Error checking admin status:", error);
       router.push("/");
     }
-  };
+  }, [supabase, router]);
 
-  const fetchPosts = async () => {
+  const fetchPosts = useCallback(async () => {
     try {
       setIsLoading(true);
-      const { data: posts, error } = await supabase
+      const { data: rawPosts, error } = await supabase
         .from("news_posts")
-        .select(`
+        .select(
+          `
           id,
           title,
           slug,
@@ -174,26 +175,85 @@ export default function NewsManagementPage() {
             username,
             display_name
           )
-        `)
-        .eq('status', showDrafts ? 'draft' : 'published')
+        `
+        )
+        .eq("status", showDrafts ? "draft" : "published")
         .order("created_at", { ascending: false });
 
       if (error) throw error;
 
-      setPosts(posts || []);
+      if (rawPosts) {
+        // Safely transform the posts with proper validation
+        const validPosts: NewsPost[] = rawPosts
+          .filter((post: any) => {
+            // Basic validation
+            return (
+              post.id &&
+              post.title &&
+              post.content &&
+              post.category &&
+              post.status
+            );
+          })
+          .map((post: any): NewsPost => {
+            // Handle profiles - it could be an array or single object
+            let profiles = undefined;
+            if (post.profiles) {
+              const profileData = Array.isArray(post.profiles)
+                ? post.profiles[0]
+                : post.profiles;
+              if (profileData) {
+                profiles = {
+                  username: profileData.username || "",
+                  display_name: profileData.display_name || undefined,
+                };
+              }
+            }
+
+            return {
+              id: post.id,
+              title: post.title,
+              slug: post.slug,
+              excerpt: post.excerpt || undefined,
+              content: post.content,
+              featured_image: post.featured_image || undefined,
+              category: post.category as NewsPost["category"],
+              status: post.status as NewsPost["status"],
+              badge: post.badge || undefined,
+              published_at: post.published_at || undefined,
+              created_at: post.created_at,
+              updated_at: post.updated_at,
+              profiles,
+            };
+          });
+
+        setPosts(validPosts);
+      } else {
+        setPosts([]);
+      }
     } catch (error) {
       console.error("Error fetching posts:", error);
       setError("Failed to fetch news posts");
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [supabase, showDrafts]);
+
+  useEffect(() => {
+    checkAdminStatus();
+  }, [checkAdminStatus]);
+
+  useEffect(() => {
+    if (isAdmin) {
+      fetchPosts();
+    }
+  }, [isAdmin, fetchPosts]);
 
   const generateSlug = (title: string) => {
     return title
       .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/(^-|-$)/g, '');
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/(^-|-$)/g, "");
   };
 
   const handleTitleChange = (title: string) => {
@@ -207,17 +267,17 @@ export default function NewsManagementPage() {
   const handleCreatePost = async () => {
     try {
       setIsCreating(true);
-      const response = await fetch('/api/news', {
-        method: 'POST',
+      const response = await fetch("/api/news", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(formData),
       });
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || 'Failed to create post');
+        throw new Error(error.error || "Failed to create post");
       }
 
       toast({
@@ -241,7 +301,8 @@ export default function NewsManagementPage() {
       console.error("Error creating post:", error);
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to create post",
+        description:
+          error instanceof Error ? error.message : "Failed to create post",
         variant: "destructive",
       });
     } finally {
@@ -255,16 +316,16 @@ export default function NewsManagementPage() {
     try {
       setIsCreating(true);
       const response = await fetch(`/api/news/${editingPost.id}`, {
-        method: 'PUT',
+        method: "PUT",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(formData),
       });
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || 'Failed to update post');
+        throw new Error(error.error || "Failed to update post");
       }
 
       toast({
@@ -288,7 +349,8 @@ export default function NewsManagementPage() {
       console.error("Error updating post:", error);
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to update post",
+        description:
+          error instanceof Error ? error.message : "Failed to update post",
         variant: "destructive",
       });
     } finally {
@@ -301,12 +363,12 @@ export default function NewsManagementPage() {
 
     try {
       const response = await fetch(`/api/news/${postId}`, {
-        method: 'DELETE',
+        method: "DELETE",
       });
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || 'Failed to delete post');
+        throw new Error(error.error || "Failed to delete post");
       }
 
       toast({
@@ -319,7 +381,8 @@ export default function NewsManagementPage() {
       console.error("Error deleting post:", error);
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to delete post",
+        description:
+          error instanceof Error ? error.message : "Failed to delete post",
         variant: "destructive",
       });
     }
@@ -359,7 +422,9 @@ export default function NewsManagementPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">News Management</h1>
-          <p className="text-muted-foreground">Create and manage news posts for your users</p>
+          <p className="text-muted-foreground">
+            Create and manage news posts for your users
+          </p>
         </div>
         <div className="flex items-center gap-4">
           <div className="flex items-center space-x-2">
@@ -380,10 +445,12 @@ export default function NewsManagementPage() {
             <DialogContent className="max-w-2xl">
               <DialogHeader>
                 <DialogTitle>
-                  {editingPost ? 'Edit News Post' : 'Create New News Post'}
+                  {editingPost ? "Edit News Post" : "Create New News Post"}
                 </DialogTitle>
                 <DialogDescription>
-                  {editingPost ? 'Update the news post information.' : 'Create a new news post for your users.'}
+                  {editingPost
+                    ? "Update the news post information."
+                    : "Create a new news post for your users."}
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4 max-h-96 overflow-y-auto">
@@ -437,7 +504,10 @@ export default function NewsManagementPage() {
                     id="featured_image"
                     value={formData.featured_image}
                     onChange={(e) =>
-                      setFormData({ ...formData, featured_image: e.target.value })
+                      setFormData({
+                        ...formData,
+                        featured_image: e.target.value,
+                      })
                     }
                     placeholder="https://example.com/image.jpg"
                   />
@@ -455,9 +525,13 @@ export default function NewsManagementPage() {
                         <SelectValue placeholder="Select category" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="Product Update">Product Update</SelectItem>
+                        <SelectItem value="Product Update">
+                          Product Update
+                        </SelectItem>
                         <SelectItem value="Feature">Feature</SelectItem>
-                        <SelectItem value="Announcement">Announcement</SelectItem>
+                        <SelectItem value="Announcement">
+                          Announcement
+                        </SelectItem>
                         <SelectItem value="Security">Security</SelectItem>
                         <SelectItem value="Community">Community</SelectItem>
                       </SelectContent>
@@ -519,10 +593,12 @@ export default function NewsManagementPage() {
                   {isCreating ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      {editingPost ? 'Updating...' : 'Creating...'}
+                      {editingPost ? "Updating..." : "Creating..."}
                     </>
+                  ) : editingPost ? (
+                    "Update Post"
                   ) : (
-                    editingPost ? 'Update Post' : 'Create Post'
+                    "Create Post"
                   )}
                 </Button>
               </DialogFooter>
@@ -591,13 +667,19 @@ export default function NewsManagementPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-sm text-muted-foreground space-y-1">
-                  <div>Created: {new Date(post.created_at).toLocaleDateString()}</div>
+                  <div>
+                    Created: {new Date(post.created_at).toLocaleDateString()}
+                  </div>
                   {post.published_at && (
-                    <div>Published: {new Date(post.published_at).toLocaleDateString()}</div>
+                    <div>
+                      Published:{" "}
+                      {new Date(post.published_at).toLocaleDateString()}
+                    </div>
                   )}
                   {post.profiles && (
                     <div>
-                      Author: {post.profiles.display_name || post.profiles.username}
+                      Author:{" "}
+                      {post.profiles.display_name || post.profiles.username}
                     </div>
                   )}
                 </div>
@@ -607,7 +689,8 @@ export default function NewsManagementPage() {
           {posts.length === 0 && (
             <div className="col-span-full text-center py-12">
               <p className="text-muted-foreground">
-                No {showDrafts ? 'draft' : 'published'} posts found. Create your first news post to get started.
+                No {showDrafts ? "draft" : "published"} posts found. Create your
+                first news post to get started.
               </p>
             </div>
           )}
