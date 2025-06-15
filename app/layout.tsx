@@ -9,7 +9,6 @@ import { ThemeProvider } from "next-themes";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useState } from "react";
 import SupabaseProvider from "@/components/providers/supabase-provider";
-import * as Sentry from "@sentry/nextjs";
 import { usePathname } from "next/navigation";
 import { CacheBuster } from "@/components/ui/cache-buster";
 import { AuthInitializer } from "@/components/auth/AuthInitializer";
@@ -37,18 +36,6 @@ const geistMono = localFont({
   weight: "100 900",
   display: "swap",
 });
-
-// Only initialize Sentry if DSN is properly configured
-if (
-  process.env.NEXT_PUBLIC_SENTRY_DSN &&
-  process.env.NEXT_PUBLIC_SENTRY_DSN !== "your-sentry-dsn-here"
-) {
-  Sentry.init({
-    dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
-    tracesSampleRate: 1.0,
-    debug: process.env.NODE_ENV === "development",
-  });
-}
 
 const authPages = ["/signin", "/signup", "/forgot-password"];
 

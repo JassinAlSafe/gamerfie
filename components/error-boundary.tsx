@@ -1,7 +1,6 @@
 "use client";
 
 import React from "react";
-import * as Sentry from "@sentry/nextjs";
 import { Button } from "@/components/ui/button";
 
 interface Props {
@@ -25,14 +24,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    Sentry.withScope((scope) => {
-      // Convert errorInfo to a compatible object
-      const extras = Object.fromEntries(
-        Object.entries(errorInfo).map(([key, value]) => [key, String(value)])
-      );
-      scope.setExtras(extras);
-      Sentry.captureException(error);
-    });
+    console.error("Error caught by boundary:", error, errorInfo);
   }
 
   render() {
@@ -40,7 +32,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
       if (this.props.fallback) {
         return this.props.fallback;
       }
-      
+
       return (
         <div className="flex flex-col items-center justify-center min-h-[400px] p-4">
           <h2 className="text-xl font-semibold text-red-500 mb-4">
@@ -62,7 +54,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
             Try again
           </Button>
           <p className="mt-4 text-sm text-gray-400">
-            This error has been automatically reported to our team.
+            If this persists, please contact support.
           </p>
         </div>
       );
