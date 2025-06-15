@@ -71,7 +71,7 @@ Make sure to set up the following environment variables in your Vercel project:
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 - `SUPABASE_SERVICE_ROLE_KEY`
-- `NEXT_PUBLIC_SENTRY_DSN`
+
 - `NEXT_PUBLIC_RAWG_API_KEY`
 
 You can set these in the Vercel dashboard under Project Settings > Environment Variables.

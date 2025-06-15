@@ -40,8 +40,8 @@ Add the following environment variables from your `.env.local` file:
 | `NEXT_PUBLIC_SUPABASE_URL`      | Your Supabase project URL                                        |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Your Supabase anonymous key                                      |
 | `SUPABASE_SERVICE_ROLE_KEY`     | Your Supabase service role key                                   |
-| `NEXT_PUBLIC_SENTRY_DSN`        | Your Sentry DSN (for error tracking)                             |
-| `NEXT_PUBLIC_RAWG_API_KEY`      | Your RAWG API key                                                |
+
+| `NEXT_PUBLIC_RAWG_API_KEY` | Your RAWG API key |
 
 ### 5. Deploy
 

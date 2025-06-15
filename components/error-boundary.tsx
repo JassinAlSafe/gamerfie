@@ -23,8 +23,8 @@ export class ErrorBoundary extends React.Component<Props, State> {
     return { hasError: true, error };
   }
 
-  componentDidCatch(error: Error, _errorInfo: React.ErrorInfo) {
-    console.error("Error:", error);
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    console.error("Error caught by boundary:", error, errorInfo);
   }
 
   render() {
@@ -54,7 +54,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
             Try again
           </Button>
           <p className="mt-4 text-sm text-gray-400">
-            This error has been automatically reported to our team.
+            If this persists, please contact support.
           </p>
         </div>
       );
