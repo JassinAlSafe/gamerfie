@@ -72,7 +72,7 @@ export default function FloatingHeader() {
     { href: "/", label: "Home" },
     { href: "/explore", label: "Explore" },
     { href: "/all-games", label: "All Games" },
-    { href: "/about", label: "About" },
+    { href: "/info/about", label: "About" },
   ], []);
 
   const handleSearchOpen = useCallback(() => {

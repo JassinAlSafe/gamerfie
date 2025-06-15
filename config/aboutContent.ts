@@ -3,44 +3,30 @@ import { AboutContent } from '@/types/about';
 export const aboutContent: AboutContent = {
   sections: [
     {
-      title: "Revolutionizing Gaming Communities",
-      content: "GameRFie is the ultimate platform for gamers to track, share, and celebrate their gaming journey. We're building the future of gaming communities, where every achievement matters and every gamer has a voice.",
+      title: "What is Game Vault?",
+      content: "Game Vault is a comprehensive platform designed for gamers to track their gaming progress, discover new games, and connect with a community of fellow gaming enthusiasts. Whether you're into competitive esports, casual mobile games, or retro classics, Game Vault helps you organize and celebrate your gaming journey.",
       type: "text"
     },
     {
-      title: "Platform Statistics",
-      content: "Growing stronger every day",
-      type: "stats",
-      stats: [
-        { label: "Active Gamers", value: "10,000+" },
-        { label: "Games Tracked", value: "50,000+" },
-        { label: "Reviews Posted", value: "25,000+" },
-        { label: "Communities", value: "500+" }
-      ]
-    },
-    {
-      title: "What Makes Us Special",
+      title: "Our Features",
       content: [
-        "🎮 Comprehensive game tracking across all platforms",
-        "👥 Connect with fellow gamers and build lasting friendships",
-        "📊 Advanced analytics and insights into your gaming habits",
-        "🏆 Achievement systems and progress tracking",
-        "📝 Rich journaling and review features",
-        "🌍 Global gaming community with local connections",
-        "🔒 Privacy-first approach with granular control",
-        "📱 Seamless experience across web and mobile"
+        "🎮 Track games across all platforms and devices",
+        "📊 Detailed statistics and progress tracking",
+        "👥 Connect with friends and join gaming communities",
+        "🏆 Achievement tracking and milestone celebrations",
+        "📝 Write and read game reviews and recommendations",
+        "🔍 Discover new games based on your preferences"
       ],
-      type: "feature",
-      icon: "✨"
+      type: "feature"
     },
     {
       title: "Our Mission",
-      content: "To create the most comprehensive and user-friendly platform for gamers worldwide. We believe gaming is more than entertainment—it's a way to connect, learn, and grow. Our mission is to provide tools that enhance every aspect of your gaming experience.",
+      content: "We believe gaming brings people together and creates lasting memories. Our mission is to provide gamers with the tools they need to track their progress, discover new experiences, and connect with others who share their passion for gaming.",
       type: "text"
     },
     {
-      title: "Join the Revolution",
-      content: "Whether you're a casual mobile gamer, a competitive esports athlete, or a retro gaming enthusiast, GameRFie has something for you. Join thousands of gamers who have already discovered a better way to track and share their gaming journey.",
+      title: "Why Choose Game Vault?",
+      content: "Game Vault stands out by focusing on simplicity and community. We've built a platform that's easy to use, respects your privacy, and puts the gaming community first. No complicated features, no overwhelming interfaces—just the tools you need to enhance your gaming experience.",
       type: "text"
     }
   ]

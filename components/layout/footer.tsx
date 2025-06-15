@@ -14,7 +14,7 @@ export function Footer() {
           </span>
         </div>
         <nav className="flex space-x-4 text-sm text-muted-foreground">
-          <Link href="/about" className="hover:text-primary">
+          <Link href="/info/about" className="hover:text-primary">
             About
           </Link>
           <Link href="/privacy" className="hover:text-primary">
