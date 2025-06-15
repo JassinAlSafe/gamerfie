@@ -13,6 +13,7 @@ import { usePathname } from "next/navigation";
 import { CacheBuster } from "@/components/ui/cache-buster";
 import { AuthInitializer } from "@/components/auth/AuthInitializer";
 import { FloatingActions } from "@/components/home/FloatingActions";
+import { BetaBanner } from "@/components/ui/BetaBanner";
 
 // Optimized font loading with display swap for better performance
 const inter = Inter({
@@ -169,8 +170,9 @@ export default function RootLayout({
               <div className="min-h-screen flex flex-col">
                 <AuthInitializer />
                 <CacheBuster />
+                {!isAuthPage && <BetaBanner />}
                 {!isAuthPage && <FloatingHeader />}
-                <main className={!isAuthPage ? "flex-1 pt-16" : "flex-1"}>
+                <main className={!isAuthPage ? "flex-1 pt-24" : "flex-1"}>
                   {children}
                 </main>
                 {!isAuthPage && <FloatingActions />}

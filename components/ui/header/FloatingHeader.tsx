@@ -68,12 +68,15 @@ export default function FloatingHeader() {
     return () => document.removeEventListener("keydown", down);
   }, []);
 
-  const navigationItems = useMemo(() => [
-    { href: "/", label: "Home" },
-    { href: "/explore", label: "Explore" },
-    { href: "/all-games", label: "All Games" },
-    { href: "/info/about", label: "About" },
-  ], []);
+  const navigationItems = useMemo(
+    () => [
+      { href: "/", label: "Home" },
+      { href: "/explore", label: "Explore" },
+      { href: "/all-games", label: "All Games" },
+      { href: "/info/about", label: "About" },
+    ],
+    []
+  );
 
   const handleSearchOpen = useCallback(() => {
     setIsSearchOpen(true);
@@ -83,24 +86,27 @@ export default function FloatingHeader() {
     setIsSearchOpen(open);
   }, []);
 
-  const renderMobileMenuButton = useMemo(() => (
-    <Button
-      onClick={toggleMobileMenu}
-      variant="ghost"
-      className="lg:hidden p-1 sm:p-2 text-gray-400 hover:text-white transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-white/50 focus:ring-offset-1 focus:ring-offset-gray-900"
-      aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
-      aria-expanded={isMobileMenuOpen}
-    >
-      {isMobileMenuOpen ? (
-        <X className="h-5 w-5 sm:h-6 sm:w-6" />
-      ) : (
-        <Menu className="h-5 w-5 sm:h-6 sm:w-6" />
-      )}
-    </Button>
-  ), [isMobileMenuOpen, toggleMobileMenu]);
+  const renderMobileMenuButton = useMemo(
+    () => (
+      <Button
+        onClick={toggleMobileMenu}
+        variant="ghost"
+        className="lg:hidden p-1 sm:p-2 text-gray-400 hover:text-white transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-white/50 focus:ring-offset-1 focus:ring-offset-gray-900"
+        aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
+        aria-expanded={isMobileMenuOpen}
+      >
+        {isMobileMenuOpen ? (
+          <X className="h-5 w-5 sm:h-6 sm:w-6" />
+        ) : (
+          <Menu className="h-5 w-5 sm:h-6 sm:w-6" />
+        )}
+      </Button>
+    ),
+    [isMobileMenuOpen, toggleMobileMenu]
+  );
 
   return (
-    <header className="fixed top-0 left-0 right-0 header-fixed">
+    <header className="fixed top-10 left-0 right-0 header-fixed">
       <div className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 header-backdrop">
         <div className="container mx-auto max-w-[1920px] header-container px-4 sm:px-6 md:px-6 lg:px-8">
           <div className="relative flex header-height h-16 items-center justify-between">
@@ -130,7 +136,11 @@ export default function FloatingHeader() {
                 open={isSearchOpen}
                 onOpenChange={handleSearchToggle}
               />
-              <nav className="hidden lg:flex items-center" role="navigation" aria-label="Main navigation">
+              <nav
+                className="hidden lg:flex items-center"
+                role="navigation"
+                aria-label="Main navigation"
+              >
                 <AnimatedNav items={navigationItems} />
               </nav>
               <AuthButtons />
@@ -145,8 +155,18 @@ export default function FloatingHeader() {
                 className="p-2 text-gray-400 hover:text-white"
                 aria-label="Search games"
               >
-                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                <svg
+                  className="h-5 w-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                  />
                 </svg>
               </Button>
               <SearchDialog

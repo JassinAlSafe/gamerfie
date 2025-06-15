@@ -1547,7 +1547,6 @@ The project uses:
 
 3. **Deployment Platforms**
    - Vercel (recommended)
-   - Netlify
    - Custom server
 
 ## Contributing
