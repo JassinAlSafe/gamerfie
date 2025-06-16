@@ -41,8 +41,8 @@ export const AuthButtons = React.memo(function AuthButtons() {
 
   return (
     <div className="flex items-center gap-3">
-      <AnimatedButton 
-        variant="ghost" 
+      <AnimatedButton
+        variant="ghost"
         size="default"
         glowColor="gray"
         onClick={() => router.push("/signin")}
@@ -51,7 +51,7 @@ export const AuthButtons = React.memo(function AuthButtons() {
       >
         Sign In
       </AnimatedButton>
-      <AnimatedButton 
+      <AnimatedButton
         variant="default"
         size="default"
         glowColor="purple"

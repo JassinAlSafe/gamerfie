@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { PlaylistManager } from "@/components/admin/PlaylistManager";
+import PlaylistEditor from "@/components/admin/playlist/PlaylistEditor";
 import { useAuthStore } from "@/stores/useAuthStore";
 
 export default function NewPlaylistPage() {
@@ -18,7 +18,7 @@ export default function NewPlaylistPage() {
   return (
     <div className="container mx-auto py-8">
       <h1 className="text-2xl font-bold mb-6">Create New Playlist</h1>
-      <PlaylistManager />
+      <PlaylistEditor />
     </div>
   );
 }

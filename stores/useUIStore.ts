@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import CookieManager from '@/utils/cookieManager'
 
 interface UIState {
   isMobileMenuOpen: boolean
@@ -28,7 +29,16 @@ export const useUIStore = create<UIState>()(
       computedTheme: 'dark',
       setMobileMenu: (isOpen) => set({ isMobileMenuOpen: isOpen }),
       setProfileMenu: (isOpen) => set({ isProfileMenuOpen: isOpen }),
-      setBetaBanner: (isVisible) => set({ isBetaBannerVisible: isVisible }),
+      setBetaBanner: (isVisible) => {
+        set({ isBetaBannerVisible: isVisible });
+        
+        // Update cookie if consent allows
+        if (CookieManager.hasConsent('functional')) {
+          CookieManager.setUserPreferences({ 
+            betaBannerDismissed: !isVisible 
+          });
+        }
+      },
       setTheme: (theme) => {
         set({ theme });
         if (theme !== 'system') {
@@ -37,6 +47,11 @@ export const useUIStore = create<UIState>()(
           // Check system preference
           const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
           set({ computedTheme: systemTheme });
+        }
+        
+        // Update cookie if consent allows
+        if (CookieManager.hasConsent('functional')) {
+          CookieManager.setUserPreferences({ theme });
         }
       },
       toggleMobileMenu: () => set((state) => ({ 
@@ -49,20 +64,43 @@ export const useUIStore = create<UIState>()(
       })),
       dismissBetaBanner: () => {
         set({ isBetaBannerVisible: false });
+        
+        // Still keep localStorage for backward compatibility
         localStorage.setItem('beta-banner-dismissed', 'true');
+        
+        // Update cookie if consent allows
+        if (CookieManager.hasConsent('functional')) {
+          CookieManager.setUserPreferences({ 
+            betaBannerDismissed: true 
+          });
+        }
       },
       closeAllMenus: () => set({ 
         isMobileMenuOpen: false, 
         isProfileMenuOpen: false 
       }),
       initTheme: () => {
-        // Force dark theme initially
-        set({ computedTheme: 'dark' });
+        // Load preferences from cookies first if available
+        const cookiePrefs = CookieManager.getUserPreferences();
         
-        // Initialize beta banner state from localStorage
-        const isDismissed = localStorage.getItem('beta-banner-dismissed');
-        if (isDismissed === 'true') {
+        if (cookiePrefs.theme) {
+          set({ theme: cookiePrefs.theme });
+          if (cookiePrefs.theme !== 'system') {
+            set({ computedTheme: cookiePrefs.theme });
+          }
+        } else {
+          // Force dark theme initially if no preference
+          set({ computedTheme: 'dark' });
+        }
+        
+        // Initialize beta banner state - check cookie first, then localStorage
+        if (cookiePrefs.betaBannerDismissed) {
           set({ isBetaBannerVisible: false });
+        } else {
+          const isDismissed = localStorage.getItem('beta-banner-dismissed');
+          if (isDismissed === 'true') {
+            set({ isBetaBannerVisible: false });
+          }
         }
         
         const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
@@ -77,7 +115,10 @@ export const useUIStore = create<UIState>()(
     }),
     {
       name: 'ui-storage',
-      partialize: (state) => ({ theme: state.theme })
+      partialize: (state) => ({ 
+        theme: state.theme,
+        isBetaBannerVisible: state.isBetaBannerVisible 
+      })
     }
   )
 ) 

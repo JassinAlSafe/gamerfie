@@ -2,7 +2,17 @@
 @tailwind components;
 @tailwind utilities;
 
-@import '../styles/responsive.css';
+@import "../styles/responsive.css";
+
+/* Custom responsive breakpoint for extra small screens */
+@media (min-width: 475px) {
+  .xs\:inline {
+    display: inline;
+  }
+  .xs\:hidden {
+    display: none;
+  }
+}
 
 :root {
   --foreground-rgb: 255, 255, 255;
@@ -63,7 +73,11 @@ html {
 }
 
 .bg-hero-gradient {
-  background: radial-gradient(ellipse at center, rgba(139, 92, 246, 0.15) 0%, transparent 70%);
+  background: radial-gradient(
+    ellipse at center,
+    rgba(139, 92, 246, 0.15) 0%,
+    transparent 70%
+  );
 }
 
 @layer base {

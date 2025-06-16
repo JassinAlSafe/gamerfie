@@ -1,14 +1,11 @@
 "use client";
 
-import { memo, useCallback, useEffect, useState } from "react";
+import { memo, useCallback } from "react";
 import { Game } from "@/types";
-import { Playlist } from "@/types/playlist";
 import { useAuthStore } from "@/stores/useAuthStore";
-import { PlaylistService } from "@/services/playlistService";
 import { useRouter } from "next/navigation";
 import { GameCard } from "../../shared/GameCard/GameCard";
 import { PlaylistHeader } from "./components/PlaylistHeader";
-import { GameShowcaseSkeleton } from "./components/GameShowcaseSkeleton";
 
 export interface GameShowcaseProps {
   playlistId?: string;
@@ -26,62 +23,12 @@ export const GameShowcase = memo(
     title,
     description,
     date,
-    games: propGames,
+    games = [],
     type = "featured",
   }: GameShowcaseProps) => {
-    const [games, setGames] = useState<Game[]>([]);
-    const [isLoading, setIsLoading] = useState(false);
-    const [playlist, setPlaylist] = useState<Playlist | null>(null);
     const { user } = useAuthStore();
     const router = useRouter();
     const isAdmin = user?.profile?.role === "admin";
-
-    useEffect(() => {
-      let isMounted = true;
-
-      const fetchPlaylist = async () => {
-        if (!playlistId) return;
-
-        setIsLoading(true);
-        try {
-          const playlist = await PlaylistService.getPlaylist(playlistId);
-          if (isMounted && playlist) {
-            setPlaylist(playlist);
-            setGames((playlist.games as Game[]) || []);
-          }
-        } catch (error) {
-          console.error("Failed to fetch playlist:", error);
-        } finally {
-          if (isMounted) {
-            setIsLoading(false);
-          }
-        }
-      };
-
-      if (playlistId) {
-        fetchPlaylist();
-      } else if (propGames) {
-        setGames(propGames);
-      }
-
-      return () => {
-        isMounted = false;
-      };
-    }, [playlistId, propGames]);
-
-    useEffect(() => {
-      if (!playlistId) return;
-
-      const unsubscribe = PlaylistService.subscribeToPlaylist(
-        playlistId,
-        (updatedPlaylist) => {
-          setPlaylist(updatedPlaylist);
-          setGames((updatedPlaylist.games as Game[]) || []);
-        }
-      );
-
-      return unsubscribe;
-    }, [playlistId]);
 
     const handleEditPlaylist = useCallback(() => {
       if (playlistId) {
@@ -89,16 +36,17 @@ export const GameShowcase = memo(
       }
     }, [playlistId, router]);
 
-    if (isLoading) {
-      return <GameShowcaseSkeleton />;
+    // Don't render if no games
+    if (!games || games.length === 0) {
+      return null;
     }
 
     return (
       <div className="rounded-xl border border-white/5 bg-gradient-to-br from-purple-950/50 to-indigo-950/50 p-8 backdrop-blur-sm">
         <PlaylistHeader
           date={date}
-          title={playlist?.title || title}
-          description={playlist?.description || description}
+          title={title}
+          description={description}
           type={type}
           playlistId={playlistId}
           isAdmin={isAdmin}
@@ -107,10 +55,10 @@ export const GameShowcase = memo(
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
           {games.slice(0, 5).map((game, index) => (
-            <GameCard 
-              key={game.id} 
-              game={game} 
-              variant="showcase" 
+            <GameCard
+              key={game.id}
+              game={game}
+              variant="showcase"
               priority={index < 2}
               showActions
             />

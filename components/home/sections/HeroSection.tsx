@@ -8,14 +8,22 @@ import { AnimatedCard } from "@/components/ui/animated-card";
 import { ArrowRight, Play, Trophy, Users, Star, BarChart3 } from "lucide-react";
 import Link from "next/link";
 import { Stat } from "@/types/home";
+import { useUIStore } from "@/stores/useUIStore";
 
 interface HeroSectionProps {
   stats: Stat[];
 }
 
 export function HeroSection({ stats }: HeroSectionProps) {
+  const { isBetaBannerVisible } = useUIStore();
+  
+  // Calculate viewport height minus header space
+  const minHeightClass = isBetaBannerVisible 
+    ? "min-h-[calc(100vh-108px)] sm:min-h-[calc(100vh-112px)]" 
+    : "min-h-[calc(100vh-64px)]";
+
   return (
-    <section className="min-h-screen flex flex-col justify-center items-center text-center py-8 sm:py-12 lg:py-16 xl:py-20 relative px-4 sm:px-6">
+    <section className={`${minHeightClass} flex flex-col justify-center items-center text-center py-8 sm:py-12 lg:py-16 xl:py-20 relative px-4 sm:px-6`}>
       {/* Floating Elements - Hidden on mobile for better performance */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none hidden sm:block">
         {[

@@ -6,10 +6,13 @@ export async function GET(request: NextRequest) {
     const supabase = await createClient();
     const { searchParams } = new URL(request.url);
     const status = searchParams.get('status') || 'published';
+    const category = searchParams.get('category');
+    const search = searchParams.get('search');
     const limit = parseInt(searchParams.get('limit') || '10');
-    const offset = parseInt(searchParams.get('offset') || '0');
+    const page = parseInt(searchParams.get('page') || '1');
+    const offset = (page - 1) * limit;
 
-    const query = supabase
+    let query = supabase
       .from('news_posts')
       .select(`
         id,
@@ -24,22 +27,65 @@ export async function GET(request: NextRequest) {
         published_at,
         created_at,
         updated_at,
-        profiles:author_id (
-          username,
-          display_name
-        )
+        author_id,
+        comments_enabled
       `)
-      .eq('status', status)
-      .order('published_at', { ascending: false })
-      .range(offset, offset + limit - 1);
+      .eq('status', status);
+
+    // Add category filter if provided
+    if (category) {
+      query = query.eq('category', category);
+    }
+
+    // Add search filter if provided
+    if (search) {
+      query = query.or(`title.ilike.%${search}%,excerpt.ilike.%${search}%,content.ilike.%${search}%`);
+    }
+
+    // Order by published_at, fallback to created_at for drafts
+    query = query.order('published_at', { ascending: false, nullsFirst: false })
+                 .order('created_at', { ascending: false });
+
+    // Apply pagination
+    query = query.range(offset, offset + limit - 1);
 
     const { data: posts, error } = await query;
 
     if (error) {
+      console.error('Supabase error:', error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json({ posts });
+    // Get total count for pagination
+    const countQuery = supabase
+      .from('news_posts')
+      .select('*', { count: 'exact', head: true })
+      .eq('status', status);
+
+    if (category) {
+      countQuery.eq('category', category);
+    }
+
+    if (search) {
+      countQuery.or(`title.ilike.%${search}%,excerpt.ilike.%${search}%,content.ilike.%${search}%`);
+    }
+
+    const { count, error: countError } = await countQuery;
+
+    if (countError) {
+      console.error('Count error:', countError);
+    }
+
+    const total = count || 0;
+    const hasMore = offset + limit < total;
+
+    return NextResponse.json({
+      posts: posts || [],
+      total,
+      page,
+      limit,
+      hasMore
+    });
   } catch (error) {
     console.error('Error fetching news posts:', error);
     return NextResponse.json(
@@ -70,7 +116,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { title, slug, excerpt, content, featured_image, category, status, badge, published_at } = body;
+    const { title, slug, excerpt, content, featured_image, category, status, badge, published_at, comments_enabled } = body;
 
     // Validate required fields
     if (!title || !content || !category) {
@@ -91,6 +137,7 @@ export async function POST(request: NextRequest) {
       badge,
       published_at: status === 'published' ? (published_at || new Date().toISOString()) : null,
       author_id: session.user.id,
+      comments_enabled: comments_enabled ?? true,
     };
 
     const { data, error } = await supabase

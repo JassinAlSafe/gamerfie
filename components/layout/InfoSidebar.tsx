@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { createPortal } from "react-dom";
 import { cn } from "@/lib/utils";
+import { useUIStore } from "@/stores/useUIStore";
 import {
   IconInfoCircle,
   IconHelp,
@@ -254,6 +255,7 @@ NavigationSection.displayName = "NavigationSection";
 export function InfoSidebar({ isOpen = true, onClose }: InfoSidebarProps) {
   const pathname = usePathname();
   const [mounted, setMounted] = useState(false);
+  const { isBetaBannerVisible } = useUIStore();
 
   useEffect(() => {
     setMounted(true);
@@ -326,7 +328,14 @@ export function InfoSidebar({ isOpen = true, onClose }: InfoSidebarProps) {
   const DesktopSidebar = useMemo(
     () => (
       <aside
-        className="w-80 bg-gradient-to-b from-gray-950 to-gray-900 border-r border-gray-800/50 flex-shrink-0 sticky top-0 h-screen  flex-col hidden lg:flex"
+        className={`w-80 bg-gradient-to-b from-gray-950 to-gray-900 border-r border-gray-800/50 flex-shrink-0 sticky h-screen flex-col hidden lg:flex transition-all duration-300 ${
+          isBetaBannerVisible ? "top-[120px] sm:top-[128px]" : "top-16"
+        }`}
+        style={{
+          height: isBetaBannerVisible 
+            ? "calc(100vh - 120px)" 
+            : "calc(100vh - 64px)"
+        }}
         role="complementary"
         aria-label="Information navigation"
       >
@@ -343,7 +352,7 @@ export function InfoSidebar({ isOpen = true, onClose }: InfoSidebarProps) {
         {sidebarFooter}
       </aside>
     ),
-    [sidebarHeader, sidebarFooter, isActiveItem]
+    [sidebarHeader, sidebarFooter, isActiveItem, isBetaBannerVisible]
   );
 
   // Mobile sidebar content

@@ -82,21 +82,29 @@ export class UnifiedGameService {
       const { data: { user } } = await supabase.auth.getUser();
       
       if (user) {
-        const { data: profile } = await supabase
+        // Check if search_preferences column exists by querying user settings
+        const { data: profile, error } = await supabase
           .from('profiles')
-          .select('search_preferences')
+          .select('settings')
           .eq('id', user.id)
           .single();
           
-        if (profile?.search_preferences) {
-          return { ...this.defaultPreferences, ...profile.search_preferences };
+        // If query fails or no profile, fall back to localStorage/defaults
+        if (!error && profile?.settings?.search_preferences) {
+          return { ...this.defaultPreferences, ...profile.settings.search_preferences };
         }
       }
       
       // Fallback to localStorage
-      const saved = localStorage.getItem('gameSearchPreferences');
-      if (saved) {
-        return { ...this.defaultPreferences, ...JSON.parse(saved) };
+      if (typeof window !== 'undefined') {
+        const saved = localStorage.getItem('gameSearchPreferences');
+        if (saved) {
+          try {
+            return { ...this.defaultPreferences, ...JSON.parse(saved) };
+          } catch (parseError) {
+            console.warn('Failed to parse saved preferences:', parseError);
+          }
+        }
       }
     } catch (error) {
       console.warn('Failed to load user preferences:', error);
@@ -106,26 +114,54 @@ export class UnifiedGameService {
   }
 
   /**
-   * Save user preferences
+   * Save user preferences to Supabase, cookies, and localStorage
    */
   static async saveUserPreferences(preferences: Partial<UserPreferences>): Promise<void> {
     try {
+      // Dynamic import to avoid SSR issues
+      const CookieManager = (await import('@/utils/cookieManager')).default;
+      
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
       
       if (user) {
+        // Get current settings first to merge with new preferences
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('settings')
+          .eq('id', user.id)
+          .single();
+          
+        const currentSettings = profile?.settings || {};
+        const updatedSettings = {
+          ...currentSettings,
+          search_preferences: {
+            ...currentSettings.search_preferences,
+            ...preferences
+          }
+        };
+        
         await supabase
           .from('profiles')
-          .update({ search_preferences: preferences })
+          .update({ settings: updatedSettings })
           .eq('id', user.id);
       }
       
+      // Save to cookies if functional consent given
+      if (CookieManager.hasConsent('functional')) {
+        CookieManager.setSearchPreferences(preferences);
+      }
+      
       // Also save to localStorage as backup
-      localStorage.setItem('gameSearchPreferences', JSON.stringify(preferences));
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('gameSearchPreferences', JSON.stringify(preferences));
+      }
     } catch (error) {
       console.warn('Failed to save user preferences:', error);
-      // Still save to localStorage if Supabase fails
-      localStorage.setItem('gameSearchPreferences', JSON.stringify(preferences));
+      // Still save to localStorage if other methods fail
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('gameSearchPreferences', JSON.stringify(preferences));
+      }
     }
   }
 
@@ -525,11 +561,8 @@ export class UnifiedGameService {
     const targetSource = source || preferences.preferredSource;
     
     try {
-      console.log(`Attempting to fetch trending games from ${targetSource} source`);
-      
       if (targetSource === 'igdb' || targetSource === 'auto') {
         const games = await IGDBService.getTrendingGames(limit);
-        console.log(`Successfully fetched ${games.length} trending games from IGDB`);
         // Ensure consistent ID prefixing for IGDB games
         return games.map(game => ({
           ...game,
@@ -539,7 +572,6 @@ export class UnifiedGameService {
         }));
       } else {
         const result = await RAWGService.getTrendingGames(1, limit);
-        console.log(`Successfully fetched ${result.games.length} trending games from RAWG`);
         // Ensure consistent ID prefixing for RAWG games
         return result.games.map(game => ({
           ...game,
@@ -549,8 +581,6 @@ export class UnifiedGameService {
         }));
       }
     } catch (primaryError) {
-      console.warn('Primary source failed, falling back:', primaryError);
-      
       if (preferences.fallbackEnabled && targetSource !== 'rawg') {
         try {
           const result = await RAWGService.getTrendingGames(1, limit);
@@ -563,16 +593,13 @@ export class UnifiedGameService {
             dataSource: 'rawg' as const
           }));
         } catch (fallbackError) {
-          console.error('Fallback also failed:', fallbackError);
-          
-          // Instead of throwing, return empty array with warning
-          console.warn('All trending game sources failed, returning empty array');
+          console.error('Trending games: All sources failed, returning empty array');
           return [];
         }
       }
       
       // If no fallback is enabled or fallback failed, return empty array
-      console.warn('No fallback available or disabled, returning empty array');
+      console.error('Trending games: No fallback available, returning empty array');
       return [];
     }
   }
@@ -585,11 +612,8 @@ export class UnifiedGameService {
     const targetSource = source || preferences.preferredSource;
     
     try {
-      console.log(`Attempting to fetch upcoming games from ${targetSource} source`);
-      
       if (targetSource === 'igdb' || targetSource === 'auto') {
         const games = await IGDBService.getUpcomingGames(limit);
-        console.log(`Successfully fetched ${games.length} upcoming games from IGDB`);
         // Ensure consistent ID prefixing for IGDB games
         return games.map(game => ({
           ...game,
@@ -599,7 +623,6 @@ export class UnifiedGameService {
         }));
       } else {
         const result = await RAWGService.getUpcomingGames(1, limit);
-        console.log(`Successfully fetched ${result.games.length} upcoming games from RAWG`);
         // Ensure consistent ID prefixing for RAWG games
         return result.games.map(game => ({
           ...game,
@@ -609,8 +632,6 @@ export class UnifiedGameService {
         }));
       }
     } catch (primaryError) {
-      console.warn('Primary source failed, falling back:', primaryError);
-      
       if (preferences.fallbackEnabled && targetSource !== 'rawg') {
         try {
           const result = await RAWGService.getUpcomingGames(1, limit);
@@ -623,16 +644,13 @@ export class UnifiedGameService {
             dataSource: 'rawg' as const
           }));
         } catch (fallbackError) {
-          console.error('Fallback also failed:', fallbackError);
-          
-          // Instead of throwing, return empty array with warning
-          console.warn('All upcoming game sources failed, returning empty array');
+          console.error('Upcoming games: All sources failed, returning empty array');
           return [];
         }
       }
       
       // If no fallback is enabled or fallback failed, return empty array
-      console.warn('No fallback available or disabled, returning empty array');
+      console.error('Upcoming games: No fallback available, returning empty array');
       return [];
     }
   }
@@ -645,11 +663,8 @@ export class UnifiedGameService {
     const targetSource = source || preferences.preferredSource;
     
     try {
-      console.log(`Attempting to fetch recent games from ${targetSource} source`);
-      
       if (targetSource === 'igdb' || targetSource === 'auto') {
         const games = await IGDBService.getRecentGames(limit);
-        console.log(`Successfully fetched ${games.length} recent games from IGDB`);
         // Ensure consistent ID prefixing for IGDB games
         return games.map(game => ({
           ...game,
@@ -659,7 +674,6 @@ export class UnifiedGameService {
         }));
       } else {
         const result = await RAWGService.getRecentGames(1, limit);
-        console.log(`Successfully fetched ${result.games.length} recent games from RAWG`);
         // Ensure consistent ID prefixing for RAWG games
         return result.games.map(game => ({
           ...game,
@@ -669,8 +683,6 @@ export class UnifiedGameService {
         }));
       }
     } catch (primaryError) {
-      console.warn('Primary source failed, falling back:', primaryError);
-      
       if (preferences.fallbackEnabled && targetSource !== 'rawg') {
         try {
           const result = await RAWGService.getRecentGames(1, limit);
@@ -683,16 +695,13 @@ export class UnifiedGameService {
             dataSource: 'rawg' as const
           }));
         } catch (fallbackError) {
-          console.error('Fallback also failed:', fallbackError);
-          
-          // Instead of throwing, return empty array with warning
-          console.warn('All recent game sources failed, returning empty array');
+          console.error('Recent games: All sources failed, returning empty array');
           return [];
         }
       }
       
       // If no fallback is enabled or fallback failed, return empty array
-      console.warn('No fallback available or disabled, returning empty array');
+      console.error('Recent games: No fallback available, returning empty array');
       return [];
     }
   }
@@ -763,12 +772,9 @@ export class UnifiedGameService {
     const targetSource = source || detectedSource || preferences.preferredSource;
     
     try {
-      console.log(`Fetching game details for ID ${gameId} (original: ${originalId}) using ${targetSource} source`);
-      
       if (targetSource === 'igdb' || targetSource === 'auto') {
         const gameDetails = await IGDBService.fetchGameDetails(originalId);
         if (gameDetails) {
-          console.log(`Successfully fetched game details from IGDB for ID: ${originalId}`);
           return {
             ...gameDetails,
             id: `igdb_${gameDetails.id}`, // Ensure consistent prefixing
@@ -779,10 +785,8 @@ export class UnifiedGameService {
       }
       
       if (targetSource === 'rawg' || (targetSource === 'auto' && preferences.fallbackEnabled)) {
-        console.log(`Trying RAWG for game details (ID: ${originalId})`);
         const gameDetails = await RAWGService.getGameDetails(originalId);
         if (gameDetails) {
-          console.log(`Successfully fetched game details from RAWG for ID: ${originalId}`);
           return {
             ...gameDetails,
             id: `rawg_${gameDetails.id}`, // Ensure consistent prefixing
@@ -792,16 +796,12 @@ export class UnifiedGameService {
         }
       }
       
-      console.warn(`No game details found for ID: ${gameId}`);
       return null;
     } catch (primaryError) {
-      console.warn(`Primary source failed for game ID ${gameId}:`, primaryError);
-      
       if (preferences.fallbackEnabled && targetSource !== 'rawg' && targetSource !== 'igdb') {
         try {
           // Try the other source as fallback only if we're in auto mode
           if (targetSource === 'auto') {
-            console.log(`Falling back to RAWG for game ID: ${originalId}`);
             const gameDetails = await RAWGService.getGameDetails(originalId);
             if (gameDetails) {
               console.log(`Fallback successful: fetched game details from RAWG for ID: ${originalId}`);
@@ -814,11 +814,10 @@ export class UnifiedGameService {
             }
           }
         } catch (fallbackError) {
-          console.error(`Fallback also failed for game ID ${gameId}:`, fallbackError);
+          console.error(`Game details fallback failed for ID ${gameId}`);
         }
       }
       
-      console.error(`All sources failed for game ID ${gameId}`);
       throw new Error(`Failed to fetch game details for ID: ${gameId}`);
     }
   }

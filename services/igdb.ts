@@ -67,7 +67,6 @@ export class IGDBService {
     try {
       // Return cached token if still valid (with 5 minute buffer)
       if (this.cachedToken && this.tokenExpiry && Date.now() < this.tokenExpiry - 5 * 60 * 1000) {
-        console.log('Using cached IGDB token');
         return this.cachedToken;
       }
 
@@ -79,7 +78,6 @@ export class IGDBService {
         throw new Error('TWITCH_CLIENT_SECRET is not configured');
       }
 
-      console.log('Requesting new IGDB token...');
       const response = await fetch('https://id.twitch.tv/oauth2/token', {
         method: 'POST',
         headers: {
@@ -95,19 +93,10 @@ export class IGDBService {
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('Twitch token response:', {
-          status: response.status,
-          statusText: response.statusText,
-          body: errorText
-        });
         throw new Error(`Failed to get IGDB token: ${response.status} ${response.statusText} - ${errorText}`);
       }
 
       const data = await response.json();
-      console.log('Got IGDB token response:', {
-        hasToken: !!data.access_token,
-        expiresIn: data.expires_in
-      });
       
       if (!data.access_token || typeof data.expires_in !== 'number') {
         console.error('Invalid token response:', data);
@@ -375,8 +364,6 @@ export class IGDBService {
         sort total_rating_count desc;
         limit ${limit};
       `;
-
-      console.log('IGDB: Making trending games request', { limit });
 
       const response = await fetch(this.getProxyUrl(), {
         method: 'POST',

@@ -15,7 +15,7 @@ export function UnauthenticatedHome() {
   const typedHomeData = homeData as HomePageData;
   
   return (
-    <div className="relative min-h-screen bg-black overflow-hidden">
+    <div className="relative min-h-full bg-black overflow-hidden">
       {/* Background Effects */}
       <div className="absolute inset-0">
         <div className="absolute inset-0 bg-gradient-to-br from-purple-900/20 via-black to-cyan-900/20" />

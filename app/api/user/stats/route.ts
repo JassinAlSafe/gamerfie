@@ -14,21 +14,38 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Use the optimized get_user_activity_summary function
-    const { data: userStats, error } = await supabase
-      .rpc('get_user_activity_summary', { 
-        user_uuid: user.id 
-      });
+    // Get user library stats - using correct column names from database schema
+    const { data: libraryStats, error: libraryError } = await supabase
+      .from('user_games')
+      .select('status, user_rating, play_time')
+      .eq('user_id', user.id);
 
-    if (error) {
-      console.error('Error fetching user stats:', error);
-      return NextResponse.json(
-        { error: 'Failed to fetch user statistics' },
-        { status: 500 }
-      );
+    if (libraryError) {
+      console.error('Error fetching library stats:', libraryError);
+      return NextResponse.json({ error: 'Failed to fetch library stats' }, { status: 500 });
     }
 
-    // Get journal stats directly from journal_entries table
+    // Calculate library statistics with proper validation
+    const totalGames = libraryStats?.length || 0;
+    const completedGames = libraryStats?.filter(game => 
+      game.status === 'completed'
+    ).length || 0;
+    
+    // Calculate total playtime (play_time is stored as double precision in hours)
+    const totalPlaytime = libraryStats?.reduce((sum, game) => {
+      const hours = parseFloat(game.play_time?.toString() || '0') || 0;
+      return sum + hours;
+    }, 0) || 0;
+    
+    // Calculate average rating (user_rating is stored as double precision 0-10)
+    const ratedGames = libraryStats?.filter(game => 
+      game.user_rating && !isNaN(parseFloat(game.user_rating?.toString() || '0'))
+    ) || [];
+    const avgRating = ratedGames.length > 0 
+      ? ratedGames.reduce((sum, game) => sum + (parseFloat(game.user_rating?.toString() || '0') || 0), 0) / ratedGames.length
+      : 0;
+
+    // Get journal stats
     const { data: journalEntries, error: journalError } = await supabase
       .from('journal_entries')
       .select('type, rating, hours_played')
@@ -53,8 +70,28 @@ export async function GET() {
       total_playtime: 0
     };
 
+    // Get recent activity count (last 30 days)
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    const { data: recentActivities, error: activityError } = await supabase
+      .from('friend_activities')
+      .select('id')
+      .eq('user_id', user.id)
+      .gte('created_at', thirtyDaysAgo.toISOString());
+
+    if (activityError) {
+      console.warn('Activity stats not available:', activityError);
+    }
+
+    const recentActivitiesCount = recentActivities?.length || 0;
+
     return NextResponse.json({
-      ...userStats,
+      total_games: totalGames,
+      completed_games: completedGames,
+      total_playtime: Math.round(totalPlaytime * 100) / 100, // Round to 2 decimal places
+      avg_rating: Math.round(avgRating * 100) / 100, // Round to 2 decimal places
+      recent_activities: recentActivitiesCount,
       journal: journalStats
     });
   } catch (error) {

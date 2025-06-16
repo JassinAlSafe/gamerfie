@@ -24,10 +24,8 @@ export async function GET(
         published_at,
         created_at,
         updated_at,
-        profiles:author_id (
-          username,
-          display_name
-        )
+        author_id,
+        comments_enabled
       `)
       .eq('id', id)
       .single();
@@ -75,7 +73,7 @@ export async function PUT(
     }
 
     const body = await request.json();
-    const { title, slug, excerpt, content, featured_image, category, status, badge, published_at } = body;
+    const { title, slug, excerpt, content, featured_image, category, status, badge, published_at, comments_enabled } = body;
 
     // Validate required fields
     if (!title || !content || !category) {
@@ -95,6 +93,7 @@ export async function PUT(
       status,
       badge,
       published_at: status === 'published' ? (published_at || new Date().toISOString()) : null,
+      comments_enabled,
     };
 
     const { data, error } = await supabase

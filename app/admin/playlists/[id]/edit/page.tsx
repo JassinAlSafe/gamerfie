@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { PlaylistManager } from "@/components/admin/PlaylistManager";
+import PlaylistEditor from "@/components/admin/playlist/PlaylistEditor";
 import { PlaylistService } from "@/services/playlistService";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { Playlist } from "@/types/playlist";
@@ -40,7 +40,7 @@ export default function EditPlaylistPage() {
       <h1 className="text-2xl font-bold mb-6">
         Edit Playlist: {playlist.title}
       </h1>
-      <PlaylistManager initialPlaylist={playlist} />
+      <PlaylistEditor initialPlaylist={playlist} />
     </div>
   );
 }

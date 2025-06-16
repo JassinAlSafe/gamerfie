@@ -10,6 +10,7 @@ import { SearchDialog } from "@/components/ui/search/search-dialog";
 import { AuthButtons } from "./auth-buttons";
 import { MobileMenu } from "./mobile-menu";
 import { Button } from "@/components/ui/button";
+import AdminShortcuts from "@/components/admin/AdminShortcuts";
 
 export default function FloatingHeader() {
   const { initialize, isInitialized, checkUser, user } = useAuthStore();
@@ -109,7 +110,7 @@ export default function FloatingHeader() {
   return (
     <header
       className={`fixed left-0 right-0 header-fixed transition-all duration-300 ${
-        isBetaBannerVisible ? "top-10" : "top-0"
+        isBetaBannerVisible ? "top-[44px] sm:top-[48px]" : "top-0"
       }`}
     >
       <div className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 header-backdrop">
@@ -148,6 +149,7 @@ export default function FloatingHeader() {
               >
                 <AnimatedNav items={navigationItems} />
               </nav>
+              <AdminShortcuts variant="dropdown" />
               <AuthButtons />
             </div>
 

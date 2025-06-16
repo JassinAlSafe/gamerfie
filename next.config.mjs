@@ -91,6 +91,31 @@ const nextConfig = {
         protocol: "https",
         hostname: "avatars.githubusercontent.com",
       },
+      {
+        protocol: "https",
+        hostname: "store-images.s-microsoft.com",
+        pathname: "/image/**",
+      },
+      {
+        protocol: "https",
+        hostname: "steamcdn-a.akamaihd.net",
+      },
+      {
+        protocol: "https",
+        hostname: "cdn.cloudflare.steamstatic.com",
+      },
+      {
+        protocol: "https",
+        hostname: "assets.nintendo.com",
+      },
+      {
+        protocol: "https",
+        hostname: "image.api.playstation.com",
+      },
+      {
+        protocol: "https",
+        hostname: "gaming-cdn.com",
+      },
     ],
     dangerouslyAllowSVG: false,
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",

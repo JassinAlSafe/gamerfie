@@ -232,13 +232,13 @@ const GameCardContent = memo(({
 
 GameCardContent.displayName = "GameCardContent";
 
-export const GameCard = memo(({ 
+export const GameCard = memo(React.forwardRef<HTMLDivElement, GameCardProps>(({ 
   game, 
   variant = "grid", 
   className, 
   animated = false, 
   ...props 
-}: GameCardProps) => {
+}, ref) => {
   const CardWrapper = animated ? motion.div : 'div';
   const animationProps = animated ? {
     layout: true,
@@ -249,7 +249,7 @@ export const GameCard = memo(({
   } : {};
 
   return (
-    <CardWrapper className={cn("group", className)} {...animationProps}>
+    <CardWrapper ref={ref} className={cn("group", className)} {...animationProps}>
       <Link
         href={`/game/${game.id}`}
         className={cn(
@@ -263,6 +263,6 @@ export const GameCard = memo(({
       </Link>
     </CardWrapper>
   );
-});
+}));
 
 GameCard.displayName = "GameCard";

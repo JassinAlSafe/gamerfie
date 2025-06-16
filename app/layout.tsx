@@ -14,6 +14,8 @@ import { CacheBuster } from "@/components/ui/cache-buster";
 import { AuthInitializer } from "@/components/auth/AuthInitializer";
 import { FloatingActions } from "@/components/home/FloatingActions";
 import { BetaBanner } from "@/components/ui/BetaBanner";
+import { CookieConsent } from "@/components/ui/CookieConsent";
+import AdminShortcuts from "@/components/admin/AdminShortcuts";
 
 import { useUIStore } from "@/stores/useUIStore";
 
@@ -72,7 +74,7 @@ export default function RootLayout({
 
   const mainPaddingClass = !isAuthPage
     ? `flex-1 transition-all duration-300 ${
-        isBetaBannerVisible ? "pt-24" : "pt-16"
+        isBetaBannerVisible ? "pt-[120px] sm:pt-[116px]" : "pt-16"
       }`
     : "flex-1";
 
@@ -188,6 +190,8 @@ export default function RootLayout({
                 {!isAuthPage && <FloatingHeader />}
                 <main className={mainPaddingClass}>{children}</main>
                 {!isAuthPage && <FloatingActions />}
+                {!isAuthPage && <AdminShortcuts variant="floating" />}
+                <CookieConsent />
                 {!isAuthPage && (
                   <div className="mt-auto">
                     <Footer />

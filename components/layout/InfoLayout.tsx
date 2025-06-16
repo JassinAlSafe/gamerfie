@@ -2,6 +2,7 @@
 import React, { useState } from "react";
 import { InfoSidebar } from "./InfoSidebar";
 import { IconMenu2 } from "@tabler/icons-react";
+import { useUIStore } from "@/stores/useUIStore";
 
 interface InfoLayoutProps {
   children: React.ReactNode;
@@ -10,11 +11,16 @@ interface InfoLayoutProps {
 
 export function InfoLayout({ children, title }: InfoLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { isBetaBannerVisible } = useUIStore();
 
   return (
     <div className="min-h-screen bg-gray-950">
       {/* Mobile Header */}
-      <div className="lg:hidden bg-gray-900/95 backdrop-blur-sm border-b border-gray-800/50 p-4 sticky top-0 z-50">
+      <div 
+        className={`lg:hidden bg-gray-900/95 backdrop-blur-sm border-b border-gray-800/50 p-4 sticky z-50 transition-all duration-300 ${
+          isBetaBannerVisible ? "top-[44px] sm:top-[48px]" : "top-0"
+        }`}
+      >
         <div className="flex items-center justify-between">
           <button
             onClick={() => setSidebarOpen(true)}
