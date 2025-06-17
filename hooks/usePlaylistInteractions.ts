@@ -22,7 +22,9 @@ export const usePlaylistInteractions = (playlistId: string) => {
     isLoading: true,
   });
 
-  // Fetch initial state
+  const [isActionLoading, setIsActionLoading] = useState(false);
+
+  // Fetch initial state only once
   const fetchInteractionState = useCallback(async () => {
     if (!playlistId) return;
 
@@ -54,7 +56,7 @@ export const usePlaylistInteractions = (playlistId: string) => {
     fetchInteractionState();
   }, [fetchInteractionState]);
 
-  // Handle like toggle
+  // Handle like toggle with pure optimistic updates
   const handleLike = useCallback(async () => {
     if (!user) {
       toast({
@@ -65,17 +67,30 @@ export const usePlaylistInteractions = (playlistId: string) => {
       return;
     }
 
+    if (isActionLoading) return; // Prevent spam clicking
+
     try {
-      // Optimistic update
-      const newLikedState = !state.isLiked;
-      const newCount = newLikedState ? state.likesCount + 1 : state.likesCount - 1;
+      setIsActionLoading(true);
       
+      // Calculate optimistic update
+      const wasLiked = state.isLiked;
+      const newLikedState = !wasLiked;
+      const newCount = newLikedState ? state.likesCount + 1 : Math.max(0, state.likesCount - 1);
+      
+      // Apply optimistic update immediately
       setState(prev => ({
         ...prev,
         isLiked: newLikedState,
-        likesCount: Math.max(0, newCount),
+        likesCount: newCount,
       }));
 
+      // Show immediate feedback
+      toast({
+        title: newLikedState ? "Added to likes" : "Removed from likes",
+        description: `Playlist ${newLikedState ? 'added to' : 'removed from'} your liked playlists`,
+      });
+
+      // Send to server in background
       const response = await fetch(`/api/playlists/${playlistId}/like`, {
         method: 'POST',
       });
@@ -86,25 +101,21 @@ export const usePlaylistInteractions = (playlistId: string) => {
         throw new Error(data.error || 'Failed to update like status');
       }
 
-      // Update with server response
-      setState(prev => ({
-        ...prev,
-        isLiked: data.liked,
-      }));
-
-      toast({
-        title: data.liked ? "Added to likes" : "Removed from likes",
-        description: `Playlist ${data.liked ? 'added to' : 'removed from'} your liked playlists`,
-      });
-
-      // Refresh count from server
-      setTimeout(fetchInteractionState, 500);
+      // Only update if server response differs from our optimistic update
+      if (data.liked !== newLikedState) {
+        setState(prev => ({
+          ...prev,
+          isLiked: data.liked,
+        }));
+      }
       
     } catch (error) {
-      // Revert optimistic update
+      console.error('Like error:', error);
+      
+      // Revert optimistic update on error
       setState(prev => ({
         ...prev,
-        isLiked: !state.isLiked,
+        isLiked: state.isLiked,
         likesCount: state.likesCount,
       }));
 
@@ -113,10 +124,12 @@ export const usePlaylistInteractions = (playlistId: string) => {
         description: "Failed to update like status. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setIsActionLoading(false);
     }
-  }, [user, state.isLiked, state.likesCount, playlistId, toast, fetchInteractionState]);
+  }, [user, state.isLiked, state.likesCount, playlistId, toast, isActionLoading]);
 
-  // Handle bookmark toggle
+  // Handle bookmark toggle with pure optimistic updates
   const handleBookmark = useCallback(async () => {
     if (!user) {
       toast({
@@ -127,17 +140,30 @@ export const usePlaylistInteractions = (playlistId: string) => {
       return;
     }
 
+    if (isActionLoading) return; // Prevent spam clicking
+
     try {
-      // Optimistic update
-      const newBookmarkedState = !state.isBookmarked;
-      const newCount = newBookmarkedState ? state.bookmarksCount + 1 : state.bookmarksCount - 1;
+      setIsActionLoading(true);
       
+      // Calculate optimistic update
+      const wasBookmarked = state.isBookmarked;
+      const newBookmarkedState = !wasBookmarked;
+      const newCount = newBookmarkedState ? state.bookmarksCount + 1 : Math.max(0, state.bookmarksCount - 1);
+      
+      // Apply optimistic update immediately
       setState(prev => ({
         ...prev,
         isBookmarked: newBookmarkedState,
-        bookmarksCount: Math.max(0, newCount),
+        bookmarksCount: newCount,
       }));
 
+      // Show immediate feedback
+      toast({
+        title: newBookmarkedState ? "Added to bookmarks" : "Removed from bookmarks",
+        description: `Playlist ${newBookmarkedState ? 'saved to' : 'removed from'} your bookmarks`,
+      });
+
+      // Send to server in background
       const response = await fetch(`/api/playlists/${playlistId}/bookmark`, {
         method: 'POST',
       });
@@ -148,25 +174,21 @@ export const usePlaylistInteractions = (playlistId: string) => {
         throw new Error(data.error || 'Failed to update bookmark status');
       }
 
-      // Update with server response
-      setState(prev => ({
-        ...prev,
-        isBookmarked: data.bookmarked,
-      }));
-
-      toast({
-        title: data.bookmarked ? "Added to bookmarks" : "Removed from bookmarks",
-        description: `Playlist ${data.bookmarked ? 'saved to' : 'removed from'} your bookmarks`,
-      });
-
-      // Refresh count from server
-      setTimeout(fetchInteractionState, 500);
+      // Only update if server response differs from our optimistic update
+      if (data.bookmarked !== newBookmarkedState) {
+        setState(prev => ({
+          ...prev,
+          isBookmarked: data.bookmarked,
+        }));
+      }
       
     } catch (error) {
-      // Revert optimistic update
+      console.error('Bookmark error:', error);
+      
+      // Revert optimistic update on error
       setState(prev => ({
         ...prev,
-        isBookmarked: !state.isBookmarked,
+        isBookmarked: state.isBookmarked,
         bookmarksCount: state.bookmarksCount,
       }));
 
@@ -175,13 +197,16 @@ export const usePlaylistInteractions = (playlistId: string) => {
         description: "Failed to update bookmark status. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setIsActionLoading(false);
     }
-  }, [user, state.isBookmarked, state.bookmarksCount, playlistId, toast, fetchInteractionState]);
+  }, [user, state.isBookmarked, state.bookmarksCount, playlistId, toast, isActionLoading]);
 
   return {
     ...state,
     handleLike,
     handleBookmark,
+    isLoading: state.isLoading || isActionLoading,
     refresh: fetchInteractionState,
   };
 };

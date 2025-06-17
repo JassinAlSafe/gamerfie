@@ -4,7 +4,7 @@ import React from "react";
 import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Heart, Share2, Bookmark, Calendar, Eye, Play } from "lucide-react";
+import { Heart, Share2, Bookmark, Calendar, Eye, Play, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatPlaylistDate } from "@/lib/playlist-utils";
 import type { Playlist } from "@/types/playlist";
@@ -50,6 +50,9 @@ export const PlaylistHeroModern: React.FC<PlaylistHeroModernProps> = ({
             src={featuredGame.background_image || featuredGame.cover_url || "/api/placeholder/1920/800"}
             alt={featuredGame.name}
             fill
+            sizes="100vw"
+            quality={80}
+            unoptimized={false}
             className="object-cover opacity-20"
             priority
           />
@@ -124,12 +127,16 @@ export const PlaylistHeroModern: React.FC<PlaylistHeroModernProps> = ({
               onClick={onLike}
               disabled={interactionsLoading}
               className={cn(
-                "border-white/20 text-white hover:bg-white/10 transition-all duration-200",
+                "border-white/20 text-white hover:bg-white/10 transition-all duration-200 relative transform hover:scale-105 active:scale-95",
                 isLiked && "bg-red-500/20 border-red-500/50 text-red-400",
-                interactionsLoading && "opacity-70 cursor-not-allowed"
+                interactionsLoading && "cursor-not-allowed"
               )}
             >
-              <Heart className={cn("w-5 h-5 mr-2 transition-all duration-200", isLiked && "fill-current")} />
+              {interactionsLoading ? (
+                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+              ) : (
+                <Heart className={cn("w-5 h-5 mr-2 transition-all duration-200", isLiked && "fill-current")} />
+              )}
               {stats.likes > 999 ? `${(stats.likes / 1000).toFixed(1)}k` : stats.likes}
             </Button>
 
@@ -139,12 +146,16 @@ export const PlaylistHeroModern: React.FC<PlaylistHeroModernProps> = ({
               onClick={onBookmark}
               disabled={interactionsLoading}
               className={cn(
-                "border-white/20 text-white hover:bg-white/10 transition-all duration-200",
+                "border-white/20 text-white hover:bg-white/10 transition-all duration-200 relative transform hover:scale-105 active:scale-95",
                 isBookmarked && "bg-yellow-500/20 border-yellow-500/50 text-yellow-400",
-                interactionsLoading && "opacity-70 cursor-not-allowed"
+                interactionsLoading && "cursor-not-allowed"
               )}
             >
-              <Bookmark className={cn("w-5 h-5 transition-all duration-200", isBookmarked && "fill-current")} />
+              {interactionsLoading ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+              ) : (
+                <Bookmark className={cn("w-5 h-5 transition-all duration-200", isBookmarked && "fill-current")} />
+              )}
             </Button>
 
             <Button
@@ -193,6 +204,9 @@ export const PlaylistHeroModern: React.FC<PlaylistHeroModernProps> = ({
                     src={game.cover_url || game.background_image || "/api/placeholder/300/400"}
                     alt={game.name}
                     fill
+                    sizes="(max-width: 1024px) 96px, 128px"
+                    quality={85}
+                    unoptimized={false}
                     className="object-cover transition-transform duration-300 group-hover:scale-105"
                   />
                   <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300" />

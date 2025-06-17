@@ -93,7 +93,7 @@ export const PlaylistGamesSection: React.FC<PlaylistGamesSectionProps> = ({
             className={
               viewMode === "grid"
                 ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
-                : "space-y-4"
+                : "space-y-2"
             }
           >
             {games.map((game) => (
@@ -106,6 +106,7 @@ export const PlaylistGamesSection: React.FC<PlaylistGamesSectionProps> = ({
               >
                 <GameCard
                   game={game}
+                  variant={viewMode}
                   showActions={true}
                 />
               </motion.div>

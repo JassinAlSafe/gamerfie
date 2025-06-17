@@ -13,6 +13,7 @@ import { PlaylistHeroModern } from "@/components/playlist/detail/PlaylistHeroMod
 import { PlaylistGamesSection } from "@/components/playlist/detail/PlaylistGamesSection";
 import { PlaylistDetailsTab } from "@/components/playlist/detail/PlaylistDetailsTab";
 import { PlaylistKeyboardShortcuts } from "@/components/playlist/detail/PlaylistKeyboardShortcuts";
+import PlaylistCommentsSection from "@/components/playlist/detail/PlaylistCommentsSection";
 import type { Playlist } from "@/types/playlist";
 
 type ViewMode = "grid" | "list";
@@ -75,8 +76,6 @@ export default function PlaylistDetailPage() {
       setStats((prev) => ({
         ...prev,
         totalGames: fetchedPlaylist.games?.length || 0,
-        likes: likesCount,
-        bookmarks: bookmarksCount,
       }));
     } catch (error) {
       console.error("Failed to fetch playlist:", error);
@@ -88,7 +87,7 @@ export default function PlaylistDetailPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [params.id, toast, likesCount, bookmarksCount]);
+  }, [params.id, toast]);
 
   useEffect(() => {
     fetchPlaylist();
@@ -221,7 +220,11 @@ export default function PlaylistDetailPage() {
         {/* Hero Section */}
         <PlaylistHeroModern
           playlist={playlist}
-          stats={stats}
+          stats={{
+            ...stats,
+            likes: likesCount,
+            bookmarks: bookmarksCount,
+          }}
           isBookmarked={isBookmarked}
           isLiked={isLiked}
           onShare={handleShare}
@@ -234,7 +237,7 @@ export default function PlaylistDetailPage() {
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <div className="border-t border-white/10 bg-slate-900/50 backdrop-blur-sm">
             <div className="container mx-auto px-6">
-              <TabsList className="grid w-full grid-cols-3 bg-transparent border-0 h-14 p-0">
+              <TabsList className="grid w-full grid-cols-4 bg-transparent border-0 h-14 p-0">
                 <TabsTrigger
                   value="games"
                   className="text-white text-sm font-medium border-b-2 border-transparent data-[state=active]:border-white data-[state=active]:bg-transparent data-[state=active]:text-white rounded-none"
@@ -246,6 +249,12 @@ export default function PlaylistDetailPage() {
                   className="text-white text-sm font-medium border-b-2 border-transparent data-[state=active]:border-white data-[state=active]:bg-transparent data-[state=active]:text-white rounded-none"
                 >
                   Details
+                </TabsTrigger>
+                <TabsTrigger
+                  value="comments"
+                  className="text-white text-sm font-medium border-b-2 border-transparent data-[state=active]:border-white data-[state=active]:bg-transparent data-[state=active]:text-white rounded-none"
+                >
+                  Comments
                 </TabsTrigger>
                 <TabsTrigger
                   value="similar"
@@ -272,6 +281,10 @@ export default function PlaylistDetailPage() {
 
             <TabsContent value="details" className="space-y-6 mt-0">
               <PlaylistDetailsTab playlist={playlist} stats={stats} />
+            </TabsContent>
+
+            <TabsContent value="comments" className="space-y-6 mt-0">
+              <PlaylistCommentsSection playlistId={params.id as string} />
             </TabsContent>
 
             <TabsContent value="similar" className="space-y-6 mt-0">

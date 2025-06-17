@@ -1,11 +1,12 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useCallback } from "react";
 import { Game } from "@/types";
 import { useProfile } from "@/hooks/Profile/use-profile";
 import { useProgressStore } from "@/stores/useProgressStore";
 import { useGameActivities } from "@/hooks/Games/use-game-activities";
 import { useErrorStore } from "@/stores/useErrorStore";
+import { useScrollToTopVisibility } from "@/hooks/useThrottledScroll";
 import { GameHero } from "./hero/GameHero";
 import { GameTabs } from "./tabs/GameTabs";
 import { ErrorBoundary } from "react-error-boundary";
@@ -45,30 +46,15 @@ function ErrorFallback({
 }
 
 function ScrollToTopButton() {
-  const [isVisible, setIsVisible] = useState(false);
-
-  // Show button when page is scrolled down
-  const toggleVisibility = () => {
-    if (window.scrollY > 500) {
-      setIsVisible(true);
-    } else {
-      setIsVisible(false);
-    }
-  };
-
-  // Set the scroll event listener
-  useEffect(() => {
-    window.addEventListener("scroll", toggleVisibility);
-    return () => window.removeEventListener("scroll", toggleVisibility);
-  }, []);
+  const isVisible = useScrollToTopVisibility(500);
 
   // Scroll to top function
-  const scrollToTop = () => {
+  const scrollToTop = useCallback(() => {
     window.scrollTo({
       top: 0,
       behavior: "smooth",
     });
-  };
+  }, []);
 
   return (
     <AnimatePresence>

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback, useMemo } from "react";
+import React, { useState, useCallback, useMemo, memo } from "react";
 import { motion } from "framer-motion";
 import { Game } from "@/types";
 import { Profile } from "@/types/profile";
@@ -15,7 +15,8 @@ interface GameProgress {
 }
 import { GameCover } from "./GameCover";
 import { GameQuickStats } from "./GameQuickStats";
-import { getHighQualityImageUrl } from "@/utils/image-utils";
+import { getOptimizedImageUrl } from "@/utils/image-utils";
+import { OptimizedImage } from "@/components/ui/optimized-image";
 import { AddToLibraryButton } from "@/components/add-to-library-button";
 import { UpdateProgressButton } from "@/components/update-progress-button";
 import { ArrowLeft, Star, Calendar, Users, Play, Loader2 } from "lucide-react";
@@ -37,7 +38,7 @@ interface GameHeroProps {
   progress?: Partial<GameProgress>;
 }
 
-export function GameHero({ game, profile, progress }: GameHeroProps) {
+export const GameHero = memo(function GameHero({ game, profile, progress }: GameHeroProps) {
   const [mounted, setMounted] = React.useState(false);
   const [backgroundLoaded, setBackgroundLoaded] = useState(false);
   const [trailerOpen, setTrailerOpen] = useState(false);
@@ -107,16 +108,8 @@ export function GameHero({ game, profile, progress }: GameHeroProps) {
 
   React.useEffect(() => {
     setMounted(true);
-
-    // Preload the background image
-    if (backgroundImage) {
-      const img = new Image();
-      img.src = getHighQualityImageUrl(backgroundImage);
-      img.onload = () => setBackgroundLoaded(true);
-    }
-
     return () => setMounted(false);
-  }, [backgroundImage]);
+  }, []);
 
   // Format platforms for display
   const platformNames = useMemo(
@@ -151,13 +144,9 @@ export function GameHero({ game, profile, progress }: GameHeroProps) {
     }
   }, []);
 
-  // Memoize the background style to prevent unnecessary recalculations
-  const backgroundStyle = useMemo(
-    () => ({
-      backgroundImage: backgroundImage
-        ? `url(${getHighQualityImageUrl(backgroundImage)})`
-        : "none",
-    }),
+  // Memoize the optimized background URL
+  const optimizedBackgroundUrl = useMemo(
+    () => backgroundImage ? getOptimizedImageUrl(backgroundImage, 'background') : null,
     [backgroundImage]
   );
 
@@ -171,13 +160,16 @@ export function GameHero({ game, profile, progress }: GameHeroProps) {
   return (
     <div className="relative min-h-[80vh] w-full overflow-hidden">
       {/* Background Image with Parallax */}
-      {backgroundImage && mounted && (
-        <div
-          className={`absolute inset-0 bg-cover bg-center bg-fixed transform scale-105 filter blur-[2px] transition-opacity duration-500 ${
+      {optimizedBackgroundUrl && mounted && (
+        <OptimizedImage
+          src={optimizedBackgroundUrl}
+          alt=""
+          context="background"
+          priority={true}
+          className={`absolute inset-0 w-full h-full object-cover transform scale-105 filter blur-[2px] transition-opacity duration-500 ${
             backgroundLoaded ? "opacity-70" : "opacity-0"
           }`}
-          style={backgroundStyle}
-          aria-hidden="true"
+          onLoad={() => setBackgroundLoaded(true)}
         />
       )}
 
@@ -205,50 +197,56 @@ export function GameHero({ game, profile, progress }: GameHeroProps) {
           </Link>
         </div>
 
-        {/* Game Info Container - Improved centering */}
-        <div className="flex-grow flex items-end pb-16">
+        {/* Game Info Container - Enhanced layout and spacing */}
+        <div className="flex-grow flex items-end pb-20">
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="flex flex-col md:flex-row gap-8 md:gap-12 items-center md:items-start w-full max-w-6xl mx-auto"
+            transition={{ duration: 0.6, ease: "easeOut" }}
+            className="flex flex-col md:flex-row gap-10 md:gap-16 items-center md:items-start w-full max-w-7xl mx-auto"
           >
-            {/* Game Cover - Fixed width for better alignment */}
-            <div className="w-full md:w-64 lg:w-80 flex-shrink-0">
-              <GameCover game={processedGame} />
+            {/* Game Cover - Enhanced sizing and spacing */}
+            <div className="w-full md:w-72 lg:w-96 xl:w-80 flex-shrink-0">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.5, delay: 0.1 }}
+              >
+                <GameCover game={processedGame} />
+              </motion.div>
             </div>
 
-            {/* Game Details */}
-            <div className="w-full md:flex-1 text-center md:text-left space-y-6">
+            {/* Game Details - Enhanced typography and spacing */}
+            <div className="w-full md:flex-1 text-center md:text-left space-y-8">
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.2 }}
-                className="space-y-3"
+                className="space-y-4"
               >
-                <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white leading-tight tracking-tight">
+                <h1 className="text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold text-white leading-tight tracking-tight drop-shadow-lg">
                   {processedGame.name}
                 </h1>
 
-                {/* Game metadata badges - Improved alignment */}
-                <div className="flex flex-wrap items-center gap-4 text-sm text-gray-300">
+                {/* Game metadata badges - Enhanced design */}
+                <div className="flex flex-wrap items-center gap-5 text-sm">
                   {releaseYear && (
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-800/60 rounded-full backdrop-blur-sm border border-gray-700/30">
                       <Calendar
                         className="h-4 w-4 text-purple-400"
                         aria-hidden="true"
                       />
-                      <span>{releaseYear}</span>
+                      <span className="text-gray-200 font-medium">{releaseYear}</span>
                     </div>
                   )}
 
                   {processedGame.rating && (
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-800/60 rounded-full backdrop-blur-sm border border-gray-700/30">
                       <Star
                         className="h-4 w-4 text-yellow-500 fill-yellow-500"
                         aria-hidden="true"
                       />
-                      <span>
+                      <span className="text-gray-200 font-medium">
                         {typeof processedGame.rating === "number"
                           ? processedGame.rating.toFixed(1)
                           : processedGame.rating}
@@ -257,12 +255,12 @@ export function GameHero({ game, profile, progress }: GameHeroProps) {
                   )}
 
                   {platformNames && (
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-800/60 rounded-full backdrop-blur-sm border border-gray-700/30">
                       <Users
                         className="h-4 w-4 text-blue-400"
                         aria-hidden="true"
                       />
-                      <span className="truncate max-w-[200px]">
+                      <span className="text-gray-200 font-medium truncate max-w-[200px]">
                         {platformNames}
                       </span>
                     </div>
@@ -276,7 +274,7 @@ export function GameHero({ game, profile, progress }: GameHeroProps) {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.4 }}
-                className="text-lg text-gray-300/90 leading-relaxed line-clamp-3 max-w-3xl"
+                className="text-lg md:text-xl text-gray-300/90 leading-relaxed line-clamp-4 max-w-4xl drop-shadow-sm"
               >
                 {(processedGame as any).summary}
               </motion.p>
@@ -389,4 +387,4 @@ export function GameHero({ game, profile, progress }: GameHeroProps) {
       </div>
     </div>
   );
-}
+});

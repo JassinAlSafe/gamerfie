@@ -99,7 +99,7 @@ const GameCardContent = memo(({
   const renderImage = () => (
     <div className={cn(
       "relative overflow-hidden",
-      variant === 'list' ? "w-16 h-24 flex-shrink-0 rounded-md" : "aspect-[3/4] w-full"
+      variant === 'list' ? "w-20 h-28 flex-shrink-0 rounded-md" : "aspect-[3/4] w-full"
     )}>
       {coverUrl && !imageError ? (
         <>
@@ -110,15 +110,16 @@ const GameCardContent = memo(({
             priority={priority}
             sizes={
               variant === 'list' 
-                ? "64px"
-                : "(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                ? "80px"
+                : "(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, (max-width: 1280px) 25vw, 300px"
             }
             className={cn(
-              "object-cover transition-all duration-500",
-              isLoading ? "scale-110 blur-2xl" : "scale-100 blur-0",
+              "object-cover transition-all duration-300",
+              isLoading ? "scale-100 opacity-0" : "scale-100 opacity-100",
               variant !== 'list' && "group-hover:scale-105"
             )}
-            quality={variant === 'list' ? 60 : 80}
+            quality={variant === 'list' ? 85 : 90}
+            unoptimized={false}
             onLoad={() => setLoading(false)}
             onError={() => setImageError(true)}
           />
@@ -130,7 +131,7 @@ const GameCardContent = memo(({
         <div className="absolute inset-0 bg-white/5 flex items-center justify-center">
           <Gamepad2 className={cn(
             "text-gray-600",
-            variant === 'list' ? "w-8 h-8" : "w-16 h-16"
+            variant === 'list' ? "w-10 h-10" : "w-16 h-16"
           )} />
         </div>
       )}
@@ -150,7 +151,7 @@ const GameCardContent = memo(({
       )}>
         <h3 className={cn(
           "font-semibold text-white mb-1",
-          variant === 'list' ? "text-lg" : "line-clamp-1",
+          variant === 'list' ? "text-base" : "line-clamp-1",
           variant !== 'list' && "group-hover:text-purple-300 transition-colors duration-300"
         )}>
           {title}
@@ -168,7 +169,7 @@ const GameCardContent = memo(({
 
       <div className={cn(
         "flex items-center",
-        variant === 'list' ? "space-x-4 mt-2" : "justify-between"
+        variant === 'list' ? "space-x-3 mt-1" : "justify-between"
       )}>
         {variant !== 'showcase' && game.first_release_date && (
           <p className="text-sm text-white/60 mb-2">
@@ -212,7 +213,7 @@ const GameCardContent = memo(({
 
   if (variant === 'list') {
     return (
-      <div className="bg-gray-900/50 rounded-lg p-4 flex items-center space-x-4 hover:bg-gray-900/70 transition-colors">
+      <div className="bg-gray-900/50 rounded-lg p-3 flex items-center space-x-3 hover:bg-gray-900/70 transition-colors">
         {renderImage()}
         {renderInfo()}
       </div>

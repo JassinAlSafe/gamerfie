@@ -4,6 +4,7 @@ export const IGDB_IMAGE_SIZES = {
     SMALL: 't_thumb',
     MEDIUM: 't_cover_big',
     LARGE: 't_cover_big_2x',
+    ULTRA: 't_1080p',
     ORIGINAL: 't_original'  // Highest quality for covers
   },
   SCREENSHOT: {
@@ -72,6 +73,55 @@ export function getHighQualityImageUrl(url: string): string {
   if (url.includes('youtube.com/vi/') || url.includes('img.youtube.com')) {
     // Try to get the maxresdefault version if possible
     return url.replace(/\/[^\/]+\.jpg$/, '/maxresdefault.jpg');
+  }
+  
+  return url;
+}
+
+/**
+ * Gets optimized image URL based on usage context
+ */
+export function getOptimizedImageUrl(
+  url: string, 
+  context: 'hero' | 'card' | 'thumbnail' | 'background' = 'card'
+): string {
+  if (!url) return "/placeholder.png";
+  
+  url = ensureHttps(url);
+  
+  if (url.includes('igdb.com')) {
+    let processedUrl = url;
+    
+    // Choose appropriate size based on context
+    let targetSize: string;
+    switch (context) {
+      case 'hero':
+        targetSize = IGDB_IMAGE_SIZES.COVER.ULTRA;
+        break;
+      case 'card':
+        targetSize = IGDB_IMAGE_SIZES.COVER.LARGE;
+        break;
+      case 'thumbnail':
+        targetSize = IGDB_IMAGE_SIZES.COVER.MEDIUM;
+        break;
+      case 'background':
+        targetSize = IGDB_IMAGE_SIZES.SCREENSHOT.ULTRA;
+        break;
+      default:
+        targetSize = IGDB_IMAGE_SIZES.COVER.MEDIUM;
+    }
+    
+    if (processedUrl.includes("/t_")) {
+      processedUrl = processedUrl.replace(/\/t_[^/]+\//, `/${targetSize}/`);
+    } else {
+      const parts = processedUrl.split("/upload/");
+      if (parts.length === 2) {
+        processedUrl = `${parts[0]}/upload/${targetSize}/${parts[1]}`;
+      }
+    }
+
+    processedUrl = processedUrl.replace(/([^:])\/\//g, '$1/');
+    return processedUrl;
   }
   
   return url;

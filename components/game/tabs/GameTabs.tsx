@@ -1,14 +1,16 @@
 "use client";
 
-import React from "react";
+import React, { memo, Suspense } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Game } from "@/types";
 import { Profile } from "@/types/profile";
 import { OverviewTab } from "./OverviewTab";
-import { MediaTab } from "./MediaTab";
-import { AchievementsTab } from "./AchievementsTab";
-import { ActivityTab } from "./ActivityTab";
-import { RelatedTab } from "./RelatedTab";
+
+// Lazy load heavy tab components
+const MediaTab = React.lazy(() => import("./MediaTab").then(module => ({ default: module.MediaTab })));
+const AchievementsTab = React.lazy(() => import("./AchievementsTab").then(module => ({ default: module.AchievementsTab })));
+const ActivityTab = React.lazy(() => import("./ActivityTab").then(module => ({ default: module.ActivityTab })));
+const RelatedTab = React.lazy(() => import("./RelatedTab").then(module => ({ default: module.RelatedTab })));
 
 interface GameTabsProps {
   game: Game;
@@ -31,7 +33,16 @@ interface GameTabsProps {
   };
 }
 
-export function GameTabs({
+// Loading fallback component
+function TabLoadingFallback() {
+  return (
+    <div className="flex items-center justify-center py-12">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500"></div>
+    </div>
+  );
+}
+
+export const GameTabs = memo(function GameTabs({
   game,
   profile: _profile,
   activeTab,
@@ -96,29 +107,37 @@ export function GameTabs({
             </TabsContent>
 
             <TabsContent value="media" className="focus-visible:outline-none">
-              <MediaTab game={game} />
+              <Suspense fallback={<TabLoadingFallback />}>
+                <MediaTab game={game} />
+              </Suspense>
             </TabsContent>
 
             <TabsContent
               value="achievements"
               className="focus-visible:outline-none"
             >
-              <AchievementsTab game={game} profile={_profile} />
+              <Suspense fallback={<TabLoadingFallback />}>
+                <AchievementsTab game={game} profile={_profile} />
+              </Suspense>
             </TabsContent>
 
             <TabsContent value="related" className="focus-visible:outline-none">
-              <RelatedTab games={[]} />
+              <Suspense fallback={<TabLoadingFallback />}>
+                <RelatedTab games={[]} />
+              </Suspense>
             </TabsContent>
 
             <TabsContent
               value="activity"
               className="focus-visible:outline-none"
             >
-              <ActivityTab gameId={game.id} activities={activities} />
+              <Suspense fallback={<TabLoadingFallback />}>
+                <ActivityTab gameId={game.id} activities={activities} />
+              </Suspense>
             </TabsContent>
           </div>
         </Tabs>
       </div>
     </div>
   );
-}
+});
