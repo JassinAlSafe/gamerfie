@@ -121,6 +121,48 @@ export async function POST(
       return NextResponse.json({ error: 'Comments are disabled for this post' }, { status: 403 });
     }
 
+    // Check if user has a profile, create one if not
+    const { error: profileError } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('id', session.user.id)
+      .single();
+
+    if (profileError && profileError.code === 'PGRST116') {
+      // Profile doesn't exist, create one
+      const username = session.user.email?.split('@')[0] || `user_${session.user.id.slice(0, 8)}`;
+      const displayName = session.user.user_metadata?.full_name || 
+                         session.user.user_metadata?.name || 
+                         session.user.user_metadata?.display_name ||
+                         username;
+
+      const { error: createProfileError } = await supabase
+        .from('profiles')
+        .insert({
+          id: session.user.id,
+          username,
+          display_name: displayName,
+          email: session.user.email || null,
+          avatar_url: session.user.user_metadata?.avatar_url || 
+                     session.user.user_metadata?.picture || null,
+          role: 'user',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        });
+
+      if (createProfileError) {
+        console.error('Error creating profile:', createProfileError);
+        return NextResponse.json({ 
+          error: 'Failed to create user profile. Please try again.' 
+        }, { status: 500 });
+      }
+    } else if (profileError) {
+      console.error('Error checking profile:', profileError);
+      return NextResponse.json({ 
+        error: 'Failed to verify user profile. Please try again.' 
+      }, { status: 500 });
+    }
+
     const body = await request.json();
     const { content } = body;
 

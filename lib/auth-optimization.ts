@@ -103,7 +103,7 @@ export class ProfileCache {
 }
 
 /**
- * Optimized profile fetching with caching
+ * Optimized profile fetching with caching and auto-creation
  */
 export async function fetchUserProfileOptimized(userId: string) {
   // Check cache first
@@ -120,6 +120,49 @@ export async function fetchUserProfileOptimized(userId: string) {
       .select('*')
       .eq('id', userId)
       .single();
+    
+    if (error && error.code === 'PGRST116') {
+      // Profile doesn't exist, try to create one using the database function
+      console.log('Profile not found for user:', userId, 'attempting to create...');
+      
+      try {
+        // Get user data to pass to the creation function
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (user && user.id === userId) {
+          // Call the database function to create profile safely
+          const { error: createError } = await supabase.rpc(
+            'create_user_profile_safe',
+            {
+              user_id: userId,
+              user_email: user.email,
+              user_metadata: user.user_metadata || {}
+            }
+          );
+          
+          if (createError) {
+            console.warn('Profile creation failed:', createError);
+            return null;
+          }
+          
+          // Now fetch the newly created profile
+          const { data: newProfile, error: fetchError } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', userId)
+            .single();
+          
+          if (!fetchError && newProfile) {
+            ProfileCache.set(userId, newProfile);
+            return newProfile;
+          }
+        }
+      } catch (createError) {
+        console.warn('Profile auto-creation failed:', createError);
+      }
+      
+      return null;
+    }
     
     if (error) {
       console.warn('Profile fetch error:', error);

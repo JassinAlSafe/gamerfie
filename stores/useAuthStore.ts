@@ -75,39 +75,10 @@ export const useAuthStore = create<AuthState>()(
             if (session?.user) {
               const profile = await fetchUserProfile(session.user.id);
               
-              // If no profile exists, create one
-              if (!profile) {
-                const username = session.user.email?.split('@')[0] || 'user';
-                const displayName = session.user.user_metadata?.display_name || session.user.user_metadata?.full_name || username;
-                const { data: newProfile, error: insertError } = await supabase
-                  .from('profiles')
-                  .insert({
-                    id: session.user.id,
-                    username,
-                    display_name: displayName,
-                    email: session.user.email || null,
-                    avatar_url: session.user.user_metadata?.avatar_url,
-                    role: 'user',
-                    created_at: new Date().toISOString(),
-                    updated_at: new Date().toISOString()
-                  })
-                  .select()
-                  .single();
-
-                if (insertError) {
-                  console.warn('Failed to create profile:', insertError);
-                }
-
-                set({ 
-                  user: { ...session.user, profile: newProfile || null },
-                  error: null 
-                });
-              } else {
-                set({ 
-                  user: { ...session.user, profile },
-                  error: null 
-                });
-              }
+              set({ 
+                user: { ...session.user, profile: profile || null },
+                error: null 
+              });
             }
           };
 
@@ -183,39 +154,31 @@ export const useAuthStore = create<AuthState>()(
             if (response.error) throw response.error;
 
             if (response.data.user) {
-              const { error: profileError } = await supabase
-                .from('profiles')
-                .insert({
-                  id: response.data.user.id,
-                  username: _username,
-                  display_name: _username,
-                  email: response.data.user.email || null,
-                  role: 'user',
-                  created_at: new Date().toISOString(),
-                  updated_at: new Date().toISOString()
-                });
+              // Use the safe profile creation function with custom username
+              const { error: profileError } = await supabase.rpc(
+                'create_user_profile_safe',
+                {
+                  user_id: response.data.user.id,
+                  user_email: response.data.user.email,
+                  user_metadata: { 
+                    ...response.data.user.user_metadata, 
+                    display_name: _username,
+                    username: _username 
+                  }
+                }
+              );
 
               if (profileError) {
                 console.warn('Failed to create profile during signup:', profileError);
               }
 
-              const newProfile: Profile = {
-                id: response.data.user.id,
-                username: _username,
-                display_name: _username,
-                bio: null,
-                avatar_url: null,
-                email: response.data.user.email || null,
-                settings: null,
-                role: 'user',
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
-              };
+              // Fetch the created profile
+              const profile = await fetchUserProfile(response.data.user.id);
 
               set({ 
                 user: { 
                   ...response.data.user, 
-                  profile: newProfile
+                  profile: profile || null
                 },
                 error: null 
               });

@@ -27,40 +27,81 @@ export async function middleware(request: NextRequest) {
     }
   )
 
+  // Do not run code between createServerClient and
+  // supabase.auth.getUser(). A simple mistake could make it very hard to debug
+  // issues with users being randomly logged out.
+
   // IMPORTANT: DO NOT REMOVE auth.getUser()
+
   const {
     data: { user },
   } = await supabase.auth.getUser()
 
-  // These routes require authentication
-  const protectedRoutes = ['/profile', '/settings', '/admin']
-  // These routes are only for non-authenticated users
-  const authRoutes = ['/signin', '/signup']
+  // If user is authenticated, ensure they have a profile
+  if (user) {
+    try {
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('id', user.id)
+        .single();
 
-  // Skip auth check for auth callback route
-  if (request.nextUrl.pathname.startsWith('/auth/callback')) {
-    return supabaseResponse
+      // If profile doesn't exist, create one
+      if (profileError && profileError.code === 'PGRST116') {
+        const username = user.email?.split('@')[0] || `user_${user.id.slice(0, 8)}`;
+        const displayName = user.user_metadata?.display_name ||
+                           user.user_metadata?.full_name ||
+                           user.user_metadata?.name ||
+                           username;
+
+        await supabase
+          .from('profiles')
+          .insert({
+            id: user.id,
+            username,
+            display_name: displayName,
+            email: user.email || null,
+            avatar_url: user.user_metadata?.avatar_url ||
+                       user.user_metadata?.picture || null,
+            role: 'user',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          });
+      }
+    } catch (error) {
+      // Don't fail the request if profile creation fails
+      console.warn('Profile creation failed in middleware:', error);
+    }
   }
 
-  const isProtectedRoute = protectedRoutes.some(route => 
-    request.nextUrl.pathname.startsWith(route)
-  )
-  const isAuthRoute = authRoutes.some(route => 
-    request.nextUrl.pathname.startsWith(route)
-  )
-
-  // If user is not signed in and trying to access a protected route
-  if (!user && isProtectedRoute) {
-    const redirectUrl = new URL('/signin', request.url)
-    // Store the original URL to redirect back after login
-    redirectUrl.searchParams.set('redirectTo', request.nextUrl.pathname)
-    return NextResponse.redirect(redirectUrl)
+  if (
+    !user &&
+    !request.nextUrl.pathname.startsWith('/login') &&
+    !request.nextUrl.pathname.startsWith('/signin') &&
+    !request.nextUrl.pathname.startsWith('/signup') &&
+    !request.nextUrl.pathname.startsWith('/auth') &&
+    !request.nextUrl.pathname.startsWith('/api/auth') &&
+    !request.nextUrl.pathname.startsWith('/') &&
+    request.nextUrl.pathname !== '/'
+  ) {
+    // no user, potentially respond by redirecting the user to the login page
+    const url = request.nextUrl.clone()
+    url.pathname = '/signin'
+    return NextResponse.redirect(url)
   }
 
-  // If user is signed in and trying to access auth routes (signin/signup)
-  if (user && isAuthRoute) {
-    return NextResponse.redirect(new URL('/', request.url))
-  }
+  // IMPORTANT: You *must* return the supabaseResponse object as it is.
+  // If you're creating a new response object with NextResponse.next() make sure to:
+  // 1. Pass the request in it, like so:
+  // const myNewResponse = NextResponse.next({ request })
+  // 2. Copy over the cookies, like so:
+  // myNewResponse.cookies.setAll(supabaseResponse.cookies.getAll())
+  // 3. Change the myNewResponse object to fit your needs, but avoid changing
+  // the cookies!
+  // 4. Finally:
+  // return myNewResponse
+  // If this is not done, you may be causing the browser and server to go out
+  // of sync and terminate the user's session prematurely!
 
   return supabaseResponse
 }
