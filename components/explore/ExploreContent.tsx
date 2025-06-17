@@ -6,6 +6,7 @@ import { TracingBeam } from "@/components/ui/tracing-beam";
 import { ErrorBoundary } from "react-error-boundary";
 import { useExploreOptimized } from "@/hooks/useExploreOptimized";
 import { useExploreData } from "@/hooks/useExploreData";
+import { usePlaylistSubscription } from "@/hooks/usePlaylistSubscription";
 import { OptimizedGameSection } from "../shared/GameSection/OptimizedGameSection";
 import HeroSection from "./HeroSection/HeroSection";
 import {
@@ -186,6 +187,9 @@ export const ExploreContent = memo(() => {
   } = useExploreOptimized();
 
   const { data: exploreData, isLoading, error } = useExploreData();
+
+  // Set up real-time playlist subscriptions for instant updates
+  usePlaylistSubscription();
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 via-purple-900/20 to-gray-900">

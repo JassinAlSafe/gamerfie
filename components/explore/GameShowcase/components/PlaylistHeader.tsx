@@ -77,11 +77,23 @@ export const PlaylistHeader = memo(
             Edit
           </Button>
         )}
-        <Link href={`/playlists/${type}`}>
-          <Button className="px-4 py-2 rounded-lg bg-white/5 text-white/80 hover:bg-white/10 transition-colors">
-            See all
-          </Button>
-        </Link>
+        <div className="flex gap-2">
+          {playlistId && (
+            <Link href={`/playlists/${playlistId}`}>
+              <Button 
+                variant="outline" 
+                className="px-4 py-2 rounded-lg bg-white/5 text-white/80 hover:bg-white/10 transition-colors border-white/20"
+              >
+                View Details
+              </Button>
+            </Link>
+          )}
+          <Link href={`/playlists/category/${type}`}>
+            <Button className="px-4 py-2 rounded-lg bg-white/5 text-white/80 hover:bg-white/10 transition-colors">
+              See all {type}
+            </Button>
+          </Link>
+        </div>
       </div>
     </div>
   )

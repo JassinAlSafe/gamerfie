@@ -9,7 +9,9 @@
     "lint": "next lint",
     "type-check": "tsc --noEmit",
     "analyze": "ANALYZE=true next build",
-    "analyze:bundle": "npm run analyze && echo '\\n📊 Bundle analysis complete! Check the browser for visualization.'"
+    "analyze:bundle": "npm run analyze && echo '\\n📊 Bundle analysis complete! Check the browser for visualization.'",
+    "check": "npm run type-check && npm run lint",
+    "check:all": "npm run type-check && npm run lint && npm run build"
   },
   "dependencies": {
     "@auth/supabase-adapter": "^1.7.4",

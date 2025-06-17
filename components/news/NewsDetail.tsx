@@ -18,24 +18,24 @@ interface NewsDetailProps {
   className?: string;
 }
 
-const getCategoryColor = (category: NewsPost['category']) => {
+const getCategoryColor = (category: NewsPost["category"]) => {
   const colors = {
-    'Product Update': 'bg-blue-500/10 text-blue-600 border-blue-500/20',
-    'Feature': 'bg-green-500/10 text-green-600 border-green-500/20',
-    'Announcement': 'bg-purple-500/10 text-purple-600 border-purple-500/20',
-    'Security': 'bg-red-500/10 text-red-600 border-red-500/20',
-    'Community': 'bg-orange-500/10 text-orange-600 border-orange-500/20'
+    "Product Update": "bg-blue-500/10 text-blue-600 border-blue-500/20",
+    Feature: "bg-green-500/10 text-green-600 border-green-500/20",
+    Announcement: "bg-purple-500/10 text-purple-600 border-purple-500/20",
+    Security: "bg-red-500/10 text-red-600 border-red-500/20",
+    Community: "bg-orange-500/10 text-orange-600 border-orange-500/20",
   };
-  return colors[category] || 'bg-gray-500/10 text-gray-600 border-gray-500/20';
+  return colors[category] || "bg-gray-500/10 text-gray-600 border-gray-500/20";
 };
 
 const formatDate = (dateString: string) => {
-  return new Date(dateString).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
+  return new Date(dateString).toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
   });
 };
 
@@ -47,27 +47,31 @@ const NewsDetail: React.FC<NewsDetailProps> = ({ post, className }) => {
 
   useEffect(() => {
     const getUser = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
       if (session) {
         setCurrentUser(session.user);
         setIsAuthenticated(true);
 
         // Check if user is admin
         const { data: profile } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', session.user.id)
+          .from("profiles")
+          .select("role")
+          .eq("id", session.user.id)
           .single();
 
-        setIsAdmin(profile?.role === 'admin');
+        setIsAdmin(profile?.role === "admin");
       }
     };
 
     getUser();
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session) {
         setCurrentUser(session.user);
         setIsAuthenticated(true);
@@ -90,7 +94,7 @@ const NewsDetail: React.FC<NewsDetailProps> = ({ post, className }) => {
           url: window.location.href,
         });
       } catch (error) {
-        console.log('Share failed:', error);
+        console.log("Share failed:", error);
       }
     } else {
       // Fallback to copying URL to clipboard
@@ -100,20 +104,20 @@ const NewsDetail: React.FC<NewsDetailProps> = ({ post, className }) => {
 
   const containerVariants = {
     hidden: { opacity: 0, y: 20 },
-    visible: { 
-      opacity: 1, 
+    visible: {
+      opacity: 1,
       y: 0,
-      transition: { duration: 0.6, ease: "easeOut" }
-    }
+      transition: { duration: 0.6, ease: "easeOut" },
+    },
   };
 
   const imageVariants = {
     hidden: { opacity: 0, scale: 1.05 },
-    visible: { 
-      opacity: 1, 
+    visible: {
+      opacity: 1,
       scale: 1,
-      transition: { duration: 0.8, ease: "easeOut" }
-    }
+      transition: { duration: 0.8, ease: "easeOut" },
+    },
   };
 
   return (
@@ -185,11 +189,7 @@ const NewsDetail: React.FC<NewsDetailProps> = ({ post, className }) => {
               <Share2 className="w-4 h-4" />
               Share
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="gap-2"
-            >
+            <Button variant="outline" size="sm" className="gap-2">
               <Bookmark className="w-4 h-4" />
               Save
             </Button>
@@ -224,7 +224,7 @@ const NewsDetail: React.FC<NewsDetailProps> = ({ post, className }) => {
         transition={{ delay: 0.3, duration: 0.6 }}
         className="prose prose-lg dark:prose-invert max-w-none"
       >
-        <div 
+        <div
           dangerouslySetInnerHTML={{ __html: post.content }}
           className="leading-relaxed"
         />

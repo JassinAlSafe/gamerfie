@@ -59,8 +59,11 @@ import { useToast } from "@/components/ui/use-toast";
 import { useDebounce } from "@/hooks/Settings/useDebounce";
 import { cn } from "@/lib/utils";
 import { generateSlug, PLAYLIST_TYPE_CONFIG } from "@/lib/playlist-utils";
-import { GameImage } from "./shared/GameImage";
+import { GameThumbnail } from "./shared/GameThumbnail";
+import { GameSearchResults } from "./shared/GameSearchResults";
 import Image from "next/image";
+// Remove unused import
+// import { getPlaylistGameCoverUrl } from "@/utils/playlist-image-utils";
 
 interface PlaylistEditorProps {
   initialPlaylist?: Playlist | null;
@@ -70,9 +73,11 @@ interface PlaylistEditorProps {
 
 interface ExtendedGame extends Omit<Game, "videos"> {
   selected?: boolean;
-  background_image?: string;
+  background_image?: string | null;
   released?: string;
   source_id?: string; // For tracking original RAWG ID when converted to IGDB
+  dataSource?: 'igdb' | 'rawg';
+  total_rating?: number;
   videos?: Array<{
     id: string;
     name: string;
@@ -95,11 +100,14 @@ const PlaylistEditor: React.FC<PlaylistEditorProps> = ({
     startDate: initialPlaylist?.start_date?.toISOString().split("T")[0] || "",
     endDate: initialPlaylist?.end_date?.toISOString().split("T")[0] || "",
     // Ensure gameIds are stored as pure numeric (strip any prefixes)
-    gameIds: initialPlaylist?.gameIds?.map(id => 
-      id.startsWith('igdb_') ? id.replace('igdb_', '') : 
-      id.startsWith('rawg_') ? id.replace('rawg_', '') : 
-      id
-    ) || [],
+    gameIds:
+      initialPlaylist?.gameIds?.map((id) =>
+        id.startsWith("igdb_")
+          ? id.replace("igdb_", "")
+          : id.startsWith("rawg_")
+          ? id.replace("rawg_", "")
+          : id
+      ) || [],
     metadata: initialPlaylist?.metadata || {},
   });
 
@@ -111,6 +119,8 @@ const PlaylistEditor: React.FC<PlaylistEditorProps> = ({
   const [activeTab, setActiveTab] = useState("details");
   const [activeGame, setActiveGame] = useState<ExtendedGame | null>(null);
   const [bulkMode, setBulkMode] = useState(false);
+  // Remove unused state for now
+  // const [showPreview, setShowPreview] = useState<string | null>(null);
 
   const debouncedSearch = useDebounce(searchQuery, 500);
 
@@ -142,18 +152,27 @@ const PlaylistEditor: React.FC<PlaylistEditorProps> = ({
       setIsSearching(true);
       try {
         // Use UnifiedGameService with IGDB-first strategy for cleaner architecture
-        const result = await UnifiedGameService.searchGames(debouncedSearch, 1, 20, {
-          strategy: 'igdb_first', // Prefer IGDB for consistent game IDs
-          useCache: true
-        });
-        
+        const result = await UnifiedGameService.searchGames(
+          debouncedSearch,
+          1,
+          20,
+          {
+            strategy: "igdb_first", // Prefer IGDB for consistent game IDs
+            useCache: true,
+          }
+        );
+
         const gamesWithSelection = result.games.map((game) => ({
           ...(game as ExtendedGame),
           selected: selectedGames.some((g) => g.id === game.id),
         }));
         setSearchResults(gamesWithSelection);
-        
-        console.log(`🔍 Found ${result.games.length} games using ${result.sources.join(', ')} sources`);
+
+        console.log(
+          `🔍 Found ${result.games.length} games using ${result.sources.join(
+            ", "
+          )} sources`
+        );
       } catch (error) {
         console.error("Failed to search games:", error);
         toast({
@@ -191,12 +210,14 @@ const PlaylistEditor: React.FC<PlaylistEditorProps> = ({
     if (!selectedGames.find((g) => g.id === game.id)) {
       // Extract pure numeric ID for clean database storage
       // Convert "igdb_1020" -> "1020" or keep "1020" as is
-      const numericId = game.id.startsWith('igdb_') ? game.id.replace('igdb_', '') : 
-                       game.id.startsWith('rawg_') ? game.id.replace('rawg_', '') : 
-                       game.id;
+      const numericId = game.id.startsWith("igdb_")
+        ? game.id.replace("igdb_", "")
+        : game.id.startsWith("rawg_")
+        ? game.id.replace("rawg_", "")
+        : game.id;
 
-      const gameForPlaylist = { 
-        ...game, 
+      const gameForPlaylist = {
+        ...game,
         selected: false,
       };
 
@@ -206,8 +227,10 @@ const PlaylistEditor: React.FC<PlaylistEditorProps> = ({
         gameIds: [...(prev.gameIds || []), numericId], // Store pure numeric ID
       }));
 
-      console.log(`✅ Added game to playlist: ${game.name} (display: ${game.id}, stored: ${numericId})`);
-      
+      console.log(
+        `✅ Added game to playlist: ${game.name} (display: ${game.id}, stored: ${numericId})`
+      );
+
       toast({
         title: "Game Added",
         description: `${game.name} added to playlist`,
@@ -287,6 +310,17 @@ const PlaylistEditor: React.FC<PlaylistEditorProps> = ({
           initialPlaylist?.id ? "updated" : "created"
         } successfully`,
       });
+
+      // Trigger cache invalidation for explore page
+      try {
+        await fetch("/api/cache/invalidate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ type: "playlists" }),
+        });
+      } catch (cacheError) {
+        console.warn("Cache invalidation failed:", cacheError);
+      }
 
       if (onSave) {
         await onSave();
@@ -536,53 +570,97 @@ const PlaylistEditor: React.FC<PlaylistEditorProps> = ({
             {/* Game Search */}
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Search className="w-5 h-5" />
-                  Add Games
-                </CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-2">
+                    <Search className="w-5 h-5" />
+                    Add Games
+                  </CardTitle>
+                  {searchResults.length > 0 && (
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          const availableGames = searchResults.filter(
+                            (game) =>
+                              !selectedGames.some((g) => g.id === game.id)
+                          );
+                          availableGames.slice(0, 5).forEach((game) => {
+                            handleAddGame(game);
+                          });
+                        }}
+                        disabled={searchResults.every((game) =>
+                          selectedGames.some((g) => g.id === game.id)
+                        )}
+                        className="gap-1"
+                      >
+                        <Plus className="w-3 h-3" />
+                        Add Top 5
+                      </Button>
+                    </div>
+                  )}
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Search and add games to your playlist. IGDB results provide
+                  higher quality metadata.
+                </p>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
                   <Input
-                    placeholder="Search for games..."
+                    placeholder="Search for games... (e.g., Cyberpunk, Zelda, FIFA)"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10"
+                    className="pl-10 pr-4"
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && searchResults.length > 0) {
+                        const firstAvailable = searchResults.find(
+                          (game) => !selectedGames.some((g) => g.id === game.id)
+                        );
+                        if (firstAvailable) {
+                          handleAddGame(firstAvailable);
+                        }
+                      }
+                    }}
                   />
+                  {searchQuery && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setSearchQuery("")}
+                      className="absolute right-2 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0"
+                    >
+                      <X className="w-3 h-3" />
+                    </Button>
+                  )}
                 </div>
 
-                <div className="max-h-96 overflow-y-auto space-y-2">
-                  {isSearching ? (
-                    <div className="text-center py-8">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-                      <p className="text-sm text-muted-foreground mt-2">
-                        Searching...
-                      </p>
-                    </div>
-                  ) : searchResults.length > 0 ? (
-                    searchResults.map((game) => (
-                      <GameSearchItem
-                        key={game.id}
-                        game={game}
-                        onAdd={() => handleAddGame(game)}
-                        isAdded={selectedGames.some((g) => g.id === game.id)}
-                      />
-                    ))
-                  ) : searchQuery ? (
-                    <div className="text-center py-8">
-                      <p className="text-sm text-muted-foreground">
-                        No games found
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="text-center py-8">
-                      <Search className="w-12 h-12 text-muted-foreground mx-auto mb-2" />
-                      <p className="text-sm text-muted-foreground">
-                        Search for games to add
-                      </p>
-                    </div>
-                  )}
+                {searchResults.length > 0 && (
+                  <div className="flex items-center justify-between text-xs text-muted-foreground px-1">
+                    <span>
+                      {searchResults.length} results found
+                      {searchResults.some((g) => g.dataSource === "igdb") &&
+                        searchResults.some((g) => g.dataSource === "rawg") &&
+                        " from IGDB & RAWG"}
+                    </span>
+                    <span>Press Enter to add first result</span>
+                  </div>
+                )}
+
+                <div className="max-h-96 overflow-y-auto">
+                  <GameSearchResults
+                    games={searchResults}
+                    isLoading={isSearching}
+                    searchQuery={searchQuery}
+                    selectedGameIds={selectedGames.map(g => g.id)}
+                    onAddGame={(game) => handleAddGame(game as ExtendedGame)}
+                    onBatchAdd={(games) => {
+                      games.forEach(game => handleAddGame(game as ExtendedGame));
+                    }}
+                    showBatchActions={true}
+                    maxBatchSize={5}
+                  />
                 </div>
               </CardContent>
             </Card>
@@ -674,12 +752,10 @@ const PlaylistEditor: React.FC<PlaylistEditorProps> = ({
                         {activeGame ? (
                           <div className="bg-white dark:bg-gray-800 border rounded-lg p-3 shadow-lg">
                             <div className="flex items-center gap-3">
-                              <GameImage
-                                src={activeGame.background_image}
-                                alt={activeGame.name}
-                                width={40}
-                                height={40}
-                                className="w-10 h-10 object-cover rounded"
+                              <GameThumbnail
+                                game={activeGame}
+                                size="sm"
+                                className="w-10 h-10"
                               />
                               <span className="font-medium">
                                 {activeGame.name}
@@ -830,6 +906,7 @@ const SortableGameItem: React.FC<SortableGameItemProps> = ({
     transition,
     isDragging,
   } = useSortable({ id: game.id });
+  const [isHovered, setIsHovered] = useState(false);
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -837,14 +914,20 @@ const SortableGameItem: React.FC<SortableGameItemProps> = ({
     opacity: isDragging ? 0.5 : 1,
   };
 
+  // Source indicator is now handled by GameThumbnail component
+
   return (
     <div
       ref={setNodeRef}
       style={style}
       className={cn(
-        "flex items-center gap-3 p-3 bg-background border rounded-lg group hover:shadow-sm transition-all",
-        isDragging && "shadow-lg z-50"
+        "flex items-center gap-3 p-3 bg-background border rounded-lg group transition-all duration-200",
+        "hover:shadow-md hover:border-primary/20",
+        isDragging && "shadow-lg z-50 border-primary",
+        game.selected && bulkMode && "bg-blue-50 dark:bg-blue-950/20 border-blue-300 dark:border-blue-700"
       )}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
     >
       {bulkMode ? (
         <Button
@@ -863,98 +946,68 @@ const SortableGameItem: React.FC<SortableGameItemProps> = ({
         <div
           {...attributes}
           {...listeners}
-          className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground p-1"
+          className={cn(
+            "cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground p-1 rounded transition-colors",
+            isHovered && "bg-muted"
+          )}
         >
           <GripVertical className="w-4 h-4" />
         </div>
       )}
 
-      <GameImage
-        src={game.background_image}
-        alt={game.name}
-        width={40}
-        height={40}
-        className="w-10 h-10 object-cover rounded"
-      />
-
-      <div className="flex-1 min-w-0">
-        <p className="font-medium text-sm truncate">{game.name}</p>
-        <p className="text-xs text-muted-foreground">
-          {game.released && new Date(game.released).getFullYear()}
-        </p>
+      <div className="relative">
+        <GameThumbnail
+          game={game}
+          size="md"
+          showSourceIndicator={true}
+          className="shadow-sm"
+        />
       </div>
 
-      {!bulkMode && (
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onRemove}
-          className="opacity-0 group-hover:opacity-100 transition-opacity p-1 h-auto text-red-500 hover:text-red-700"
-        >
-          <X className="w-4 h-4" />
-        </Button>
-      )}
-    </div>
-  );
-};
-
-// Game Search Item Component
-interface GameSearchItemProps {
-  game: ExtendedGame;
-  onAdd: () => Promise<void>;
-  isAdded: boolean;
-}
-
-const GameSearchItem: React.FC<GameSearchItemProps> = ({
-  game,
-  onAdd,
-  isAdded,
-}) => {
-  const [isAdding, setIsAdding] = useState(false);
-
-  const handleAdd = async () => {
-    setIsAdding(true);
-    try {
-      await onAdd();
-    } finally {
-      setIsAdding(false);
-    }
-  };
-
-  return (
-    <div className="flex items-center gap-3 p-3 border rounded-lg hover:bg-muted/50 transition-colors">
-      <GameImage
-        src={game.background_image}
-        alt={game.name}
-        width={40}
-        height={40}
-        className="w-10 h-10 object-cover rounded"
-      />
-
-      <div className="flex-1 min-w-0">
+      <div className="flex-1 min-w-0 space-y-1">
         <p className="font-medium text-sm truncate">{game.name}</p>
-        <p className="text-xs text-muted-foreground">
-          {game.released && new Date(game.released).getFullYear()}
-        </p>
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          {game.released && (
+            <span>{new Date(game.released).getFullYear()}</span>
+          )}
+          {game.total_rating && (
+            <>
+              <span>•</span>
+              <span>★ {Math.round(game.total_rating / 10)}/10</span>
+            </>
+          )}
+        </div>
       </div>
 
-      <Button
-        variant={isAdded ? "secondary" : "default"}
-        size="sm"
-        onClick={handleAdd}
-        disabled={isAdded || isAdding}
-        className="gap-1"
-      >
-        {isAdding ? (
-          <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
-        ) : isAdded ? (
-          "Added"
-        ) : (
-          <Plus className="w-3 h-3" />
+      <div className="flex items-center gap-2">
+        {!bulkMode && isHovered && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              // Open game details in new tab
+              window.open(`/games/${game.id}`, '_blank');
+            }}
+            className="opacity-0 group-hover:opacity-100 transition-opacity p-1 h-auto text-blue-500 hover:text-blue-700"
+          >
+            <Eye className="w-4 h-4" />
+          </Button>
         )}
-      </Button>
+        {!bulkMode && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onRemove}
+            className="opacity-0 group-hover:opacity-100 transition-opacity p-1 h-auto text-red-500 hover:text-red-700"
+          >
+            <X className="w-4 h-4" />
+          </Button>
+        )}
+      </div>
     </div>
   );
 };
+
+// GameSearchItem component has been moved to shared/GameSearchResults.tsx
 
 export default PlaylistEditor;

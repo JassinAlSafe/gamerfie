@@ -1,7 +1,6 @@
 import { createClient } from "@/utils/supabase/client";
 import { Playlist, CreatePlaylistInput, UpdatePlaylistInput, PlaylistType } from '@/types/playlist';
 import { UnifiedGameService } from './unifiedGameService';
-import { GameIdMappingService } from './gameIdMappingService';
 import { useAuthStore } from '@/stores/useAuthStore';
 
 interface DatabasePlaylistGame {
@@ -32,6 +31,7 @@ export class PlaylistService {
   private static supabase = createClient();
   private static playlistCache = new Map<string, { data: any; timestamp: number }>();
   private static readonly CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+  private static subscriptions = new Map<string, any>();
 
   static async createPlaylist(input: CreatePlaylistInput): Promise<Playlist> {
     try {
@@ -94,6 +94,9 @@ export class PlaylistService {
           throw new Error(`Failed to associate games with playlist: ${gameError.message}`);
         }
       }
+
+      // Invalidate relevant caches after successful creation
+      await this.invalidatePlaylistCaches();
 
       return this.mapDatabasePlaylist(playlist);
     } catch (error) {
@@ -161,28 +164,40 @@ export class PlaylistService {
       }
     }
 
+    // Invalidate relevant caches after successful update
+    await this.invalidatePlaylistCaches();
+
     return this.mapDatabasePlaylist(playlist);
   }
 
   static async getPlaylist(id: string): Promise<Playlist | null> {
-    const { data: playlist, error } = await this.supabase
+    // First, get the playlist
+    const { data: playlist, error: playlistError } = await this.supabase
       .from('playlists')
-      .select(`
-        *,
-        playlist_games (
-          game_id,
-          display_order,
-          added_at
-        )
-      `)
+      .select('*')
       .eq('id', id)
       .single();
 
-    if (error) throw error;
+    if (playlistError) throw playlistError;
     if (!playlist) return null;
 
+    // Then, get the playlist_games
+    const { data: playlistGames, error: gamesError } = await this.supabase
+      .from('playlist_games')
+      .select('*')
+      .eq('playlist_id', id)
+      .order('display_order');
+
+    if (gamesError) throw gamesError;
+
+    // Combine the data
+    const playlistWithGames = {
+      ...playlist,
+      playlist_games: playlistGames || []
+    };
+
     // Fetch games data using unified service for better covers and metadata
-    const gameIds = (playlist as DatabasePlaylist).playlist_games.map((pg: DatabasePlaylistGame) => pg.game_id);
+    const gameIds = playlistWithGames.playlist_games.map((pg: DatabasePlaylistGame) => pg.game_id);
     const games = await Promise.all(
       gameIds.map(async (id: string) => {
         try {
@@ -203,10 +218,10 @@ export class PlaylistService {
     const validGames = games.filter((game): game is NonNullable<typeof game> => game !== null);
 
     return {
-      ...this.mapDatabasePlaylist(playlist as DatabasePlaylist),
+      ...this.mapDatabasePlaylist(playlistWithGames as DatabasePlaylist),
       games: validGames.sort((a, b) => {
-        const aOrder = (playlist as DatabasePlaylist).playlist_games.find((pg: DatabasePlaylistGame) => pg.game_id === a.id)?.display_order ?? 0;
-        const bOrder = (playlist as DatabasePlaylist).playlist_games.find((pg: DatabasePlaylistGame) => pg.game_id === b.id)?.display_order ?? 0;
+        const aOrder = playlistWithGames.playlist_games.find((pg: DatabasePlaylistGame) => pg.game_id === a.id)?.display_order ?? 0;
+        const bOrder = playlistWithGames.playlist_games.find((pg: DatabasePlaylistGame) => pg.game_id === b.id)?.display_order ?? 0;
         return aOrder - bOrder;
       })
     };
@@ -270,37 +285,54 @@ export class PlaylistService {
 
   static async getAllPlaylistsForAdmin(type?: string): Promise<Playlist[]> {
     try {
+      // First, get the playlists
       let query = this.supabase
         .from('playlists')
-        .select(`
-          *,
-          playlist_games (
-            game_id,
-            display_order,
-            added_at
-          )
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
       if (type) {
         query = query.eq('type', type);
       }
 
-      const { data: playlists, error } = await query;
+      const { data: playlists, error: playlistError } = await query;
 
-      if (error) {
-        console.error('Error fetching playlists:', error);
-        throw error;
+      if (playlistError) {
+        console.error('Error fetching playlists:', playlistError);
+        throw playlistError;
       }
 
       if (!playlists) {
         return [];
       }
 
+      // Then, get all playlist_games for these playlists
+      const playlistIds = playlists.map(p => p.id);
+      
+      if (playlistIds.length === 0) {
+        return [];
+      }
+
+      const { data: playlistGames, error: gamesError } = await this.supabase
+        .from('playlist_games')
+        .select('*')
+        .in('playlist_id', playlistIds)
+        .order('playlist_id, display_order');
+
+      if (gamesError) {
+        console.error('Error fetching playlist games:', gamesError);
+        throw gamesError;
+      }
+
+      // Combine the data
+      const playlistsWithGames = playlists.map(playlist => ({
+        ...playlist,
+        playlist_games: (playlistGames || []).filter(pg => pg.playlist_id === playlist.id)
+      }));
+
       // Return simplified playlist data without fetching all game details for admin dashboard
-      return playlists.map((playlist: DatabasePlaylist) => ({
+      return playlistsWithGames.map((playlist: DatabasePlaylist) => ({
         ...this.mapDatabasePlaylist(playlist),
-        gameIds: playlist.playlist_games.map((pg: DatabasePlaylistGame) => pg.game_id),
         games: [] // We'll populate this if needed for specific playlists
       }));
     } catch (error) {
@@ -337,10 +369,19 @@ export class PlaylistService {
                 throw new Error(`Game not found: ${gameId}`);
               }
               
+              // Prioritize proper game covers over background images (screenshots)
+              const getCoverUrl = () => {
+                // First try to get the actual game cover
+                if (gameData.cover?.url) return gameData.cover.url;
+                if (gameData.cover_url) return gameData.cover_url;
+                // Fall back to background image only if no cover available
+                return gameData.background_image || null;
+              };
+
               return {
                 id: gameId,
                 name: gameData.name || 'Unknown Game',
-                cover_url: gameData.background_image || gameData.cover_url || null,
+                cover_url: getCoverUrl(),
                 created_at: new Date().toISOString(),
                 updated_at: new Date().toISOString()
               };
@@ -389,6 +430,9 @@ export class PlaylistService {
       .eq('id', id);
 
     if (error) throw error;
+
+    // Invalidate relevant caches after successful deletion
+    await this.invalidatePlaylistCaches();
   }
 
   static subscribeToPlaylist(playlistId: string, callback: (playlist: Playlist) => void) {
@@ -446,8 +490,11 @@ export class PlaylistService {
       const cacheKey = `featured_playlists_${limit}`;
       const cached = this.playlistCache.get(cacheKey);
       if (cached && Date.now() - cached.timestamp < this.CACHE_TTL) {
+        console.log('Using cached featured playlists');
         return Array.isArray(cached.data) ? cached.data : [cached.data];
       }
+
+      console.log('Fetching fresh featured playlists...');
 
       // First, get the playlists
       const { data: playlists, error: playlistError } = await this.supabase
@@ -459,6 +506,11 @@ export class PlaylistService {
         .limit(limit);
 
       if (playlistError) throw playlistError;
+
+      if (!playlists || playlists.length === 0) {
+        console.warn('No featured playlists found');
+        return [];
+      }
 
       // Then, get all playlist_games for these playlists
       const playlistIds = playlists.map(p => p.id);
@@ -473,7 +525,7 @@ export class PlaylistService {
       // Combine the data
       const playlistsWithGames = playlists.map(playlist => ({
         ...playlist,
-        playlist_games: playlistGames.filter(pg => pg.playlist_id === playlist.id)
+        playlist_games: playlistGames?.filter(pg => pg.playlist_id === playlist.id) || []
       }));
 
       // Batch process all games for all playlists at once
@@ -505,228 +557,379 @@ export class PlaylistService {
           })
           .slice(0, 5); // Only take first 5 games for featured display
 
-        const result = {
+        return {
           ...this.mapDatabasePlaylist(playlist),
           games
         };
-        
-        return result;
       });
 
-
-
-      // Cache the result
+      // Cache the result with longer TTL for featured playlists
       this.playlistCache.set(cacheKey, {
         data: processedPlaylists as any,
         timestamp: Date.now()
       });
 
+      console.log(`Cached ${processedPlaylists.length} featured playlists`);
       return processedPlaylists;
     } catch (error) {
-      console.error('🔍 DEBUGGING: Failed to fetch featured playlists:', error);
+      console.error('Failed to fetch featured playlists:', error);
       return [];
     }
   }
 
   /**
-   * Batch fetch game details with caching, RAWG-to-IGDB conversion, and fallback handling
+   * Batch fetch game details with caching and fallback handling
    */
   private static async batchFetchGameDetails(gameIds: string[]): Promise<Map<string, any>> {
     const gameMap = new Map();
     const uncachedIds: string[] = [];
-
-    console.log(`🔍 DEBUGGING: BatchFetchGameDetails called with ${gameIds.length} game IDs:`, gameIds);
 
     // Check what's already cached
     gameIds.forEach(id => {
       const cached = this.playlistCache.get(`game_${id}`);
       if (cached && Date.now() - cached.timestamp < this.CACHE_TTL) {
         gameMap.set(id, cached.data);
-        console.log(`🔍 DEBUGGING: Found cached game: ${id}`);
       } else {
         uncachedIds.push(id);
-        console.log(`🔍 DEBUGGING: Game not cached: ${id}`);
       }
     });
 
     if (uncachedIds.length === 0) {
-      console.log('🔍 DEBUGGING: All games found in cache');
       return gameMap;
     }
 
-    console.log(`🔍 DEBUGGING: Fetching ${uncachedIds.length} uncached games:`, uncachedIds);
-
-    // ARCHITECTURE FIX: Convert RAWG IDs to IGDB IDs for consistent data
-    const convertedIds = new Map<string, string>(); // original -> converted
-    for (const originalId of uncachedIds) {
-      if (originalId.startsWith('rawg_')) {
-        console.log(`🔄 DEBUGGING: Converting RAWG ID to IGDB: ${originalId}`);
-        
-        // Check for manual mapping first
-        const manualMapping = GameIdMappingService.getManualMapping(originalId);
-        if (manualMapping) {
-          convertedIds.set(originalId, manualMapping);
-          console.log(`✅ DEBUGGING: Manual mapping found: ${originalId} -> ${manualMapping}`);
-        } else {
-          // Try automatic conversion
-          const igdbId = await GameIdMappingService.convertRawgToIgdb(originalId);
-          convertedIds.set(originalId, igdbId || originalId);
-          console.log(`🔄 DEBUGGING: Auto conversion: ${originalId} -> ${igdbId || 'failed'}`);
-        }
-      } else {
-        convertedIds.set(originalId, originalId);
-      }
-    }
-
-    console.log(`🔍 DEBUGGING: ID conversion complete. Processing ${convertedIds.size} games...`);
-
-    // First, try to fetch games from our database using converted IDs
     try {
-      const allIdsToQuery = Array.from(new Set([...uncachedIds, ...convertedIds.values()]));
-      console.log(`🔍 DEBUGGING: Querying database for games with IDs: [${allIdsToQuery.join(', ')}]`);
-      
+      // First, try to fetch games from our database
       const { data: dbGames, error } = await this.supabase
         .from('games')
         .select('*')
-        .in('id', allIdsToQuery);
+        .in('id', uncachedIds);
 
       if (error) {
-        console.error('🔍 DEBUGGING: Error fetching games from database:', error);
+        console.error('Error fetching games from database:', error);
       } else if (dbGames && dbGames.length > 0) {
-        console.log(`🔍 DEBUGGING: Found ${dbGames.length} games in database:`);
-        dbGames.forEach(game => {
-          console.log(`🔍 DEBUGGING:   - Database game: ${game.name} (ID: ${game.id})`);
-        });
-        
+        // Add database games to the map
         dbGames.forEach(game => {
           const gameForPlaylist = {
             id: game.id,
             name: game.name,
-            title: game.name, // Ensure title is set for compatibility
+            title: game.name,
             cover_url: game.cover_url,
-            background_image: game.cover_url, // Map cover_url to background_image for compatibility
+            background_image: game.cover_url,
             first_release_date: game.first_release_date,
             platforms: game.platforms || [],
             genres: game.genres || [],
             rating: game.rating,
             source_id: game.source_id || game.id,
-            playlist_id: game.id
           };
 
-          // For each original game ID that was requested, check if this database game matches
-          uncachedIds.forEach(originalId => {
-            const convertedId = convertedIds.get(originalId) || originalId;
-            if (convertedId === game.id) {
-              console.log(`🔗 DEBUGGING: Mapping ${originalId} -> ${convertedId} to game: ${game.name}`);
-              
-              // Add the game with the original ID for playlist compatibility
-              gameMap.set(originalId, gameForPlaylist);
-              
-              // Cache the game
-              this.playlistCache.set(`game_${originalId}`, {
-                data: gameForPlaylist,
-                timestamp: Date.now()
-              });
-            }
-          });
+          gameMap.set(game.id, gameForPlaylist);
           
-          console.log(`🔍 DEBUGGING: Added database game to map: ${game.name} with ID: ${game.id}`);
+          // Cache the game
+          this.playlistCache.set(`game_${game.id}`, {
+            data: gameForPlaylist,
+            timestamp: Date.now()
+          });
         });
 
-        // Find which original IDs still need fetching
-        const foundConvertedIds = dbGames.map(game => game.id);
-        const stillUncachedOriginalIds = uncachedIds.filter(originalId => {
-          const convertedId = convertedIds.get(originalId);
-          return !foundConvertedIds.includes(convertedId!);
-        });
+        // Find which IDs still need fetching from external API
+        const foundIds = dbGames.map(game => game.id);
+        const stillUncachedIds = uncachedIds.filter(id => !foundIds.includes(id));
         
-        console.log(`🔍 DEBUGGING: Still need to fetch from external API: ${stillUncachedOriginalIds.length} games:`, stillUncachedOriginalIds);
-
         // For any games not in our database, try UnifiedGameService as fallback
-        if (stillUncachedOriginalIds.length > 0) {
+        if (stillUncachedIds.length > 0) {
           const BATCH_SIZE = 10;
-          const batches = [];
-          for (let i = 0; i < stillUncachedOriginalIds.length; i += BATCH_SIZE) {
-            batches.push(stillUncachedOriginalIds.slice(i, i + BATCH_SIZE));
-          }
-
-          for (const batch of batches) {
-            console.log(`🔍 DEBUGGING: Processing batch of ${batch.length} games:`, batch);
+          for (let i = 0; i < stillUncachedIds.length; i += BATCH_SIZE) {
+            const batch = stillUncachedIds.slice(i, i + BATCH_SIZE);
             
             const batchResults = await Promise.allSettled(
-              batch.map(async (originalId) => {
+              batch.map(async (gameId) => {
                 try {
-                  const convertedId = convertedIds.get(originalId) || originalId;
-                  console.log(`🔍 DEBUGGING: Fetching game details from API for ${originalId} (converted: ${convertedId})`);
-                  
-                  const game = await UnifiedGameService.getGameDetails(convertedId);
+                  const game = await UnifiedGameService.getGameDetails(gameId);
                   if (game) {
-                    console.log(`🔍 DEBUGGING: Successfully fetched game from API: ${game.name} (${originalId} -> ${convertedId})`);
-                    
                     const gameForPlaylist = { 
                       ...game, 
-                      id: originalId, // Use original ID for playlist compatibility
-                      source_id: game.source_id || convertedId,
-                      playlist_id: originalId
+                      id: gameId,
+                      source_id: game.source_id || gameId,
                     };
                     
-                    this.playlistCache.set(`game_${originalId}`, {
+                    this.playlistCache.set(`game_${gameId}`, {
                       data: gameForPlaylist,
                       timestamp: Date.now()
                     });
                     
-                    return { id: originalId, game: gameForPlaylist };
-                  } else {
-                    console.warn(`🔍 DEBUGGING: UnifiedGameService returned null for game ID: ${originalId} (${convertedId})`);
-                    return null;
+                    return { id: gameId, game: gameForPlaylist };
                   }
+                  return null;
                 } catch (error) {
-                  console.error(`🔍 DEBUGGING: Failed to fetch game from API ${originalId}:`, error);
+                  console.warn(`Failed to fetch game from API ${gameId}:`, error);
                   return null;
                 }
               })
             );
 
-            batchResults.forEach((result, index) => {
-              const originalId = batch[index];
+            batchResults.forEach((result) => {
               if (result.status === 'fulfilled' && result.value) {
                 gameMap.set(result.value.id, result.value.game);
-                console.log(`🔍 DEBUGGING: Added API game to map: ${result.value.game.name} with ID: ${result.value.id}`);
-              } else {
-                console.warn(`🔍 DEBUGGING: Failed to process API game ${originalId}:`, result.status === 'rejected' ? result.reason : 'null result');
               }
             });
           }
         }
-      } else {
-        console.log(`🔍 DEBUGGING: No games found in database, trying external APIs for all ${uncachedIds.length} games`);
       }
     } catch (error) {
-      console.error('🔍 DEBUGGING: Error in batchFetchGameDetails:', error);
+      console.error('Error in batchFetchGameDetails:', error);
     }
-
-    console.log(`🔍 DEBUGGING: BatchFetchGameDetails completed. Returning ${gameMap.size} games`);
-    gameMap.forEach((game, id) => {
-      console.log(`🔍 DEBUGGING: Final game map - ${id}: ${game.name}`);
-    });
     
     return gameMap;
   }
 
   /**
-   * Clear playlist cache
+   * Clear all playlist-related caches
    */
   static clearCache(): void {
     this.playlistCache.clear();
+    console.log('All playlist caches cleared');
   }
 
   /**
-   * Get cache stats for debugging
+   * Invalidate playlist caches after CRUD operations
+   * This ensures the explore page shows fresh data immediately
    */
-  static getCacheStats() {
-    return {
-      size: this.playlistCache.size,
-      keys: Array.from(this.playlistCache.keys())
+  private static async invalidatePlaylistCaches(): Promise<void> {
+    try {
+      // Clear all playlist-related cache entries
+      const keysToDelete: string[] = [];
+      
+      for (const [key] of this.playlistCache) {
+        if (key.includes('playlist') || key.includes('featured') || key.includes('explore')) {
+          keysToDelete.push(key);
+        }
+      }
+
+      keysToDelete.forEach(key => {
+        this.playlistCache.delete(key);
+      });
+
+      console.log(`Invalidated ${keysToDelete.length} playlist cache entries`);
+
+      // Also trigger a broadcast to notify other components
+      this.broadcastCacheInvalidation();
+    } catch (error) {
+      console.error('Error invalidating playlist caches:', error);
+    }
+  }
+
+  /**
+   * Broadcast cache invalidation to components using playlists
+   */
+  private static broadcastCacheInvalidation(): void {
+    // Use BroadcastChannel for cross-tab communication
+    if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
+      try {
+        const channel = new BroadcastChannel('playlist-updates');
+        channel.postMessage({ 
+          type: 'CACHE_INVALIDATED', 
+          timestamp: Date.now() 
+        });
+        channel.close();
+      } catch (error) {
+        console.warn('BroadcastChannel not available:', error);
+      }
+    }
+
+    // Also emit a custom event for same-tab components
+    if (typeof window !== 'undefined') {
+      try {
+        window.dispatchEvent(new CustomEvent('playlist-cache-invalidated', {
+          detail: { timestamp: Date.now() }
+        }));
+      } catch (error) {
+        console.warn('CustomEvent not available:', error);
+      }
+    }
+  }
+
+  /**
+   * Subscribe to real-time playlist changes
+   * Automatically invalidates cache when playlists are modified
+   */
+  static subscribeToPlaylistChanges(): () => void {
+    if (typeof window === 'undefined') {
+      return () => {}; // No-op for server-side
+    }
+
+    const subscriptionKey = 'global_playlist_changes';
+    
+    // Don't create duplicate subscriptions
+    if (this.subscriptions.has(subscriptionKey)) {
+      return this.subscriptions.get(subscriptionKey);
+    }
+
+    console.log('Setting up real-time playlist subscription...');
+
+    const subscription = this.supabase
+      .channel('playlist-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'playlists',
+        },
+        async (payload) => {
+          console.log('Playlist change detected:', payload.eventType, (payload.new as any)?.title || (payload.old as any)?.title);
+          
+          // Invalidate caches on any playlist change
+          await this.invalidatePlaylistCaches();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'playlist_games',
+        },
+        async (payload) => {
+          console.log('Playlist games change detected:', payload.eventType);
+          
+          // Invalidate caches when playlist games are modified
+          await this.invalidatePlaylistCaches();
+        }
+      )
+      .subscribe();
+
+    const unsubscribe = () => {
+      console.log('Unsubscribing from playlist changes...');
+      subscription.unsubscribe();
+      this.subscriptions.delete(subscriptionKey);
     };
+
+    this.subscriptions.set(subscriptionKey, unsubscribe);
+    return unsubscribe;
+  }
+
+  /**
+   * Get playlist by ID with full game details
+   */
+  static async getPlaylistById(id: string): Promise<Playlist> {
+    try {
+      const { data: playlist, error } = await this.supabase
+        .from('playlists')
+        .select(`
+          *,
+          playlist_games (
+            game_id,
+            display_order,
+            added_at
+          )
+        `)
+        .eq('id', id)
+        .single();
+
+      if (error) throw error;
+      if (!playlist) throw new Error('Playlist not found');
+
+      const gameIds = playlist.playlist_games.map((pg: DatabasePlaylistGame) => pg.game_id);
+      const games = await Promise.all(
+        gameIds.map(async (gameId: string) => {
+          try {
+            const game = await UnifiedGameService.getGameDetails(gameId);
+            if (game) {
+              return { ...game, id: gameId };
+            }
+            return null;
+          } catch (error) {
+            console.warn(`Failed to fetch game details for ID ${gameId}:`, error);
+            return null;
+          }
+        })
+      );
+
+      const validGames = games.filter((game): game is NonNullable<typeof game> => game !== null);
+
+      return {
+        ...this.mapDatabasePlaylist(playlist as DatabasePlaylist),
+        games: validGames.sort((a, b) => {
+          const aOrder = playlist.playlist_games.find((pg: DatabasePlaylistGame) => pg.game_id === a.id)?.display_order ?? 0;
+          const bOrder = playlist.playlist_games.find((pg: DatabasePlaylistGame) => pg.game_id === b.id)?.display_order ?? 0;
+          return aOrder - bOrder;
+        })
+      };
+    } catch (error) {
+      console.error('Failed to fetch playlist by ID:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get playlists by type/category
+   */
+  static async getPlaylistsByType(type: PlaylistType): Promise<Playlist[]> {
+    try {
+      const { data: playlists, error } = await this.supabase
+        .from('playlists')
+        .select(`
+          *,
+          playlist_games (
+            game_id,
+            display_order,
+            added_at
+          )
+        `)
+        .eq('type', type)
+        .eq('is_published', true)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      return Promise.all(
+        playlists.map(async (playlist: DatabasePlaylist) => {
+          const gameIds = playlist.playlist_games.map((pg: DatabasePlaylistGame) => pg.game_id);
+          const games = await Promise.all(
+            gameIds.slice(0, 5).map(async (gameId: string) => { // Only load first 5 for performance
+              try {
+                const game = await UnifiedGameService.getGameDetails(gameId);
+                if (game) {
+                  return { ...game, id: gameId };
+                }
+                return null;
+              } catch (error) {
+                console.warn(`Failed to fetch game details for ID ${gameId}:`, error);
+                return null;
+              }
+            })
+          );
+
+          const validGames = games.filter((game): game is NonNullable<typeof game> => game !== null);
+
+          return {
+            ...this.mapDatabasePlaylist(playlist),
+            games: validGames.sort((a, b) => {
+              const aOrder = playlist.playlist_games.find((pg: DatabasePlaylistGame) => pg.game_id === a.id)?.display_order ?? 0;
+              const bOrder = playlist.playlist_games.find((pg: DatabasePlaylistGame) => pg.game_id === b.id)?.display_order ?? 0;
+              return aOrder - bOrder;
+            })
+          };
+        })
+      );
+    } catch (error) {
+      console.error(`Failed to fetch playlists by type ${type}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Warm up the cache with featured playlists
+   * Can be called on app initialization for better performance
+   */
+  static async warmUpCache(): Promise<void> {
+    try {
+      console.log('Warming up playlist cache...');
+      await this.getFeaturedPlaylists(10);
+      console.log('Playlist cache warmed up successfully');
+    } catch (error) {
+      console.warn('Failed to warm up playlist cache:', error);
+    }
   }
 } 

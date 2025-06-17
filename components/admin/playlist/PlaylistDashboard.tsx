@@ -1,7 +1,9 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
+import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
+import { useRouter } from "next/navigation";
 import {
   Plus,
   Search,
@@ -28,10 +30,12 @@ import { PlaylistTypeIcon } from "./shared/PlaylistTypeIcon";
 import { PlaylistDropdownMenu } from "./shared/PlaylistDropdownMenu";
 import { PlaylistStatusBadge } from "./shared/PlaylistStatusBadge";
 import { StatCard } from "./shared/StatCard";
+import { GameThumbnailStack } from "./shared/GameThumbnail";
 import PlaylistEditor from "./PlaylistEditor";
 import PlaylistTemplates from "./PlaylistTemplates";
 
 const PlaylistDashboard: React.FC = () => {
+  const router = useRouter();
   const [playlists, setPlaylists] = useState<Playlist[]>([]);
   const [filteredPlaylists, setFilteredPlaylists] = useState<Playlist[]>([]);
   const [loading, setLoading] = useState(true);
@@ -97,18 +101,38 @@ const PlaylistDashboard: React.FC = () => {
   };
 
   const handleEditPlaylist = (playlist: Playlist) => {
-    setEditingPlaylist(playlist);
-    setShowEditor(true);
+    // Navigate to the proper edit route instead of showing inline editor
+    router.push(`/admin/playlists/${playlist.id}/edit`);
   };
 
   const handleDeletePlaylist = async (playlistId: string) => {
     if (!confirm("Are you sure you want to delete this playlist?")) return;
 
     try {
+      // Optimistic update - remove from local state immediately
+      const optimisticPlaylists = playlists.filter((p) => p.id !== playlistId);
+      setPlaylists(optimisticPlaylists);
+      calculateStats(optimisticPlaylists);
+
       await PlaylistService.deletePlaylist(playlistId);
+
+      // Trigger cache invalidation for explore page
+      try {
+        await fetch("/api/cache/invalidate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ type: "playlists" }),
+        });
+      } catch (cacheError) {
+        console.warn("Cache invalidation failed:", cacheError);
+      }
+
+      // Final refresh to ensure consistency
       await fetchPlaylists();
     } catch (error) {
       console.error("Failed to delete playlist:", error);
+      // Revert optimistic update on error
+      await fetchPlaylists();
     }
   };
 
@@ -348,16 +372,65 @@ const PlaylistCard: React.FC<PlaylistCardProps> = ({
   onDelete,
   onDuplicate,
 }) => {
+  const [isHovered, setIsHovered] = useState(false);
+  
+  // Get first few games for preview
+  const previewGames = playlist.games?.slice(0, 4) || [];
+  
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.1 }}
       exit={{ opacity: 0, y: -20 }}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
     >
       <Card className="group hover:shadow-lg hover:shadow-primary/5 transition-all duration-300 overflow-hidden border-border/50">
         <div className={cn("h-2", getTypeColor(playlist.type))} />
-        <CardHeader className="pb-3">
+        
+        {/* Game Preview Section */}
+        {previewGames.length > 0 && (
+          <div className="relative h-32 overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900">
+            <div className="absolute inset-0 flex">
+              {previewGames.map((game, gameIndex) => (
+                <div
+                  key={game.id}
+                  className={cn(
+                    "relative transition-all duration-300",
+                    previewGames.length === 1 ? "w-full" :
+                    previewGames.length === 2 ? "w-1/2" :
+                    previewGames.length === 3 ? (gameIndex === 0 ? "w-1/2" : "w-1/4") :
+                    "w-1/4"
+                  )}
+                  style={{
+                    transform: isHovered ? 'scale(1.05)' : 'scale(1)',
+                    zIndex: gameIndex
+                  }}
+                >
+                  <Image
+                    src={game.background_image || game.cover_url || '/api/placeholder/400/600'}
+                    alt={game.name}
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                  />
+                  <div className="absolute inset-0 bg-black/20" />
+                </div>
+              ))}
+            </div>
+            
+            {/* Game count overlay */}
+            <div className="absolute bottom-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded-full">
+              {playlist.gameIds?.length || 0} games
+            </div>
+            
+            {/* Gradient overlay for text readability */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+          </div>
+        )}
+        
+        <CardHeader className={cn("pb-3", previewGames.length === 0 && "pt-6")}>
           <div className="flex items-start justify-between">
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-2">
@@ -382,7 +455,25 @@ const PlaylistCard: React.FC<PlaylistCardProps> = ({
             {playlist.description}
           </p>
         </CardHeader>
+        
         <CardContent className="pt-0">
+          {/* Top games preview */}
+          {previewGames.length > 0 && (
+            <div className="mb-4">
+              <div className="flex items-center gap-2 mb-2">
+                <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                  Featured Games
+                </h4>
+              </div>
+              <GameThumbnailStack
+                games={previewGames}
+                maxVisible={3}
+                size="sm"
+                showCount={true}
+              />
+            </div>
+          )}
+          
           <div className="flex items-center justify-between text-sm text-muted-foreground">
             <span className="flex items-center gap-1">
               <Gamepad2 className="w-3 h-3" />
@@ -407,6 +498,8 @@ const PlaylistListItem: React.FC<PlaylistCardProps> = ({
   onDelete,
   onDuplicate,
 }) => {
+  const previewGames = playlist.games?.slice(0, 3) || [];
+  
   return (
     <motion.div
       initial={{ opacity: 0, x: -20 }}
@@ -424,6 +517,17 @@ const PlaylistListItem: React.FC<PlaylistCardProps> = ({
                   getTypeColor(playlist.type)
                 )}
               />
+              
+              {/* Game thumbnails for list view */}
+              {previewGames.length > 0 && (
+                <GameThumbnailStack
+                  games={previewGames}
+                  maxVisible={3}
+                  size="xs"
+                  showCount={false}
+                />
+              )}
+              
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
                   <PlaylistTypeIcon type={playlist.type} />
@@ -436,12 +540,20 @@ const PlaylistListItem: React.FC<PlaylistCardProps> = ({
                 <p className="text-sm text-muted-foreground line-clamp-1">
                   {playlist.description}
                 </p>
+                
+                {/* Additional metadata in list view */}
+                <div className="flex items-center gap-4 mt-1 text-xs text-muted-foreground">
+                  <span>Updated {formatPlaylistDate(playlist.updatedAt || playlist.createdAt)}</span>
+                  {playlist.games && playlist.games.length > 0 && (
+                    <span>Last game: {playlist.games[playlist.games.length - 1]?.name}</span>
+                  )}
+                </div>
               </div>
             </div>
             <div className="flex items-center gap-4 text-sm text-muted-foreground">
               <span className="flex items-center gap-1">
                 <Gamepad2 className="w-3 h-3" />
-                {playlist.gameIds?.length || 0}
+                {playlist.gameIds?.length || 0} games
               </span>
               <span className="flex items-center gap-1">
                 <Calendar className="w-3 h-3" />

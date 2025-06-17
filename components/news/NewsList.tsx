@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import { NewsPost, NewsFilters } from "@/types/news";
 import { NewsService } from "@/services/newsService";
@@ -8,8 +8,7 @@ import NewsCard, { NewsCardVariant } from "./NewsCard";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Filter, Loader2 } from "lucide-react";
+import { Search, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface NewsListProps {
@@ -21,12 +20,12 @@ interface NewsListProps {
   className?: string;
 }
 
-const categories: Array<{ value: NewsPost['category']; label: string }> = [
-  { value: 'Product Update', label: 'Product Updates' },
-  { value: 'Feature', label: 'Features' },
-  { value: 'Announcement', label: 'Announcements' },
-  { value: 'Security', label: 'Security' },
-  { value: 'Community', label: 'Community' },
+const categories: Array<{ value: NewsPost["category"]; label: string }> = [
+  { value: "Product Update", label: "Product Updates" },
+  { value: "Feature", label: "Features" },
+  { value: "Announcement", label: "Announcements" },
+  { value: "Security", label: "Security" },
+  { value: "Community", label: "Community" },
 ];
 
 const NewsList: React.FC<NewsListProps> = ({
@@ -35,68 +34,76 @@ const NewsList: React.FC<NewsListProps> = ({
   showFilters = true,
   showSearch = true,
   featured = false,
-  className
+  className,
 }) => {
   const [posts, setPosts] = useState<NewsPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  
-  const [filters, setFilters] = useState<NewsFilters>({
-    status: 'published',
+
+  const [filters] = useState<NewsFilters>({
+    status: "published",
     limit,
-    page: 1
+    page: 1,
   });
 
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
 
-  const fetchPosts = async (page = 1, reset = false) => {
-    try {
-      setLoading(true);
-      setError(null);
+  const fetchPosts = useCallback(
+    async (page = 1, reset = false) => {
+      try {
+        setLoading(true);
+        setError(null);
 
-      const filterParams: NewsFilters = {
-        ...filters,
-        page,
-        search: searchTerm || undefined,
-        category: selectedCategory !== 'all' ? selectedCategory as NewsPost['category'] : undefined
-      };
-
-      let response;
-      if (featured) {
-        const featuredPosts = await NewsService.getFeaturedPosts(limit);
-        response = {
-          posts: featuredPosts,
-          total: featuredPosts.length,
-          page: 1,
-          limit,
-          hasMore: false
+        const filterParams: NewsFilters = {
+          ...filters,
+          page,
+          search: searchTerm || undefined,
+          category:
+            selectedCategory !== "all"
+              ? (selectedCategory as NewsPost["category"])
+              : undefined,
         };
-      } else {
-        response = await NewsService.getNewsPosts(filterParams);
-      }
 
-      if (reset || page === 1) {
-        setPosts(response.posts);
-      } else {
-        setPosts(prev => [...prev, ...response.posts]);
-      }
+        let response;
+        if (featured) {
+          const featuredPosts = await NewsService.getFeaturedPosts(limit);
+          response = {
+            posts: featuredPosts,
+            total: featuredPosts.length,
+            page: 1,
+            limit,
+            hasMore: false,
+          };
+        } else {
+          response = await NewsService.getNewsPosts(filterParams);
+        }
 
-      setHasMore(response.hasMore);
-      setCurrentPage(page);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch news posts');
-      console.error('Error fetching posts:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
+        if (reset || page === 1) {
+          setPosts(response.posts);
+        } else {
+          setPosts((prev) => [...prev, ...response.posts]);
+        }
+
+        setHasMore(response.hasMore);
+        setCurrentPage(page);
+      } catch (err) {
+        setError(
+          err instanceof Error ? err.message : "Failed to fetch news posts"
+        );
+        console.error("Error fetching posts:", err);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [filters, searchTerm, selectedCategory, featured, limit]
+  );
 
   useEffect(() => {
     fetchPosts(1, true);
-  }, [searchTerm, selectedCategory, featured]);
+  }, [fetchPosts]);
 
   const handleLoadMore = () => {
     if (!loading && hasMore) {
@@ -119,9 +126,9 @@ const NewsList: React.FC<NewsListProps> = ({
     visible: {
       opacity: 1,
       transition: {
-        staggerChildren: 0.1
-      }
-    }
+        staggerChildren: 0.1,
+      },
+    },
   };
 
   const getGridClassName = () => {
@@ -156,17 +163,19 @@ const NewsList: React.FC<NewsListProps> = ({
       {(showFilters || showSearch) && !featured && (
         <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
           <div className="flex flex-wrap gap-2">
-            <Badge 
-              variant={selectedCategory === 'all' ? 'default' : 'outline'}
+            <Badge
+              variant={selectedCategory === "all" ? "default" : "outline"}
               className="cursor-pointer hover:bg-primary/10"
-              onClick={() => handleCategoryChange('all')}
+              onClick={() => handleCategoryChange("all")}
             >
               All
             </Badge>
             {categories.map((category) => (
               <Badge
                 key={category.value}
-                variant={selectedCategory === category.value ? 'default' : 'outline'}
+                variant={
+                  selectedCategory === category.value ? "default" : "outline"
+                }
                 className="cursor-pointer hover:bg-primary/10"
                 onClick={() => handleCategoryChange(category.value)}
               >
@@ -200,24 +209,24 @@ const NewsList: React.FC<NewsListProps> = ({
       {!loading && posts.length === 0 && (
         <div className="text-center py-12">
           <p className="text-gray-600 dark:text-gray-400 mb-4">
-            {error?.includes('does not exist') 
-              ? 'News system is being set up. Please run the database migration first.'
-              : searchTerm || selectedCategory !== 'all' 
-              ? 'No news posts found matching your criteria.'
-              : 'No news posts available yet.'
-            }
+            {error?.includes("does not exist")
+              ? "News system is being set up. Please run the database migration first."
+              : searchTerm || selectedCategory !== "all"
+              ? "No news posts found matching your criteria."
+              : "No news posts available yet."}
           </p>
-          {(searchTerm || selectedCategory !== 'all') && !error?.includes('does not exist') && (
-            <Button 
-              onClick={() => {
-                setSearchTerm('');
-                setSelectedCategory('all');
-              }}
-              variant="outline"
-            >
-              Clear Filters
-            </Button>
-          )}
+          {(searchTerm || selectedCategory !== "all") &&
+            !error?.includes("does not exist") && (
+              <Button
+                onClick={() => {
+                  setSearchTerm("");
+                  setSelectedCategory("all");
+                }}
+                variant="outline"
+              >
+                Clear Filters
+              </Button>
+            )}
         </div>
       )}
 
@@ -244,18 +253,14 @@ const NewsList: React.FC<NewsListProps> = ({
       {/* Load More Button */}
       {hasMore && !loading && (
         <div className="text-center pt-6">
-          <Button
-            onClick={handleLoadMore}
-            disabled={loading}
-            variant="outline"
-          >
+          <Button onClick={handleLoadMore} disabled={loading} variant="outline">
             {loading ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin mr-2" />
                 Loading...
               </>
             ) : (
-              'Load More'
+              "Load More"
             )}
           </Button>
         </div>

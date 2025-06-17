@@ -19,6 +19,8 @@ interface ExploreResponse {
 const CACHE_TTL = 5 * 60 * 1000;
 let cachedResponse: { data: ExploreResponse; timestamp: number } | null = null;
 
+
+
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
@@ -67,13 +69,12 @@ export async function GET(request: NextRequest) {
       }
     });
     
-    // Only add fallback games if playlist has NO gameIds in database (not if games failed to load)
+    // Only add fallback games if playlist has NO gameIds in database
     if (processedPlaylists.length > 0) {
       processedPlaylists = await Promise.all(
         processedPlaylists.map(async (playlist) => {
           // Only add fallback if the playlist has NO gameIds stored in database
           if (!playlist.gameIds || playlist.gameIds.length === 0) {
-            console.log(`Playlist "${playlist.title}" has no game IDs in database, adding fallback games`);
             try {
               const fallbackGames = popularGames.status === 'fulfilled' 
                 ? popularGames.value.slice(0, 5)
@@ -87,11 +88,8 @@ export async function GET(request: NextRequest) {
               console.warn('Failed to add fallback games to playlist:', error);
               return playlist;
             }
-          } else {
-            // Playlist has gameIds, keep it as is (even if games array is empty due to fetch failures)
-            console.log(`Playlist "${playlist.title}" has ${playlist.gameIds.length} game IDs, keeping original games`);
-            return playlist;
           }
+          return playlist;
         })
       );
     }

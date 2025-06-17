@@ -9,14 +9,11 @@ import {
   Database,
   FileText,
   Trophy,
-  Users,
   Shield,
   ChevronDown,
   ExternalLink,
-  Zap,
   BarChart3,
-  Newspaper,
-  Gift
+  Newspaper
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {

@@ -22,7 +22,13 @@ export default function EditPlaylistPage() {
 
     if (id) {
       PlaylistService.getPlaylist(id as string)
-        .then(setPlaylist)
+        .then((result) => {
+          setPlaylist(result);
+        })
+        .catch((error) => {
+          console.error(`Failed to fetch playlist:`, error);
+          setPlaylist(null);
+        })
         .finally(() => setIsLoading(false));
     }
   }, [id, user, router]);

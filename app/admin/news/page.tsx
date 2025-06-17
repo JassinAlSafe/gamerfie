@@ -36,6 +36,7 @@ import {
 import { cn } from "@/lib/utils";
 import { Switch } from "@/components/ui/switch";
 import { NewsPost } from "@/types/news";
+import Image from "next/image";
 
 interface CreateNewsForm {
   title: string;
@@ -583,7 +584,7 @@ export default function NewsManagementPage() {
                       />
                       {formData.featured_image && (
                         <div className="mt-2">
-                          <img 
+                          <Image 
                             src={formData.featured_image} 
                             alt="Preview" 
                             className="w-full h-32 object-cover rounded-lg border"
