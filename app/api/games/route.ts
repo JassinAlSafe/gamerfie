@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import { IGDBService } from '@/services/igdb';
 import { UnifiedGameService } from '@/services/unifiedGameService';
 import { Game } from '@/types';
+import { RAWGService } from '@/services/rawgService';
 
 // Force dynamic rendering due to search params
 export const dynamic = 'force-dynamic';
@@ -121,32 +122,35 @@ export async function GET(request: NextRequest) {
       
       // Enhanced fallback system for infinite scroll
       try {
-        // For infinite scroll, we need to ensure we have enough data across multiple pages
+        // For infinite scroll, we need to dynamically fetch more games based on page number
         console.log('🔄 Using UnifiedGameService fallback...');
-        const unifiedGames = await UnifiedGameService.getPopularGames(limit * 10); // Get more games for pagination
         
-        // Calculate pagination for the unified games
-        const startIndex = (page - 1) * limit;
-        const endIndex = startIndex + limit;
-        const paginatedGames = unifiedGames.slice(startIndex, endIndex);
+        // Use RAWG service directly for better pagination control
+        const rawgPage = Math.ceil(page / 2); // RAWG pages are larger, so we need fewer calls
+        const rawgLimit = Math.min(limit * 2, 40); // RAWG supports up to 40 per page
         
-        // Ensure we have realistic pagination for infinite scroll
-        const totalAvailable = Math.max(unifiedGames.length, 5000); // Assume we have at least 5000 games
-        const calculatedTotalPages = Math.ceil(totalAvailable / limit);
-        const hasMorePages = page < calculatedTotalPages && paginatedGames.length === limit;
+        const rawgResponse = await RAWGService.getPopularGames(rawgPage, rawgLimit);
         
-        console.log(`📊 Unified: ${paginatedGames.length} games, page ${page}/${calculatedTotalPages}, hasNext: ${hasMorePages}`);
+        // Calculate which subset of the RAWG results we need for this specific page
+        const startIndex = ((page - 1) % 2) * limit;
+        const paginatedGames = rawgResponse.games.slice(startIndex, startIndex + limit);
+        
+        // RAWG has much more data available - estimate based on their total
+        const estimatedTotal = Math.min(rawgResponse.total, 100000); // Cap at reasonable limit
+        const calculatedTotalPages = Math.ceil(estimatedTotal / limit);
+        const hasMorePages = rawgResponse.hasNextPage || (page * limit < estimatedTotal);
+        
+        console.log(`📊 RAWG Fallback: ${paginatedGames.length} games, page ${page}/${calculatedTotalPages}, total: ${estimatedTotal}, hasNext: ${hasMorePages}`);
         
         response = {
           games: paginatedGames,
-          totalCount: totalAvailable,
+          totalCount: estimatedTotal,
           currentPage: page,
           totalPages: calculatedTotalPages,
           hasNextPage: hasMorePages,
           hasPreviousPage: page > 1,
-          source: 'unified'
+          source: 'rawg'
         };
-        
       } catch (unifiedError) {
         console.warn('⚠️ UnifiedGameService also failed, using curated games:', unifiedError);
         

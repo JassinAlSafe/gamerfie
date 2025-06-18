@@ -138,7 +138,7 @@ export class IGDBService {
 
   private static processGame(game: IGDBGameResponse): Game {
     return {
-      id: game.id.toString(),
+      id: `igdb_${game.id}`,
       name: game.name,
       cover: game.cover ? {
         id: game.cover.id.toString(),
@@ -190,25 +190,26 @@ export class IGDBService {
     try {
       const offset = (page - 1) * limit;
 
-      // Enhanced base query conditions for high-quality, popular games
+      // Simple, proven conditions that work with IGDB for large datasets
       const conditions: string[] = [
-        'category = 0',                     // Main games only (no DLCs, expansions, etc.)
-        'version_parent = null',            // No duplicate editions
-        'status = 0',                       // Released games only
-        'total_rating_count > 50',          // Games with substantial reviews
-        'total_rating > 70',                // Well-rated games (7.0+/10)
-        'first_release_date > 946684800',   // Games released after 2000
-        'platforms = (6,48,49,130,131,137,167,169)', // Popular platforms: PC, PS4, Xbox One, Switch, PS5, Xbox Series X/S, iOS, Android
+        'category = 0'                      // Main games only - this is the key working condition
       ];
       
-      // Only add cover requirement if we have specific filters (search, genre, platform)
-      // This allows more games to show up in the general "all games" view
+      // Check if we have specific filters
       const hasSpecificFilters = filters?.search || filters?.platformId || filters?.genreId || filters?.releaseYear;
-      if (hasSpecificFilters) {
-        conditions.push('cover != null');   // Require cover only when filtering
+      
+      // For trending/rating-first approach, we need games with rating data
+      if (!hasSpecificFilters) {
+        // Add minimal quality conditions to get engaging, trending games
+        conditions.push('total_rating_count > 3');    // Games with some community engagement
+        conditions.push('cover != null');              // Ensure games have cover images
       } else {
-        // For general browsing, prefer games with covers but allow some without
-        conditions.push('(cover != null | total_rating_count > 200)'); // Must have cover OR be very popular
+        // Add more restrictive filters only when user is searching/filtering
+        conditions.push('version_parent = null');    // No duplicate editions
+        conditions.push('status = 0');               // Released games only
+        if (filters?.search) {
+          conditions.push('cover != null');          // Require cover for searches
+        }
       }
       
       // Add platform filter - use proper IGDB syntax for array membership
@@ -251,15 +252,15 @@ export class IGDBService {
         }
       }
 
-      // Enhanced sort condition for better game discovery
+      // Enhanced sort condition for better game discovery - prioritize trending/quality games
       let sortBy = '';
       switch (filters?.sortBy) {
         case 'rating':
           sortBy = 'total_rating desc';
           break;
         case 'popularity':
-          // Combine rating count and rating for better popularity
-          sortBy = 'total_rating_count desc, total_rating desc';
+          // Show most engaging games first - this creates the trending effect
+          sortBy = 'total_rating_count desc';
           break;
         case 'name':
           sortBy = 'name asc';
@@ -268,8 +269,9 @@ export class IGDBService {
           sortBy = 'first_release_date desc';
           break;
         default:
-          // Default to a weighted popularity score
-          sortBy = 'total_rating_count desc, total_rating desc';
+          // Default: Show most engaging games first (high community engagement = trending)
+          // This naturally surfaces popular/trending games
+          sortBy = 'total_rating_count desc';
       }
 
       // For general browsing without specific filters, use a conservative estimate
@@ -347,7 +349,17 @@ export class IGDBService {
 
       // Calculate pagination info
       const totalPages = Math.ceil(totalGames / limit);
-      const hasNextPage = processedGames.length === limit && page < totalPages;
+      const hasNextPage = page < totalPages && (processedGames.length > 0 || page <= 5);
+
+      console.log(`📊 IGDB Pagination Debug:`, {
+        page,
+        processedGamesLength: processedGames.length,
+        limit,
+        totalGames,
+        totalPages,
+        hasNextPage,
+        calculation: `${page} < ${totalPages} && (${processedGames.length} > 0 || ${page} <= 5) = ${hasNextPage}`
+      });
 
       return {
         games: processedGames,
@@ -574,7 +586,7 @@ export class IGDBService {
       });
 
       const processedGame = {
-        id: game.id.toString(),
+        id: `igdb_${game.id}`,
         name: game.name,
         cover_url: coverUrl,
         background_image: backgroundImage,
