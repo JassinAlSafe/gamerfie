@@ -515,11 +515,10 @@ export class UnifiedGameService {
     try {
       if (targetSource === 'igdb' || targetSource === 'auto') {
         const games = await IGDBService.getPopularGames(limit);
-        // Ensure consistent ID prefixing for IGDB games
+        // IGDBService already returns games with igdb_ prefix, no need to add it again
         return games.map(game => ({
           ...game,
-          id: `igdb_${game.id}`,
-          source_id: game.id,
+          source_id: game.id.replace('igdb_', ''), // Extract numeric ID for source_id
           dataSource: 'igdb' as const
         }));
       } else {
@@ -540,8 +539,8 @@ export class UnifiedGameService {
           // Ensure consistent ID prefixing for RAWG fallback games
           return result.games.map(game => ({
             ...game,
-            id: `rawg_${game.id}`,
-            source_id: game.id,
+            id: `rawg_${game.id.replace('rawg_', '')}`, // Avoid double prefixing
+            source_id: game.id.replace('rawg_', ''),
             dataSource: 'rawg' as const
           }));
         } catch (fallbackError) {
@@ -563,11 +562,10 @@ export class UnifiedGameService {
     try {
       if (targetSource === 'igdb' || targetSource === 'auto') {
         const games = await IGDBService.getTrendingGames(limit);
-        // Ensure consistent ID prefixing for IGDB games
+        // IGDBService already returns games with igdb_ prefix, no need to add it again
         return games.map(game => ({
           ...game,
-          id: `igdb_${game.id}`,
-          source_id: game.id,
+          source_id: game.id.replace('igdb_', ''), // Extract numeric ID for source_id
           dataSource: 'igdb' as const
         }));
       } else {
@@ -575,8 +573,8 @@ export class UnifiedGameService {
         // Ensure consistent ID prefixing for RAWG games
         return result.games.map(game => ({
           ...game,
-          id: `rawg_${game.id}`,
-          source_id: game.id,
+          id: `rawg_${game.id.replace('rawg_', '')}`, // Avoid double prefixing
+          source_id: game.id.replace('rawg_', ''),
           dataSource: 'rawg' as const
         }));
       }
@@ -588,8 +586,8 @@ export class UnifiedGameService {
           // Ensure consistent ID prefixing for RAWG fallback games
           return result.games.map(game => ({
             ...game,
-            id: `rawg_${game.id}`,
-            source_id: game.id,
+            id: `rawg_${game.id.replace('rawg_', '')}`, // Avoid double prefixing
+            source_id: game.id.replace('rawg_', ''),
             dataSource: 'rawg' as const
           }));
         } catch (fallbackError) {
@@ -614,11 +612,10 @@ export class UnifiedGameService {
     try {
       if (targetSource === 'igdb' || targetSource === 'auto') {
         const games = await IGDBService.getUpcomingGames(limit);
-        // Ensure consistent ID prefixing for IGDB games
+        // IGDBService already returns games with igdb_ prefix, no need to add it again
         return games.map(game => ({
           ...game,
-          id: `igdb_${game.id}`,
-          source_id: game.id,
+          source_id: game.id.replace('igdb_', ''), // Extract numeric ID for source_id
           dataSource: 'igdb' as const
         }));
       } else {
@@ -626,8 +623,8 @@ export class UnifiedGameService {
         // Ensure consistent ID prefixing for RAWG games
         return result.games.map(game => ({
           ...game,
-          id: `rawg_${game.id}`,
-          source_id: game.id,
+          id: `rawg_${game.id.replace('rawg_', '')}`, // Avoid double prefixing
+          source_id: game.id.replace('rawg_', ''),
           dataSource: 'rawg' as const
         }));
       }
@@ -639,8 +636,8 @@ export class UnifiedGameService {
           // Ensure consistent ID prefixing for RAWG fallback games
           return result.games.map(game => ({
             ...game,
-            id: `rawg_${game.id}`,
-            source_id: game.id,
+            id: `rawg_${game.id.replace('rawg_', '')}`, // Avoid double prefixing
+            source_id: game.id.replace('rawg_', ''),
             dataSource: 'rawg' as const
           }));
         } catch (fallbackError) {
@@ -665,11 +662,10 @@ export class UnifiedGameService {
     try {
       if (targetSource === 'igdb' || targetSource === 'auto') {
         const games = await IGDBService.getRecentGames(limit);
-        // Ensure consistent ID prefixing for IGDB games
+        // IGDBService already returns games with igdb_ prefix, no need to add it again
         return games.map(game => ({
           ...game,
-          id: `igdb_${game.id}`,
-          source_id: game.id,
+          source_id: game.id.replace('igdb_', ''), // Extract numeric ID for source_id
           dataSource: 'igdb' as const
         }));
       } else {
@@ -677,8 +673,8 @@ export class UnifiedGameService {
         // Ensure consistent ID prefixing for RAWG games
         return result.games.map(game => ({
           ...game,
-          id: `rawg_${game.id}`,
-          source_id: game.id,
+          id: `rawg_${game.id.replace('rawg_', '')}`, // Avoid double prefixing
+          source_id: game.id.replace('rawg_', ''),
           dataSource: 'rawg' as const
         }));
       }
@@ -690,8 +686,8 @@ export class UnifiedGameService {
           // Ensure consistent ID prefixing for RAWG fallback games
           return result.games.map(game => ({
             ...game,
-            id: `rawg_${game.id}`,
-            source_id: game.id,
+            id: `rawg_${game.id.replace('rawg_', '')}`, // Avoid double prefixing
+            source_id: game.id.replace('rawg_', ''),
             dataSource: 'rawg' as const
           }));
         } catch (fallbackError) {
@@ -775,10 +771,12 @@ export class UnifiedGameService {
       if (targetSource === 'igdb' || targetSource === 'auto') {
         const gameDetails = await IGDBService.fetchGameDetails(originalId);
         if (gameDetails) {
+          // IGDBService.fetchGameDetails already returns the game with igdb_ prefix
+          // So we don't need to add it again to avoid double prefixing
           return {
             ...gameDetails,
-            id: `igdb_${gameDetails.id}`, // Ensure consistent prefixing
-            source_id: gameDetails.id.toString(),
+            // Keep the existing ID from IGDBService which already has the prefix
+            source_id: originalId, // Use the original numeric ID
             dataSource: 'igdb' as const
           } as Game;
         }

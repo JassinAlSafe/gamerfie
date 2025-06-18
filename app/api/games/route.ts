@@ -1,8 +1,6 @@
 import { NextRequest } from 'next/server';
 import { IGDBService } from '@/services/igdb';
-import { UnifiedGameService } from '@/services/unifiedGameService';
 import { Game } from '@/types';
-import { RAWGService } from '@/services/rawgService';
 
 // Force dynamic rendering due to search params
 export const dynamic = 'force-dynamic';
@@ -47,6 +45,41 @@ function getGenreId(genre: string): number | undefined {
   return genreMap[genre];
 }
 
+// Game mode mapping helper
+function getGameModeId(mode: string): number | undefined {
+  const gameModeMap: Record<string, number> = {
+    'single-player': 1,    // Single player
+    'multiplayer': 2,      // Multiplayer
+    'co-op': 3,           // Co-operative
+    'split-screen': 4,     // Split screen
+    'mmo': 5,             // Massively Multiplayer Online (MMO)    
+    'battle-royale': 6,   // Battle Royale
+  };
+  
+  return gameModeMap[mode];
+}
+
+// Theme mapping helper
+function getThemeId(theme: string): number | undefined {
+  const themeMap: Record<string, number> = {
+    'action': 1,          // Action
+    'fantasy': 17,        // Fantasy
+    'sci-fi': 18,         // Science fiction
+    'horror': 19,         // Horror
+    'thriller': 20,       // Thriller
+    'survival': 21,       // Survival
+    'historical': 22,     // Historical
+    'stealth': 23,        // Stealth
+    'comedy': 27,         // Comedy
+    'mystery': 28,        // Mystery
+    'romance': 33,        // Romance
+    'war': 35,           // Warfare
+    'kids': 43,          // Kids
+  };
+  
+  return themeMap[theme];
+}
+
 interface GameResponse {
   games: Game[];
   totalCount: number;
@@ -72,13 +105,20 @@ export async function GET(request: NextRequest) {
   const sortBy = searchParams.get('sort') || 'popularity';
   const search = searchParams.get('search') || '';
   const timeRange = searchParams.get('timeRange') || 'all';
+  
+  // Enhanced filter parameters
+  const gameMode = searchParams.get('gameMode') || 'all';
+  const theme = searchParams.get('theme') || 'all';
+  const minRating = searchParams.get('minRating');
+  const maxRating = searchParams.get('maxRating');
+  const hasMultiplayer = searchParams.get('multiplayer') === 'true';
 
-  // Enhanced cache duration - longer for popular games
+  // IGDB cache duration - longer for popular games, shorter for searches
   const isPopularGamesRequest = !search && platform === 'all' && genre === 'all' && 
                                 category === 'all' && year === 'all' && timeRange === 'all';
-  const cacheDuration = isPopularGamesRequest ? 600 : 300; // 10min for popular, 5min for searches
+  const cacheDuration = isPopularGamesRequest ? 900 : 300; // 15min for popular, 5min for searches (IGDB only)
 
-  console.log(`📋 Games API - Page ${page}, Limit ${limit}, Popular: ${isPopularGamesRequest}`);
+  console.log(`📋 Games API - Page ${page}, Limit ${limit}, Search: "${search}", Popular: ${isPopularGamesRequest}`);
 
   try {
     // Build filters for IGDB using the correct interface structure
@@ -89,6 +129,11 @@ export async function GET(request: NextRequest) {
       sortBy: sortBy as 'popularity' | 'rating' | 'name' | 'release',
       ...(platform !== 'all' && { platformId: getPlatformId(platform) }),
       ...(genre !== 'all' && { genreId: getGenreId(genre) }),
+      ...(gameMode !== 'all' && { gameMode: getGameModeId(gameMode) }),
+      ...(theme !== 'all' && { theme: getThemeId(theme) }),
+      ...(minRating && { minRating: parseFloat(minRating) }),
+      ...(maxRating && { maxRating: parseFloat(maxRating) }),
+      ...(hasMultiplayer && { hasMultiplayer: true }),
       ...(year !== 'all' && {
         releaseYear: {
           start: Math.floor(new Date(parseInt(year), 0, 1).getTime() / 1000),
@@ -98,81 +143,26 @@ export async function GET(request: NextRequest) {
       ...(timeRange !== 'all' && { timeRange: timeRange as 'new_releases' | 'upcoming' | 'classic' })
     };
 
-    let response: GameResponse;
-
-    // Try IGDB first - our primary high-quality source
-    try {
-      console.log('🎮 Fetching from IGDB...');
-      const igdbResponse = await IGDBService.getGames(page, limit, filters);
-      
-      console.log(`✅ IGDB returned ${igdbResponse.games.length} games, hasNext: ${igdbResponse.hasNextPage}`);
-      
-      response = {
-        games: igdbResponse.games as unknown as Game[],
-        totalCount: igdbResponse.totalCount,
-        currentPage: igdbResponse.currentPage,
-        totalPages: igdbResponse.totalPages,
-        hasNextPage: igdbResponse.hasNextPage,
-        hasPreviousPage: igdbResponse.hasPreviousPage,
-        source: 'igdb'
-      };
-
-    } catch (igdbError) {
-      console.warn('⚠️ IGDB service failed, using fallback:', igdbError);
-      
-      // Enhanced fallback system for infinite scroll
-      try {
-        // For infinite scroll, we need to dynamically fetch more games based on page number
-        console.log('🔄 Using UnifiedGameService fallback...');
-        
-        // Use RAWG service directly for better pagination control
-        const rawgPage = Math.ceil(page / 2); // RAWG pages are larger, so we need fewer calls
-        const rawgLimit = Math.min(limit * 2, 40); // RAWG supports up to 40 per page
-        
-        const rawgResponse = await RAWGService.getPopularGames(rawgPage, rawgLimit);
-        
-        // Calculate which subset of the RAWG results we need for this specific page
-        const startIndex = ((page - 1) % 2) * limit;
-        const paginatedGames = rawgResponse.games.slice(startIndex, startIndex + limit);
-        
-        // RAWG has much more data available - estimate based on their total
-        const estimatedTotal = Math.min(rawgResponse.total, 100000); // Cap at reasonable limit
-        const calculatedTotalPages = Math.ceil(estimatedTotal / limit);
-        const hasMorePages = rawgResponse.hasNextPage || (page * limit < estimatedTotal);
-        
-        console.log(`📊 RAWG Fallback: ${paginatedGames.length} games, page ${page}/${calculatedTotalPages}, total: ${estimatedTotal}, hasNext: ${hasMorePages}`);
-        
-        response = {
-          games: paginatedGames,
-          totalCount: estimatedTotal,
-          currentPage: page,
-          totalPages: calculatedTotalPages,
-          hasNextPage: hasMorePages,
-          hasPreviousPage: page > 1,
-          source: 'rawg'
-        };
-      } catch (unifiedError) {
-        console.warn('⚠️ UnifiedGameService also failed, using curated games:', unifiedError);
-        
-        // Final fallback with expanded curated games for infinite scroll
-        const curatedGames = await getExpandedCuratedGames(page, limit);
-        const totalCuratedGames = 1000; // Assume we can generate 1000 curated games
-        const curatedTotalPages = Math.ceil(totalCuratedGames / limit);
-        const hasMoreCurated = page < curatedTotalPages && curatedGames.length === limit;
-        
-        console.log(`🎯 Curated: ${curatedGames.length} games, page ${page}/${curatedTotalPages}, hasNext: ${hasMoreCurated}`);
-        
-        response = {
-          games: curatedGames,
-          totalCount: totalCuratedGames,
-          currentPage: page,
-          totalPages: curatedTotalPages,
-          hasNextPage: hasMoreCurated,
-          hasPreviousPage: page > 1,
-          source: 'curated'
-        };
-      }
-    }
+    // Use IGDB exclusively for all-games page - no fallbacks
+    console.log('🎮 Fetching from IGDB with filters:', { 
+      search: filters.search, 
+      page: filters.page, 
+      limit: filters.limit 
+    });
+    
+    const igdbResponse = await IGDBService.getGames(page, limit, filters);
+    
+    console.log(`✅ IGDB returned ${igdbResponse.games.length} games, hasNext: ${igdbResponse.hasNextPage}`);
+    
+    const response: GameResponse = {
+      games: igdbResponse.games as unknown as Game[],
+      totalCount: igdbResponse.totalCount,
+      currentPage: igdbResponse.currentPage,
+      totalPages: igdbResponse.totalPages,
+      hasNextPage: igdbResponse.hasNextPage,
+      hasPreviousPage: igdbResponse.hasPreviousPage,
+      source: 'igdb'
+    };
 
     // Set cache headers
     const headers = new Headers({
@@ -188,137 +178,22 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('❌ Games API error:', error);
+    console.error('❌ IGDB API error:', error);
     
-    // Error fallback - return some curated games so the UI doesn't break
-    const fallbackGames = await getExpandedCuratedGames(1, Math.min(limit, 12));
-    
+    // Return error response - no fallbacks for all-games page
     return new Response(JSON.stringify({
-      games: fallbackGames,
-      totalCount: fallbackGames.length,
-      currentPage: 1,
-      totalPages: 1,
+      games: [],
+      totalCount: 0,
+      currentPage: page,
+      totalPages: 0,
       hasNextPage: false,
       hasPreviousPage: false,
-      source: 'fallback',
-      error: 'Service temporarily unavailable'
+      source: 'igdb',
+      error: error instanceof Error ? error.message : 'IGDB service temporarily unavailable'
     }), { 
-      status: 200,
+      status: 500,
       headers: { 'Content-Type': 'application/json' }
     });
   }
 }
 
-// Enhanced function to get more curated games for proper infinite scroll
-async function getExpandedCuratedGames(page: number, limit: number): Promise<Game[]> {
-  // Expanded list of popular games across different genres and eras
-  const popularGamesByCategory = {
-    // AAA Blockbusters
-    blockbusters: [
-      'Grand Theft Auto V', 'The Witcher 3: Wild Hunt', 'Red Dead Redemption 2',
-      'Cyberpunk 2077', 'Call of Duty: Modern Warfare', 'Call of Duty: Warzone',
-      'Assassin\'s Creed Valhalla', 'FIFA 24', 'NBA 2K24', 'Madden NFL 24'
-    ],
-    // Classic Games
-    classics: [
-      'The Elder Scrolls V: Skyrim', 'Portal 2', 'Portal', 'Half-Life 2',
-      'Grand Theft Auto: San Andreas', 'The Last of Us', 'God of War',
-      'Bioshock Infinite', 'Mass Effect 2', 'Fallout: New Vegas'
-    ],
-    // Indie Hits
-    indies: [
-      'Minecraft', 'Among Us', 'Fall Guys', 'Stardew Valley', 'Hollow Knight',
-      'Celeste', 'Hades', 'Dead Cells', 'Ori and the Blind Forest', 'Cuphead'
-    ],
-    // Competitive Games
-    competitive: [
-      'League of Legends', 'Counter-Strike 2', 'Valorant', 'Overwatch 2',
-      'Apex Legends', 'Rocket League', 'Fortnite', 'PUBG: BATTLEGROUNDS',
-      'Rainbow Six Siege', 'Dota 2'
-    ],
-    // RPGs
-    rpgs: [
-      'Elden Ring', 'Dark Souls III', 'Baldur\'s Gate 3', 'The Witcher 3: Wild Hunt',
-      'Persona 5 Royal', 'Final Fantasy XIV', 'World of Warcraft', 'Destiny 2',
-      'Diablo IV', 'Path of Exile'
-    ],
-    // Recent Hits
-    recent: [
-      'Starfield', 'Hogwarts Legacy', 'Spider-Man Remastered', 'Horizon Zero Dawn',
-      'Ghost of Tsushima', 'It Takes Two', 'Valheim', 'Palworld',
-      'Lethal Company', 'Pizza Tower'
-    ]
-  };
-
-  // Flatten all games and create a larger pool
-  const allGames = Object.values(popularGamesByCategory).flat();
-  
-  // For infinite scroll, we need to simulate having many more games
-  // We'll cycle through our curated list multiple times with variations
-  const expandedGames: string[] = [];
-  const baseGames = allGames;
-  
-  // Create enough games for the requested page
-  const totalNeeded = page * limit;
-  while (expandedGames.length < totalNeeded) {
-    expandedGames.push(...baseGames);
-  }
-
-  // Get the games for this specific page
-  const startIndex = (page - 1) * limit;
-  const endIndex = startIndex + limit;
-  const pageGames = expandedGames.slice(startIndex, endIndex);
-
-  const curatedGames: Game[] = [];
-  
-  // Try to fetch these games from IGDB
-  for (const gameName of pageGames) {
-    try {
-      const searchFilters = {
-        page: 1,
-        limit: 1,
-        search: gameName,
-        sortBy: 'popularity' as const
-      };
-      
-      const searchResponse = await IGDBService.getGames(1, 1, searchFilters);
-      
-      if (searchResponse.games.length > 0) {
-        curatedGames.push(searchResponse.games[0] as unknown as Game);
-      } else {
-        // If IGDB doesn't have it, create a placeholder game
-        curatedGames.push(createPlaceholderGame(gameName, startIndex + curatedGames.length));
-      }
-      
-      // Stop if we have enough games for this page
-      if (curatedGames.length >= limit) break;
-      
-    } catch (error) {
-      console.warn(`Failed to fetch curated game: ${gameName}`);
-      // Create placeholder for failed fetches
-      if (curatedGames.length < limit) {
-        curatedGames.push(createPlaceholderGame(gameName, startIndex + curatedGames.length));
-      }
-    }
-  }
-
-  return curatedGames.slice(0, limit);
-}
-
-// Helper function to create placeholder games when IGDB fails
-function createPlaceholderGame(name: string, index: number): Game {
-  return {
-    id: `placeholder_${index}`,
-    name: name,
-    cover: {
-      id: `cover_${index}`,
-      url: `https://via.placeholder.com/300x400/4a5568/ffffff?text=${encodeURIComponent(name.substring(0, 20))}`
-    },
-    rating: Math.floor(Math.random() * 30) + 70, // Random rating between 70-100
-    total_rating_count: Math.floor(Math.random() * 1000) + 100,
-    genres: [{ id: 'action', name: 'Action' }],
-    platforms: [{ id: 'pc', name: 'PC' }],
-    summary: `${name} is a popular game that players love to play.`,
-    dataSource: 'curated' as any
-  };
-}

@@ -21,6 +21,13 @@ interface GamesState {
   timeRange: TimeRange;
   searchQuery: string;
   
+  // Enhanced filtering options
+  selectedGameMode: string;
+  selectedTheme: string;
+  minRating: number | null;
+  maxRating: number | null;
+  hasMultiplayer: boolean;
+  
   // From GamePaginationState
   currentPage: number;
   totalPages: number;
@@ -48,6 +55,10 @@ interface GamesState {
   setSelectedYear: (year: string) => void;
   setTimeRange: (range: TimeRange) => void;
   setSearchQuery: (query: string) => void;
+  setSelectedGameMode: (gameMode: string) => void;
+  setSelectedTheme: (theme: string) => void;
+  setRatingRange: (min: number | null, max: number | null) => void;
+  setHasMultiplayer: (hasMultiplayer: boolean) => void;
   
   // Filter management
   removeFilter: (filterType: FilterType) => void;
@@ -68,6 +79,11 @@ const DEFAULT_VALUES = {
   CATEGORY: 'all' as CategoryOption,
   YEAR: 'all',
   TIME_RANGE: 'all' as TimeRange,
+  GAME_MODE: 'all',
+  THEME: 'all',
+  MIN_RATING: null as number | null,
+  MAX_RATING: null as number | null,
+  HAS_MULTIPLAYER: false,
 };
 
 export const useGamesStore = create<GamesState>()(
@@ -86,6 +102,11 @@ export const useGamesStore = create<GamesState>()(
       selectedCategory: DEFAULT_VALUES.CATEGORY,
       selectedYear: DEFAULT_VALUES.YEAR,
       timeRange: DEFAULT_VALUES.TIME_RANGE,
+      selectedGameMode: DEFAULT_VALUES.GAME_MODE,
+      selectedTheme: DEFAULT_VALUES.THEME,
+      minRating: DEFAULT_VALUES.MIN_RATING,
+      maxRating: DEFAULT_VALUES.MAX_RATING,
+      hasMultiplayer: DEFAULT_VALUES.HAS_MULTIPLAYER,
       hasActiveFilters: false,
       searchQuery: "",
 
@@ -155,6 +176,35 @@ export const useGamesStore = create<GamesState>()(
       setTimeRange: (range) => {
         if (get().timeRange === range) return;
         set({ timeRange: range });
+        get().updateHasActiveFilters();
+        get().setCurrentPage(1);
+      },
+
+      setSelectedGameMode: (gameMode) => {
+        if (get().selectedGameMode === gameMode) return;
+        set({ selectedGameMode: gameMode });
+        get().updateHasActiveFilters();
+        get().setCurrentPage(1);
+      },
+
+      setSelectedTheme: (theme) => {
+        if (get().selectedTheme === theme) return;
+        set({ selectedTheme: theme });
+        get().updateHasActiveFilters();
+        get().setCurrentPage(1);
+      },
+
+      setRatingRange: (min, max) => {
+        const state = get();
+        if (state.minRating === min && state.maxRating === max) return;
+        set({ minRating: min, maxRating: max });
+        get().updateHasActiveFilters();
+        get().setCurrentPage(1);
+      },
+
+      setHasMultiplayer: (hasMultiplayer) => {
+        if (get().hasMultiplayer === hasMultiplayer) return;
+        set({ hasMultiplayer });
         get().updateHasActiveFilters();
         get().setCurrentPage(1);
       },
