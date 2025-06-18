@@ -104,6 +104,7 @@ export const useGamesStore = create<GamesState>()(
           state.selectedGenre !== DEFAULT_VALUES.GENRE ||
           state.selectedCategory !== DEFAULT_VALUES.CATEGORY ||
           state.selectedYear !== DEFAULT_VALUES.YEAR ||
+          state.timeRange !== DEFAULT_VALUES.TIME_RANGE ||
           state.searchQuery !== "" ||
           state.sortBy !== DEFAULT_VALUES.SORT;
         
@@ -111,11 +112,9 @@ export const useGamesStore = create<GamesState>()(
       },
 
       setSearchQuery: (query) => {
-        if (get().searchQuery === query) return;
         set({ searchQuery: query });
         get().updateHasActiveFilters();
         get().setCurrentPage(1);
-        get().fetchGames();
       },
 
       setSortBy: (sortBy) => {
@@ -123,7 +122,6 @@ export const useGamesStore = create<GamesState>()(
         set({ sortBy });
         get().updateHasActiveFilters();
         get().setCurrentPage(1);
-        get().fetchGames();
       },
 
       setSelectedPlatform: (platform) => {
@@ -131,7 +129,6 @@ export const useGamesStore = create<GamesState>()(
         set({ selectedPlatform: platform });
         get().updateHasActiveFilters();
         get().setCurrentPage(1);
-        get().fetchGames();
       },
 
       setSelectedGenre: (genre) => {
@@ -139,7 +136,6 @@ export const useGamesStore = create<GamesState>()(
         set({ selectedGenre: genre });
         get().updateHasActiveFilters();
         get().setCurrentPage(1);
-        get().fetchGames();
       },
 
       setSelectedCategory: (category) => {
@@ -147,7 +143,6 @@ export const useGamesStore = create<GamesState>()(
         set({ selectedCategory: category });
         get().updateHasActiveFilters();
         get().setCurrentPage(1);
-        get().fetchGames();
       },
 
       setSelectedYear: (year) => {
@@ -155,7 +150,6 @@ export const useGamesStore = create<GamesState>()(
         set({ selectedYear: year });
         get().updateHasActiveFilters();
         get().setCurrentPage(1);
-        get().fetchGames();
       },
 
       setTimeRange: (range) => {
@@ -163,7 +157,6 @@ export const useGamesStore = create<GamesState>()(
         set({ timeRange: range });
         get().updateHasActiveFilters();
         get().setCurrentPage(1);
-        get().fetchGames();
       },
 
       removeFilter: (filterType) => {
@@ -182,6 +175,9 @@ export const useGamesStore = create<GamesState>()(
           case 'year':
             updates.selectedYear = DEFAULT_VALUES.YEAR;
             break;
+          case 'timeRange':
+            updates.timeRange = DEFAULT_VALUES.TIME_RANGE;
+            break;
           case 'search':
             updates.searchQuery = "";
             break;
@@ -193,7 +189,6 @@ export const useGamesStore = create<GamesState>()(
         set(updates);
         get().updateHasActiveFilters();
         get().setCurrentPage(1);
-        get().fetchGames();
       },
 
       resetFilters: () => {
@@ -208,7 +203,6 @@ export const useGamesStore = create<GamesState>()(
           currentPage: 1,
           hasActiveFilters: false
         });
-        get().fetchGames();
       },
 
       handleResetFilters: () => {
@@ -243,6 +237,7 @@ export const useGamesStore = create<GamesState>()(
             genre: state.selectedGenre,
             category: state.selectedCategory,
             year: state.selectedYear,
+            timeRange: state.timeRange,
             sort: state.sortBy,
             search: state.searchQuery
           });
@@ -276,7 +271,6 @@ export const useGamesStore = create<GamesState>()(
         set(updates);
         get().updateHasActiveFilters();
         get().setCurrentPage(1);
-        get().fetchGames();
       }
     }),
     {

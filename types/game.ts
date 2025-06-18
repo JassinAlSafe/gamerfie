@@ -8,8 +8,8 @@ export type GamePlatform = 'PC' | 'PlayStation' | 'Xbox' | 'Nintendo' | 'Mobile'
 // Filter and Sort Types
 export type SortOption = 'popularity' | 'rating' | 'name' | 'release' | 'recent';
 export type CategoryOption = 'all' | 'popular' | 'trending' | 'upcoming' | 'recent' | 'classic';
-export type FilterType = 'platform' | 'genre' | 'category' | 'year' | 'search' | 'sort';
-export type TimeRange = 'recent' | 'upcoming' | 'classic' | 'all';
+export type FilterType = 'platform' | 'genre' | 'category' | 'year' | 'timeRange' | 'search' | 'sort';
+export type TimeRange = 'recent' | 'upcoming' | 'classic' | 'all' | 'this-year' | 'last-year';
 
 // Core Interfaces
 export interface Platform {

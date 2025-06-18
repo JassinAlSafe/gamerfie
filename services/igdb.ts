@@ -190,22 +190,45 @@ export class IGDBService {
     try {
       const offset = (page - 1) * limit;
 
-      // Build the base query conditions - only require that games have a cover
-      const conditions: string[] = ['cover != null'];
+      // Enhanced base query conditions for high-quality, popular games
+      const conditions: string[] = [
+        'category = 0',                     // Main games only (no DLCs, expansions, etc.)
+        'version_parent = null',            // No duplicate editions
+        'status = 0',                       // Released games only
+        'total_rating_count > 50',          // Games with substantial reviews
+        'total_rating > 70',                // Well-rated games (7.0+/10)
+        'first_release_date > 946684800',   // Games released after 2000
+        'platforms = (6,48,49,130,131,137,167,169)', // Popular platforms: PC, PS4, Xbox One, Switch, PS5, Xbox Series X/S, iOS, Android
+      ];
+      
+      // Only add cover requirement if we have specific filters (search, genre, platform)
+      // This allows more games to show up in the general "all games" view
+      const hasSpecificFilters = filters?.search || filters?.platformId || filters?.genreId || filters?.releaseYear;
+      if (hasSpecificFilters) {
+        conditions.push('cover != null');   // Require cover only when filtering
+      } else {
+        // For general browsing, prefer games with covers but allow some without
+        conditions.push('(cover != null | total_rating_count > 200)'); // Must have cover OR be very popular
+      }
       
       // Add platform filter - use proper IGDB syntax for array membership
       if (filters?.platformId) {
-        conditions.push(`platforms = [${filters.platformId}]`);
+        conditions.push(`platforms = (${filters.platformId})`);
       }
 
       // Add genre filter - use proper IGDB syntax for array membership
       if (filters?.genreId) {
-        conditions.push(`genres = [${filters.genreId}]`);
+        conditions.push(`genres = (${filters.genreId})`);
       }
 
       // Add search filter if provided - use exact IGDB search syntax
       if (filters?.search) {
         conditions.push(`name ~ "${filters.search}"*`);
+      }
+
+      // Add release year filter
+      if (filters?.releaseYear) {
+        conditions.push(`first_release_date >= ${filters.releaseYear.start} & first_release_date <= ${filters.releaseYear.end}`);
       }
 
       // Add time range filter
@@ -228,14 +251,15 @@ export class IGDBService {
         }
       }
 
-      // Build the sort condition with proper IGDB syntax
+      // Enhanced sort condition for better game discovery
       let sortBy = '';
       switch (filters?.sortBy) {
         case 'rating':
           sortBy = 'total_rating desc';
           break;
         case 'popularity':
-          sortBy = 'total_rating_count desc';
+          // Combine rating count and rating for better popularity
+          sortBy = 'total_rating_count desc, total_rating desc';
           break;
         case 'name':
           sortBy = 'name asc';
@@ -244,28 +268,39 @@ export class IGDBService {
           sortBy = 'first_release_date desc';
           break;
         default:
-          sortBy = 'total_rating_count desc';
+          // Default to a weighted popularity score
+          sortBy = 'total_rating_count desc, total_rating desc';
       }
 
-      // Get total count first
-      const countQuery = `where ${conditions.join(' & ')};`;
+      // For general browsing without specific filters, use a conservative estimate
+      // to avoid expensive count queries on the entire IGDB database
+      let totalGames = 25000; // Conservative estimate for high-quality games in IGDB
+      
+      if (hasSpecificFilters) {
+        // Only do expensive count query when we have specific filters
+        try {
+          const countQuery = `where ${conditions.join(' & ')};`;
 
-      const countResponse = await fetch(this.getProxyUrl(), {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          endpoint: 'games/count',
-          query: countQuery.trim()
-        })
-      });
+          const countResponse = await fetch(this.getProxyUrl(), {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              endpoint: 'games/count',
+              query: countQuery.trim()
+            })
+          });
 
-      if (!countResponse.ok) {
-        throw new Error('Failed to fetch games count');
+          if (countResponse.ok) {
+            const { count } = await countResponse.json();
+            totalGames = count;
+          }
+        } catch (countError) {
+          console.warn('Count query failed, using estimate:', countError);
+          // Keep the conservative estimate
+        }
       }
-
-      const { count: totalGames } = await countResponse.json();
 
       // Fetch games with all necessary fields and high-quality images
       const query = `
@@ -274,15 +309,18 @@ export class IGDBService {
                cover.url, 
                cover.image_id,
                rating, 
+               total_rating, 
                total_rating_count, 
                genres.*, 
                platforms.*, 
                first_release_date, 
                summary, 
-               total_rating,
                screenshots.*,
                videos.*,
-               artworks.*;
+               artworks.*,
+               themes.*,
+               game_modes.*,
+               player_perspectives.*;
         where ${conditions.join(' & ')};
         sort ${sortBy};
         limit ${limit};
@@ -307,12 +345,16 @@ export class IGDBService {
       const games = await gamesResponse.json();
       const processedGames = games.map(this.processGame);
 
+      // Calculate pagination info
+      const totalPages = Math.ceil(totalGames / limit);
+      const hasNextPage = processedGames.length === limit && page < totalPages;
+
       return {
         games: processedGames,
         totalCount: totalGames,
         currentPage: page,
-        totalPages: Math.ceil(totalGames / limit),
-        hasNextPage: page < Math.ceil(totalGames / limit),
+        totalPages: totalPages,
+        hasNextPage: hasNextPage,
         hasPreviousPage: page > 1,
       };
     } catch (error) {
@@ -706,56 +748,76 @@ export class IGDBService {
   }
 
   static async getPlatforms() {
-    const headers = await this.getHeaders();
-    
-    const response = await fetch('https://api.igdb.com/v4/platforms', {
-      method: 'POST',
-      headers,
-      body: `
+    try {
+      const query = `
         fields name, slug;
         where category = (1,2,3,4,5,6);
         sort name asc;
         limit 50;
-      `
-    });
+      `;
 
-    if (!response.ok) {
-      console.error('Failed to fetch platforms:', await response.text());
-      throw new Error('Failed to fetch platforms');
+      const response = await fetch(this.getProxyUrl(), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          endpoint: 'platforms',
+          query: query.trim()
+        })
+      });
+
+      if (!response.ok) {
+        console.error('Failed to fetch platforms:', await response.text());
+        throw new Error('Failed to fetch platforms');
+      }
+
+      const platforms = await response.json();
+      return platforms.map((platform: any) => ({
+        id: platform.id.toString(),
+        name: platform.name,
+        slug: platform.slug
+      }));
+    } catch (error) {
+      console.error('Error fetching platforms:', error);
+      throw error;
     }
-
-    const platforms = await response.json();
-    return platforms.map((platform: any) => ({
-      id: platform.id.toString(),
-      name: platform.name,
-      slug: platform.slug
-    }));
   }
 
   static async getGenres() {
-    const headers = await this.getHeaders();
-    
-    const response = await fetch('https://api.igdb.com/v4/genres', {
-      method: 'POST',
-      headers,
-      body: `
+    try {
+      const query = `
         fields name, slug;
         sort name asc;
         limit 50;
-      `
-    });
+      `;
 
-    if (!response.ok) {
-      console.error('Failed to fetch genres:', await response.text());
-      throw new Error('Failed to fetch genres');
+      const response = await fetch(this.getProxyUrl(), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          endpoint: 'genres',
+          query: query.trim()
+        })
+      });
+
+      if (!response.ok) {
+        console.error('Failed to fetch genres:', await response.text());
+        throw new Error('Failed to fetch genres');
+      }
+
+      const genres = await response.json();
+      return genres.map((genre: any) => ({
+        id: genre.id.toString(),
+        name: genre.name,
+        slug: genre.slug
+      }));
+    } catch (error) {
+      console.error('Error fetching genres:', error);
+      throw error;
     }
-
-    const genres = await response.json();
-    return genres.map((genre: any) => ({
-      id: genre.id.toString(),
-      name: genre.name,
-      slug: genre.slug
-    }));
   }
 
   static async testConnection(): Promise<boolean> {

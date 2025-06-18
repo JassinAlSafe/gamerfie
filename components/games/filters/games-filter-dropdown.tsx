@@ -35,9 +35,11 @@ interface GamesFilterDropdownProps {
   selectedPlatform: string;
   selectedGenre: string;
   selectedYear: string;
+  selectedTimeRange: import("@/types").TimeRange;
   onPlatformChange: (platform: string) => void;
   onGenreChange: (genre: string) => void;
   onYearChange: (year: string) => void;
+  onTimeRangeChange: (timeRange: import("@/types").TimeRange) => void;
 }
 
 export function GamesFilterDropdown({
@@ -46,15 +48,18 @@ export function GamesFilterDropdown({
   selectedPlatform,
   selectedGenre,
   selectedYear,
+  selectedTimeRange,
   onPlatformChange,
   onGenreChange,
   onYearChange,
+  onTimeRangeChange,
 }: GamesFilterDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
   const filterButtonId = useId();
   const platformSubId = useId();
   const genreSubId = useId();
   const yearSubId = useId();
+  const timeRangeSubId = useId();
 
   // Memoize the years array
   const years = useMemo(
@@ -62,12 +67,22 @@ export function GamesFilterDropdown({
     []
   );
 
+  // Time range options
+  const timeRangeOptions = useMemo(() => [
+    { value: "all", label: "All Time" },
+    { value: "upcoming", label: "Upcoming" },
+    { value: "recent", label: "Recent" },
+    { value: "this-year", label: "This Year" },
+    { value: "last-year", label: "Last Year" },
+  ], []);
+
   // Get active filter count
   const getActiveFilterCount = () => {
     let count = 0;
     if (selectedPlatform !== "all") count++;
     if (selectedGenre !== "all") count++;
     if (selectedYear !== "all") count++;
+    if (selectedTimeRange !== "all") count++;
     return count;
   };
 
@@ -189,6 +204,31 @@ export function GamesFilterDropdown({
     [years, selectedYear, onYearChange]
   );
 
+  // Memoize the time range items
+  const timeRangeItems = useMemo(
+    () => (
+      <>
+        {timeRangeOptions.map((option) => (
+          <DropdownMenuItem
+            key={option.value}
+            onClick={() => {
+              onTimeRangeChange(option.value as import("@/types").TimeRange);
+              setIsOpen(false);
+            }}
+            className={cn(
+              "cursor-pointer hover:bg-gray-800 focus:bg-gray-800 focus:text-white transition-colors",
+              selectedTimeRange === option.value && "bg-purple-500/30 text-white"
+            )}
+            aria-selected={selectedTimeRange === option.value}
+          >
+            {option.label}
+          </DropdownMenuItem>
+        ))}
+      </>
+    ),
+    [timeRangeOptions, selectedTimeRange, onTimeRangeChange]
+  );
+
   return (
     <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
       <DropdownMenuTrigger asChild>
@@ -303,6 +343,34 @@ export function GamesFilterDropdown({
                 aria-labelledby={yearSubId}
               >
                 {yearItems}
+              </DropdownMenuSubContent>
+            </DropdownMenuPortal>
+          </DropdownMenuSub>
+
+          <DropdownMenuSeparator className="bg-gray-800" />
+
+          <DropdownMenuSub>
+            <DropdownMenuSubTrigger
+              className="bg-gray-900 hover:bg-gray-800 focus:bg-gray-800 focus:text-white transition-colors"
+              id={timeRangeSubId}
+              aria-haspopup="menu"
+              aria-expanded={false}
+            >
+              <span className="flex items-center justify-between w-full">
+                <span>Time Range</span>
+                {selectedTimeRange !== "all" && (
+                  <span className="text-xs bg-purple-500/30 text-white px-1.5 py-0.5 rounded-full">
+                    1
+                  </span>
+                )}
+              </span>
+            </DropdownMenuSubTrigger>
+            <DropdownMenuPortal>
+              <DropdownMenuSubContent
+                className="bg-gray-900 border-gray-800 max-h-[300px] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-gray-900 rounded-lg shadow-lg"
+                aria-labelledby={timeRangeSubId}
+              >
+                {timeRangeItems}
               </DropdownMenuSubContent>
             </DropdownMenuPortal>
           </DropdownMenuSub>

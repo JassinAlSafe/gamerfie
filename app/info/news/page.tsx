@@ -14,7 +14,7 @@ export default function NewsPage() {
       description="Stay updated with the latest Game Vault developments, new features, and community updates."
     >
       <NewsList 
-        variant="grid"
+        variant="list"
         limit={12}
         showFilters={true}
         showSearch={true}
