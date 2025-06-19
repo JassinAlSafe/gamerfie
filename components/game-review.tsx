@@ -12,15 +12,17 @@ import {
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "./ui/text/textarea";
-import { Star, Edit2, Trash2 } from "lucide-react";
+import { Star, Edit2, Trash2, Globe, Lock } from "lucide-react";
 import toast from "react-hot-toast";
 import { Icons } from "./ui/icons";
+import { Switch } from "@/components/ui/switch";
 
 interface GameReviewProps {
   gameId: string;
   gameName: string;
   initialRating?: number;
   initialReview?: string;
+  initialIsPublic?: boolean;
   onReviewUpdate?: () => void;
 }
 
@@ -29,11 +31,13 @@ export function GameReview({
   gameName,
   initialRating,
   initialReview,
+  initialIsPublic,
   onReviewUpdate,
 }: GameReviewProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [rating, setRating] = useState(initialRating || 0);
   const [review, setReview] = useState(initialReview || "");
+  const [isPublic, setIsPublic] = useState(initialIsPublic ?? true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const supabase = createClient();
 
@@ -49,11 +53,14 @@ export function GameReview({
         return;
       }
 
-      const { error } = await supabase.from("game_reviews").upsert({
+      const { error } = await supabase.from("journal_entries").upsert({
         user_id: user.id,
         game_id: gameId,
+        type: "review",
+        content: review,
         rating,
-        review_text: review,
+        is_public: isPublic,
+        title: `Review: ${gameName}`,
         updated_at: new Date().toISOString(),
       });
 
@@ -80,9 +87,9 @@ export function GameReview({
       if (!user) return;
 
       const { error } = await supabase
-        .from("game_reviews")
+        .from("journal_entries")
         .delete()
-        .match({ user_id: user.id, game_id: gameId });
+        .match({ user_id: user.id, game_id: gameId, type: "review" });
 
       if (error) throw error;
 
@@ -173,6 +180,32 @@ export function GameReview({
                 className="min-h-[100px]"
               />
             </div>
+
+            {/* Public/Private Toggle */}
+            <div className="flex items-center justify-between p-3 bg-gray-800/30 rounded-lg border border-gray-700/50">
+              <div className="flex items-center gap-3">
+                {isPublic ? (
+                  <Globe className="h-4 w-4 text-green-400" />
+                ) : (
+                  <Lock className="h-4 w-4 text-gray-400" />
+                )}
+                <div>
+                  <Label className="text-sm font-medium">
+                    {isPublic ? "Public Review" : "Private Review"}
+                  </Label>
+                  <p className="text-xs text-muted-foreground">
+                    {isPublic
+                      ? "Other users can see this review"
+                      : "Only you can see this review"}
+                  </p>
+                </div>
+              </div>
+              <Switch
+                checked={isPublic}
+                onCheckedChange={setIsPublic}
+                className="data-[state=checked]:bg-green-600"
+              />
+            </div>
           </>
         ) : (
           <>
@@ -205,6 +238,7 @@ export function GameReview({
             onClick={() => {
               setRating(initialRating || 0);
               setReview(initialReview || "");
+              setIsPublic(initialIsPublic ?? true);
               setIsEditing(false);
             }}
           >

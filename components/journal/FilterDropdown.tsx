@@ -50,7 +50,7 @@ export function FilterDropdown({
     });
   };
 
-  const hasActiveFilters = criteria.type || criteria.date;
+  const hasActiveFilters = (criteria.type && criteria.type !== "all") || (criteria.date && criteria.date !== "all");
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -102,7 +102,7 @@ export function FilterDropdown({
                 <SelectValue placeholder="All types" />
               </SelectTrigger>
               <SelectContent className="bg-gray-800 border-gray-700">
-                <SelectItem value="">All types</SelectItem>
+                <SelectItem value="all">All types</SelectItem>
                 <SelectItem value="progress">Progress Updates</SelectItem>
                 <SelectItem value="daily">Daily Logs</SelectItem>
                 <SelectItem value="review">Game Reviews</SelectItem>
@@ -128,7 +128,7 @@ export function FilterDropdown({
                 <SelectValue placeholder="All dates" />
               </SelectTrigger>
               <SelectContent className="bg-gray-800 border-gray-700 max-h-[200px]">
-                <SelectItem value="">All dates</SelectItem>
+                <SelectItem value="all">All dates</SelectItem>
                 {uniqueDates.map((date) => (
                   <SelectItem key={date} value={date}>
                     {formatDate(date)}
@@ -143,8 +143,8 @@ export function FilterDropdown({
               variant="ghost"
               size="sm"
               onClick={() => {
-                onChange("type", "");
-                onChange("date", "");
+                onChange("type", "all");
+                onChange("date", "all");
                 setOpen(false);
               }}
               className="text-gray-400 hover:text-white"

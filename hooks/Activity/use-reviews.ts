@@ -17,9 +17,10 @@ export function useReviews() {
       if (!user) return;
 
       const { data: reviews, error: reviewsError } = await supabase
-        .from("game_reviews")
-        .select("*")
-        .eq("user_id", user.id);
+        .from("journal_entries")
+        .select("id, game_id, user_id, rating, content, is_public, created_at, updated_at")
+        .eq("user_id", user.id)
+        .eq("type", "review");
 
       if (reviewsError) throw reviewsError;
 
@@ -31,6 +32,7 @@ export function useReviews() {
             
             return {
               ...review,
+              review_text: review.content, // Map content to review_text for interface compatibility
               game_details: {
                 name: gameData?.name || `Game ${review.game_id}`,
                 cover: gameData?.cover,
@@ -43,6 +45,7 @@ export function useReviews() {
             );
             return {
               ...review,
+              review_text: review.content, // Map content to review_text for interface compatibility
               game_details: {
                 name: `Game ${review.game_id}`,
               },

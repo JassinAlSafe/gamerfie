@@ -21,8 +21,7 @@ Disallow: /_next/
 Disallow: /static/
 
 # Sitemaps
-Sitemap: https://gamevault.app/sitemap.xml
-Sitemap: https://gamevault.app/games-sitemap.xml
+Sitemap: https://gamersvaultapp.com/sitemap.xml
 
 # Crawl-delay for respectful crawling
 Crawl-delay: 1

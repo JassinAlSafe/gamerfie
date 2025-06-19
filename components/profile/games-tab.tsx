@@ -1,10 +1,10 @@
 "use client";
 
+import React, { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/utils/supabase/client";
-import { useEffect, useState, useMemo } from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import {
@@ -52,11 +52,14 @@ interface GamesTabProps {
     status?: string;
     sortBy?: string;
     sortOrder?: string;
+    search?: string;
+    platform?: string;
+    genre?: string;
   };
 }
 
 // List View Component
-const GameListItem = ({
+const GameListItem = React.memo(({
   game,
   onDelete,
 }: {
@@ -65,6 +68,7 @@ const GameListItem = ({
 }) => {
   const router = useRouter();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [imageError, setImageError] = useState(false);
 
   const coverUrl = game.games.cover_url
     ? getCoverImageUrl(game.games.cover_url)
@@ -78,16 +82,14 @@ const GameListItem = ({
       onClick={() => router.push(`/game/${game.game_id}`)}
     >
       <div className="relative w-20 h-24 flex-shrink-0 overflow-hidden rounded-lg ring-2 ring-white/5 group-hover:ring-purple-500/20 transition-all duration-300">
-        {coverUrl ? (
+        {!imageError && coverUrl ? (
           <Image
             src={coverUrl}
             alt={game.games.name}
             fill
             className="object-cover transition-transform duration-300 group-hover:scale-105"
             sizes="80px"
-            onError={(e) => {
-              console.error("Image load error:", e);
-            }}
+            onError={() => setImageError(true)}
           />
         ) : (
           <div className="flex items-center justify-center h-full bg-gray-800">
@@ -162,10 +164,6 @@ const GameListItem = ({
             gameId={game.game_id}
             gameName={game.games.name}
             onSuccess={() => {
-              console.log(
-                "Delete success in list view for game:",
-                game.game_id
-              );
               setShowDeleteDialog(false);
               onDelete();
             }}
@@ -174,10 +172,12 @@ const GameListItem = ({
       )}
     </motion.div>
   );
-};
+});
+
+GameListItem.displayName = 'GameListItem';
 
 // Grid View Component
-const GameGridItem = ({
+const GameGridItem = React.memo(({
   game,
   onDelete,
 }: {
@@ -189,21 +189,15 @@ const GameGridItem = ({
   const [imageError, setImageError] = useState(false);
 
   const coverUrl = useMemo(() => {
-    console.log("GameGridItem - Raw game data:", game);
-
     // Get the cover URL from the games table
     const rawCoverUrl = game.games?.cover_url;
-    console.log("GameGridItem - Raw cover URL:", rawCoverUrl);
 
     if (!rawCoverUrl) {
-      console.log("GameGridItem - No cover URL found");
       return undefined;
     }
 
     // Process the URL through our utility function
-    const processed = getCoverImageUrl(rawCoverUrl);
-    console.log("GameGridItem - Processed URL:", processed);
-    return processed;
+    return getCoverImageUrl(rawCoverUrl);
   }, [game]);
 
   return (
@@ -255,17 +249,7 @@ const GameGridItem = ({
             quality={100}
             priority={false}
             className="object-cover transition-transform duration-300 group-hover:scale-105"
-            onError={(e) => {
-              console.error(
-                "Failed to load image:",
-                coverUrl,
-                "for game:",
-                game.games.name,
-                "Error:",
-                e
-              );
-              setImageError(true);
-            }}
+            onError={() => setImageError(true)}
           />
         ) : (
           <div className="flex items-center justify-center h-full bg-gray-800">
@@ -318,10 +302,6 @@ const GameGridItem = ({
             gameId={game.game_id}
             gameName={game.games.name}
             onSuccess={() => {
-              console.log(
-                "Delete success in grid view for game:",
-                game.game_id
-              );
               setShowDeleteDialog(false);
               onDelete();
             }}
@@ -330,12 +310,14 @@ const GameGridItem = ({
       )}
     </motion.div>
   );
-};
+});
+
+GameGridItem.displayName = 'GameGridItem';
 
 // Loading State Component
 const LoadingState = () => (
-  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-    {Array.from({ length: 6 }).map((_, i) => (
+  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-2 sm:gap-3 md:gap-4">
+    {Array.from({ length: 12 }).map((_, i) => (
       <div
         key={i}
         className="aspect-[3/4] bg-gray-900/50 rounded-xl animate-pulse overflow-hidden border border-white/5"
@@ -348,18 +330,38 @@ const LoadingState = () => (
 
 // Empty State Component
 const EmptyState = ({ router }: { router: ReturnType<typeof useRouter> }) => (
-  <div className="flex flex-col items-center justify-center p-12 text-center bg-gray-900/50 rounded-xl border border-white/10 backdrop-blur-sm">
-    <h2 className="text-2xl font-bold mb-4 text-white">No games found</h2>
-    <p className="text-gray-400 mb-6">
-      You haven&apos;t added any games to your library yet.
+  <motion.div 
+    initial={{ opacity: 0, y: 20 }}
+    animate={{ opacity: 1, y: 0 }}
+    className="flex flex-col items-center justify-center p-16 text-center bg-gradient-to-br from-gray-900/60 to-gray-800/40 rounded-2xl border border-purple-500/20 backdrop-blur-sm"
+  >
+    <div className="relative mb-8">
+      <div className="absolute inset-0 bg-purple-500/20 rounded-full blur-xl"></div>
+      <div className="relative w-24 h-24 rounded-full bg-gradient-to-br from-purple-500/30 to-pink-500/30 border border-purple-500/30 flex items-center justify-center">
+        <Gamepad2 className="w-12 h-12 text-purple-400" />
+      </div>
+    </div>
+    <h2 className="text-3xl font-bold mb-4 text-white">Your Game Library is Empty</h2>
+    <p className="text-gray-400 mb-8 max-w-md leading-relaxed">
+      Start building your gaming collection! Browse our catalog to discover new games and track your gaming journey.
     </p>
-    <Button
-      onClick={() => router.push("/games")}
-      className="bg-purple-500 hover:bg-purple-600 text-white transition-colors duration-200"
-    >
-      Browse Games
-    </Button>
-  </div>
+    <div className="flex flex-col sm:flex-row gap-3">
+      <Button
+        onClick={() => router.push("/games")}
+        className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white transition-all duration-300 hover:scale-105 shadow-lg"
+      >
+        <Gamepad2 className="w-4 h-4 mr-2" />
+        Browse Games
+      </Button>
+      <Button
+        variant="outline"
+        onClick={() => router.push("/games/search")}
+        className="border-purple-500/30 text-purple-400 hover:bg-purple-500/10 transition-all duration-300"
+      >
+        Search Games
+      </Button>
+    </div>
+  </motion.div>
 );
 
 export default function GamesTab({ filters }: GamesTabProps) {
@@ -407,8 +409,7 @@ export default function GamesTab({ filters }: GamesTabProps) {
     };
   }, [userId, queryClient, supabase]);
 
-  const handleGameRemoval = (removedGameId: string) => {
-    console.log("Handling game removal in UI for gameId:", removedGameId);
+  const handleGameRemoval = () => {
     // Invalidate the cache to trigger a refetch
     queryClient.invalidateQueries({ queryKey: ["userGames", userId, "v2"] });
   };
@@ -417,7 +418,6 @@ export default function GamesTab({ filters }: GamesTabProps) {
     queryKey: ["userGames", userId, "v2"],
     queryFn: async () => {
       if (!userId) return [];
-      console.log("Fetching games for user:", userId);
 
       const { data, error } = await supabase
         .from("user_games")
@@ -439,11 +439,8 @@ export default function GamesTab({ filters }: GamesTabProps) {
         .eq("user_id", userId);
 
       if (error) {
-        console.error("Error fetching games:", error);
-        throw error;
+        throw new Error(`Failed to fetch games: ${error.message}`);
       }
-
-      console.log("Raw data from Supabase:", data);
 
       // Transform the response to match our interface
       const mappedGames = data.map((item) => ({
@@ -463,7 +460,6 @@ export default function GamesTab({ filters }: GamesTabProps) {
         games: item.games,
       }));
 
-      console.log("Final transformed data:", mappedGames);
       return mappedGames;
     },
     enabled: !!userId,
@@ -471,22 +467,73 @@ export default function GamesTab({ filters }: GamesTabProps) {
 
   const sortedGames = useMemo(() => {
     if (!games?.length) return [];
-    console.log("Sorting games from React Query:", games);
-    let sorted = [...games];
+    
+    let filtered = [...games];
 
     // Apply status filter
     if (filters.status !== "all") {
-      sorted = sorted.filter((game) => game.status === filters.status);
-      console.log("After status filter:", sorted);
+      filtered = filtered.filter((game) => game.status === filters.status);
+    }
+
+    // Apply search filter
+    if (filters.search && filters.search.trim()) {
+      const searchTerm = filters.search.toLowerCase().trim();
+      filtered = filtered.filter((game) => 
+        game.games?.name?.toLowerCase().includes(searchTerm)
+      );
+    }
+
+    // Apply platform filter
+    if (filters.platform && filters.platform !== "all") {
+      filtered = filtered.filter((game) => {
+        const platforms = game.games?.platforms;
+        if (!platforms) return false;
+        
+        // Handle both array and string formats
+        if (Array.isArray(platforms)) {
+          return platforms.some((platform: any) => 
+            platform?.name?.toLowerCase().includes(filters.platform!.toLowerCase())
+          );
+        }
+        
+        return platforms.toLowerCase().includes(filters.platform!.toLowerCase());
+      });
+    }
+
+    // Apply genre filter
+    if (filters.genre && filters.genre !== "all") {
+      filtered = filtered.filter((game) => {
+        const genres = game.games?.genres;
+        if (!genres) return false;
+        
+        // Handle both array and string formats
+        if (Array.isArray(genres)) {
+          return genres.some((genre: any) => 
+            genre?.name?.toLowerCase().includes(filters.genre!.toLowerCase())
+          );
+        }
+        
+        return genres.toLowerCase().includes(filters.genre!.toLowerCase());
+      });
     }
 
     // Apply sorting
-    sorted.sort((a, b) => {
+    filtered.sort((a, b) => {
       switch (filters.sortBy) {
         case "name":
+          const nameA = a.games?.name || "";
+          const nameB = b.games?.name || "";
           return filters.sortOrder === "asc"
-            ? a.games.name.localeCompare(b.games.name)
-            : b.games.name.localeCompare(a.games.name);
+            ? nameA.localeCompare(nameB)
+            : nameB.localeCompare(nameA);
+        case "playtime":
+          const timeA = a.playTime || 0;
+          const timeB = b.playTime || 0;
+          return filters.sortOrder === "asc" ? timeA - timeB : timeB - timeA;
+        case "rating":
+          const ratingA = a.userRating || 0;
+          const ratingB = b.userRating || 0;
+          return filters.sortOrder === "asc" ? ratingA - ratingB : ratingB - ratingA;
         case "recent":
         default:
           const dateA = new Date(a.created_at).getTime();
@@ -495,18 +542,16 @@ export default function GamesTab({ filters }: GamesTabProps) {
       }
     });
 
-    console.log("Final sorted games:", sorted);
-    return sorted;
+    return filtered;
   }, [games, filters]);
 
   const renderGameItem = (game: GameWithUserData) => {
-    console.log("Rendering game item:", game);
     if (libraryView === "list") {
       return (
         <GameListItem
           key={game.game_id}
           game={game}
-          onDelete={() => handleGameRemoval(game.game_id)}
+          onDelete={handleGameRemoval}
         />
       );
     }
@@ -514,7 +559,7 @@ export default function GamesTab({ filters }: GamesTabProps) {
       <GameGridItem
         key={game.game_id}
         game={game}
-        onDelete={() => handleGameRemoval(game.game_id)}
+        onDelete={handleGameRemoval}
       />
     );
   };
@@ -527,8 +572,8 @@ export default function GamesTab({ filters }: GamesTabProps) {
     <div
       className={
         libraryView === "grid"
-          ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
-          : "space-y-4"
+          ? "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-2 sm:gap-3 md:gap-4"
+          : "space-y-2 sm:space-y-3"
       }
     >
       {sortedGames.map(renderGameItem)}
@@ -561,6 +606,6 @@ async function handleStatusChange(gameId: string, newStatus: GameStatus) {
     .eq("id", gameId);
 
   if (error) {
-    console.error("Error updating game status:", error);
+    throw new Error(`Failed to update game status: ${error.message}`);
   }
 }

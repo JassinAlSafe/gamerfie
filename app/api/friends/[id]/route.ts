@@ -24,15 +24,11 @@ export async function PATCH(
       );
     }
 
-    // Update friend status
+    // Update friend status - handle both directions of friendship
     const { data: updatedFriend, error: updateError } = await supabase
       .from('friends')
       .update({ status })
-      .match({
-        friend_id: user.id,
-        user_id: params.id,
-        status: 'pending'
-      })
+      .or(`and(friend_id.eq.${user.id},user_id.eq.${params.id},status.eq.pending),and(user_id.eq.${user.id},friend_id.eq.${params.id},status.eq.pending)`)
       .select()
       .single();
 

@@ -31,25 +31,25 @@ export const FriendsSection: React.FC<FriendsSectionProps> = ({ friends }) => {
             {friends.slice(0, 3).map((friend) => (
               <div
                 key={friend.id}
-                className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-800/30 transition-colors"
+                className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-800/50 transition-all duration-200 hover:scale-[1.02] group cursor-pointer"
               >
-                <div className="w-10 h-10 rounded-full bg-gray-800 overflow-hidden">
+                <div className="w-10 h-10 rounded-full bg-gray-800 overflow-hidden ring-2 ring-gray-700 group-hover:ring-purple-500/50 transition-all">
                   {friend.avatar_url ? (
                     <Image
                       src={friend.avatar_url}
                       alt={friend.username}
                       width={40}
                       height={40}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-200"
                     />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center text-gray-400">
+                    <div className="w-full h-full flex items-center justify-center text-gray-400 group-hover:text-purple-400 transition-colors">
                       {friend.username.charAt(0).toUpperCase()}
                     </div>
                   )}
                 </div>
                 <div className="flex-1">
-                  <p className="font-medium text-white">
+                  <p className="font-medium text-white group-hover:text-purple-300 transition-colors">
                     {friend.username}
                   </p>
                   <p className="text-sm text-gray-400">
@@ -86,14 +86,19 @@ export const FriendsSection: React.FC<FriendsSectionProps> = ({ friends }) => {
             )}
           </div>
         ) : (
-          <div className="text-center py-4">
-            <p className="text-gray-400 mb-3">No friends yet.</p>
-            <Link href="/friends/find">
+          <div className="text-center py-6">
+            <div className="mb-4">
+              <Users className="h-12 w-12 text-gray-600 mx-auto mb-2" />
+              <p className="text-gray-400 mb-2">No friends yet</p>
+              <p className="text-sm text-gray-500">Connect with fellow gamers and build your gaming community</p>
+            </div>
+            <Link href="/friends">
               <Button
                 variant="outline"
                 size="sm"
-                className="bg-blue-900/30 text-blue-400 border-blue-800 hover:bg-blue-900/50"
+                className="bg-blue-900/30 text-blue-400 border-blue-800 hover:bg-blue-900/50 transition-all hover:scale-105"
               >
+                <Users className="h-4 w-4 mr-2" />
                 Find Friends
               </Button>
             </Link>

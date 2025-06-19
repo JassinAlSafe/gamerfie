@@ -2,7 +2,7 @@ import { Metadata } from "next";
 
 export const siteMetadata: Metadata = {
   title: {
-    default: "Game Vault - Ultimate Video Game Tracking & Gaming Community Platform",
+    default: "Game Vault - Ultimate Video Game Tracker & Gaming Community Platform",
     template: "%s | Game Vault - Track Your Gaming Journey"
   },
   description: "Track your video game progress, discover new games, and connect with gamers worldwide. The ultimate gaming community platform for achievement tracking, game reviews, and gaming statistics.",
@@ -31,9 +31,9 @@ export const siteMetadata: Metadata = {
   authors: [{ name: "Game Vault Team" }],
   creator: "Game Vault",
   publisher: "Game Vault",
-  metadataBase: new URL('https://gamerfie.com'),
+  metadataBase: new URL('https://gamersvaultapp.com'),
   alternates: {
-    canonical: 'https://gamerfie.com'
+    canonical: 'https://gamersvaultapp.com'
   },
   robots: {
     index: true,
@@ -49,7 +49,7 @@ export const siteMetadata: Metadata = {
   openGraph: {
     type: 'website',
     locale: 'en_US',
-    url: 'https://gamerfie.com',
+    url: 'https://gamersvaultapp.com',
     siteName: 'Game Vault',
     title: 'Game Vault - Ultimate Video Game Tracking & Gaming Community Platform',
     description: 'Track your video game progress, discover new games, and connect with gamers worldwide. The ultimate gaming community platform for achievement tracking and game reviews.',
@@ -66,7 +66,7 @@ export const siteMetadata: Metadata = {
     card: 'summary_large_image',
     site: '@gamevault',
     creator: '@gamevault',
-    title: 'Game Vault - Ultimate Video Game Tracking Platform',
+    title: 'Game Vault - Ultimate Video Game Tracker & Gaming Community',
     description: 'Track your video game progress, discover new games, and connect with gamers worldwide.',
     images: ['/twitter-image.png'],
   },
@@ -75,10 +75,33 @@ export const siteMetadata: Metadata = {
   },
   category: 'technology',
   classification: 'Gaming Platform',
+  manifest: '/manifest.json',
   other: {
     'mobile-web-app-capable': 'yes',
     'apple-mobile-web-app-capable': 'yes',
     'apple-mobile-web-app-status-bar-style': 'black-translucent',
+    'apple-mobile-web-app-title': 'Game Vault',
+    'application-name': 'Game Vault',
+    'msapplication-TileColor': '#8b5cf6',
+    'msapplication-config': '/browserconfig.xml',
+    'theme-color': '#8b5cf6',
+  },
+  icons: {
+    icon: [
+      { url: '/favicon.ico', sizes: 'any' },
+      { url: '/icons/icon-16x16.png', type: 'image/png', sizes: '16x16' },
+      { url: '/icons/icon-32x32.png', type: 'image/png', sizes: '32x32' },
+    ],
+    apple: [
+      { url: '/icons/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
+    ],
+    other: [
+      {
+        rel: 'mask-icon',
+        url: '/icons/safari-pinned-tab.svg',
+        color: '#8b5cf6',
+      },
+    ],
   }
 };
 
@@ -86,14 +109,13 @@ export const structuredData = {
   "@context": "https://schema.org",
   "@type": "WebSite",
   "name": "Game Vault",
-  "alternateName": "Gamerfie",
-  "url": "https://gamerfie.com",
-  "description": "Ultimate video game tracking and gaming community platform",
+  "url": "https://gamersvaultapp.com",
+  "description": "Ultimate video game tracker and gaming community platform",
   "potentialAction": {
     "@type": "SearchAction",
     "target": {
       "@type": "EntryPoint",
-      "urlTemplate": "https://gamerfie.com/search?q={search_term_string}"
+      "urlTemplate": "https://gamersvaultapp.com/search?q={search_term_string}"
     },
     "query-input": "required name=search_term_string"
   },
@@ -108,13 +130,13 @@ export const organizationStructuredData = {
   "@context": "https://schema.org",
   "@type": "Organization",
   "name": "Game Vault",
-  "url": "https://gamerfie.com",
-  "logo": "https://gamerfie.com/logo.png",
-  "description": "Ultimate video game tracking and gaming community platform",
+  "url": "https://gamersvaultapp.com",
+  "logo": "https://gamersvaultapp.com/logo.png",
+  "description": "Ultimate video game tracker and gaming community platform",
   "foundingDate": "2024",
   "contactPoint": {
     "@type": "ContactPoint",
     "contactType": "customer service",
-    "url": "https://gamerfie.com/info/contact"
+    "url": "https://gamersvaultapp.com/info/contact"
   }
 };

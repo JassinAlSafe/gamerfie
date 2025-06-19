@@ -16,6 +16,7 @@ interface FriendSearchSectionProps {
   isSearching: boolean;
   onSearch: (query: string) => void;
   onSendFriendRequest: (friendId: string) => Promise<void>;
+  onAcceptFriendRequest?: (friendId: string) => Promise<void>;
   getFriendshipStatus: (user: Friend) => { status: FriendStatus; isSender: boolean } | null;
 }
 
@@ -26,6 +27,7 @@ export const FriendSearchSection = memo(function FriendSearchSection({
   isSearching,
   onSearch,
   onSendFriendRequest,
+  onAcceptFriendRequest,
   getFriendshipStatus,
 }: FriendSearchSectionProps) {
   const [pendingRequests, setPendingRequests] = useState<Set<string>>(new Set());
@@ -102,7 +104,7 @@ export const FriendSearchSection = memo(function FriendSearchSection({
             size="sm"
             variant="outline"
             className="bg-purple-500/20 border-purple-500/30 hover:bg-purple-500/30 text-purple-400"
-            onClick={() => handleSendFriendRequest(user.id)}
+            onClick={() => onAcceptFriendRequest ? onAcceptFriendRequest(user.id) : handleSendFriendRequest(user.id)}
           >
             <Check className="w-4 h-4 mr-2" />
             Accept Request

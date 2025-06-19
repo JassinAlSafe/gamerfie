@@ -79,6 +79,13 @@ export const MobileMenu = React.memo(function MobileMenu() {
           All Games
         </Link>
         <Link
+          href="/reviews"
+          className="block py-2.5 px-2 rounded-lg text-gray-300 hover:text-white hover:bg-white/10 transition-all duration-200"
+          onClick={closeAllMenus}
+        >
+          Reviews
+        </Link>
+        <Link
           href="/info/about"
           className="block py-2.5 px-2 rounded-lg text-gray-300 hover:text-white hover:bg-white/10 transition-all duration-200"
           onClick={closeAllMenus}

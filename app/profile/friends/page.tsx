@@ -80,7 +80,7 @@ export default function ProfileFriendsPage() {
     };
 
     checkSession();
-  }, [supabase, router, fetchFriends]);
+  }, [supabase, router]); // Remove fetchFriends from dependencies to prevent infinite loop
 
   const searchUsers = async (query: string) => {
     if (!query.trim()) {
@@ -154,6 +154,32 @@ export default function ProfileFriendsPage() {
     } catch (error) {
       console.error("Error sending friend request:", error);
       toast.error((error as Error).message || "Failed to send friend request");
+    }
+  };
+
+  const acceptFriendRequest = async (friendId: string) => {
+    try {
+      const response = await fetch(`/api/friends/${friendId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status: 'accepted' }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to accept friend request');
+      }
+
+      toast.success("Friend request accepted!");
+      // Refresh friends list and search results
+      fetchFriends();
+      if (searchQuery) {
+        searchUsers(searchQuery);
+      }
+    } catch (error) {
+      console.error("Error accepting friend request:", error);
+      toast.error((error as Error).message || "Failed to accept friend request");
     }
   };
 
@@ -365,14 +391,10 @@ export default function ProfileFriendsPage() {
                                                 "Accepting friend request..."
                                               );
                                               try {
-                                                await sendFriendRequest(
+                                                await acceptFriendRequest(
                                                   user.id
                                                 );
-                                                toast.success(
-                                                  "Friend request accepted!",
-                                                  { id: toastId }
-                                                );
-                                                searchUsers(searchQuery);
+                                                toast.dismiss(toastId);
                                               } catch {
                                                 toast.error(
                                                   "Failed to accept friend request",

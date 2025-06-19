@@ -75,6 +75,7 @@ export default function FloatingHeader() {
       { href: "/", label: "Home" },
       { href: "/explore", label: "Explore" },
       { href: "/all-games", label: "All Games" },
+      { href: "/reviews", label: "Reviews" },
       { href: "/info/about", label: "About" },
     ],
     []

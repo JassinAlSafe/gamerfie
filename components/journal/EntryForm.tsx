@@ -14,7 +14,8 @@ import Image from "next/image";
 import type { JournalEntryType } from "@/stores/useJournalStore";
 import { cn } from "@/lib/utils";
 import { Slider } from "@/components/ui/slider";
-import { Trash2Icon } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Trash2Icon, Globe, Lock } from "lucide-react";
 import { getCoverImageUrl } from "@/utils/image-utils";
 import { toast } from "react-hot-toast";
 import { JournalGameData, SearchGameResult } from "@/types";
@@ -29,6 +30,7 @@ interface JournalFormData {
   hoursPlayed?: number;
   rating?: number;
   date?: string;
+  is_public?: boolean;
 }
 
 interface EntryFormProps {
@@ -48,6 +50,7 @@ export function EntryForm({
 }: EntryFormProps) {
   const [formData, setFormData] = useState<JournalFormData>({
     type,
+    is_public: initialData.is_public ?? true, // Default to public
     ...initialData,
   });
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -429,6 +432,34 @@ export function EntryForm({
               className={inputClasses}
               required
               maxLength={1000}
+            />
+          </div>
+
+          {/* Public/Private Toggle */}
+          <div className="flex items-center justify-between p-4 bg-gray-800/30 rounded-lg border border-gray-700/50">
+            <div className="flex items-center gap-3">
+              {formData.is_public ? (
+                <Globe className="h-5 w-5 text-green-400" />
+              ) : (
+                <Lock className="h-5 w-5 text-gray-400" />
+              )}
+              <div>
+                <Label className={cn(labelClasses, "text-base font-medium")}>
+                  {formData.is_public ? "Public Review" : "Private Review"}
+                </Label>
+                <p className="text-sm text-gray-500">
+                  {formData.is_public
+                    ? "Other users can see this review"
+                    : "Only you can see this review"}
+                </p>
+              </div>
+            </div>
+            <Switch
+              checked={formData.is_public ?? true}
+              onCheckedChange={(checked) =>
+                setFormData((prev) => ({ ...prev, is_public: checked }))
+              }
+              className="data-[state=checked]:bg-green-600"
             />
           </div>
         </>

@@ -1,14 +1,16 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { TrendingUp } from "lucide-react";
+import { UserStats } from "@/types/stats";
+
 interface StatsSectionProps {
-  stats: any | null;
+  stats: UserStats | null;
   isLoading: boolean;
   onRefresh: () => void;
 }
 
-export const StatsSection: React.FC<StatsSectionProps> = ({ 
+export const StatsSection = memo<StatsSectionProps>(({ 
   stats, 
   isLoading: _isLoading, 
   onRefresh 
@@ -81,4 +83,6 @@ export const StatsSection: React.FC<StatsSectionProps> = ({
       </CardContent>
     </Card>
   );
-};
+});
+
+StatsSection.displayName = 'StatsSection';

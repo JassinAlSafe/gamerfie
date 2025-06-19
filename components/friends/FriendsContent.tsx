@@ -11,12 +11,15 @@ import { FriendSearchSection } from "./FriendSearchSection";
 import { FriendsGridSection } from "./FriendsGridSection";
 import LoadingSpinner from "@/components/loadingSpinner";
 import { Shell } from "@/app/layout/shell";
-import { Users, UserPlus } from "lucide-react";
+import { Users, UserPlus, Clock, Check, X } from "lucide-react";
+import { Card } from "@/components/ui/card";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 import toast from "react-hot-toast";
 
 export function FriendsContent() {
   const { user, isLoading: authLoading, isInitialized } = useAuthStore();
-  const { friends, fetchFriends, addFriend, isLoading: friendsLoading } = useFriendsStore();
+  const { friends, fetchFriends, addFriend, updateFriendStatus, isLoading: friendsLoading } = useFriendsStore();
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<Friend[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -45,7 +48,7 @@ export function FriendsContent() {
     if (user) {
       fetchFriends();
     }
-  }, [user, fetchFriends]);
+  }, [user]); // Remove fetchFriends from dependencies to prevent infinite loop
 
   // Loading timeout detection
   useEffect(() => {
@@ -151,6 +154,36 @@ export function FriendsContent() {
     }
   }, [addFriend, searchQuery, searchUsers]);
 
+  // Accept friend request function
+  const acceptFriendRequest = useCallback(async (friendId: string) => {
+    try {
+      await updateFriendStatus(friendId, "accepted");
+      toast.success("Friend request accepted!");
+      // Refresh search results if we have a query
+      if (searchQuery) {
+        searchUsers(searchQuery);
+      }
+    } catch (error) {
+      console.error("Error accepting friend request:", error);
+      toast.error((error as Error).message || "Failed to accept friend request");
+    }
+  }, [updateFriendStatus, searchQuery, searchUsers]);
+
+  // Decline friend request function
+  const declineFriendRequest = useCallback(async (friendId: string) => {
+    try {
+      await updateFriendStatus(friendId, "declined");
+      toast.success("Friend request declined");
+      // Refresh search results if we have a query
+      if (searchQuery) {
+        searchUsers(searchQuery);
+      }
+    } catch (error) {
+      console.error("Error declining friend request:", error);
+      toast.error((error as Error).message || "Failed to decline friend request");
+    }
+  }, [updateFriendStatus, searchQuery, searchUsers]);
+
   // Helper function to determine friendship status
   const getFriendshipStatus = useCallback((
     searchUser: Friend
@@ -240,15 +273,96 @@ export function FriendsContent() {
             isSearching={isSearching}
             onSearch={searchUsers}
             onSendFriendRequest={sendFriendRequest}
+            onAcceptFriendRequest={acceptFriendRequest}
             getFriendshipStatus={getFriendshipStatus}
           />
         </motion.div>
+
+        {/* Pending Requests Section */}
+        {pendingFriends.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="space-y-4"
+          >
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-gradient-to-br from-orange-500/20 to-yellow-500/20 border border-orange-500/20">
+                <Clock className="h-5 w-5 text-orange-400" />
+              </div>
+              <div>
+                <h2 className="text-xl font-semibold text-foreground">
+                  Pending Friend Requests ({pendingFriends.length})
+                </h2>
+                <p className="text-sm text-muted-foreground">
+                  Accept or decline incoming friend requests
+                </p>
+              </div>
+            </div>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {pendingFriends.map((friend, index) => {
+                const isIncoming = friend.sender_id !== user?.id;
+                return (
+                  <motion.div
+                    key={friend.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.1 }}
+                  >
+                    <Card className="p-5 bg-card/50 border-border/30 hover:bg-card/70 hover:border-orange-500/30 transition-all duration-300 rounded-xl group">
+                      <div className="space-y-4">
+                        <div className="flex items-center gap-3">
+                          <Avatar className="ring-2 ring-border/20 group-hover:ring-orange-500/30 transition-all w-12 h-12">
+                            <AvatarImage src={friend.avatar_url} />
+                            <AvatarFallback className="bg-muted text-muted-foreground font-medium">
+                              {friend.username?.[0]?.toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-semibold text-foreground group-hover:text-orange-400 transition-colors truncate">
+                              {friend.username}
+                            </h3>
+                            <p className="text-sm text-muted-foreground">
+                              {isIncoming ? "Sent you a request" : "Request sent"}
+                            </p>
+                          </div>
+                        </div>
+                        {isIncoming && (
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="flex-1 bg-green-500/20 border-green-500/30 hover:bg-green-500/30 text-green-400"
+                              onClick={() => acceptFriendRequest(friend.id)}
+                            >
+                              <Check className="w-4 h-4 mr-2" />
+                              Accept
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="flex-1 bg-red-500/20 border-red-500/30 hover:bg-red-500/30 text-red-400"
+                              onClick={() => declineFriendRequest(friend.id)}
+                            >
+                              <X className="w-4 h-4 mr-2" />
+                              Decline
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    </Card>
+                  </motion.div>
+                );
+              })}
+            </div>
+          </motion.div>
+        )}
 
         {/* Friends Grid */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
+          transition={{ delay: 0.3 }}
         >
           <FriendsGridSection
             friends={acceptedFriends}

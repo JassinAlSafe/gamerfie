@@ -38,12 +38,21 @@ export function GamesHeader() {
     selectedCategory,
     selectedYear,
     timeRange,
+    selectedGameMode,
+    selectedTheme,
+    minRating,
+    maxRating,
+    hasMultiplayer,
     platforms,
     genres,
     setSelectedPlatform,
     setSelectedGenre,
     setSelectedYear,
     setTimeRange,
+    setSelectedGameMode,
+    setSelectedTheme,
+    setRatingRange,
+    setHasMultiplayer,
     totalGames,
     searchQuery,
     setSearchQuery,
@@ -65,6 +74,11 @@ export function GamesHeader() {
     selectedCategory !== "all" ||
     selectedYear !== "all" ||
     timeRange !== "all" ||
+    selectedGameMode !== "all" ||
+    selectedTheme !== "all" ||
+    minRating !== null ||
+    maxRating !== null ||
+    hasMultiplayer ||
     sortBy !== "popularity" ||
     searchQuery !== "";
 
@@ -251,10 +265,19 @@ export function GamesHeader() {
               selectedGenre={selectedGenre}
               selectedYear={selectedYear}
               selectedTimeRange={timeRange}
+              selectedGameMode={selectedGameMode}
+              selectedTheme={selectedTheme}
+              minRating={minRating}
+              maxRating={maxRating}
+              hasMultiplayer={hasMultiplayer}
               onPlatformChange={setSelectedPlatform}
               onGenreChange={setSelectedGenre}
               onYearChange={setSelectedYear}
               onTimeRangeChange={setTimeRange}
+              onGameModeChange={setSelectedGameMode}
+              onThemeChange={setSelectedTheme}
+              onRatingRangeChange={setRatingRange}
+              onMultiplayerChange={setHasMultiplayer}
             />
           </div>
           
@@ -330,6 +353,78 @@ export function GamesHeader() {
                   onClick={() => setTimeRange("all")}
                   className="h-5 w-5 p-0 rounded-full hover:bg-gray-700 ml-1"
                   aria-label="Remove time range filter"
+                >
+                  <X className="h-3 w-3" />
+                </Button>
+              </Badge>
+            )}
+
+            {selectedGameMode !== "all" && (
+              <Badge
+                variant="outline"
+                className="bg-gray-800/70 hover:bg-gray-700 text-white border-purple-500/30 pl-2 pr-1 py-1 flex items-center gap-1 rounded-full"
+              >
+                Game Mode: {selectedGameMode}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setSelectedGameMode("all")}
+                  className="h-5 w-5 p-0 rounded-full hover:bg-gray-700 ml-1"
+                  aria-label="Remove game mode filter"
+                >
+                  <X className="h-3 w-3" />
+                </Button>
+              </Badge>
+            )}
+
+            {selectedTheme !== "all" && (
+              <Badge
+                variant="outline"
+                className="bg-gray-800/70 hover:bg-gray-700 text-white border-purple-500/30 pl-2 pr-1 py-1 flex items-center gap-1 rounded-full"
+              >
+                Theme: {selectedTheme}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setSelectedTheme("all")}
+                  className="h-5 w-5 p-0 rounded-full hover:bg-gray-700 ml-1"
+                  aria-label="Remove theme filter"
+                >
+                  <X className="h-3 w-3" />
+                </Button>
+              </Badge>
+            )}
+
+            {(minRating !== null || maxRating !== null) && (
+              <Badge
+                variant="outline"
+                className="bg-gray-800/70 hover:bg-gray-700 text-white border-purple-500/30 pl-2 pr-1 py-1 flex items-center gap-1 rounded-full"
+              >
+                Rating: {minRating}+ stars
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setRatingRange(null, null)}
+                  className="h-5 w-5 p-0 rounded-full hover:bg-gray-700 ml-1"
+                  aria-label="Remove rating filter"
+                >
+                  <X className="h-3 w-3" />
+                </Button>
+              </Badge>
+            )}
+
+            {hasMultiplayer && (
+              <Badge
+                variant="outline"
+                className="bg-gray-800/70 hover:bg-gray-700 text-white border-purple-500/30 pl-2 pr-1 py-1 flex items-center gap-1 rounded-full"
+              >
+                Multiplayer Only
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setHasMultiplayer(false)}
+                  className="h-5 w-5 p-0 rounded-full hover:bg-gray-700 ml-1"
+                  aria-label="Remove multiplayer filter"
                 >
                   <X className="h-3 w-3" />
                 </Button>

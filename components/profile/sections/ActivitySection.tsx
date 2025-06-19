@@ -1,5 +1,6 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Gamepad2 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -28,26 +29,24 @@ export const ActivitySection: React.FC<ActivitySectionProps> = ({ activities }) 
       <CardContent>
         {activities.length > 0 ? (
           <div className="space-y-4">
-            {activities.map((activity) => {
-              console.log("Rendering activity:", activity);
-              return (
+            {activities.map((activity) => (
                 isValidActivity(activity) && (
                   <div
                     key={activity.id}
-                    className="border-b border-gray-800 pb-3 last:border-0"
+                    className="border-b border-gray-800 pb-3 last:border-0 group hover:bg-gray-800/20 rounded-lg p-2 -m-2 transition-all duration-200"
                   >
                     <div className="flex items-start gap-3">
-                      <div className="w-10 h-10 rounded bg-gray-800 overflow-hidden flex-shrink-0">
+                      <div className="w-10 h-10 rounded-lg bg-gray-800 overflow-hidden flex-shrink-0 ring-2 ring-gray-700 group-hover:ring-purple-500/30 transition-all">
                         {activity.game && activity.game.cover_url ? (
                           <Image
                             src={activity.game.cover_url}
                             alt={activity.game.name || "Game"}
                             width={40}
                             height={40}
-                            className="w-full h-full object-cover"
+                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-200"
                           />
                         ) : (
-                          <div className="w-full h-full flex items-center justify-center text-gray-400">
+                          <div className="w-full h-full flex items-center justify-center text-gray-400 group-hover:text-purple-400 transition-colors">
                             {activity.game && activity.game.name
                               ? activity.game.name.charAt(0).toUpperCase()
                               : "G"}
@@ -55,8 +54,8 @@ export const ActivitySection: React.FC<ActivitySectionProps> = ({ activities }) 
                         )}
                       </div>
                       <div>
-                        <p className="text-white">
-                          <span className="font-medium">
+                        <p className="text-white group-hover:text-purple-200 transition-colors">
+                          <span className="font-medium group-hover:text-purple-300">
                             {activity.user ? activity.user.username : "User"}
                           </span>{" "}
                           {activity.type === "started_playing" && "started playing"}
@@ -79,13 +78,28 @@ export const ActivitySection: React.FC<ActivitySectionProps> = ({ activities }) 
                     </div>
                   </div>
                 )
-              );
-            })}
+            ))}
           </div>
         ) : (
-          <p className="text-gray-400">
-            No recent activity. Start playing games to see activity here!
-          </p>
+          <div className="text-center py-8">
+            <div className="mb-4">
+              <Gamepad2 className="h-16 w-16 text-gray-600 mx-auto mb-3" />
+              <p className="text-gray-400 mb-2">No recent activity</p>
+              <p className="text-sm text-gray-500 max-w-sm mx-auto">
+                Start playing games, writing reviews, or completing challenges to see your activity here!
+              </p>
+            </div>
+            <Link href="/games">
+              <Button
+                variant="outline"
+                size="sm"
+                className="bg-purple-900/30 text-purple-400 border-purple-800 hover:bg-purple-900/50 transition-all hover:scale-105"
+              >
+                <Gamepad2 className="h-4 w-4 mr-2" />
+                Browse Games
+              </Button>
+            </Link>
+          </div>
         )}
       </CardContent>
     </Card>

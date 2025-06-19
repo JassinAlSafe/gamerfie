@@ -22,6 +22,7 @@ export interface JournalEntry {
   progress?: number
   hoursPlayed?: number
   rating?: number
+  is_public?: boolean
   createdAt: string
   updatedAt: string
 }
@@ -67,7 +68,6 @@ export const useJournalStore = create<JournalState>((set, get) => {
 
       return await response.json();
     } catch (error) {
-      console.error('Error creating activity:', error);
       throw error;
     }
   };
@@ -101,7 +101,6 @@ export const useJournalStore = create<JournalState>((set, get) => {
 
           // If game doesn't exist, add it
           if (!existingGame) {
-            console.log('Adding new game to database:', entry.game)
             const { error: insertError } = await supabase
               .from('games')
               .insert({
@@ -113,7 +112,6 @@ export const useJournalStore = create<JournalState>((set, get) => {
               })
 
             if (insertError) {
-              console.error('Error adding game to database:', insertError)
               throw new Error('Failed to add game to database')
             }
           }
@@ -134,6 +132,7 @@ export const useJournalStore = create<JournalState>((set, get) => {
             progress: entry.progress,
             hours_played: entry.hoursPlayed,
             rating: entry.rating,
+            is_public: entry.is_public ?? true,
           })
           .select()
           .single()
@@ -155,6 +154,7 @@ export const useJournalStore = create<JournalState>((set, get) => {
           progress: newEntry.progress,
           hoursPlayed: newEntry.hours_played,
           rating: newEntry.rating,
+          is_public: newEntry.is_public,
           createdAt: newEntry.created_at,
           updatedAt: newEntry.updated_at,
         }
@@ -206,10 +206,9 @@ export const useJournalStore = create<JournalState>((set, get) => {
               })
 
             if (historyError) {
-              console.error('Error recording progress history:', historyError)
+              // Silent fail for progress history as it's not critical
             }
           } catch (error) {
-            console.error('Error updating game progress:', error)
             // Don't throw here, allow the journal entry to be saved even if progress update fails
           }
         }
@@ -224,41 +223,40 @@ export const useJournalStore = create<JournalState>((set, get) => {
                     comment: entry.content 
                       ? `${entry.content} (Completed the game!)`
                       : 'Completed the game!'
-                  }).catch(e => console.error('Activity creation failed:', e))
+                  }).catch(() => {})
                 } else {
                   await createActivity('progress', entry.game.id, {
                     progress: entry.progress,
                     comment: entry.content || `Made progress: ${entry.progress}%`
-                  }).catch(e => console.error('Activity creation failed:', e))
+                  }).catch(() => {})
                 }
                 break
               case 'review':
                 await createActivity('review', entry.game.id, {
                   comment: `Rated ${entry.game.name} ${entry.rating}/10 - ${entry.content}`
-                }).catch(e => console.error('Activity creation failed:', e))
+                }).catch(() => {})
                 break
               case 'daily':
                 await createActivity('started_playing', entry.game.id, {
                   comment: entry.content
-                }).catch(e => console.error('Activity creation failed:', e))
+                }).catch(() => {})
                 break
               case 'list':
                 await createActivity('want_to_play', entry.game.id, {
                   comment: `Added ${entry.game.name} to list: ${entry.title}`
-                }).catch(e => console.error('Activity creation failed:', e))
+                }).catch(() => {})
                 break
             }
           } catch (activityError) {
-            console.error('Error creating activity for journal entry:', activityError)
             // Don't throw here, allow the journal entry to be saved even if activity creation fails
           }
         }
 
         toast.success('Entry added successfully')
       } catch (error) {
-        console.error('Error adding journal entry:', error)
-        set({ error: (error as Error).message, loading: false })
-        toast.error(error instanceof Error ? error.message : 'Failed to add entry')
+        const errorMessage = error instanceof Error ? error.message : 'Failed to add entry';
+        set({ error: errorMessage, loading: false });
+        toast.error(errorMessage);
         throw error
       }
     },
@@ -278,7 +276,6 @@ export const useJournalStore = create<JournalState>((set, get) => {
             .eq('id', entry.game.id)
 
           if (gameCheckError) {
-            console.error('Error checking game existence:', gameCheckError)
             throw new Error('Failed to verify game existence')
           }
 
@@ -301,6 +298,7 @@ export const useJournalStore = create<JournalState>((set, get) => {
             progress: entry.progress,
             hours_played: entry.hoursPlayed,
             rating: entry.rating,
+            is_public: entry.is_public,
             updated_at: new Date().toISOString()
           })
           .eq('id', id)
@@ -324,6 +322,7 @@ export const useJournalStore = create<JournalState>((set, get) => {
           progress: updatedEntry.progress,
           hoursPlayed: updatedEntry.hours_played,
           rating: updatedEntry.rating,
+          is_public: updatedEntry.is_public,
           createdAt: updatedEntry.created_at,
           updatedAt: updatedEntry.updated_at,
         }
@@ -376,10 +375,10 @@ export const useJournalStore = create<JournalState>((set, get) => {
               });
 
             if (historyError) {
-              console.error('Error recording progress history:', historyError);
+              // Silent fail for progress history as it's not critical
             }
           } catch (error) {
-            console.error('Error updating game progress:', error);
+            // Silent fail for progress updates
           }
         }
 
@@ -439,15 +438,15 @@ export const useJournalStore = create<JournalState>((set, get) => {
                 .limit(1);
             }
           } catch (activityError) {
-            console.error('Error creating activity for journal entry:', activityError);
+            // Silent fail for activity creation
           }
         }
 
         toast.success('Entry updated successfully')
       } catch (error) {
-        console.error('Error updating journal entry:', error)
-        set({ error: (error as Error).message, loading: false })
-        toast.error('Failed to update entry')
+        const errorMessage = error instanceof Error ? error.message : 'Failed to update entry';
+        set({ error: errorMessage, loading: false });
+        toast.error(errorMessage);
         throw error
       }
     },
@@ -473,9 +472,9 @@ export const useJournalStore = create<JournalState>((set, get) => {
 
         toast.success('Entry deleted successfully')
       } catch (error) {
-        console.error('Error deleting journal entry:', error)
-        set({ error: (error as Error).message, loading: false })
-        toast.error('Failed to delete entry')
+        const errorMessage = error instanceof Error ? error.message : 'Failed to delete entry';
+        set({ error: errorMessage, loading: false });
+        toast.error(errorMessage);
         throw error
       }
     },
@@ -528,16 +527,17 @@ export const useJournalStore = create<JournalState>((set, get) => {
           progress: entry.progress,
           hoursPlayed: entry.hours_played,
           rating: entry.rating,
+          is_public: entry.is_public,
           createdAt: entry.created_at,
           updatedAt: entry.updated_at,
         }));
 
         set({ entries: transformedEntries, loading: false, isLoading: false });
       } catch (error) {
-        console.error('Error fetching journal entries:', error);
+        const errorMessage = error instanceof Error ? error.message : 'Failed to load journal entries';
         set({ 
           loading: false, 
-          error: error instanceof Error ? error.message : 'Unknown error', 
+          error: errorMessage, 
           isLoading: false 
         });
       }

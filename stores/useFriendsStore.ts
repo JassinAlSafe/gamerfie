@@ -61,7 +61,6 @@ export const useFriendsStore = create<FriendsStore>((set, get) => {
           .order('created_at', { ascending: false });
 
         if (friendsError) {
-          console.warn('Friends feature not available:', friendsError.message);
           set({ friends: [], isLoading: false });
           return;
         }
@@ -92,7 +91,6 @@ export const useFriendsStore = create<FriendsStore>((set, get) => {
           .in('id', Array.from(friendIds));
 
         if (profilesError) {
-          console.warn('Error fetching friend profiles:', profilesError.message);
           set({ friends: [], isLoading: false });
           return;
         }
@@ -135,7 +133,6 @@ export const useFriendsStore = create<FriendsStore>((set, get) => {
         
         await Promise.race([fetchWithTimeout(), timeout]);
       } catch (error) {
-        console.warn('Error fetching friends (timeout or table issue):', error);
         // Set empty friends array if there's any error
         set({ friends: [], isLoading: false, error: null });
       }
@@ -183,7 +180,7 @@ export const useFriendsStore = create<FriendsStore>((set, get) => {
 
         set({ activities: transformedActivities, isLoadingActivities: false });
       } catch (error) {
-        console.warn('Error fetching optimized activities:', error);
+        // Log error for debugging but continue with fallback
         
         // Fallback to direct database query if API fails
         try {
@@ -194,7 +191,9 @@ export const useFriendsStore = create<FriendsStore>((set, get) => {
             .select(`
               *,
               user:profiles!user_id(id, username, avatar_url),
-              game:games!game_id(id, name, cover_url)
+              game:games!game_id(id, name, cover_url),
+              reactions:activity_reactions(id, user_id, emoji, user:profiles!user_id(id, username, avatar_url)),
+              comments:activity_comments(id, user_id, content, created_at, user:profiles!user_id(id, username, avatar_url))
             `)
             .eq('user_id', user.id)
             .order('created_at', { ascending: false })
@@ -202,7 +201,6 @@ export const useFriendsStore = create<FriendsStore>((set, get) => {
 
           if (activitiesError) {
             // If friend_activities table doesn't exist, that's okay - just set empty array
-            console.warn('Activities feature not available:', activitiesError.message);
             set({ activities: [], isLoadingActivities: false });
             return;
           }
@@ -216,8 +214,19 @@ export const useFriendsStore = create<FriendsStore>((set, get) => {
             timestamp: activity.created_at,
             created_at: activity.created_at,
             details: activity.details || {},
-            reactions: [],
-            comments: [],
+            reactions: (activity.reactions || []).map((reaction: any) => ({
+              id: reaction.id,
+              user_id: reaction.user_id,
+              emoji: reaction.emoji,
+              user: reaction.user
+            })),
+            comments: (activity.comments || []).map((comment: any) => ({
+              id: comment.id,
+              user_id: comment.user_id,
+              content: comment.content,
+              created_at: comment.created_at,
+              user: comment.user
+            })),
             user: activity.user ? {
               id: activity.user.id,
               username: activity.user.username || 'Unknown User',
@@ -240,7 +249,6 @@ export const useFriendsStore = create<FriendsStore>((set, get) => {
           
           set({ activities: transformedActivities, isLoadingActivities: false });
         } catch (fallbackError) {
-          console.warn('Activities feature not available:', fallbackError);
           set({ activities: [], isLoadingActivities: false });
         }
       }
@@ -268,7 +276,6 @@ export const useFriendsStore = create<FriendsStore>((set, get) => {
         // Refresh activities
         await get().fetchActivities();
       } catch (error) {
-        console.error('Error creating activity:', error);
         const errorMessage = error instanceof Error ? error.message : 'Failed to create activity';
         set({ error: errorMessage });
         throw error;
@@ -294,7 +301,6 @@ export const useFriendsStore = create<FriendsStore>((set, get) => {
         if (error) throw error;
         await get().fetchFriends();
       } catch (error) {
-        console.error('Error adding friend:', error);
         const errorMessage = error instanceof Error ? error.message : 'Failed to add friend';
         set({ error: errorMessage });
         throw error;
@@ -331,13 +337,20 @@ export const useFriendsStore = create<FriendsStore>((set, get) => {
           throw new Error('Friend ID is required');
         }
 
-        const { error } = await supabase
-          .from('friends')
-          .update({ status })
-          .eq('id', friendId);
+        const response = await fetch(`/api/friends/${friendId}`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ status }),
+        });
 
-        if (error) throw error;
+        if (!response.ok) {
+          throw new Error('Failed to update friend status');
+        }
+
         await get().fetchFriends();
+        set({ isLoading: false });
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Failed to update friend status';
         set({ error: errorMessage, isLoading: false });
@@ -353,6 +366,25 @@ export const useFriendsStore = create<FriendsStore>((set, get) => {
           throw new Error('Activity ID and emoji are required');
         }
 
+        // Check if user already has any reaction to this activity
+        const { data: existingReaction } = await supabase
+          .from('activity_reactions')
+          .select('emoji')
+          .eq('activity_id', activityId)
+          .eq('user_id', user.id)
+          .single();
+
+        if (existingReaction) {
+          // If user has the same emoji, remove it (toggle off)
+          if (existingReaction.emoji === emoji) {
+            await get().removeReaction(activityId, emoji);
+            return;
+          }
+          // If user has different emoji, remove old one first
+          await get().removeReaction(activityId, existingReaction.emoji);
+        }
+
+        // Add the new reaction
         const { error } = await supabase
           .from('activity_reactions')
           .insert({
@@ -364,7 +396,6 @@ export const useFriendsStore = create<FriendsStore>((set, get) => {
         if (error) throw error;
         await get().fetchActivities();
       } catch (error) {
-        console.error('Error adding reaction:', error);
         const errorMessage = error instanceof Error ? error.message : 'Failed to add reaction';
         set({ error: errorMessage });
         throw error;
@@ -391,7 +422,6 @@ export const useFriendsStore = create<FriendsStore>((set, get) => {
         if (error) throw error;
         await get().fetchActivities();
       } catch (error) {
-        console.error('Error removing reaction:', error);
         const errorMessage = error instanceof Error ? error.message : 'Failed to remove reaction';
         set({ error: errorMessage });
         throw error;
@@ -417,7 +447,6 @@ export const useFriendsStore = create<FriendsStore>((set, get) => {
         if (error) throw error;
         await get().fetchActivities();
       } catch (error) {
-        console.error('Error adding comment:', error);
         const errorMessage = error instanceof Error ? error.message : 'Failed to add comment';
         set({ error: errorMessage });
         throw error;
@@ -438,7 +467,6 @@ export const useFriendsStore = create<FriendsStore>((set, get) => {
         if (error) throw error;
         await get().fetchActivities();
       } catch (error) {
-        console.error('Error deleting comment:', error);
         const errorMessage = error instanceof Error ? error.message : 'Failed to delete comment';
         set({ error: errorMessage });
         throw error;
@@ -471,7 +499,6 @@ export const useFriendsStore = create<FriendsStore>((set, get) => {
         // Return the activities instead of updating state
         return activities || [];
       } catch (error) {
-        console.error('Error fetching game activities:', error);
         throw error;
       }
     },
@@ -491,7 +518,6 @@ export const useFriendsStore = create<FriendsStore>((set, get) => {
 
         await Promise.all(activityPromises);
       } catch (error) {
-        console.error('Error batch creating achievements:', error);
         const errorMessage = error instanceof Error ? error.message : 'Failed to batch create achievements';
         set({ error: errorMessage });
         throw error;

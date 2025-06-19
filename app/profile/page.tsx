@@ -100,11 +100,19 @@ export default function ProfilePage(): JSX.Element {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* Left Column - About & Stats & Activity */}
             <div className="md:col-span-2 space-y-6">
-              <ProfileSection isLoading={isLoading} section="About">
+              <ProfileSection 
+                isLoading={isLoading} 
+                section="About"
+                error={error}
+              >
                 <AboutSection profile={profile} />
               </ProfileSection>
 
-              <ProfileSection isLoading={statsLoading} section="Statistics">
+              <ProfileSection 
+                isLoading={statsLoading} 
+                section="Statistics"
+                onRetry={refreshStats}
+              >
                 <StatsSection 
                   stats={optimizedStats} 
                   isLoading={statsLoading}
@@ -112,18 +120,30 @@ export default function ProfilePage(): JSX.Element {
                 />
               </ProfileSection>
 
-              <ProfileSection isLoading={activitiesLoading} section="Activity">
+              <ProfileSection 
+                isLoading={activitiesLoading} 
+                section="Activity"
+                onRetry={() => window.location.reload()}
+              >
                 <ActivitySection activities={recentActivities} />
               </ProfileSection>
             </div>
 
             {/* Right Column - Games & Friends */}
             <div className="space-y-6">
-              <ProfileSection isLoading={isLoading} section="Games">
+              <ProfileSection 
+                isLoading={isLoading} 
+                section="Games"
+                error={error}
+              >
                 <GamesSection totalGames={totalGames} />
               </ProfileSection>
 
-              <ProfileSection isLoading={friendsLoading} section="Friends">
+              <ProfileSection 
+                isLoading={friendsLoading} 
+                section="Friends"
+                onRetry={() => window.location.reload()}
+              >
                 <FriendsSection friends={acceptedFriends} />
               </ProfileSection>
             </div>
@@ -131,11 +151,19 @@ export default function ProfilePage(): JSX.Element {
 
           {/* Bottom Row - Reviews & Journal */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-            <ProfileSection isLoading={journalLoading} section="Reviews">
+            <ProfileSection 
+              isLoading={journalLoading} 
+              section="Reviews"
+              onRetry={() => window.location.reload()}
+            >
               <ReviewsSection reviews={recentReviews} />
             </ProfileSection>
 
-            <ProfileSection isLoading={journalLoading} section="Journal">
+            <ProfileSection 
+              isLoading={journalLoading} 
+              section="Journal"
+              onRetry={() => window.location.reload()}
+            >
               <JournalSection entries={recentJournalEntries} />
             </ProfileSection>
           </div>

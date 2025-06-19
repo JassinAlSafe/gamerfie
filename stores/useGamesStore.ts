@@ -61,6 +61,7 @@ interface GamesState {
   setHasMultiplayer: (hasMultiplayer: boolean) => void;
   
   // Filter management
+  updateFilter: (filterType: keyof GamesState, value: any) => void;
   removeFilter: (filterType: FilterType) => void;
   resetFilters: () => void;
   handleResetFilters: () => void;
@@ -126,13 +127,20 @@ export const useGamesStore = create<GamesState>()(
           state.selectedCategory !== DEFAULT_VALUES.CATEGORY ||
           state.selectedYear !== DEFAULT_VALUES.YEAR ||
           state.timeRange !== DEFAULT_VALUES.TIME_RANGE ||
+          state.selectedGameMode !== DEFAULT_VALUES.GAME_MODE ||
+          state.selectedTheme !== DEFAULT_VALUES.THEME ||
+          state.minRating !== DEFAULT_VALUES.MIN_RATING ||
+          state.maxRating !== DEFAULT_VALUES.MAX_RATING ||
+          state.hasMultiplayer !== DEFAULT_VALUES.HAS_MULTIPLAYER ||
           state.searchQuery !== "" ||
           state.sortBy !== DEFAULT_VALUES.SORT;
         
         set({ hasActiveFilters: hasFilters });
       },
 
+      // Individual filter setters with consistent pattern
       setSearchQuery: (query) => {
+        if (get().searchQuery === query) return;
         set({ searchQuery: query });
         get().updateHasActiveFilters();
         get().setCurrentPage(1);
@@ -194,6 +202,23 @@ export const useGamesStore = create<GamesState>()(
         get().setCurrentPage(1);
       },
 
+      setHasMultiplayer: (hasMultiplayer) => {
+        if (get().hasMultiplayer === hasMultiplayer) return;
+        set({ hasMultiplayer });
+        get().updateHasActiveFilters();
+        get().setCurrentPage(1);
+      },
+
+      // Common filter update pattern - helper method
+      updateFilter: (filterType: keyof GamesState, value: any) => {
+        const currentValue = get()[filterType];
+        if (currentValue === value) return;
+        
+        set({ [filterType]: value });
+        get().updateHasActiveFilters();
+        get().setCurrentPage(1);
+      },
+
       setRatingRange: (min, max) => {
         const state = get();
         if (state.minRating === min && state.maxRating === max) return;
@@ -202,41 +227,43 @@ export const useGamesStore = create<GamesState>()(
         get().setCurrentPage(1);
       },
 
-      setHasMultiplayer: (hasMultiplayer) => {
-        if (get().hasMultiplayer === hasMultiplayer) return;
-        set({ hasMultiplayer });
-        get().updateHasActiveFilters();
-        get().setCurrentPage(1);
-      },
-
       removeFilter: (filterType) => {
-        const updates: Partial<GamesState> = {};
+        const filterMap: Record<FilterType, keyof GamesState> = {
+          platform: 'selectedPlatform',
+          genre: 'selectedGenre', 
+          category: 'selectedCategory',
+          year: 'selectedYear',
+          timeRange: 'timeRange',
+          gameMode: 'selectedGameMode',
+          theme: 'selectedTheme',
+          search: 'searchQuery',
+          sort: 'sortBy',
+          rating: 'minRating', // Special case - will handle both min/max
+          multiplayer: 'hasMultiplayer'
+        };
 
-        switch (filterType) {
-          case 'platform':
-            updates.selectedPlatform = DEFAULT_VALUES.PLATFORM;
-            break;
-          case 'genre':
-            updates.selectedGenre = DEFAULT_VALUES.GENRE;
-            break;
-          case 'category':
-            updates.selectedCategory = DEFAULT_VALUES.CATEGORY;
-            break;
-          case 'year':
-            updates.selectedYear = DEFAULT_VALUES.YEAR;
-            break;
-          case 'timeRange':
-            updates.timeRange = DEFAULT_VALUES.TIME_RANGE;
-            break;
-          case 'search':
-            updates.searchQuery = "";
-            break;
-          case 'sort':
-            updates.sortBy = DEFAULT_VALUES.SORT;
-            break;
+        const defaultMap: Record<FilterType, any> = {
+          platform: DEFAULT_VALUES.PLATFORM,
+          genre: DEFAULT_VALUES.GENRE,
+          category: DEFAULT_VALUES.CATEGORY,
+          year: DEFAULT_VALUES.YEAR,
+          timeRange: DEFAULT_VALUES.TIME_RANGE,
+          gameMode: DEFAULT_VALUES.GAME_MODE,
+          theme: DEFAULT_VALUES.THEME,
+          search: '',
+          sort: DEFAULT_VALUES.SORT,
+          rating: null,
+          multiplayer: DEFAULT_VALUES.HAS_MULTIPLAYER
+        };
+
+        if (filterType === 'rating') {
+          set({ minRating: null, maxRating: null });
+        } else {
+          const stateKey = filterMap[filterType];
+          const defaultValue = defaultMap[filterType];
+          set({ [stateKey]: defaultValue });
         }
 
-        set(updates);
         get().updateHasActiveFilters();
         get().setCurrentPage(1);
       },
@@ -249,6 +276,11 @@ export const useGamesStore = create<GamesState>()(
           selectedCategory: DEFAULT_VALUES.CATEGORY,
           selectedYear: DEFAULT_VALUES.YEAR,
           timeRange: DEFAULT_VALUES.TIME_RANGE,
+          selectedGameMode: DEFAULT_VALUES.GAME_MODE,
+          selectedTheme: DEFAULT_VALUES.THEME,
+          minRating: DEFAULT_VALUES.MIN_RATING,
+          maxRating: DEFAULT_VALUES.MAX_RATING,
+          hasMultiplayer: DEFAULT_VALUES.HAS_MULTIPLAYER,
           searchQuery: "",
           currentPage: 1,
           hasActiveFilters: false
@@ -288,9 +320,20 @@ export const useGamesStore = create<GamesState>()(
             category: state.selectedCategory,
             year: state.selectedYear,
             timeRange: state.timeRange,
+            gameMode: state.selectedGameMode,
+            theme: state.selectedTheme,
             sort: state.sortBy,
-            search: state.searchQuery
+            search: state.searchQuery,
+            multiplayer: state.hasMultiplayer.toString()
           });
+
+          // Add rating filters if set
+          if (state.minRating !== null) {
+            params.set('minRating', state.minRating.toString());
+          }
+          if (state.maxRating !== null) {
+            params.set('maxRating', state.maxRating.toString());
+          }
 
           const response = await fetch(`/api/games?${params.toString()}`);
           if (!response.ok) {
@@ -324,7 +367,7 @@ export const useGamesStore = create<GamesState>()(
       }
     }),
     {
-      name: 'games-store',
+      name: 'games-store-v2', // Updated to reset persisted state
       partialize: (state) => ({
         sortBy: state.sortBy,
         selectedPlatform: state.selectedPlatform,
@@ -332,6 +375,11 @@ export const useGamesStore = create<GamesState>()(
         selectedCategory: state.selectedCategory,
         selectedYear: state.selectedYear,
         timeRange: state.timeRange,
+        selectedGameMode: state.selectedGameMode,
+        selectedTheme: state.selectedTheme,
+        minRating: state.minRating,
+        maxRating: state.maxRating,
+        hasMultiplayer: state.hasMultiplayer,
         searchQuery: state.searchQuery,
         hasActiveFilters: state.hasActiveFilters
       })

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useMemo } from "react";
 import { useInView } from "react-intersection-observer";
 import { useGamesInfinite } from "@/hooks/Games/useGames";
 import { GamesGrid } from "../games/sections/games-grid";
@@ -29,37 +29,34 @@ export default function AllGamesClient() {
     rootMargin: "200px", // Start loading 200px before reaching the element
   });
 
-  // Clean load more function - no unnecessary complexity
+  // Get all games from all pages - memoized to avoid recalculation
+  const allGames = useMemo(() => 
+    data?.pages?.flatMap((page) => page.games || []) ?? [], 
+    [data?.pages]
+  );
+
+  // Clean load more function - simplified dependencies
   const handleLoadMore = useCallback(() => {
     if (hasNextPage && !isFetchingNextPage && !isLoading) {
-      const currentTotalGames =
-        data?.pages?.flatMap((page) => page.games || [])?.length || 0;
-      const nextPage = (data?.pages?.length || 0) + 1;
-
-      console.log("🔄 Loading more games...", {
-        nextPage,
-        currentTotalGames,
-        hasNextPage,
-        isFetchingNextPage,
-        isLoading,
-      });
+      if (process.env.NODE_ENV === 'development') {
+        console.log("🔄 Loading more games...", {
+          nextPage: (data?.pages?.length || 0) + 1,
+          currentTotalGames: allGames.length,
+          hasNextPage,
+          isFetchingNextPage,
+          isLoading,
+        });
+      }
 
       fetchNextPage();
-    } else {
+    } else if (process.env.NODE_ENV === 'development') {
       console.log("⏸️ Not loading more games:", {
         hasNextPage,
         isFetchingNextPage,
         isLoading,
       });
     }
-  }, [
-    hasNextPage,
-    isFetchingNextPage,
-    isLoading,
-    fetchNextPage,
-    data?.pages?.length,
-    data?.pages?.flatMap((page) => page.games || [])?.length,
-  ]);
+  }, [hasNextPage, isFetchingNextPage, isLoading, fetchNextPage, allGames.length, data?.pages?.length]);
 
   // Fetch metadata once on mount
   useEffect(() => {
@@ -73,8 +70,6 @@ export default function AllGamesClient() {
     }
   }, [inView, handleLoadMore]);
 
-  // Get all games from all pages
-  const allGames = data?.pages?.flatMap((page) => page.games || []) ?? [];
   const totalGames = allGames.length;
   const isEndReached = !hasNextPage && !isFetchingNextPage;
 

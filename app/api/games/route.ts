@@ -118,7 +118,9 @@ export async function GET(request: NextRequest) {
                                 category === 'all' && year === 'all' && timeRange === 'all';
   const cacheDuration = isPopularGamesRequest ? 900 : 300; // 15min for popular, 5min for searches (IGDB only)
 
-  console.log(`📋 Games API - Page ${page}, Limit ${limit}, Search: "${search}", Popular: ${isPopularGamesRequest}`);
+  if (process.env.NODE_ENV === 'development') {
+    console.log(`📋 Games API - Page ${page}, Limit ${limit}, Search: "${search}", Popular: ${isPopularGamesRequest}`);
+  }
 
   try {
     // Build filters for IGDB using the correct interface structure
@@ -144,15 +146,19 @@ export async function GET(request: NextRequest) {
     };
 
     // Use IGDB exclusively for all-games page - no fallbacks
-    console.log('🎮 Fetching from IGDB with filters:', { 
-      search: filters.search, 
-      page: filters.page, 
-      limit: filters.limit 
-    });
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🎮 Fetching from IGDB with filters:', { 
+        search: filters.search, 
+        page: filters.page, 
+        limit: filters.limit 
+      });
+    }
     
     const igdbResponse = await IGDBService.getGames(page, limit, filters);
     
-    console.log(`✅ IGDB returned ${igdbResponse.games.length} games, hasNext: ${igdbResponse.hasNextPage}`);
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`✅ IGDB returned ${igdbResponse.games.length} games, hasNext: ${igdbResponse.hasNextPage}`);
+    }
     
     const response: GameResponse = {
       games: igdbResponse.games as unknown as Game[],
@@ -170,7 +176,9 @@ export async function GET(request: NextRequest) {
       'Cache-Control': `public, s-maxage=${cacheDuration}, stale-while-revalidate=86400`,
     });
 
-    console.log(`📤 Returning ${response.games.length} games, hasNextPage: ${response.hasNextPage}`);
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`📤 Returning ${response.games.length} games, hasNextPage: ${response.hasNextPage}`);
+    }
 
     return new Response(JSON.stringify(response), { 
       status: 200, 
@@ -178,7 +186,9 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('❌ IGDB API error:', error);
+    if (process.env.NODE_ENV === 'development') {
+      console.error('❌ IGDB API error:', error);
+    }
     
     // Return error response - no fallbacks for all-games page
     return new Response(JSON.stringify({

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import React, { useMemo } from "react";
 import {
   BarChart2,
   Calendar,
@@ -42,7 +42,7 @@ interface JournalStatsProps {
   entries: JournalEntry[];
 }
 
-export function JournalStats({ entries }: JournalStatsProps) {
+export const JournalStats = React.memo<JournalStatsProps>(({ entries }) => {
   const stats = useMemo((): JournalStatsData => {
     // Count entries by type
     const typeCount = {
@@ -119,7 +119,7 @@ export function JournalStats({ entries }: JournalStatsProps) {
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
       <Card className="bg-gray-900 border-gray-800">
         <CardHeader className="pb-2">
           <CardTitle className="text-sm font-medium text-gray-400">
@@ -330,7 +330,9 @@ export function JournalStats({ entries }: JournalStatsProps) {
               <div>
                 <div className="text-sm text-gray-400 mb-1">Journal Streak</div>
                 <div className="flex items-center gap-2">
-                  <div className="text-2xl font-bold text-white">7</div>
+                  <div className="text-2xl font-bold text-white">
+                    {calculateStreak(entries)}
+                  </div>
                   <div className="flex items-center gap-1 text-sm text-gray-400">
                     <TrendingUp className="h-4 w-4 text-green-400" />
                     <span>days</span>
@@ -339,11 +341,13 @@ export function JournalStats({ entries }: JournalStatsProps) {
               </div>
 
               <div>
-                <div className="text-sm text-gray-400 mb-1">Completion</div>
+                <div className="text-sm text-gray-400 mb-1">Review Progress</div>
                 <div className="space-y-1">
-                  <Progress value={75} className="h-2" />
+                  <Progress value={calculateReviewPercentage(entries)} className="h-2" />
                   <div className="flex justify-between text-xs">
-                    <span className="text-gray-400">75% of games reviewed</span>
+                    <span className="text-gray-400">
+                      {calculateReviewPercentage(entries).toFixed(0)}% of games reviewed
+                    </span>
                   </div>
                 </div>
               </div>
@@ -353,7 +357,9 @@ export function JournalStats({ entries }: JournalStatsProps) {
       )}
     </div>
   );
-}
+});
+
+JournalStats.displayName = 'JournalStats';
 
 function getEntryTypeLabel(type: string) {
   switch (type) {
@@ -368,4 +374,65 @@ function getEntryTypeLabel(type: string) {
     default:
       return "Journal Entry";
   }
+}
+
+// Calculate streak of consecutive days with journal entries
+function calculateStreak(entries: JournalEntry[]): number {
+  if (!entries.length) return 0;
+  
+  const sortedDates = [...new Set(entries.map(e => e.date))]
+    .sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
+  
+  if (!sortedDates.length) return 0;
+  
+  let streak = 1;
+  const today = new Date();
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+  
+  // Check if most recent entry is today or yesterday
+  const mostRecentDate = new Date(sortedDates[0]);
+  const todayStr = today.toISOString().split('T')[0];
+  const yesterdayStr = yesterday.toISOString().split('T')[0];
+  const mostRecentStr = mostRecentDate.toISOString().split('T')[0];
+  
+  if (mostRecentStr !== todayStr && mostRecentStr !== yesterdayStr) {
+    return 0; // Streak is broken
+  }
+  
+  // Count consecutive days
+  for (let i = 1; i < sortedDates.length; i++) {
+    const currentDate = new Date(sortedDates[i]);
+    const previousDate = new Date(sortedDates[i - 1]);
+    const daysDiff = Math.abs(previousDate.getTime() - currentDate.getTime()) / (1000 * 60 * 60 * 24);
+    
+    if (daysDiff === 1) {
+      streak++;
+    } else {
+      break;
+    }
+  }
+  
+  return streak;
+}
+
+// Calculate percentage of unique games that have been reviewed
+function calculateReviewPercentage(entries: JournalEntry[]): number {
+  if (!entries.length) return 0;
+  
+  const uniqueGames = new Set<string>();
+  const reviewedGames = new Set<string>();
+  
+  entries.forEach(entry => {
+    if (entry.game?.id) {
+      uniqueGames.add(entry.game.id);
+      if (entry.type === 'review') {
+        reviewedGames.add(entry.game.id);
+      }
+    }
+  });
+  
+  if (uniqueGames.size === 0) return 0;
+  
+  return (reviewedGames.size / uniqueGames.size) * 100;
 }

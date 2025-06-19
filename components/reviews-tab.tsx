@@ -58,6 +58,7 @@ export function ReviewsTab() {
               gameName={review.game_details?.name || `Game ${review.game_id}`}
               initialRating={review.rating}
               initialReview={review.review_text}
+              initialIsPublic={review.is_public}
               onReviewUpdate={refetchReviews}
             />
           ))}

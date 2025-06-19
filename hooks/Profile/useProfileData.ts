@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useMemo, useCallback } from 'react';
 import { useProfile } from "@/hooks/Profile/use-profile";
 import { useUserStats } from "@/hooks/useUserStats";
 import { useFriendsStore } from "@/stores/useFriendsStore";
@@ -32,73 +32,31 @@ export const useProfileData = () => {
     isLoading: journalLoading,
   } = useJournalStore();
 
-  const [isDataLoaded, setIsDataLoaded] = useState<boolean>(false);
+  // Optimized data fetching with parallel requests and proper error handling
+  const initializeData = useCallback(async () => {
+    if (!profile?.id) return;
 
-  // Optimize data fetching with sequential loading
-  useEffect(() => {
-    if (isDataLoaded || friendsLoading || activitiesLoading || journalLoading) {
-      return;
+    try {
+      // Fetch all data in parallel instead of sequential timeouts
+      await Promise.allSettled([
+        fetchFriends(),
+        fetchActivities(),
+        fetchEntries(),
+      ]);
+    } catch (error) {
+      // Handle any critical errors silently - individual fetches handle their own errors
+      console.error("Error during data initialization:", error);
     }
+  }, [profile?.id, fetchFriends, fetchActivities, fetchEntries]);
 
-    console.log("Starting data fetch sequence");
-
-    const friendsTimeout = setTimeout(() => {
-      console.log("Fetching friends...");
-      fetchFriends().catch((err) =>
-        console.error("Error fetching friends:", err)
-      );
-
-      const activitiesTimeout = setTimeout(() => {
-        console.log("Fetching activities...");
-        fetchActivities().catch((err) =>
-          console.error("Error fetching activities:", err)
-        );
-
-        const journalTimeout = setTimeout(() => {
-          console.log("Fetching journal entries...");
-          fetchEntries().catch((err) =>
-            console.error("Error fetching journal entries:", err)
-          );
-          setIsDataLoaded(true);
-        }, 300);
-
-        return () => clearTimeout(journalTimeout);
-      }, 300);
-
-      return () => clearTimeout(activitiesTimeout);
-    }, 0);
-
-    return () => clearTimeout(friendsTimeout);
-  }, [
-    isDataLoaded,
-    friendsLoading,
-    activitiesLoading,
-    journalLoading,
-    friends.length,
-    activities.length,
-    entries.length,
-    fetchFriends,
-    fetchActivities,
-    fetchEntries,
-  ]);
-
-  // Debug logging for activities
+  // Initialize data when profile is available
   useEffect(() => {
-    console.log("Activities state:", {
-      count: activities.length,
-      loading: activitiesLoading,
-      isDataLoaded,
-    });
-
-    if (activities.length === 0 && !activitiesLoading && isDataLoaded) {
-      console.log("Attempting to refetch activities...");
-      fetchActivities().catch((err) =>
-        console.error("Error refetching activities:", err)
-      );
+    if (profile?.id && !friendsLoading && !activitiesLoading && !journalLoading) {
+      initializeData();
     }
-  }, [activities.length, activitiesLoading, isDataLoaded, fetchActivities]);
+  }, [profile?.id, initializeData]); // Removed loading states from dependencies to prevent loops
 
-  // Memoized calculations
+  // Memoized calculations with proper error handling
   const totalGames = useMemo<number>(
     () => (isValidGameStats(gameStats) ? gameStats.total_played : 0),
     [gameStats]
@@ -110,21 +68,44 @@ export const useProfileData = () => {
   );
 
   const recentReviews = useMemo<JournalEntry[]>(
-    () =>
-      entries
-        .filter((entry) => entry.type === "review")
-        .slice(0, 3),
+    () => {
+      try {
+        return entries
+          .filter((entry) => entry.type === "review")
+          .slice(0, 3);
+      } catch {
+        return [];
+      }
+    },
     [entries]
   );
 
   const recentActivities = useMemo<FriendActivity[]>(
-    () => activities.slice(0, 5),
+    () => {
+      try {
+        return activities.slice(0, 5);
+      } catch {
+        return [];
+      }
+    },
     [activities]
   );
 
   const recentJournalEntries = useMemo<JournalEntry[]>(
-    () => entries.slice(0, 3),
+    () => {
+      try {
+        return entries.slice(0, 3);
+      } catch {
+        return [];
+      }
+    },
     [entries]
+  );
+
+  // Aggregate loading state
+  const isDataLoading = useMemo(
+    () => isLoading || friendsLoading || activitiesLoading || journalLoading,
+    [isLoading, friendsLoading, activitiesLoading, journalLoading]
   );
 
   return {
@@ -144,6 +125,7 @@ export const useProfileData = () => {
     friendsLoading,
     activitiesLoading,
     journalLoading,
+    isDataLoading,
     
     // Calculated data
     totalGames,

@@ -3,7 +3,6 @@
 import React from "react";
 import { Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import {
   Popover,
   PopoverContent,
@@ -33,7 +32,7 @@ export function ActivityReactions({ activity }: ActivityReactionsProps) {
   const supabase = createClient();
   const [userId, setUserId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const { addReaction, removeReaction } = useFriendsStore();
+  const { addReaction } = useFriendsStore();
   const [localReactions, setLocalReactions] = useState<ActivityReaction[]>(
     activity.reactions || []
   );
@@ -43,10 +42,6 @@ export function ActivityReactions({ activity }: ActivityReactionsProps) {
       const {
         data: { session },
       } = await supabase.auth.getSession();
-      console.log("Supabase session check:", {
-        hasSession: !!session,
-        userId: session?.user?.id,
-      });
       setUserId(session?.user?.id || null);
     };
     checkSession();
@@ -54,68 +49,26 @@ export function ActivityReactions({ activity }: ActivityReactionsProps) {
 
   // Update local reactions when activity reactions change
   useEffect(() => {
-    console.log("Activity reactions updated:", {
-      activityId: activity.id,
-      reactionCount: activity.reactions?.length || 0,
-      reactions: activity.reactions,
-    });
     setLocalReactions(activity.reactions || []);
   }, [activity.reactions, activity.id]);
 
   const handleReaction = async (emoji: string) => {
-    console.log("Handling reaction:", {
-      emoji,
-      userId,
-      activityId: activity.id,
-      currentReactions: localReactions.length,
-    });
-
     if (!userId) {
-      console.log("No user ID found, showing sign-in message");
       toast.error("Please sign in to react to activities");
       return;
     }
 
     if (isLoading) {
-      console.log("Already processing a reaction, skipping");
       return;
     }
 
     try {
       setIsLoading(true);
-      const userReaction = localReactions.find((r) => r.user_id === userId);
-      const isChangingReaction = userReaction && userReaction.emoji !== emoji;
-
-      console.log("Reaction state:", {
-        userReaction,
-        isChangingReaction,
-      });
-
-      if (userReaction) {
-        // Remove existing reaction
-        console.log("Removing existing reaction...");
-        await removeReaction(activity.id, userReaction.emoji);
-        setLocalReactions((prev) =>
-          prev.filter((r) => !(r.user_id === userId))
-        );
-
-        // If changing to a different emoji, add the new reaction
-        if (isChangingReaction) {
-          console.log("Adding new reaction...");
-          await addReaction(activity.id, emoji);
-          toast.success("Reaction changed");
-        } else {
-          toast.success("Reaction removed");
-        }
-      } else {
-        // Add new reaction
-        console.log("Adding reaction...");
-        await addReaction(activity.id, emoji);
-        toast.success("Reaction added");
-      }
-    } catch (error: any) {
-      console.error("Reaction error:", error);
-      console.error("Error stack:", error.stack);
+      
+      // The store now handles all reaction logic including duplicates and toggles
+      await addReaction(activity.id, emoji);
+      toast.success("Reaction updated");
+    } catch {
       toast.error("Failed to update reaction");
       // Refresh local state to match server state
       setLocalReactions(activity.reactions || []);
@@ -173,11 +126,29 @@ export function ActivityReactions({ activity }: ActivityReactionsProps) {
 
       {Object.keys(reactionCounts).length > 0 && (
         <div className="flex flex-wrap gap-1">
-          {Object.entries(reactionCounts).map(([emoji, count]) => (
-            <Badge key={emoji} variant="secondary" className="gap-1">
-              {emoji} {String(count)}
-            </Badge>
-          ))}
+          {Object.entries(reactionCounts).map(([emoji, count]) => {
+            const userHasReaction = localReactions.some(
+              (r) => r.user_id === userId && r.emoji === emoji
+            );
+            
+            return (
+              <Button
+                key={emoji}
+                variant="ghost"
+                size="sm"
+                onClick={() => handleReaction(emoji)}
+                disabled={isLoading}
+                className={cn(
+                  "h-6 px-2 gap-1 text-xs transition-all",
+                  userHasReaction 
+                    ? "bg-purple-600/20 border border-purple-500/30 text-purple-300 hover:bg-purple-600/30" 
+                    : "bg-gray-700/50 border border-gray-600/30 text-gray-300 hover:bg-gray-600/50"
+                )}
+              >
+                {emoji} {String(count)}
+              </Button>
+            );
+          })}
         </div>
       )}
     </>

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Gamepad2 } from "lucide-react";
@@ -8,7 +8,7 @@ interface GamesSectionProps {
   totalGames: number;
 }
 
-export const GamesSection: React.FC<GamesSectionProps> = ({ totalGames }) => {
+export const GamesSection = memo<GamesSectionProps>(({ totalGames }) => {
   return (
     <Card className="bg-gray-900/50 border-gray-800 backdrop-blur-sm">
       <CardHeader className="flex flex-row items-center justify-between">
@@ -37,4 +37,6 @@ export const GamesSection: React.FC<GamesSectionProps> = ({ totalGames }) => {
       </CardContent>
     </Card>
   );
-};
+});
+
+GamesSection.displayName = 'GamesSection';

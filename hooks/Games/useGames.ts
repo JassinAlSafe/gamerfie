@@ -28,6 +28,11 @@ export function useGamesInfinite() {
       store.selectedCategory,
       store.selectedYear,
       store.timeRange,
+      store.selectedGameMode,
+      store.selectedTheme,
+      store.minRating,
+      store.maxRating,
+      store.hasMultiplayer,
       debouncedSearchQuery,
     ],
     queryFn: async ({ pageParam = 1 }) => {
@@ -38,10 +43,21 @@ export function useGamesInfinite() {
         genre: store.selectedGenre || 'all',
         category: store.selectedCategory || 'all',
         year: store.selectedYear || 'all',
-        sort: store.sortBy || 'popularity', // Always default to popularity
+        sort: store.sortBy || 'popularity',
         search: debouncedSearchQuery || '',
-        timeRange: store.timeRange || 'all'
+        timeRange: store.timeRange || 'all',
+        gameMode: store.selectedGameMode || 'all',
+        theme: store.selectedTheme || 'all',
+        multiplayer: store.hasMultiplayer.toString()
       });
+
+      // Add rating filters if set
+      if (store.minRating !== null) {
+        params.set('minRating', store.minRating.toString());
+      }
+      if (store.maxRating !== null) {
+        params.set('maxRating', store.maxRating.toString());
+      }
 
       const response = await fetch(`/api/games?${params.toString()}`);
       
