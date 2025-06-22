@@ -1,173 +1,64 @@
-import { useState, useEffect } from "react";
-import { createClient } from "@/utils/supabase/client";
-import { UnifiedGameService } from '@/services/unifiedGameService';
-import toast from "react-hot-toast";
+import { useMemo } from "react";
+import { useReviewsQuery, useReviewsStatsQuery } from "./use-reviews-query";
+import { useGameDetails } from "./use-game-details";
+import { GameReview, ReviewsStats } from "./types";
 
-export interface GameReview {
-  id: string;
-  game_id: string;
-  user_id: string;
-  rating: number;
-  review_text: string;
-  is_public: boolean;
-  created_at: string;
-  updated_at: string;
-  user: {
-    id: string;
-    username: string;
-    avatar_url?: string;
-  };
-  game_details?: {
-    name: string;
-    cover_url?: string;
-    developer?: string;
-    publisher?: string;
-    genres?: string[];
-    release_date?: string;
-  };
-}
+// Re-export types for backward compatibility
+export type { GameReview, ReviewsStats };
 
-export interface ReviewsStats {
-  totalReviews: number;
-  averageRating: number;
-  ratingsDistribution: Record<number, number>;
-  topGenres: Array<{ genre: string; count: number }>;
-}
+export function useAllReviews(initialReviews?: GameReview[] | null) {
+  // Use React Query for better caching and performance
+  const reviewsQuery = useReviewsQuery(initialReviews || undefined);
+  const statsQuery = useReviewsStatsQuery();
+  
+  // Flatten all pages of reviews
+  const allReviews = useMemo(() => {
+    return reviewsQuery.data?.pages.flatMap(page => page.reviews) || [];
+  }, [reviewsQuery.data]);
 
-export function useAllReviews() {
-  const [reviews, setReviews] = useState<GameReview[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const supabase = createClient();
-
-  const fetchReviews = async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-
-      // Get current user to include their private reviews
-      const { data: { user: currentUser } } = await supabase.auth.getUser();
-
-      // Fetch reviews from journal_entries (public reviews only, plus user's own reviews)
-      const { data: reviewsData, error: reviewsError } = await supabase
-        .from('journal_entries')
-        .select(`
-          id,
-          game_id,
-          user_id,
-          rating,
-          content,
-          is_public,
-          created_at,
-          updated_at,
-          user:profiles!user_id(id, username, avatar_url)
-        `)
-        .eq('type', 'review')
-        .or(`is_public.eq.true${currentUser ? `,user_id.eq.${currentUser.id}` : ''}`)
-        .order('created_at', { ascending: false })
-        .limit(100);
-
-      if (reviewsError) throw reviewsError;
-
-      if (!reviewsData || reviewsData.length === 0) {
-        setReviews([]);
-        return;
+  // Get unique game IDs for fetching game details
+  const gameIds = useMemo(() => 
+    [...new Set(allReviews.map(review => review.game_id))],
+    [allReviews]
+  );
+  
+  const { gameDetails } = useGameDetails(gameIds);
+  
+  // Progressive loading: Show reviews immediately, add game details as they load
+  const reviewsWithGameDetails = useMemo(() => 
+    allReviews.map(review => ({
+      ...review,
+      game_details: gameDetails.get(review.game_id) || {
+        name: `Loading game ${review.game_id}...`,
+        cover_url: undefined,
+        developer: undefined,
+        publisher: undefined,
+        genres: [],
+        release_date: undefined
       }
+    })),
+    [allReviews, gameDetails]
+  );
 
-      // Fetch game details for each review
-      const reviewsWithGameDetails = await Promise.all(
-        reviewsData.map(async (review) => {
-          try {
-            const gameData = await UnifiedGameService.getGameDetails(review.game_id.toString());
-            
-            return {
-              ...review,
-              review_text: review.content, // Map content to review_text for interface compatibility
-              user: Array.isArray(review.user) ? review.user[0] : review.user, // Fix user property type
-              game_details: gameData ? {
-                name: gameData.name || `Game ${review.game_id}`,
-                cover_url: gameData.cover_url || gameData.cover?.url,
-                developer: gameData.involved_companies?.[0]?.company?.name,
-                publisher: gameData.involved_companies?.find(c => c.publisher)?.company?.name,
-                genres: gameData.genres?.map(g => g.name) || [],
-                release_date: gameData.first_release_date 
-                  ? new Date(gameData.first_release_date * 1000).toISOString().split('T')[0]
-                  : undefined
-              } : {
-                name: `Game ${review.game_id}`,
-                cover_url: undefined,
-                developer: "Unknown Developer",
-                publisher: "Unknown Publisher",
-                genres: ["Unknown"],
-                release_date: undefined
-              }
-            };
-          } catch (error) {
-            console.error(`Error fetching game details for ${review.game_id}:`, error);
-                        return {
-              ...review,
-              review_text: review.content, // Map content to review_text for interface compatibility
-              user: Array.isArray(review.user) ? review.user[0] : review.user, // Fix user property type
-              game_details: {
-                name: `Game ${review.game_id}`,
-                cover_url: undefined,
-                developer: "Unknown Developer",
-                publisher: "Unknown Publisher",
-                genres: ["Unknown"],
-                release_date: undefined
-              }
-            };
-          }
-        })
-      );
-
-      setReviews(reviewsWithGameDetails);
-    } catch (error) {
-      console.error("Error fetching reviews:", error);
-      const errorMessage = error instanceof Error ? error.message : "Failed to load reviews";
-      setError(errorMessage);
-      toast.error(errorMessage);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchReviews();
-  }, []);
-
-  // Calculate statistics
-  const stats: ReviewsStats = {
-    totalReviews: reviews.length,
-    averageRating: reviews.length > 0 
-      ? reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length 
-      : 0,
-    ratingsDistribution: reviews.reduce((acc, review) => {
-      acc[review.rating] = (acc[review.rating] || 0) + 1;
-      return acc;
-    }, {} as Record<number, number>),
-    topGenres: (() => {
-      const genreCounts = reviews.reduce((acc, review) => {
-        (review.game_details?.genres || []).forEach(genre => {
-          if (genre !== "Unknown") {
-            acc[genre] = (acc[genre] || 0) + 1;
-          }
-        });
-        return acc;
-      }, {} as Record<string, number>);
-
-      return Object.entries(genreCounts)
-        .sort(([,a], [,b]) => b - a)
-        .slice(0, 5)
-        .map(([genre, count]) => ({ genre, count }));
-    })()
-  };
+  // Get total count from the first page
+  const totalCount = reviewsQuery.data?.pages[0]?.totalCount || 0;
+  
+  // Create stats object
+  const stats: ReviewsStats = useMemo(() => ({
+    totalReviews: totalCount,
+    averageRating: statsQuery.data?.averageRating || 0,
+    ratingsDistribution: statsQuery.data?.ratingsDistribution || {},
+    topGenres: [] // TODO: Calculate from game details when available
+  }), [totalCount, statsQuery.data]);
 
   return {
-    reviews,
+    reviews: reviewsWithGameDetails,
     stats,
-    isLoading,
-    error,
-    refetchReviews: fetchReviews,
+    isLoading: reviewsQuery.isLoading,
+    error: reviewsQuery.error?.message || null,
+    hasNextPage: reviewsQuery.hasNextPage,
+    totalCount,
+    refetchReviews: () => reviewsQuery.refetch(),
+    loadMoreReviews: () => reviewsQuery.fetchNextPage(),
   };
 }

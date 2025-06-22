@@ -1,6 +1,7 @@
 import { Game } from "@/types";
 import { IGDBResponse, IGDBGame } from "@/types/igdb-types";
 import { IGDB_IMAGE_SIZES } from '@/utils/image-utils';
+import { igdbRateLimiter } from './igdb-rate-limiter';
 
 interface GameFilters {
   page: number;
@@ -205,10 +206,6 @@ export class IGDBService {
       // Check if we have specific filters
       const hasSpecificFilters = filters?.search || filters?.platformId || filters?.genreId || filters?.releaseYear;
       
-      // Debug logging for search
-      if (filters?.search) {
-        console.log(`🔍 IGDB Search requested: "${filters.search}"`);
-      }
       
       // For trending/rating-first approach, we need games with rating data
       if (!hasSpecificFilters) {
@@ -344,66 +341,43 @@ export class IGDBService {
         }
       }
 
-      // Fetch games with all necessary fields and high-quality images
-      // Enhanced search approach based on IGDB best practices
+      // Fetch games with only essential fields for better performance
       let query: string;
       
       if (filters?.search && filters.search.trim()) {
         // Use IGDB games endpoint with name filtering
         const searchTerm = filters.search.trim();
         
-        console.log(`🔍 IGDB Search: Searching for "${searchTerm}"`);
-        
         // Use case-insensitive partial matching with wildcards
         conditions.push(`name ~ *"${searchTerm.toLowerCase()}"*`);
         
         query = `
           fields name, 
-                 cover.*, 
                  cover.url, 
                  cover.image_id,
                  rating, 
-                 total_rating, 
                  total_rating_count, 
-                 genres.*, 
-                 platforms.*, 
+                 genres.name, 
+                 platforms.name, 
                  first_release_date, 
-                 summary, 
-                 screenshots.*,
-                 videos.*,
-                 artworks.*,
-                 themes.*,
-                 game_modes.*,
-                 player_perspectives.*,
-                 age_ratings.*,
-                 multiplayer_modes.*;
+                 summary;
           where ${conditions.join(' & ')};
           sort ${sortBy};
           limit ${limit};
           offset ${offset};
         `;
       } else {
-        // Standard query without search
+        // Standard query without search - minimal data
         query = `
           fields name, 
-                 cover.*, 
                  cover.url, 
                  cover.image_id,
                  rating, 
-                 total_rating, 
                  total_rating_count, 
-                 genres.*, 
-                 platforms.*, 
+                 genres.name, 
+                 platforms.name, 
                  first_release_date, 
-                 summary, 
-                 screenshots.*,
-                 videos.*,
-                 artworks.*,
-                 themes.*,
-                 game_modes.*,
-                 player_perspectives.*,
-                 age_ratings.*,
-                 multiplayer_modes.*;
+                 summary;
           where ${conditions.join(' & ')};
           sort ${sortBy};
           limit ${limit};
@@ -433,15 +407,6 @@ export class IGDBService {
       const totalPages = Math.ceil(totalGames / limit);
       const hasNextPage = page < totalPages && (processedGames.length > 0 || page <= 5);
 
-      console.log(`📊 IGDB Pagination Debug:`, {
-        page,
-        processedGamesLength: processedGames.length,
-        limit,
-        totalGames,
-        totalPages,
-        hasNextPage,
-        calculation: `${page} < ${totalPages} && (${processedGames.length} > 0 || ${page} <= 5) = ${hasNextPage}`
-      });
 
       return {
         games: processedGames,
@@ -604,94 +569,93 @@ export class IGDBService {
   }
 
   static async fetchGameDetails(gameId: string) {
-    try {
-      console.log('Fetching game details from IGDB for ID:', gameId);
-      
-      const query = `
-        fields name, cover.*, first_release_date, rating, total_rating, total_rating_count, 
-        genres.*, platforms.*, summary, storyline, involved_companies.company.name, 
-        involved_companies.developer, involved_companies.publisher, screenshots.*, videos.*, artworks.*;
-        where id = ${gameId};
-      `;
+    return igdbRateLimiter.enqueue(gameId, async () => {
+      try {
+        
+        const query = `
+          fields name, cover.*, first_release_date, rating, total_rating, total_rating_count, 
+          genres.*, platforms.*, summary, storyline, involved_companies.company.name, 
+          involved_companies.developer, involved_companies.publisher, screenshots.*, artworks.*;
+          where id = ${gameId};
+        `;
 
-      const response = await fetch(this.getProxyUrl(), {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          endpoint: 'games',
-          query: query.trim()
-        })
-      });
+        const response = await fetch(this.getProxyUrl(), {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            endpoint: 'games',
+            query: query.trim()
+          })
+        });
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('IGDB error:', errorText);
-        throw new Error('Failed to fetch game details');
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('IGDB error:', errorText);
+          
+          // Parse error message to check for rate limiting
+          try {
+            const errorData = JSON.parse(errorText);
+            if (errorData.error && errorData.error.includes('Too Many Requests')) {
+              throw new Error('Too Many Requests');
+            }
+          } catch (parseError) {
+            // If can't parse, check text content
+            if (errorText.includes('Too Many Requests') || errorText.includes('429')) {
+              throw new Error('Too Many Requests');
+            }
+          }
+          
+          throw new Error('Failed to fetch game details');
+        }
+
+        const games = await response.json();
+        const [game] = games;
+        if (!game) {
+          console.log('No game found in IGDB response');
+          return null;
+        }
+
+
+        // Process cover image URL
+        const coverUrl = game.cover?.url ? (
+          game.cover.url.startsWith('//') 
+            ? `https:${game.cover.url.replace('t_thumb', 't_cover_big')}`
+            : game.cover.url.startsWith('https:') 
+              ? game.cover.url.replace('t_thumb', 't_cover_big')
+              : `https://${game.cover.url.replace('t_thumb', 't_cover_big')}`
+        ) : null;
+
+        // Get background image from artworks or screenshots
+        const backgroundImage = game.artworks?.[0]?.url 
+          ? `https:${game.artworks[0].url.replace('t_thumb', 't_1080p')}`
+          : game.screenshots?.[0]?.url 
+            ? `https:${game.screenshots[0].url.replace('t_thumb', 't_1080p')}`
+            : coverUrl;
+
+
+        const processedGame = {
+          id: `igdb_${game.id}`,
+          name: game.name,
+          cover_url: coverUrl,
+          background_image: backgroundImage,
+          rating: game.rating || game.total_rating || null,
+          first_release_date: game.first_release_date || null,
+          platforms: game.platforms?.map((p: { name: string }) => p.name) || [],
+          genres: game.genres?.map((g: { name: string }) => g.name) || [],
+          summary: game.summary || null,
+          storyline: game.storyline || null,
+          involved_companies: game.involved_companies || []
+        };
+
+
+        return processedGame;
+      } catch (error) {
+        console.error('Error in fetchGameDetails:', error);
+        throw error;
       }
-
-      const games = await response.json();
-      const [game] = games;
-      if (!game) {
-        console.log('No game found in IGDB response');
-        return null;
-      }
-
-      console.log('Raw IGDB game data:', {
-        id: game.id,
-        name: game.name,
-        cover: game.cover,
-        artworks: game.artworks?.length,
-        screenshots: game.screenshots?.length
-      });
-
-      // Process cover image URL
-      const coverUrl = game.cover?.url ? (
-        game.cover.url.startsWith('//') 
-          ? `https:${game.cover.url.replace('t_thumb', 't_cover_big')}`
-          : game.cover.url.startsWith('https:') 
-            ? game.cover.url.replace('t_thumb', 't_cover_big')
-            : `https://${game.cover.url.replace('t_thumb', 't_cover_big')}`
-      ) : null;
-
-      // Get background image from artworks or screenshots
-      const backgroundImage = game.artworks?.[0]?.url 
-        ? `https:${game.artworks[0].url.replace('t_thumb', 't_1080p')}`
-        : game.screenshots?.[0]?.url 
-          ? `https:${game.screenshots[0].url.replace('t_thumb', 't_1080p')}`
-          : coverUrl;
-
-      console.log('Processed image URLs:', {
-        coverUrl,
-        backgroundImage
-      });
-
-      const processedGame = {
-        id: `igdb_${game.id}`,
-        name: game.name,
-        cover_url: coverUrl,
-        background_image: backgroundImage,
-        rating: game.rating || game.total_rating || null,
-        first_release_date: game.first_release_date || null,
-        platforms: game.platforms?.map((p: { name: string }) => p.name) || [],
-        genres: game.genres?.map((g: { name: string }) => g.name) || [],
-        summary: game.summary || null,
-        storyline: game.storyline || null
-      };
-
-      console.log('Returning processed game data:', {
-        id: processedGame.id,
-        name: processedGame.name,
-        hasBackgroundImage: !!processedGame.background_image,
-        hasCoverUrl: !!processedGame.cover_url
-      });
-
-      return processedGame;
-    } catch (error) {
-      console.error('Error in fetchGameDetails:', error);
-      throw error;
-    }
+    });
   }
 
   static async fetchGameAchievements(gameId: string) {

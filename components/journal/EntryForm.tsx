@@ -100,10 +100,19 @@ export function EntryForm({
     }
 
     const gameData: JournalGameData = {
-      id: game.id,
+      id: game.id.toString().startsWith('igdb_') ? game.id : `igdb_${game.id}`,
       name: game.name,
-      cover_url: game.cover?.url ? getCoverImageUrl(game.cover.url) : undefined,
+      cover_url: game.cover_url ? getCoverImageUrl(game.cover_url) : (game.cover?.url ? getCoverImageUrl(game.cover.url) : undefined),
     };
+
+    console.log('🎮 Game selection debug:', {
+      originalId: game.id,
+      finalId: gameData.id,
+      originalCover: game.cover?.url,
+      processedCover: gameData.cover_url,
+      gameName: game.name,
+      fullGameObject: game
+    });
 
     if (type === "list") {
       setSelectedGames((prev) => [...prev, gameData]);

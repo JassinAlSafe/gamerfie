@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Star,
@@ -28,15 +28,48 @@ import { CardContent } from "@/components/ui/card";
 import { useAllReviews } from "@/hooks/Reviews/use-all-reviews";
 import { AnimatedCard } from "@/components/ui/animated-card";
 import { ReviewCard } from "@/components/reviews/ReviewCard";
+import { ReviewPrefetcher } from "@/components/reviews/ReviewPrefetcher";
+import { ReviewSkeletons } from "@/components/reviews/ReviewCard/ReviewCardSkeleton";
+import { EmptyReviewsState } from "@/components/reviews/EmptyReviewsState";
+import { useInfiniteScroll } from "@/hooks/Reviews/use-infinite-scroll";
+import { GameReview } from "@/hooks/Reviews/use-all-reviews";
 
-export function ReviewsPageClient() {
+interface ReviewsPageClientProps {
+  initialReviews?: GameReview[] | null;
+}
+
+export function ReviewsPageClient({ initialReviews }: ReviewsPageClientProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState("newest");
   const [filterRating, setFilterRating] = useState("all");
   const [selectedGenre, setSelectedGenre] = useState("all");
 
   // Use the custom hook to fetch reviews
-  const { reviews: reviewsData, stats, isLoading, error } = useAllReviews();
+  const {
+    reviews: reviewsData,
+    stats,
+    isLoading,
+    error,
+    hasNextPage,
+    totalCount,
+    loadMoreReviews,
+  } = useAllReviews(initialReviews);
+
+  // Loading state is now managed by React Query
+
+  // Simplified load more with React Query
+  const handleLoadMore = useCallback(() => {
+    if (!hasNextPage || isLoading) return;
+    loadMoreReviews();
+  }, [hasNextPage, isLoading, loadMoreReviews]);
+
+  // Infinite scroll implementation
+  const { sentinelRef } = useInfiniteScroll({
+    hasNextPage,
+    isLoading: isLoading,
+    onLoadMore: handleLoadMore,
+    rootMargin: "200px"
+  });
 
   // Sort reviews based on sortBy state
   const sortedReviews = useMemo(() => {
@@ -167,65 +200,76 @@ export function ReviewsPageClient() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-950 pt-20 px-4">
+      <div className="min-h-screen bg-gradient-to-b from-gray-950 via-purple-950/10 to-gray-950 pt-20 px-4">
         <div className="max-w-7xl mx-auto">
-          <div className="animate-pulse space-y-8">
+          <div className="space-y-8">
             {/* Enhanced Header skeleton */}
-            <div className="text-center space-y-6 py-16">
-              <div className="mx-auto w-24 h-24 bg-gray-800 rounded-full"></div>
-              <div className="space-y-3">
-                <div className="h-12 bg-gray-800 rounded w-96 mx-auto"></div>
-                <div className="h-6 bg-gray-800 rounded w-2/3 mx-auto"></div>
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-center mb-16 relative"
+            >
+              <div className="relative inline-block mb-8">
+                <div className="bg-gray-800/50 rounded-full p-6 w-24 h-24 mx-auto animate-pulse"></div>
               </div>
-            </div>
+              <div className="space-y-4">
+                <div className="h-12 bg-gray-800/50 rounded w-96 mx-auto animate-pulse"></div>
+                <div className="h-6 bg-gray-800/30 rounded w-2/3 mx-auto animate-pulse"></div>
+              </div>
+            </motion.div>
 
             {/* Enhanced Stats skeleton */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12"
+            >
               {Array(4)
                 .fill(0)
                 .map((_, i) => (
-                  <div
+                  <AnimatedCard
                     key={i}
-                    className="bg-gray-800 rounded-2xl p-6 space-y-4"
+                    variant="stat"
+                    className="h-full"
                   >
-                    <div className="w-12 h-12 bg-gray-700 rounded-xl"></div>
-                    <div className="space-y-2">
-                      <div className="h-8 bg-gray-700 rounded w-3/4"></div>
-                      <div className="h-4 bg-gray-700 rounded w-1/2"></div>
-                    </div>
-                  </div>
-                ))}
-            </div>
-
-            {/* Enhanced Reviews skeleton */}
-            <div className="space-y-6">
-              {Array(3)
-                .fill(0)
-                .map((_, i) => (
-                  <div
-                    key={i}
-                    className="bg-gray-800 rounded-2xl overflow-hidden"
-                  >
-                    <div className="flex">
-                      <div className="w-64 h-80 bg-gray-700"></div>
-                      <div className="flex-1 p-6 space-y-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-12 h-12 bg-gray-700 rounded-full"></div>
-                          <div className="space-y-2">
-                            <div className="h-4 bg-gray-700 rounded w-32"></div>
-                            <div className="h-3 bg-gray-700 rounded w-20"></div>
-                          </div>
-                        </div>
-                        <div className="space-y-3">
-                          <div className="h-6 bg-gray-700 rounded w-3/4"></div>
-                          <div className="h-4 bg-gray-700 rounded w-full"></div>
-                          <div className="h-4 bg-gray-700 rounded w-5/6"></div>
-                        </div>
+                    <div className="p-6 space-y-4">
+                      <div className="w-12 h-12 bg-gray-700/50 rounded-xl animate-pulse"></div>
+                      <div className="space-y-2">
+                        <div className="h-8 bg-gray-700/40 rounded w-3/4 animate-pulse"></div>
+                        <div className="h-4 bg-gray-700/30 rounded w-1/2 animate-pulse"></div>
                       </div>
                     </div>
-                  </div>
+                  </AnimatedCard>
                 ))}
-            </div>
+            </motion.div>
+
+            {/* Filters skeleton */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="mb-8"
+            >
+              <AnimatedCard
+                variant="feature"
+                className="p-6 border border-gray-800/50"
+              >
+                <div className="flex flex-col lg:flex-row gap-6">
+                  <div className="flex-1">
+                    <div className="h-12 bg-gray-700/30 rounded animate-pulse"></div>
+                  </div>
+                  <div className="flex flex-col sm:flex-row gap-4">
+                    {Array(3).fill(0).map((_, i) => (
+                      <div key={i} className="h-12 bg-gray-700/30 rounded w-40 animate-pulse"></div>
+                    ))}
+                  </div>
+                </div>
+              </AnimatedCard>
+            </motion.div>
+
+            {/* Enhanced Reviews skeleton */}
+            <ReviewSkeletons count={5} showGameInfo={true} />
           </div>
         </div>
       </div>
@@ -521,13 +565,18 @@ export function ReviewsPageClient() {
               </span>{" "}
               of{" "}
               <span className="text-white font-semibold">
-                {stats.totalReviews}
+                {reviewsData.length}
               </span>{" "}
-              reviews
+              loaded reviews
+              {totalCount > reviewsData.length && (
+                <span className="text-purple-400 ml-1">
+                  ({totalCount} total)
+                </span>
+              )}
             </div>
-            {filteredReviews.length !== stats.totalReviews && (
+            {filteredReviews.length !== reviewsData.length && (
               <div className="text-sm text-purple-400">
-                {stats.totalReviews - filteredReviews.length} reviews filtered
+                {reviewsData.length - filteredReviews.length} reviews filtered
                 out
               </div>
             )}
@@ -587,51 +636,73 @@ export function ReviewsPageClient() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="space-y-8"
+                className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6"
               >
-                {filteredReviews.map((review, index) => (
+                {filteredReviews.length === 0 ? (
+                  <div className="col-span-full">
+                    <EmptyReviewsState />
+                  </div>
+                ) : (
+                  filteredReviews.map((review, index) => (
                   <motion.div
                     key={review.id}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.05 }}
+                    transition={{ delay: index * 0.02 }}
+                    className="h-fit"
                   >
                     <ReviewCard
                       review={review}
                       variant="default"
                       showGameInfo={true}
-                      onLike={(_reviewId) => {
-                        // TODO: Implement like functionality
-                      }}
-                      onShare={(_reviewId) => {
-                        // TODO: Implement share functionality
-                      }}
-                      onBookmark={(_reviewId) => {
-                        // TODO: Implement bookmark functionality
-                      }}
                     />
                   </motion.div>
-                ))}
+                  ))
+                )}
               </motion.div>
             )}
           </AnimatePresence>
 
-          {/* Load More / Pagination could go here */}
-          {filteredReviews.length >= 10 && (
+          {/* Infinite Scroll Sentinel */}
+          {hasNextPage && (
+            <div ref={sentinelRef} className="py-8 text-center">
+              {isLoading && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="flex items-center justify-center gap-3 text-gray-400"
+                >
+                  <div className="animate-spin w-5 h-5 border-2 border-gray-300 border-t-purple-500 rounded-full" />
+                  <span>Loading more reviews...</span>
+                </motion.div>
+              )}
+            </div>
+          )}
+
+          {/* Manual Load More Button (fallback) */}
+          {hasNextPage && !isLoading && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="text-center mt-12 py-8"
+              className="text-center mt-8 py-4"
             >
               <Button
                 variant="outline"
                 size="lg"
+                onClick={handleLoadMore}
                 className="border-gray-700/50 hover:bg-gray-800/50 hover:border-purple-500/50"
               >
-                Load More Reviews
+                Load More Reviews ({totalCount - reviewsData.length} remaining)
               </Button>
             </motion.div>
           )}
+
+          {/* Smart prefetching for performance */}
+          <ReviewPrefetcher
+            gameIds={filteredReviews.map((review) => review.game_id)}
+            hasNextPage={hasNextPage}
+            onLoadMore={handleLoadMore}
+          />
         </div>
       </div>
     </>
