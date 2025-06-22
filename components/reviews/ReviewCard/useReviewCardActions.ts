@@ -11,44 +11,29 @@ interface ReviewActionsState {
 
 export function useReviewCardActions(
   reviewId: string,
+  initialLiked: boolean = false,
+  initialBookmarked: boolean = false,
   onLike?: (reviewId: string) => void,
   onShare?: (reviewId: string) => void,
   onBookmark?: (reviewId: string) => void
 ) {
   const [state, setState] = useState<ReviewActionsState>({
-    isLiked: false,
-    isBookmarked: false,
+    isLiked: initialLiked,
+    isBookmarked: initialBookmarked,
     isLikeLoading: false,
     isBookmarkLoading: false,
     isShareLoading: false,
   });
   const [showFullReview, setShowFullReview] = useState(false);
 
-  // Load initial like/bookmark status
+  // Update state when initial values change
   useEffect(() => {
-    const loadInitialStatus = async () => {
-      try {
-        const [likeResponse, bookmarkResponse] = await Promise.all([
-          fetch(`/api/reviews/${reviewId}/like`),
-          fetch(`/api/reviews/${reviewId}/bookmark`),
-        ]);
-
-        if (likeResponse.ok) {
-          const likeData = await likeResponse.json();
-          setState(prev => ({ ...prev, isLiked: likeData.liked }));
-        }
-
-        if (bookmarkResponse.ok) {
-          const bookmarkData = await bookmarkResponse.json();
-          setState(prev => ({ ...prev, isBookmarked: bookmarkData.bookmarked }));
-        }
-      } catch (error) {
-        console.error("Error loading review status:", error);
-      }
-    };
-
-    loadInitialStatus();
-  }, [reviewId]);
+    setState(prev => ({
+      ...prev,
+      isLiked: initialLiked,
+      isBookmarked: initialBookmarked
+    }));
+  }, [initialLiked, initialBookmarked]);
 
   const handleLike = async () => {
     setState(prev => ({ ...prev, isLikeLoading: true }));

@@ -64,11 +64,11 @@ export function useGameDetails(gameIds: string[]) {
           const newMap = new Map(prevDetails);
           newGameIds.forEach(gameId => {
             newMap.set(gameId, {
-              name: `Game ${gameId.replace('igdb_', '')}`,
+              name: `Unknown Game (ID: ${gameId.replace('igdb_', '')})`,
               cover_url: undefined,
-              developer: "Unknown Developer",
-              publisher: "Unknown Publisher",
-              genres: ["Unknown"],
+              developer: "Data unavailable",
+              publisher: "Data unavailable",
+              genres: ["Game Data Missing"],
               release_date: undefined
             });
           });

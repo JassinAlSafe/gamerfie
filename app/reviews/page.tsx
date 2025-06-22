@@ -12,11 +12,10 @@ export async function generateMetadata(): Promise<Metadata> {
   try {
     const supabase = await createClient();
 
-    // Get review count for metadata
+    // Get review count for metadata from unified_reviews table
     const { count: totalReviews } = await supabase
-      .from("journal_entries")
+      .from("unified_reviews")
       .select("*", { count: "exact", head: true })
-      .eq("type", "review")
       .eq("is_public", true);
 
     const reviewCount = totalReviews || 0;
@@ -136,21 +135,23 @@ async function getInitialReviewsData() {
   try {
     const supabase = await createClient();
 
-    // Use a more aggressive approach - fetch only essential data for instant load
+    // Fetch initial community reviews for instant load (manual join)
     const { data: reviewsData, error } = await supabase
-      .from("journal_entries")
+      .from("unified_reviews")
       .select(
         `
         id,
         game_id,
         user_id,
         rating,
-        content,
+        review_text,
+        playtime_at_review,
+        is_recommended,
+        helpfulness_score,
         created_at,
-        user:profiles!user_id(id, username, avatar_url)
+        updated_at
       `
       )
-      .eq("type", "review")
       .eq("is_public", true)
       .order("created_at", { ascending: false })
       .range(0, 4) // Only 5 reviews for instant SSR load
@@ -165,12 +166,32 @@ async function getInitialReviewsData() {
       return [];
     }
 
-    // Minimal transformation for fastest possible load
+    // Manually fetch user data for the reviews
+    const userIds = [...new Set(reviewsData.map(r => r.user_id))];
+    const { data: usersData } = await supabase
+      .from("profiles")
+      .select("id, username, avatar_url")
+      .in("id", userIds);
+
+    // Create a map for quick user lookup
+    const usersMap = new Map();
+    usersData?.forEach(user => {
+      usersMap.set(user.id, user);
+    });
+
+    // Minimal transformation for fastest possible load with user data
     const transformedReviews = reviewsData.map((review: any) => ({
       ...review,
-      review_text: review.content,
-      user: Array.isArray(review.user) ? review.user[0] : review.user,
+      user: usersMap.get(review.user_id) || {
+        id: review.user_id,
+        username: "Unknown User",
+        avatar_url: null
+      },
       game_details: undefined, // Completely skip game details on server
+      likes_count: 0, // Will be fetched client-side
+      bookmarks_count: 0,
+      is_liked: false,
+      is_bookmarked: false
     })) as GameReview[];
 
     return transformedReviews;

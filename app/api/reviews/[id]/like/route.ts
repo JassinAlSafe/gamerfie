@@ -1,31 +1,34 @@
 import { NextRequest, NextResponse } from "next/server";
-import { ReviewService } from "@/services/reviewService";
+import { authenticateRequest, isAuthResult } from "@/app/api/lib/auth";
 
 export async function POST(
   _request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
+    const authResult = await authenticateRequest();
+    if (!isAuthResult(authResult)) {
+      return authResult; // Return the error response
+    }
+
+    const { supabase } = authResult;
     const reviewId = params.id;
-    const result = await ReviewService.toggleLike(reviewId);
+
+    // Use the enhanced toggle_review_like function
+    const { data: result, error } = await supabase.rpc('toggle_review_like', {
+      review_id: reviewId
+    });
+
+    if (error) throw error;
     
     return NextResponse.json({
       liked: result.liked,
-      count: result.count,
+      count: result.likes_count,
       message: result.liked ? "Review liked" : "Like removed"
     });
   } catch (error) {
     console.error("[LIKE POST] Error toggling like:", error);
     
-    if (error instanceof Error) {
-      if (error.message.includes('User not authenticated')) {
-        return NextResponse.json(
-          { error: "Authentication required" },
-          { status: 401 }
-        );
-      }
-    }
-
     return NextResponse.json(
       { error: "Failed to toggle like", details: error instanceof Error ? error.message : String(error) },
       { status: 500 }
@@ -38,10 +41,26 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
+    const authResult = await authenticateRequest();
+    if (!isAuthResult(authResult)) {
+      return NextResponse.json({ liked: false }); // Return false if not authenticated
+    }
+
+    const { user, supabase } = authResult;
     const reviewId = params.id;
-    const liked = await ReviewService.checkLikeStatus(reviewId);
+
+    const { data, error } = await supabase
+      .from('review_likes')
+      .select('id')
+      .eq('review_id', reviewId)
+      .eq('user_id', user.id)
+      .single();
+
+    if (error && error.code !== 'PGRST116') {
+      throw error;
+    }
     
-    return NextResponse.json({ liked });
+    return NextResponse.json({ liked: !!data });
   } catch (error) {
     console.error("[LIKE GET] Error checking like status:", error);
     return NextResponse.json(

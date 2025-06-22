@@ -31,7 +31,6 @@ import { ReviewCard } from "@/components/reviews/ReviewCard";
 import { ReviewPrefetcher } from "@/components/reviews/ReviewPrefetcher";
 import { ReviewSkeletons } from "@/components/reviews/ReviewCard/ReviewCardSkeleton";
 import { EmptyReviewsState } from "@/components/reviews/EmptyReviewsState";
-import { useInfiniteScroll } from "@/hooks/Reviews/use-infinite-scroll";
 import { GameReview } from "@/hooks/Reviews/use-all-reviews";
 
 interface ReviewsPageClientProps {
@@ -63,13 +62,6 @@ export function ReviewsPageClient({ initialReviews }: ReviewsPageClientProps) {
     loadMoreReviews();
   }, [hasNextPage, isLoading, loadMoreReviews]);
 
-  // Infinite scroll implementation
-  const { sentinelRef } = useInfiniteScroll({
-    hasNextPage,
-    isLoading: isLoading,
-    onLoadMore: handleLoadMore,
-    rootMargin: "200px"
-  });
 
   // Sort reviews based on sortBy state
   const sortedReviews = useMemo(() => {
@@ -563,21 +555,26 @@ export function ReviewsPageClient({ initialReviews }: ReviewsPageClientProps) {
               <span className="text-white font-semibold">
                 {filteredReviews.length}
               </span>{" "}
-              of{" "}
-              <span className="text-white font-semibold">
-                {reviewsData.length}
-              </span>{" "}
-              loaded reviews
+              {filteredReviews.length !== reviewsData.length ? (
+                <>
+                  of{" "}
+                  <span className="text-white font-semibold">
+                    {reviewsData.length}
+                  </span>{" "}
+                  loaded reviews
+                </>
+              ) : (
+                reviewsData.length === totalCount ? "reviews" : "loaded reviews"
+              )}
               {totalCount > reviewsData.length && (
                 <span className="text-purple-400 ml-1">
-                  ({totalCount} total)
+                  ({totalCount} total available)
                 </span>
               )}
             </div>
             {filteredReviews.length !== reviewsData.length && (
               <div className="text-sm text-purple-400">
-                {reviewsData.length - filteredReviews.length} reviews filtered
-                out
+                {reviewsData.length - filteredReviews.length} filtered out
               </div>
             )}
           </div>
@@ -636,7 +633,7 @@ export function ReviewsPageClient({ initialReviews }: ReviewsPageClientProps) {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6"
+                className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 items-start"
               >
                 {filteredReviews.length === 0 ? (
                   <div className="col-span-full">
@@ -649,7 +646,7 @@ export function ReviewsPageClient({ initialReviews }: ReviewsPageClientProps) {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.02 }}
-                    className="h-fit"
+                    className="w-full"
                   >
                     <ReviewCard
                       review={review}
@@ -663,45 +660,46 @@ export function ReviewsPageClient({ initialReviews }: ReviewsPageClientProps) {
             )}
           </AnimatePresence>
 
-          {/* Infinite Scroll Sentinel */}
+          {/* Load More Section */}
           {hasNextPage && (
-            <div ref={sentinelRef} className="py-8 text-center">
-              {isLoading && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-center mt-12 py-8"
+            >
+              {isLoading ? (
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   className="flex items-center justify-center gap-3 text-gray-400"
                 >
-                  <div className="animate-spin w-5 h-5 border-2 border-gray-300 border-t-purple-500 rounded-full" />
-                  <span>Loading more reviews...</span>
+                  <div className="animate-spin w-6 h-6 border-2 border-gray-300 border-t-purple-500 rounded-full" />
+                  <span className="text-lg">Loading more reviews...</span>
                 </motion.div>
+              ) : (
+                <div className="space-y-4">
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    onClick={handleLoadMore}
+                    className="border-gray-700/50 hover:bg-gray-800/50 hover:border-purple-500/50 transition-all duration-300 px-8 py-3 text-lg font-medium"
+                  >
+                    Load More Reviews
+                    <span className="ml-2 text-purple-400">
+                      ({totalCount - reviewsData.length} remaining)
+                    </span>
+                  </Button>
+                  <p className="text-sm text-gray-500">
+                    Showing {reviewsData.length} of {totalCount} reviews
+                  </p>
+                </div>
               )}
-            </div>
-          )}
-
-          {/* Manual Load More Button (fallback) */}
-          {hasNextPage && !isLoading && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="text-center mt-8 py-4"
-            >
-              <Button
-                variant="outline"
-                size="lg"
-                onClick={handleLoadMore}
-                className="border-gray-700/50 hover:bg-gray-800/50 hover:border-purple-500/50"
-              >
-                Load More Reviews ({totalCount - reviewsData.length} remaining)
-              </Button>
             </motion.div>
           )}
 
           {/* Smart prefetching for performance */}
           <ReviewPrefetcher
             gameIds={filteredReviews.map((review) => review.game_id)}
-            hasNextPage={hasNextPage}
-            onLoadMore={handleLoadMore}
           />
         </div>
       </div>

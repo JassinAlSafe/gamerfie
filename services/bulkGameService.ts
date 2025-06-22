@@ -1,4 +1,4 @@
-import { IGDBService } from './igdb';
+import { GameValidationService } from './gameValidationService';
 
 interface GameDetails {
   name: string;
@@ -19,13 +19,30 @@ const CACHE_TTL = 15 * 60 * 1000; // 15 minutes
 
 export class BulkGameService {
   /**
-   * Fetch multiple game details in a single IGDB API call
+   * Fetch multiple game details in a single IGDB API call with validation
    */
   static async fetchBulkGameDetails(gameIds: string[]): Promise<BulkGameResult> {
     if (gameIds.length === 0) return {};
 
+    // Pre-filter obviously invalid game IDs
+    const validGameIds = gameIds.filter(id => !GameValidationService.isLikelyInvalidGameId(id));
+    const invalidGameIds = gameIds.filter(id => GameValidationService.isLikelyInvalidGameId(id));
+    
+    if (invalidGameIds.length > 0) {
+      console.warn(`⚠️ Filtered out ${invalidGameIds.length} obviously invalid game IDs:`, invalidGameIds);
+    }
+
+    if (validGameIds.length === 0) {
+      // Return fallback data for all invalid IDs
+      const result: BulkGameResult = {};
+      gameIds.forEach(gameId => {
+        result[gameId] = GameValidationService.generateFallbackData(gameId, 'invalid_id');
+      });
+      return result;
+    }
+
     // Parse numeric IDs from prefixed IDs
-    const numericIds = gameIds.map(id => id.replace(/^igdb_/, '')).filter(Boolean);
+    const numericIds = validGameIds.map(id => id.replace(/^igdb_/, '')).filter(Boolean);
     
     if (numericIds.length === 0) return {};
 
@@ -36,7 +53,14 @@ export class BulkGameService {
     const cached = bulkCache.get(cacheKey);
     if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
       console.log(`📦 Using cached bulk game details for ${numericIds.length} games`);
-      return cached.data;
+      
+      // Add fallback data for any invalid IDs that were filtered out
+      const result = { ...cached.data };
+      invalidGameIds.forEach(gameId => {
+        result[gameId] = GameValidationService.generateFallbackData(gameId, 'invalid_id');
+      });
+      
+      return result;
     }
 
     try {
@@ -118,19 +142,14 @@ export class BulkGameService {
         };
       });
 
-      // Add fallback data for missing games
+      // Add fallback data for missing games using validation service
       gameIds.forEach(gameId => {
         if (!result[gameId]) {
           const numericId = gameId.replace('igdb_', '');
           console.warn(`⚠️ Adding fallback data for missing game: ${gameId} (numeric: ${numericId})`);
-          result[gameId] = {
-            name: `Game Not Found (ID: ${numericId})`,
-            cover_url: undefined,
-            developer: "Game may no longer exist in IGDB",
-            publisher: "Unknown Publisher", 
-            genres: ["Unknown"],
-            release_date: undefined
-          };
+          
+          // Use GameValidationService for better fallback data
+          result[gameId] = GameValidationService.generateFallbackData(gameId, 'not_found');
         }
       });
 
@@ -143,23 +162,21 @@ export class BulkGameService {
       // Clean up old cache entries
       this.cleanupCache();
 
+      // Add fallback data for any invalid IDs that were filtered out earlier
+      invalidGameIds.forEach(gameId => {
+        result[gameId] = GameValidationService.generateFallbackData(gameId, 'invalid_id');
+      });
+
       console.log(`✅ Successfully fetched bulk details for ${Object.keys(result).length} games`);
       return result;
 
     } catch (error) {
       console.error('Bulk game details fetch failed:', error);
       
-      // Return fallback data for all games
+      // Return fallback data for all games using validation service
       const fallbackResult: BulkGameResult = {};
       gameIds.forEach(gameId => {
-        fallbackResult[gameId] = {
-          name: `Game ${gameId.replace('igdb_', '')}`,
-          cover_url: undefined,
-          developer: "Unknown Developer",
-          publisher: "Unknown Publisher",
-          genres: ["Unknown"],
-          release_date: undefined
-        };
+        fallbackResult[gameId] = GameValidationService.generateFallbackData(gameId, 'api_error');
       });
       
       return fallbackResult;
@@ -169,7 +186,7 @@ export class BulkGameService {
   /**
    * Clean up expired cache entries
    */
-  private static cleanupCache() {
+  static cleanupCache() {
     const now = Date.now();
     let cleanedCount = 0;
     

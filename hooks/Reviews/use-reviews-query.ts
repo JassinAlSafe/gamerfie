@@ -2,7 +2,7 @@ import { useQuery, useInfiniteQuery } from '@tanstack/react-query';
 import { useSupabase } from '@/components/providers/supabase-provider';
 import { GameReview } from './types';
 
-const REVIEWS_PER_PAGE = 20;
+const REVIEWS_PER_PAGE = 6;
 const STALE_TIME = 5 * 60 * 1000; // 5 minutes
 const CACHE_TIME = 10 * 60 * 1000; // 10 minutes
 
@@ -27,48 +27,113 @@ export function useReviewsQuery(initialData?: GameReview[]) {
   return useInfiniteQuery({
     queryKey: reviewsQueryKeys.lists(),
     queryFn: async ({ pageParam = 0 }): Promise<ReviewsQueryResult> => {
-      console.log(`🔍 Fetching reviews page ${pageParam + 1}`);
+      console.log(`🔍 Fetching community reviews page ${pageParam + 1}`);
       
-      // Get current user for private reviews
+      // Get current user for interaction status and private reviews
       const { data: { user: currentUser } } = await supabase.auth.getUser();
       
-      // Get total count efficiently
+      // Get total count efficiently from unified_reviews table
       const { count: totalCount } = await supabase
-        .from('journal_entries')
+        .from('unified_reviews')
         .select('*', { count: 'exact', head: true })
-        .eq('type', 'review')
         .or(`is_public.eq.true${currentUser ? `,user_id.eq.${currentUser.id}` : ''}`);
 
-      // Fetch paginated reviews
+      // Fetch paginated reviews with community interaction data
       const from = pageParam * REVIEWS_PER_PAGE;
       const to = from + REVIEWS_PER_PAGE - 1;
 
       const { data: reviewsData, error } = await supabase
-        .from('journal_entries')
+        .from('unified_reviews')
         .select(`
           id,
           game_id,
           user_id,
           rating,
-          content,
+          review_text,
           is_public,
+          playtime_at_review,
+          is_recommended,
+          helpfulness_score,
           created_at,
-          updated_at,
-          user:profiles!user_id(id, username, avatar_url)
+          updated_at
         `)
-        .eq('type', 'review')
         .or(`is_public.eq.true${currentUser ? `,user_id.eq.${currentUser.id}` : ''}`)
         .order('created_at', { ascending: false })
         .range(from, to);
 
       if (error) throw error;
 
-      // Transform data
+      // Fetch users data manually and interaction counts
+      const reviewIds = reviewsData?.map(r => r.id) || [];
+      const userIds = [...new Set(reviewsData?.map(r => r.user_id) || [])];
+      
+      const [usersData, likesData, bookmarksData, userLikesData, userBookmarksData] = await Promise.all([
+        // Get users data
+        supabase
+          .from('profiles')
+          .select('id, username, avatar_url')
+          .in('id', userIds),
+          
+        // Get likes count for each review
+        supabase
+          .from('review_likes')
+          .select('review_id')
+          .in('review_id', reviewIds),
+        
+        // Get bookmarks count for each review  
+        supabase
+          .from('review_bookmarks')
+          .select('review_id')
+          .in('review_id', reviewIds),
+          
+        // Get current user's likes
+        currentUser ? supabase
+          .from('review_likes')
+          .select('review_id')
+          .eq('user_id', currentUser.id)
+          .in('review_id', reviewIds) : { data: [] },
+          
+        // Get current user's bookmarks
+        currentUser ? supabase
+          .from('review_bookmarks')
+          .select('review_id')
+          .eq('user_id', currentUser.id)
+          .in('review_id', reviewIds) : { data: [] }
+      ]);
+
+      // Count interactions per review
+      const likesCounts = (likesData.data || []).reduce((acc: Record<string, number>, like) => {
+        acc[like.review_id] = (acc[like.review_id] || 0) + 1;
+        return acc;
+      }, {});
+      
+      const bookmarksCounts = (bookmarksData.data || []).reduce((acc: Record<string, number>, bookmark) => {
+        acc[bookmark.review_id] = (acc[bookmark.review_id] || 0) + 1;
+        return acc;
+      }, {});
+      
+      const userLikes = new Set((userLikesData.data || []).map(like => like.review_id));
+      const userBookmarks = new Set((userBookmarksData.data || []).map(bookmark => bookmark.review_id));
+      
+      // Create users map for quick lookup
+      const usersMap = new Map();
+      (usersData.data || []).forEach(user => {
+        usersMap.set(user.id, user);
+      });
+
+      // Transform data with community interaction info
       const transformedReviews = reviewsData?.map((review: any) => ({
         ...review,
-        review_text: review.content,
-        user: Array.isArray(review.user) ? review.user[0] : review.user,
+        user: usersMap.get(review.user_id) || {
+          id: review.user_id,
+          username: "Unknown User",
+          avatar_url: null
+        },
         game_details: undefined, // Will be populated by separate query
+        likes_count: likesCounts[review.id] || 0,
+        bookmarks_count: bookmarksCounts[review.id] || 0,
+        is_liked: userLikes.has(review.id),
+        is_bookmarked: userBookmarks.has(review.id)
       })) as GameReview[] || [];
 
       return {
@@ -103,12 +168,11 @@ export function useReviewsStatsQuery() {
   return useQuery({
     queryKey: ['reviews', 'stats'],
     queryFn: async () => {
-      console.log('📊 Fetching reviews stats');
+      console.log('📊 Fetching community reviews stats');
       
       const { data: statsData, error } = await supabase
-        .from('journal_entries')
-        .select('rating, content')
-        .eq('type', 'review')
+        .from('unified_reviews')
+        .select('rating, review_text')
         .eq('is_public', true);
 
       if (error) throw error;

@@ -20,12 +20,16 @@ interface GameInfoSectionProps {
 
 export function GameInfoSection({ gameDetails, gameId, rating }: GameInfoSectionProps) {
   const coverUrl = gameDetails.cover_url?.replace("t_thumb", "t_cover_big");
+  const isDataMissing = gameDetails.genres?.includes("Game Data Missing") || 
+                       gameDetails.developer === "Data unavailable";
 
   return (
     <div className="flex gap-4 mb-4">
       {/* Game Cover */}
       <div className="w-20 h-28 flex-shrink-0 relative">
-        <div className="w-full h-full rounded-lg overflow-hidden bg-slate-800 shadow-lg relative">
+        <div className={`w-full h-full rounded-lg overflow-hidden shadow-lg relative ${
+          isDataMissing ? 'bg-slate-800/50 border border-amber-500/20' : 'bg-slate-800'
+        }`}>
           {coverUrl ? (
             <Image
               src={coverUrl}
@@ -36,7 +40,7 @@ export function GameInfoSection({ gameDetails, gameId, rating }: GameInfoSection
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center">
-              <Sparkles className="w-6 h-6 text-slate-500" />
+              <Sparkles className={`w-6 h-6 ${isDataMissing ? 'text-amber-400' : 'text-slate-500'}`} />
             </div>
           )}
         </div>
@@ -90,12 +94,16 @@ export function GameInfoSection({ gameDetails, gameId, rating }: GameInfoSection
                 <Badge
                   key={`genre-${index}`}
                   variant="outline"
-                  className="text-xs border-slate-600/50 text-slate-300 bg-slate-800/30 px-2 py-0.5 h-5"
+                  className={`text-xs px-2 py-0.5 h-5 ${
+                    genre === "Game Data Missing" 
+                      ? "border-amber-500/50 text-amber-300 bg-amber-900/20"
+                      : "border-slate-600/50 text-slate-300 bg-slate-800/30"
+                  }`}
                 >
                   {genre}
                 </Badge>
               ))}
-            {gameDetails.genres.length > 3 && (
+            {gameDetails.genres.length > 3 && !gameDetails.genres.includes("Game Data Missing") && (
               <Badge
                 variant="outline"
                 className="text-xs border-slate-700/50 text-slate-400 bg-slate-900/30 px-2 py-0.5 h-5"

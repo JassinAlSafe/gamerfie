@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { useReviewsQuery, useReviewsStatsQuery } from "./use-reviews-query";
-import { useGameDetails } from "./use-game-details";
+import { useValidatedGameDetails } from "../useUnifiedGameDetails";
 import { GameReview, ReviewsStats } from "./types";
 
 // Re-export types for backward compatibility
@@ -22,7 +22,8 @@ export function useAllReviews(initialReviews?: GameReview[] | null) {
     [allReviews]
   );
   
-  const { gameDetails } = useGameDetails(gameIds);
+  const validatedGameDetailsResult = useValidatedGameDetails(gameIds);
+  const gameDetails = validatedGameDetailsResult?.gameDetails || new Map();
   
   // Progressive loading: Show reviews immediately, add game details as they load
   const reviewsWithGameDetails = useMemo(() => 

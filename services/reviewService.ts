@@ -12,7 +12,7 @@ export class ReviewService {
     if (!user) throw new Error('User not authenticated');
 
     const { data: review, error } = await this.supabase
-      .from('reviews')
+      .from('unified_reviews')
       .insert({
         user_id: user.id,
         game_id: data.game_id,
@@ -22,14 +22,29 @@ export class ReviewService {
         playtime_at_review: data.playtime_at_review,
         is_recommended: data.is_recommended,
       })
-      .select(`
-        *,
-        user:profiles(id, username, display_name, avatar_url)
-      `)
+      .select('*')
       .single();
 
     if (error) throw error;
-    return review;
+
+    // Manually fetch user data
+    const { data: userData, error: userError } = await this.supabase
+      .from('profiles')
+      .select('id, username, display_name, avatar_url')
+      .eq('id', user.id)
+      .single();
+
+    if (userError) throw userError;
+
+    return {
+      ...review,
+      user: userData || {
+        id: user.id,
+        username: 'Unknown User',
+        display_name: null,
+        avatar_url: null
+      }
+    };
   }
 
   /**
@@ -47,18 +62,33 @@ export class ReviewService {
     if (data.is_recommended !== undefined) updateData.is_recommended = data.is_recommended;
 
     const { data: review, error } = await this.supabase
-      .from('reviews')
+      .from('unified_reviews')
       .update(updateData)
       .eq('id', data.id)
       .eq('user_id', user.id) // Ensure user can only update their own reviews
-      .select(`
-        *,
-        user:profiles(id, username, display_name, avatar_url)
-      `)
+      .select('*')
       .single();
 
     if (error) throw error;
-    return review;
+
+    // Manually fetch user data
+    const { data: userData, error: userError } = await this.supabase
+      .from('profiles')
+      .select('id, username, display_name, avatar_url')
+      .eq('id', user.id)
+      .single();
+
+    if (userError) throw userError;
+
+    return {
+      ...review,
+      user: userData || {
+        id: user.id,
+        username: 'Unknown User',
+        display_name: null,
+        avatar_url: null
+      }
+    };
   }
 
   /**
@@ -69,7 +99,7 @@ export class ReviewService {
     if (!user) throw new Error('User not authenticated');
 
     const { error } = await this.supabase
-      .from('reviews')
+      .from('unified_reviews')
       .delete()
       .eq('id', reviewId)
       .eq('user_id', user.id); // Ensure user can only delete their own reviews
@@ -82,14 +112,8 @@ export class ReviewService {
    */
   static async getReview(reviewId: string): Promise<Review | null> {
     const { data: review, error } = await this.supabase
-      .from('reviews')
-      .select(`
-        *,
-        user:profiles(id, username, display_name, avatar_url),
-        likes_count:review_likes(count),
-        bookmarks_count:review_bookmarks(count),
-        comments_count:review_comments(count)
-      `)
+      .from('unified_reviews')
+      .select('*')
       .eq('id', reviewId)
       .single();
 
@@ -98,7 +122,30 @@ export class ReviewService {
       throw error;
     }
 
-    return review;
+    // Manually fetch related data
+    const [userData, likesData, bookmarksData] = await Promise.all([
+      this.supabase
+        .from('profiles')
+        .select('id, username, display_name, avatar_url')
+        .eq('id', review.user_id)
+        .single(),
+      this.supabase
+        .from('review_likes')
+        .select('*', { count: 'exact', head: true })
+        .eq('review_id', reviewId),
+      this.supabase
+        .from('review_bookmarks')
+        .select('*', { count: 'exact', head: true })
+        .eq('review_id', reviewId)
+    ]);
+
+    return {
+      ...review,
+      user: userData.data || { id: review.user_id, username: 'Unknown User', display_name: null, avatar_url: null },
+      likes_count: likesData.count || 0,
+      bookmarks_count: bookmarksData.count || 0,
+      comments_count: 0 // TODO: Add comments count when available
+    };
   }
 
   /**
@@ -124,14 +171,8 @@ export class ReviewService {
     } = options;
 
     let query = this.supabase
-      .from('reviews')
-      .select(`
-        *,
-        user:profiles(id, username, display_name, avatar_url),
-        likes_count:review_likes(count),
-        bookmarks_count:review_bookmarks(count),
-        comments_count:review_comments(count)
-      `, { count: 'exact' });
+      .from('unified_reviews')
+      .select('*', { count: 'exact' });
 
     // Apply filters
     if (gameId) query = query.eq('game_id', gameId);
@@ -148,8 +189,70 @@ export class ReviewService {
 
     if (error) throw error;
 
+    if (!reviews || reviews.length === 0) {
+      return {
+        reviews: [],
+        totalCount: count || 0,
+        hasNextPage: false,
+        nextCursor: undefined,
+      };
+    }
+
+    // Manually fetch related data for all reviews
+    const userIds = [...new Set(reviews.map(r => r.user_id))];
+    const reviewIds = reviews.map(r => r.id);
+
+    const [usersData, likesData, bookmarksData] = await Promise.all([
+      this.supabase
+        .from('profiles')
+        .select('id, username, display_name, avatar_url')
+        .in('id', userIds),
+      this.supabase
+        .from('review_likes')
+        .select('review_id')
+        .in('review_id', reviewIds),
+      this.supabase
+        .from('review_bookmarks')
+        .select('review_id')
+        .in('review_id', reviewIds)
+    ]);
+
+    // Create lookup maps
+    const usersMap = new Map();
+    (usersData.data || []).forEach(user => {
+      usersMap.set(user.id, user);
+    });
+
+    const likesCounts = (likesData.data || []).reduce((acc: Record<string, number>, like) => {
+      acc[like.review_id] = (acc[like.review_id] || 0) + 1;
+      return acc;
+    }, {});
+
+    const bookmarksCounts = (bookmarksData.data || []).reduce((acc: Record<string, number>, bookmark) => {
+      acc[bookmark.review_id] = (acc[bookmark.review_id] || 0) + 1;
+      return acc;
+    }, {});
+
+    // Transform reviews with manual joins
+    const transformedReviews = reviews.map(review => ({
+      ...review,
+      user: usersMap.get(review.user_id) || {
+        id: review.user_id,
+        username: 'Unknown User',
+        display_name: null,
+        avatar_url: null
+      },
+      likes_count: likesCounts[review.id] || 0,
+      bookmarks_count: bookmarksCounts[review.id] || 0,
+      comments_count: 0, // TODO: Add comments count when available
+      // Add compatibility aliases
+      is_liked: false, // TODO: Check user's like status when authenticated
+      is_bookmarked: false, // TODO: Check user's bookmark status when authenticated
+      helpfulness_score: 0
+    }));
+
     return {
-      reviews: reviews || [],
+      reviews: transformedReviews,
       totalCount: count || 0,
       hasNextPage: (count || 0) > offset + limit,
       nextCursor: (count || 0) > offset + limit ? String(offset + limit) : undefined,
@@ -161,7 +264,7 @@ export class ReviewService {
    */
   static async getReviewStats(userId?: string): Promise<ReviewStats> {
     let query = this.supabase
-      .from('reviews')
+      .from('unified_reviews')
       .select('rating');
 
     if (userId) query = query.eq('user_id', userId);
@@ -332,11 +435,8 @@ export class ReviewService {
     if (!targetUserId) return null;
 
     const { data: review, error } = await this.supabase
-      .from('reviews')
-      .select(`
-        *,
-        user:profiles(id, username, display_name, avatar_url)
-      `)
+      .from('unified_reviews')
+      .select('*')
       .eq('game_id', gameId)
       .eq('user_id', targetUserId)
       .single();
@@ -346,6 +446,21 @@ export class ReviewService {
       throw error;
     }
 
-    return review;
+    // Manually fetch user data
+    const { data: userData } = await this.supabase
+      .from('profiles')
+      .select('id, username, display_name, avatar_url')
+      .eq('id', targetUserId)
+      .single();
+
+    return {
+      ...review,
+      user: userData || {
+        id: targetUserId,
+        username: 'Unknown User',
+        display_name: null,
+        avatar_url: null
+      }
+    };
   }
 } 

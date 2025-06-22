@@ -3,7 +3,7 @@
 import { useProfile } from "@/hooks/Profile/use-profile";
 import { ProfileHeader } from "@/components/profile/profile-header";
 import { ProfileNav } from "@/components/profile/profile-nav";
-import ReviewsClient from "@/components/profile/reviews/reviews-client";
+import { ProfileReviewsClient } from "@/components/profile/reviews/ProfileReviewsClient";
 import LoadingSpinner from "@/components/loadingSpinner";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
@@ -93,7 +93,7 @@ export default function ReviewsPageClient() {
         <div className="flex-grow">
           <div className="max-w-7xl mx-auto px-4 py-8">
             <div className="bg-gray-900/50 rounded-xl p-6 backdrop-blur-sm border border-white/5">
-              <ReviewsClient />
+              <ProfileReviewsClient />
             </div>
           </div>
         </div>

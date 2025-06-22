@@ -13,7 +13,7 @@ export interface Review {
   updated_at: string;
   
   // Relations (populated via joins)
-  user?: {
+  user: {
     id: string;
     username: string;
     avatar_url?: string;
@@ -26,6 +26,9 @@ export interface Review {
     publisher?: string;
     genres?: string[];
     release_date?: string;
+    isValidated?: boolean;
+    validationReason?: string;
+    lastValidated?: number;
   };
   
   // Stats (populated via aggregations)
@@ -34,6 +37,11 @@ export interface Review {
   comments_count?: number;
   user_has_liked?: boolean;
   user_has_bookmarked?: boolean;
+  
+  // Compatibility aliases for existing code
+  is_liked?: boolean;
+  is_bookmarked?: boolean;
+  helpfulness_score?: number;
 }
 
 export interface ReviewLike {

@@ -15,6 +15,9 @@ interface ReviewActionsProps {
   isBookmarkLoading: boolean;
   isShareLoading: boolean;
   gameId: string;
+  likesCount?: number;
+  bookmarksCount?: number;
+  helpfulnessScore?: number;
   onLike: () => void;
   onShare: () => void;
   onBookmark: () => void;
@@ -27,6 +30,9 @@ export function ReviewActions({
   isBookmarkLoading,
   isShareLoading,
   gameId,
+  likesCount = 0,
+  bookmarksCount = 0,
+  helpfulnessScore,
   onLike,
   onShare,
   onBookmark,
@@ -46,7 +52,7 @@ export function ReviewActions({
           }`}
         >
           <Heart className={`w-3.5 h-3.5 mr-1.5 ${isLiked ? "fill-current" : ""} ${isLikeLoading ? "animate-pulse" : ""}`} />
-          {isLikeLoading ? "..." : "Like"}
+          {isLikeLoading ? "..." : `Like${likesCount > 0 ? ` (${likesCount})` : ""}`}
         </Button>
         <Button
           variant="ghost"
@@ -72,17 +78,26 @@ export function ReviewActions({
           <Bookmark
             className={`w-3.5 h-3.5 mr-1.5 ${isBookmarked ? "fill-current" : ""} ${isBookmarkLoading ? "animate-pulse" : ""}`}
           />
-          {isBookmarkLoading ? "..." : "Save"}
+          {isBookmarkLoading ? "..." : `Save${bookmarksCount > 0 ? ` (${bookmarksCount})` : ""}`}
         </Button>
       </div>
 
-      <Link
-        href={`/game/${gameId}`}
-        className="text-xs text-white bg-slate-700/50 hover:bg-slate-600/50 transition-all font-medium flex items-center gap-1.5 px-3 py-1.5 rounded-md"
-      >
-        <Eye className="w-3.5 h-3.5" />
-        View Game
-      </Link>
+      <div className="flex items-center gap-2">
+        {/* Helpfulness Score */}
+        {helpfulnessScore !== undefined && helpfulnessScore > 0 && (
+          <div className="text-xs text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded-md font-medium">
+            {helpfulnessScore.toFixed(1)} helpful
+          </div>
+        )}
+
+        <Link
+          href={`/game/${gameId}`}
+          className="text-xs text-white bg-slate-700/50 hover:bg-slate-600/50 transition-all font-medium flex items-center gap-1.5 px-3 py-1.5 rounded-md"
+        >
+          <Eye className="w-3.5 h-3.5" />
+          View Game
+        </Link>
+      </div>
     </div>
   );
 }
