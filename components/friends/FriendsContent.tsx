@@ -19,7 +19,13 @@ import toast from "react-hot-toast";
 
 export function FriendsContent() {
   const { user, isLoading: authLoading, isInitialized } = useAuthStore();
-  const { friends, fetchFriends, addFriend, updateFriendStatus, isLoading: friendsLoading } = useFriendsStore();
+  const {
+    friends,
+    fetchFriends,
+    addFriend,
+    updateFriendStatus,
+    isLoading: friendsLoading,
+  } = useFriendsStore();
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<Friend[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -28,18 +34,18 @@ export function FriendsContent() {
   const router = useRouter();
 
   // Memoize computed values - must be called consistently at top level
-  const acceptedFriends = useMemo(() => 
-    friends.filter(friend => friend.status === "accepted"), 
+  const acceptedFriends = useMemo(
+    () => friends.filter((friend) => friend.status === "accepted"),
     [friends]
   );
 
-  const pendingFriends = useMemo(() => 
-    friends.filter(friend => friend.status === "pending"), 
+  const pendingFriends = useMemo(
+    () => friends.filter((friend) => friend.status === "pending"),
     [friends]
   );
 
-  const onlineFriendsCount = useMemo(() => 
-    acceptedFriends.filter(f => f.online_status === "online").length, 
+  const onlineFriendsCount = useMemo(
+    () => acceptedFriends.filter((f) => f.online_status === "online").length,
     [acceptedFriends]
   );
 
@@ -48,7 +54,7 @@ export function FriendsContent() {
     if (user) {
       fetchFriends();
     }
-  }, [user]); // Remove fetchFriends from dependencies to prevent infinite loop
+  }, [user, fetchFriends]); // Use store fetchFriends
 
   // Loading timeout detection
   useEffect(() => {
@@ -76,125 +82,146 @@ export function FriendsContent() {
   }, [user, authLoading, isInitialized, router]);
 
   // Search users function
-  const searchUsers = useCallback(async (query: string) => {
-    if (!query.trim()) {
-      setSearchResults([]);
-      setIsSearching(false);
-      return;
-    }
+  const searchUsers = useCallback(
+    async (query: string) => {
+      if (!query.trim()) {
+        setSearchResults([]);
+        setIsSearching(false);
+        return;
+      }
 
-    if (!user) return;
+      if (!user) return;
 
-    try {
-      setIsSearching(true);
-      
-      // Get profiles that match the search query
-      const { data: profilesData, error: profilesError } = await supabase
-        .from("profiles")
-        .select("*")
-        .ilike("username", `%${query}%`)
-        .neq("id", user.id) // Exclude current user
-        .limit(10);
+      try {
+        setIsSearching(true);
 
-      if (profilesError) throw profilesError;
-      if (!profilesData) return;
+        // Get profiles that match the search query
+        const { data: profilesData, error: profilesError } = await supabase
+          .from("profiles")
+          .select("*")
+          .ilike("username", `%${query}%`)
+          .neq("id", user.id) // Exclude current user
+          .limit(10);
 
-      // Get all friend relationships for these profiles
-      const userIds = profilesData.map((profile) => profile.id);
-      const { data: friendsData, error: friendsError } = await supabase
-        .from("friends")
-        .select("*")
-        .or(
-          `and(user_id.eq.${user.id},friend_id.in.(${userIds.join(",")})),` +
-          `and(friend_id.eq.${user.id},user_id.in.(${userIds.join(",")}))`
-        );
+        if (profilesError) throw profilesError;
+        if (!profilesData) return;
 
-      if (friendsError) throw friendsError;
+        // Get all friend relationships for these profiles
+        const userIds = profilesData.map((profile) => profile.id);
+        const { data: friendsData, error: friendsError } = await supabase
+          .from("friends")
+          .select("*")
+          .or(
+            `and(user_id.eq.${user.id},friend_id.in.(${userIds.join(",")})),` +
+              `and(friend_id.eq.${user.id},user_id.in.(${userIds.join(",")}))`
+          );
 
-      // Transform profiles into Friend type with friendship status
-      const transformedResults = profilesData.map((profile) => {
-        const friendship = friendsData?.find(
-          (f) => 
-            (f.friend_id === profile.id && f.user_id === user.id) ||
-            (f.user_id === profile.id && f.friend_id === user.id)
-        );
+        if (friendsError) throw friendsError;
 
-        return {
-          id: profile.id,
-          username: profile.username,
-          display_name: profile.display_name,
-          avatar_url: profile.avatar_url,
-          status: friendship?.status || null,
-          sender_id: friendship?.user_id || null,
-          online_status: profile.online_status || "offline",
-        } as Friend;
-      });
+        // Transform profiles into Friend type with friendship status
+        const transformedResults = profilesData.map((profile) => {
+          const friendship = friendsData?.find(
+            (f) =>
+              (f.friend_id === profile.id && f.user_id === user.id) ||
+              (f.user_id === profile.id && f.friend_id === user.id)
+          );
 
-      setSearchResults(transformedResults);
-    } catch (error) {
-      console.error("Error searching users:", error);
-      toast.error("Failed to search users");
-    } finally {
-      setIsSearching(false);
-    }
-  }, [user, supabase]);
+          return {
+            id: profile.id,
+            username: profile.username,
+            display_name: profile.display_name,
+            avatar_url: profile.avatar_url,
+            status: friendship?.status || null,
+            sender_id: friendship?.user_id || null,
+            online_status: profile.online_status || "offline",
+          } as Friend;
+        });
+
+        setSearchResults(transformedResults);
+      } catch (error) {
+        console.error("Error searching users:", error);
+        toast.error("Failed to search users");
+      } finally {
+        setIsSearching(false);
+      }
+    },
+    [user, supabase]
+  );
 
   // Send friend request function
-  const sendFriendRequest = useCallback(async (friendId: string) => {
-    try {
-      await addFriend({ friendId });
-      toast.success("Friend request sent!");
-      // Refresh search results if we have a query
-      if (searchQuery) {
-        searchUsers(searchQuery);
+  const sendFriendRequest = useCallback(
+    async (friendId: string) => {
+      try {
+        await addFriend({ friendId });
+        toast.success("Friend request sent!");
+        // Refresh search results if we have a query
+        if (searchQuery) {
+          searchUsers(searchQuery);
+        }
+      } catch (error) {
+        console.error("Error sending friend request:", error);
+        toast.error(
+          (error as Error).message || "Failed to send friend request"
+        );
       }
-    } catch (error) {
-      console.error("Error sending friend request:", error);
-      toast.error((error as Error).message || "Failed to send friend request");
-    }
-  }, [addFriend, searchQuery, searchUsers]);
+    },
+    [addFriend, searchQuery, searchUsers]
+  );
 
   // Accept friend request function
-  const acceptFriendRequest = useCallback(async (friendId: string) => {
-    try {
-      await updateFriendStatus(friendId, "accepted");
-      toast.success("Friend request accepted!");
-      // Refresh search results if we have a query
-      if (searchQuery) {
-        searchUsers(searchQuery);
+  const acceptFriendRequest = useCallback(
+    async (friendId: string) => {
+      try {
+        await updateFriendStatus(friendId, "accepted");
+        toast.success("Friend request accepted!");
+        // Refresh search results if we have a query
+        if (searchQuery) {
+          searchUsers(searchQuery);
+        }
+      } catch (error) {
+        console.error("Error accepting friend request:", error);
+        toast.error(
+          (error as Error).message || "Failed to accept friend request"
+        );
       }
-    } catch (error) {
-      console.error("Error accepting friend request:", error);
-      toast.error((error as Error).message || "Failed to accept friend request");
-    }
-  }, [updateFriendStatus, searchQuery, searchUsers]);
+    },
+    [updateFriendStatus, searchQuery, searchUsers]
+  );
 
   // Decline friend request function
-  const declineFriendRequest = useCallback(async (friendId: string) => {
-    try {
-      await updateFriendStatus(friendId, "declined");
-      toast.success("Friend request declined");
-      // Refresh search results if we have a query
-      if (searchQuery) {
-        searchUsers(searchQuery);
+  const declineFriendRequest = useCallback(
+    async (friendId: string) => {
+      try {
+        await updateFriendStatus(friendId, "declined");
+        toast.success("Friend request declined");
+        // Refresh search results if we have a query
+        if (searchQuery) {
+          searchUsers(searchQuery);
+        }
+      } catch (error) {
+        console.error("Error declining friend request:", error);
+        toast.error(
+          (error as Error).message || "Failed to decline friend request"
+        );
       }
-    } catch (error) {
-      console.error("Error declining friend request:", error);
-      toast.error((error as Error).message || "Failed to decline friend request");
-    }
-  }, [updateFriendStatus, searchQuery, searchUsers]);
+    },
+    [updateFriendStatus, searchQuery, searchUsers]
+  );
 
   // Helper function to determine friendship status
-  const getFriendshipStatus = useCallback((
-    searchUser: Friend
-  ): { status: FriendStatus; isSender: boolean } | null => {
-    if (!user || !searchUser.status) return null;
+  const getFriendshipStatus = useCallback(
+    (
+      searchUser: Friend
+    ): { status: FriendStatus; isSender: boolean } | null => {
+      if (!user || !searchUser.status) return null;
 
-    return {
-      status: searchUser.status as FriendStatus,
-      isSender: searchUser.sender_id === user.id,
-    };
-  }, [user]);
+      return {
+        status: searchUser.status as FriendStatus,
+        isSender: searchUser.sender_id === user.id,
+      };
+    },
+    [user]
+  );
 
   // Loading state with timeout handling - show loading if auth is not initialized or still loading
   if ((!isInitialized || authLoading) && !loadingTimedOut && !user) {
@@ -213,10 +240,14 @@ export function FriendsContent() {
       <Shell maxWidth="6xl" padding="lg">
         <div className="flex flex-col items-center justify-center min-h-[50vh] space-y-4">
           <div className="text-center">
-            <h2 className="text-xl font-semibold text-foreground mb-2">Loading Taking Longer Than Expected</h2>
-            <p className="text-muted-foreground mb-4">The friends page is taking longer to load than usual.</p>
-            <button 
-              onClick={() => window.location.reload()} 
+            <h2 className="text-xl font-semibold text-foreground mb-2">
+              Loading Taking Longer Than Expected
+            </h2>
+            <p className="text-muted-foreground mb-4">
+              The friends page is taking longer to load than usual.
+            </p>
+            <button
+              onClick={() => window.location.reload()}
               className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
             >
               Refresh Page
@@ -256,7 +287,9 @@ export function FriendsContent() {
             </h1>
           </div>
           <p className="text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-            Connect with fellow gamers, discover new friends, and build your gaming community. Share achievements, compare game progress, and compete on leaderboards together.
+            Connect with fellow gamers, discover new friends, and build your
+            gaming community. Share achievements, compare game progress, and
+            compete on leaderboards together.
           </p>
         </motion.div>
 
@@ -323,7 +356,9 @@ export function FriendsContent() {
                               {friend.username}
                             </h3>
                             <p className="text-sm text-muted-foreground">
-                              {isIncoming ? "Sent you a request" : "Request sent"}
+                              {isIncoming
+                                ? "Sent you a request"
+                                : "Request sent"}
                             </p>
                           </div>
                         </div>
@@ -383,16 +418,25 @@ export function FriendsContent() {
                 <Users className="h-6 w-6 text-blue-400" />
               </div>
             </div>
-            <p className="text-3xl font-bold text-foreground mb-2 group-hover:text-blue-400 transition-colors">{acceptedFriends.length}</p>
-            <p className="text-sm text-muted-foreground font-medium">Total Friends</p>
+            <p className="text-3xl font-bold text-foreground mb-2 group-hover:text-blue-400 transition-colors">
+              {acceptedFriends.length}
+            </p>
+            <p className="text-sm text-muted-foreground font-medium">
+              Total Friends
+            </p>
             <div className="mt-2 w-full bg-border/20 rounded-full h-1.5">
-              <div 
-                className="bg-blue-400 h-1.5 rounded-full transition-all duration-500" 
-                style={{ width: `${Math.min((acceptedFriends.length / 20) * 100, 100)}%` }}
+              <div
+                className="bg-blue-400 h-1.5 rounded-full transition-all duration-500"
+                style={{
+                  width: `${Math.min(
+                    (acceptedFriends.length / 20) * 100,
+                    100
+                  )}%`,
+                }}
               />
             </div>
           </div>
-          
+
           <div className="group p-6 rounded-2xl border border-border/30 bg-gradient-to-br from-card/50 to-card/80 backdrop-blur-sm text-center hover:border-green-500/30 hover:bg-card/70 transition-all duration-300">
             <div className="flex items-center justify-center mb-4">
               <div className="p-3 rounded-full bg-green-500/20 group-hover:bg-green-500/30 transition-colors relative">
@@ -403,11 +447,19 @@ export function FriendsContent() {
             <p className="text-3xl font-bold text-foreground mb-2 group-hover:text-green-400 transition-colors">
               {onlineFriendsCount}
             </p>
-            <p className="text-sm text-muted-foreground font-medium">Online Now</p>
+            <p className="text-sm text-muted-foreground font-medium">
+              Online Now
+            </p>
             <div className="mt-2 w-full bg-border/20 rounded-full h-1.5">
-              <div 
-                className="bg-green-400 h-1.5 rounded-full transition-all duration-500" 
-                style={{ width: `${acceptedFriends.length > 0 ? (onlineFriendsCount / acceptedFriends.length) * 100 : 0}%` }}
+              <div
+                className="bg-green-400 h-1.5 rounded-full transition-all duration-500"
+                style={{
+                  width: `${
+                    acceptedFriends.length > 0
+                      ? (onlineFriendsCount / acceptedFriends.length) * 100
+                      : 0
+                  }%`,
+                }}
               />
             </div>
           </div>
@@ -421,7 +473,9 @@ export function FriendsContent() {
             <p className="text-3xl font-bold text-foreground mb-2 group-hover:text-purple-400 transition-colors">
               {pendingFriends.length}
             </p>
-            <p className="text-sm text-muted-foreground font-medium">Pending Requests</p>
+            <p className="text-sm text-muted-foreground font-medium">
+              Pending Requests
+            </p>
             {pendingFriends.length > 0 && (
               <div className="mt-2 flex justify-center">
                 <span className="text-xs bg-purple-500/20 text-purple-400 px-2 py-1 rounded-full">

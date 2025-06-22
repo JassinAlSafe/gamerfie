@@ -1,19 +1,10 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@/utils/supabase/server';
 
 export async function GET() {
   const baseUrl = 'https://gamersvaultapp.com';
   const currentDate = new Date().toISOString();
   
   try {
-    // Get dynamic game pages from database
-    const supabase = await createClient();
-    const { data: games } = await supabase
-      .from('games')
-      .select('id, name, updated_at, created_at')
-      .order('created_at', { ascending: false })
-      .limit(10000); // Limit to avoid huge sitemaps
-
     // Static pages with their priorities and change frequencies
     const staticPages = [
       {
@@ -96,24 +87,13 @@ export async function GET() {
       }
     ];
 
-    // Add dynamic game pages
-    const gamePages = (games || []).map((game) => ({
-      url: `${baseUrl}/game/${game.id}`,
-      lastmod: game.updated_at || game.created_at || currentDate,
-      changefreq: 'weekly',
-      priority: '0.7'
-    }));
-
-    // Combine all pages
-    const allPages = [...staticPages, ...gamePages];
-
     // Generate XML content
     const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9 
         http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd">
-${allPages
+${staticPages
   .map(
     (page) => `  <url>
     <loc>${page.url}</loc>
@@ -135,40 +115,21 @@ ${allPages
   } catch (error) {
     console.error('Sitemap generation error:', error);
     
-    // Fallback to static pages only if database fails
-    const staticPages = [
-      {
-        url: `${baseUrl}/`,
-        lastmod: currentDate,
-        changefreq: 'daily',
-        priority: '1.0'
-      },
-      {
-        url: `${baseUrl}/explore`,
-        lastmod: currentDate,
-        changefreq: 'daily',
-        priority: '0.9'
-      },
-      {
-        url: `${baseUrl}/all-games`,
-        lastmod: currentDate,
-        changefreq: 'daily',
-        priority: '0.9'
-      }
-    ];
-
+    // Fallback to basic static pages if anything fails
     const fallbackSitemap = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-${staticPages
-  .map(
-    (page) => `  <url>
-    <loc>${page.url}</loc>
-    <lastmod>${page.lastmod}</lastmod>
-    <changefreq>${page.changefreq}</changefreq>
-    <priority>${page.priority}</priority>
-  </url>`
-  )
-  .join('\n')}
+  <url>
+    <loc>${baseUrl}/</loc>
+    <lastmod>${currentDate}</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>${baseUrl}/explore</loc>
+    <lastmod>${currentDate}</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
 </urlset>`;
 
     return new NextResponse(fallbackSitemap, {

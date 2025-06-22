@@ -16,7 +16,6 @@ import { FloatingActions } from "@/components/home/FloatingActions";
 import { BetaBanner } from "@/components/ui/BetaBanner";
 import { CookieConsent } from "@/components/ui/CookieConsent";
 import AdminShortcuts from "@/components/admin/AdminShortcuts";
-
 import { useUIStore } from "@/stores/useUIStore";
 
 // Optimized font loading with display swap for better performance
