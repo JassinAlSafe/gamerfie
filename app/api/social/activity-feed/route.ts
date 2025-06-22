@@ -36,13 +36,15 @@ export async function GET(request: Request) {
     const friendIds = friends?.map(f => f.friend_id) || [];
     const userIds = [user.id, ...friendIds];
 
-    // Get activities from friend_activities table with user and game data
+    // Get activities from friend_activities table with user, game, reactions, and comments data
     const { data: activities, error, count } = await supabase
       .from('friend_activities')
       .select(`
         *,
         user:profiles!user_id(id, username, avatar_url),
-        game:games!game_id(id, name, cover_url)
+        game:games!game_id(id, name, cover_url),
+        reactions:activity_reactions(id, user_id, emoji, user:profiles!user_id(id, username, avatar_url)),
+        comments:activity_comments(id, user_id, content, created_at, user:profiles!user_id(id, username, avatar_url))
       `, { count: 'exact' })
       .in('user_id', userIds)
       .order('created_at', { ascending: false })
@@ -64,8 +66,19 @@ export async function GET(request: Request) {
       game_id: activity.game_id,
       created_at: activity.created_at,
       details: activity.details || {},
-      reactions: [], // Can be expanded later
-      comments: [], // Can be expanded later
+      reactions: (activity.reactions || []).map((reaction: any) => ({
+        id: reaction.id,
+        user_id: reaction.user_id,
+        emoji: reaction.emoji,
+        user: reaction.user
+      })),
+      comments: (activity.comments || []).map((comment: any) => ({
+        id: comment.id,
+        user_id: comment.user_id,
+        content: comment.content,
+        created_at: comment.created_at,
+        user: comment.user
+      })),
       username: activity.user?.username,
       avatar_url: activity.user?.avatar_url,
       game_name: activity.game?.name,

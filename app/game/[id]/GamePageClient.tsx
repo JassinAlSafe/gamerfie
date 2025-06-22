@@ -29,6 +29,47 @@ function GameContent({ id }: { id: string }) {
   const { game, error } = useGameDetails(id);
   const isError = !!error;
 
+  // Generate structured data for the game
+  const generateGameStructuredData = (gameData: any) => {
+    if (!gameData) return null;
+
+    const structuredData = {
+      "@context": "https://schema.org",
+      "@type": "VideoGame",
+      "name": gameData.name,
+      "description": gameData.description || `Track your progress and connect with other players of ${gameData.name} on Game Vault.`,
+      "url": `https://gamersvaultapp.com/game/${gameData.id}`,
+      "image": gameData.cover_url,
+      "datePublished": gameData.release_date,
+      "developer": gameData.developer ? {
+        "@type": "Organization", 
+        "name": gameData.developer
+      } : undefined,
+      "publisher": gameData.publisher ? {
+        "@type": "Organization",
+        "name": gameData.publisher  
+      } : undefined,
+      "genre": Array.isArray(gameData.genres) ? gameData.genres : [gameData.genres].filter(Boolean),
+      "gamePlatform": gameData.platforms || [],
+      "applicationCategory": "Game",
+      "operatingSystem": gameData.platforms || "Multi-platform",
+      "offers": {
+        "@type": "Offer",
+        "availability": "https://schema.org/InStock",
+        "category": "Video Game"
+      },
+      "aggregateRating": gameData.rating ? {
+        "@type": "AggregateRating",
+        "ratingValue": gameData.rating,
+        "ratingCount": gameData.rating_count || 1,
+        "bestRating": 10,
+        "worstRating": 1
+      } : undefined
+    };
+
+    return structuredData;
+  };
+
   if (isError) {
     return (
       <motion.div
@@ -63,7 +104,21 @@ function GameContent({ id }: { id: string }) {
     return <LoadingFallback />;
   }
 
-  return <GameDetails game={game} />;
+  const structuredData = generateGameStructuredData(game);
+
+  return (
+    <>
+      {structuredData && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(structuredData),
+          }}
+        />
+      )}
+      <GameDetails game={game} />
+    </>
+  );
 }
 
 export function GamePageClient({ params }: GamePageProps) {

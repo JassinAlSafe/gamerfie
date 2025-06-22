@@ -95,20 +95,20 @@ export class RAWGService {
   }
 
   static async getPopularGames(page: number = 1, pageSize: number = 20) {
-    // Get current popular games with high ratings and good coverage
+    console.log(`RAWGService.getPopularGames called with page=${page}, pageSize=${pageSize}`);
+    
+    // Very permissive query for maximum games in infinite scroll
     const response = await this.fetchFromRAWG<RAWGResponse<RAWGGame>>("/games", {
-      ordering: "-rating,-rating_count",  // Order by rating then by number of ratings
+      ordering: "-added,-rating",          // Order by recently added then rating  
       page,
       page_size: pageSize,
-      metacritic: "75,100",               // High metacritic scores
-      rating: "4.0,5.0",                  // High user ratings (4.0-5.0)
-      exclude_additions: true,            // Exclude DLCs
-      exclude_parents: true,              // Exclude parent games  
-      dates: "2020-01-01,2024-12-31",     // Recent games (last 4-5 years)
-      platforms: "18,1,7,186,187,4,5,6",  // Major platforms (PS4,PC,PS5,Xbox Series,Xbox One,Nintendo Switch)
+      exclude_additions: true,            // Only exclude DLCs
+      // Removed other restrictions to get maximum games
     });
 
-    return {
+    console.log(`RAWG API response: count=${response.count}, next=${!!response.next}, results=${response.results?.length}`);
+
+    const result = {
       games: response.results.map(this.mapRAWGGameToGame),
       total: response.count,
       page,
@@ -116,6 +116,15 @@ export class RAWGService {
       hasNextPage: !!response.next,
       hasPreviousPage: !!response.previous
     };
+    
+    console.log(`RAWGService returning:`, {
+      gamesCount: result.games.length,
+      total: result.total,
+      hasNextPage: result.hasNextPage,
+      page: result.page
+    });
+    
+    return result;
   }
 
   static async getUpcomingGames(page: number = 1, pageSize: number = 20) {

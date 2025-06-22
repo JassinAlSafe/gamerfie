@@ -12,6 +12,7 @@ export interface JournalEntry {
   progress?: number;
   hoursPlayed?: number;
   rating?: number;
+  is_public?: boolean;
   createdAt: string;
   updatedAt: string;
 }

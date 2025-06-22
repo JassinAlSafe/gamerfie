@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState, useMemo, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Trash2Icon } from "lucide-react";
 import type { JournalEntry } from "@/stores/useJournalStore";
@@ -33,40 +33,51 @@ interface TimelineViewProps {
   entries: JournalEntry[];
 }
 
-export function TimelineView({ entries }: TimelineViewProps) {
+export const TimelineView = React.memo<TimelineViewProps>(({ entries }) => {
   const [editingEntry, setEditingEntry] = useState<JournalEntry | null>(null);
   const [deletingEntry, setDeletingEntry] = useState<JournalEntry | null>(null);
   const deleteEntry = useJournalStore((state) => state.deleteEntry);
 
-  const handleDelete = async () => {
+  const handleDelete = useCallback(async () => {
     if (deletingEntry) {
       await deleteEntry(deletingEntry.id);
       setDeletingEntry(null);
     }
-  };
+  }, [deletingEntry, deleteEntry]);
 
-  // Group entries by date
-  const groupedEntries = entries.reduce((groups, entry) => {
-    const date = entry.date;
-    if (!groups[date]) {
-      groups[date] = [];
-    }
-    groups[date].push(entry);
-    return groups;
-  }, {} as Record<string, JournalEntry[]>);
+  const handleEdit = useCallback((entry: JournalEntry) => {
+    setEditingEntry(entry);
+  }, []);
 
-  // Sort dates in descending order
-  const sortedDates = Object.keys(groupedEntries).sort(
-    (a, b) => new Date(b).getTime() - new Date(a).getTime()
-  );
+  const handleDeleteClick = useCallback((entry: JournalEntry) => {
+    setDeletingEntry(entry);
+  }, []);
 
-  const formatDate = (dateString: string) => {
+  // Group entries by date with memoization
+  const { groupedEntries, sortedDates } = useMemo(() => {
+    const groups = entries.reduce((acc, entry) => {
+      const date = entry.date;
+      if (!acc[date]) {
+        acc[date] = [];
+      }
+      acc[date].push(entry);
+      return acc;
+    }, {} as Record<string, JournalEntry[]>);
+
+    const dates = Object.keys(groups).sort(
+      (a, b) => new Date(b).getTime() - new Date(a).getTime()
+    );
+
+    return { groupedEntries: groups, sortedDates: dates };
+  }, [entries]);
+
+  const formatDate = useCallback((dateString: string) => {
     const date = new Date(dateString);
     return format(date, "MMMM d, yyyy");
-  };
+  }, []);
 
-  // Update the entry card rendering with improved styling
-  function renderEntryCard(entry: JournalEntry, index: number) {
+  // Memoized entry card component for better performance
+  const EntryCard = React.memo<{ entry: JournalEntry; index: number }>(({ entry, index }) => {
     // Get entry type color
     const getEntryTypeColor = (type: string) => {
       switch (type) {
@@ -154,18 +165,14 @@ export function TimelineView({ entries }: TimelineViewProps) {
                 className="bg-gray-900/95 backdrop-blur-md border border-gray-800"
               >
                 <DropdownMenuItem
-                  onClick={() => {
-                    setEditingEntry(entry);
-                  }}
+                  onClick={() => handleEdit(entry)}
                   className="text-gray-300 hover:text-white focus:text-white cursor-pointer"
                 >
                   <Edit2 className="mr-2 h-4 w-4" />
                   Edit
                 </DropdownMenuItem>
                 <DropdownMenuItem
-                  onClick={() => {
-                    setDeletingEntry(entry);
-                  }}
+                  onClick={() => handleDeleteClick(entry)}
                   className="text-red-400 hover:text-red-300 focus:text-red-300 cursor-pointer"
                 >
                   <Trash2Icon className="mr-2 h-4 w-4" />
@@ -396,7 +403,9 @@ export function TimelineView({ entries }: TimelineViewProps) {
         </div>
       </motion.div>
     );
-  }
+  });
+
+  EntryCard.displayName = 'EntryCard';
 
   return (
     <div className="space-y-8">
@@ -416,9 +425,9 @@ export function TimelineView({ entries }: TimelineViewProps) {
             </div>
 
             <div className="space-y-4">
-              {groupedEntries[date].map((entry, index) =>
-                renderEntryCard(entry, index)
-              )}
+              {groupedEntries[date].map((entry, index) => (
+                <EntryCard key={entry.id} entry={entry} index={index} />
+              ))}
             </div>
           </div>
         ))
@@ -476,4 +485,6 @@ export function TimelineView({ entries }: TimelineViewProps) {
       />
     </div>
   );
-}
+});
+
+TimelineView.displayName = 'TimelineView';

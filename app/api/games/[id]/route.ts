@@ -8,7 +8,11 @@ export async function GET(
 ) {
   try {
     const gameId = params.id;
-    console.log('Game details API called for ID:', gameId);
+    console.log('🎮 Game details API called for ID:', gameId, {
+      hasIgdbPrefix: gameId.startsWith('igdb_'),
+      hasRawgPrefix: gameId.startsWith('rawg_'),
+      isNumeric: /^\d+$/.test(gameId)
+    });
 
     let gameDetails: any = null;
     let rawgData: any = null;
@@ -79,49 +83,52 @@ export async function GET(
         }
       }
     } else {
-      // For unprefixed IDs, try to get best of both
-      console.log(`Trying hybrid approach for unprefixed ID: ${gameId}`);
+      // For unprefixed IDs, prioritize IGDB since most game data comes from IGDB
+      console.log(`Trying IGDB first for unprefixed ID: ${gameId}`);
       
       try {
-        // Try RAWG first to get the game
-        rawgData = await RAWGService.getGameDetails(gameId);
-        if (rawgData) {
-          // Then try to find IGDB equivalent for better metadata
-          const igdbSearchResults = await IGDBService.getGames(1, 1, { 
-            page: 1,
-            limit: 1,
-            search: rawgData.name,
-            sortBy: 'popularity'
-          });
-          
-          if (igdbSearchResults.games.length > 0) {
-            const igdbGame = igdbSearchResults.games[0];
-            gameDetails = {
-              ...igdbGame,
-              id: gameId,
-              background_image: rawgData.background_image,
-              metacritic: rawgData.metacritic || (igdbGame as any).metacritic,
-              dataSource: 'hybrid',
-              rawg_rating: rawgData.rating,
-              rawg_rating_count: rawgData.total_rating_count,
-            };
-          } else {
-            gameDetails = {
-              ...rawgData,
-              id: gameId,
-              dataSource: 'rawg'
-            };
-          }
+        // Try IGDB first since our reviews mostly use IGDB IDs
+        gameDetails = await IGDBService.fetchGameDetails(gameId);
+        if (gameDetails) {
+          gameDetails.id = gameId; // Keep the unprefixed ID for consistency
+          gameDetails.dataSource = 'igdb';
+          console.log(`✅ IGDB found game for ID ${gameId}: ${gameDetails.name}`);
         }
-      } catch {
-        console.log(`RAWG failed, trying IGDB directly for ID: ${gameId}`);
+      } catch (igdbError) {
+        console.log(`IGDB failed for ID ${gameId}, trying RAWG:`, igdbError);
         try {
-          gameDetails = await IGDBService.fetchGameDetails(gameId);
-          if (gameDetails) {
-            gameDetails.dataSource = 'igdb';
+          // Fallback to RAWG if IGDB fails
+          rawgData = await RAWGService.getGameDetails(gameId);
+          if (rawgData) {
+            // Then try to find IGDB equivalent for better metadata
+            const igdbSearchResults = await IGDBService.getGames(1, 1, { 
+              page: 1,
+              limit: 1,
+              search: rawgData.name,
+              sortBy: 'popularity'
+            });
+            
+            if (igdbSearchResults.games.length > 0) {
+              const igdbGame = igdbSearchResults.games[0];
+              gameDetails = {
+                ...igdbGame,
+                id: gameId,
+                background_image: rawgData.background_image,
+                metacritic: rawgData.metacritic || (igdbGame as any).metacritic,
+                dataSource: 'hybrid',
+                rawg_rating: rawgData.rating,
+                rawg_rating_count: rawgData.total_rating_count,
+              };
+            } else {
+              gameDetails = {
+                ...rawgData,
+                id: gameId,
+                dataSource: 'rawg'
+              };
+            }
           }
-        } catch {
-          console.log(`Both RAWG and IGDB failed for ID: ${gameId}`);
+        } catch (rawgError) {
+          console.log(`Both IGDB and RAWG failed for ID: ${gameId}`, { igdbError, rawgError });
         }
       }
     }
@@ -131,13 +138,13 @@ export async function GET(
       return new NextResponse('Game not found', { status: 404 });
     }
 
-    console.log('Game details fetched successfully:', {
-      id: gameDetails.id,
+    console.log('✅ Game details fetched successfully:', {
+      originalRequestId: gameId,
+      returnedId: gameDetails.id,
       name: gameDetails.name,
       dataSource: gameDetails.dataSource,
       hasCover: !!gameDetails.cover_url || !!gameDetails.cover,
-      coverUrl: gameDetails.cover_url || gameDetails.cover?.url || 'none',
-      igdbCover: gameDetails.cover?.url || 'none'
+      coverUrl: gameDetails.cover_url || gameDetails.cover?.url || 'none'
     });
 
     return NextResponse.json(gameDetails);

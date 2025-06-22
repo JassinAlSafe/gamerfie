@@ -2,7 +2,15 @@
 
 import { useState, memo, useCallback } from "react";
 import { motion } from "framer-motion";
-import { Search, X, UserPlus, Users, Clock, Check, Loader2 } from "lucide-react";
+import {
+  Search,
+  X,
+  UserPlus,
+  Users,
+  Clock,
+  Check,
+  Loader2,
+} from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -16,7 +24,10 @@ interface FriendSearchSectionProps {
   isSearching: boolean;
   onSearch: (query: string) => void;
   onSendFriendRequest: (friendId: string) => Promise<void>;
-  getFriendshipStatus: (user: Friend) => { status: FriendStatus; isSender: boolean } | null;
+  onAcceptFriendRequest?: (friendId: string) => Promise<void>;
+  getFriendshipStatus: (
+    user: Friend
+  ) => { status: FriendStatus; isSender: boolean } | null;
 }
 
 export const FriendSearchSection = memo(function FriendSearchSection({
@@ -26,103 +37,62 @@ export const FriendSearchSection = memo(function FriendSearchSection({
   isSearching,
   onSearch,
   onSendFriendRequest,
+  onAcceptFriendRequest,
   getFriendshipStatus,
 }: FriendSearchSectionProps) {
-  const [pendingRequests, setPendingRequests] = useState<Set<string>>(new Set());
+  const [pendingRequests, setPendingRequests] = useState<Set<string>>(
+    new Set()
+  );
 
-  const handleSearch = useCallback((query: string) => {
-    setSearchQuery(query);
-    onSearch(query);
-  }, [setSearchQuery, onSearch]);
+  const handleSearch = useCallback(
+    (query: string) => {
+      setSearchQuery(query);
+      onSearch(query);
+    },
+    [setSearchQuery, onSearch]
+  );
 
-  const handleSendFriendRequest = useCallback(async (friendId: string) => {
-    setPendingRequests(prev => new Set(prev).add(friendId));
-    try {
-      await onSendFriendRequest(friendId);
-    } finally {
-      setPendingRequests(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(friendId);
-        return newSet;
-      });
-    }
-  }, [onSendFriendRequest]);
+  const handleSendFriendRequest = useCallback(
+    async (friendId: string) => {
+      setPendingRequests((prev) => new Set(prev).add(friendId));
+      try {
+        await onSendFriendRequest(friendId);
+      } finally {
+        setPendingRequests((prev) => {
+          const newSet = new Set(prev);
+          newSet.delete(friendId);
+          return newSet;
+        });
+      }
+    },
+    [onSendFriendRequest]
+  );
 
   const clearSearch = useCallback(() => {
     setSearchQuery("");
     onSearch("");
   }, [setSearchQuery, onSearch]);
 
-  const renderActionButton = useCallback((user: Friend) => {
-    const isPending = pendingRequests.has(user.id);
-    const friendshipState = getFriendshipStatus(user);
+  const renderActionButton = useCallback(
+    (user: Friend) => {
+      const isPending = pendingRequests.has(user.id);
+      const friendshipState = getFriendshipStatus(user);
 
-    if (isPending) {
-      return (
-        <Button
-          size="sm"
-          variant="outline"
-          disabled
-          className="bg-muted/20 border-muted/30 text-muted-foreground cursor-not-allowed"
-        >
-          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-          Sending...
-        </Button>
-      );
-    }
-
-    if (!friendshipState) {
-      return (
-        <Button
-          size="sm"
-          variant="outline"
-          className="bg-card/30 border-border/30 hover:bg-purple-500/20 hover:border-purple-500/30 hover:text-purple-400 transition-all"
-          onClick={() => handleSendFriendRequest(user.id)}
-        >
-          <UserPlus className="w-4 h-4 mr-2" />
-          Add Friend
-        </Button>
-      );
-    }
-
-    switch (friendshipState.status) {
-      case "pending":
-        return friendshipState.isSender ? (
-          <Button
-            size="sm"
-            variant="outline"
-            className="bg-muted/20 border-muted/30 text-muted-foreground cursor-not-allowed"
-            disabled
-          >
-            <Clock className="w-4 h-4 mr-2" />
-            Request Sent
-          </Button>
-        ) : (
-          <Button
-            size="sm"
-            variant="outline"
-            className="bg-purple-500/20 border-purple-500/30 hover:bg-purple-500/30 text-purple-400"
-            onClick={() => handleSendFriendRequest(user.id)}
-          >
-            <Check className="w-4 h-4 mr-2" />
-            Accept Request
-          </Button>
-        );
-
-      case "accepted":
+      if (isPending) {
         return (
           <Button
             size="sm"
             variant="outline"
-            className="bg-green-500/20 border-green-500/30 text-green-400 cursor-not-allowed"
             disabled
+            className="bg-muted/20 border-muted/30 text-muted-foreground cursor-not-allowed"
           >
-            <Users className="w-4 h-4 mr-2" />
-            Friends
+            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            Sending...
           </Button>
         );
+      }
 
-      case "declined":
+      if (!friendshipState) {
         return (
           <Button
             size="sm"
@@ -134,11 +104,73 @@ export const FriendSearchSection = memo(function FriendSearchSection({
             Add Friend
           </Button>
         );
+      }
 
-      default:
-        return null;
-    }
-  }, [pendingRequests, getFriendshipStatus, handleSendFriendRequest]);
+      switch (friendshipState.status) {
+        case "pending":
+          return friendshipState.isSender ? (
+            <Button
+              size="sm"
+              variant="outline"
+              className="bg-muted/20 border-muted/30 text-muted-foreground cursor-not-allowed"
+              disabled
+            >
+              <Clock className="w-4 h-4 mr-2" />
+              Request Sent
+            </Button>
+          ) : (
+            <Button
+              size="sm"
+              variant="outline"
+              className="bg-purple-500/20 border-purple-500/30 hover:bg-purple-500/30 text-purple-400"
+              onClick={() =>
+                onAcceptFriendRequest
+                  ? onAcceptFriendRequest(user.id)
+                  : handleSendFriendRequest(user.id)
+              }
+            >
+              <Check className="w-4 h-4 mr-2" />
+              Accept Request
+            </Button>
+          );
+
+        case "accepted":
+          return (
+            <Button
+              size="sm"
+              variant="outline"
+              className="bg-green-500/20 border-green-500/30 text-green-400 cursor-not-allowed"
+              disabled
+            >
+              <Users className="w-4 h-4 mr-2" />
+              Friends
+            </Button>
+          );
+
+        case "declined":
+          return (
+            <Button
+              size="sm"
+              variant="outline"
+              className="bg-card/30 border-border/30 hover:bg-purple-500/20 hover:border-purple-500/30 hover:text-purple-400 transition-all"
+              onClick={() => handleSendFriendRequest(user.id)}
+            >
+              <UserPlus className="w-4 h-4 mr-2" />
+              Add Friend
+            </Button>
+          );
+
+        default:
+          return null;
+      }
+    },
+    [
+      pendingRequests,
+      getFriendshipStatus,
+      handleSendFriendRequest,
+      onAcceptFriendRequest,
+    ]
+  );
 
   return (
     <div className="space-y-4">
@@ -187,7 +219,8 @@ export const FriendSearchSection = memo(function FriendSearchSection({
               {searchResults.length > 0 ? (
                 <>
                   <p className="text-sm text-muted-foreground font-medium">
-                    Found {searchResults.length} user{searchResults.length !== 1 ? 's' : ''}
+                    Found {searchResults.length} user
+                    {searchResults.length !== 1 ? "s" : ""}
                   </p>
                   {searchResults.map((user) => (
                     <motion.div

@@ -1,37 +1,42 @@
 "use client";
 
 import React, { useState, useRef, useEffect, memo } from "react";
+import Image from "next/image";
 import { getOptimizedImageUrl } from "@/utils/image-utils";
 import { cn } from "@/lib/utils";
 
 interface OptimizedImageProps {
   src: string;
   alt: string;
-  context?: 'hero' | 'card' | 'thumbnail' | 'background';
+  context?: "hero" | "card" | "thumbnail" | "background";
   className?: string;
   priority?: boolean;
   onLoad?: () => void;
   onError?: () => void;
   placeholder?: string;
   sizes?: string;
+  width?: number;
+  height?: number;
 }
 
 export const OptimizedImage = memo(function OptimizedImage({
   src,
   alt,
-  context = 'card',
+  context = "card",
   className,
   priority = false,
   onLoad,
   onError,
   placeholder = "/placeholder.png",
   sizes,
+  width = 300,
+  height = 400,
   ...props
 }: OptimizedImageProps) {
   const [isLoaded, setIsLoaded] = useState(false);
   const [hasError, setHasError] = useState(false);
   const [inView, setInView] = useState(priority);
-  const imgRef = useRef<HTMLImageElement>(null);
+  const imgRef = useRef<HTMLDivElement>(null);
   const observerRef = useRef<IntersectionObserver | null>(null);
 
   // Intersection Observer for lazy loading
@@ -48,7 +53,7 @@ export const OptimizedImage = memo(function OptimizedImage({
       },
       {
         threshold: 0.1,
-        rootMargin: '50px',
+        rootMargin: "50px",
       }
     );
 
@@ -84,17 +89,18 @@ export const OptimizedImage = memo(function OptimizedImage({
 
       {/* Main image */}
       {(inView || priority) && (
-        <img
+        <Image
           src={hasError ? placeholder : optimizedSrc}
           alt={alt}
+          width={width}
+          height={height}
           className={cn(
             "transition-opacity duration-300",
-            isLoaded ? "opacity-100" : "opacity-0",
-            className
+            isLoaded ? "opacity-100" : "opacity-0"
           )}
           onLoad={handleLoad}
           onError={handleError}
-          loading={priority ? "eager" : "lazy"}
+          priority={priority}
           sizes={sizes}
           {...props}
         />

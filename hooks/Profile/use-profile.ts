@@ -1,7 +1,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { createClient } from "@/utils/supabase/client";
 import type { Profile } from '@/types/profile';
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 
 interface ProfileStats {
   total_played: number;
@@ -10,7 +10,7 @@ interface ProfileStats {
 }
 
 export function useProfile() {
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
   const queryClient = useQueryClient();
 
   // Get user session with optimized caching

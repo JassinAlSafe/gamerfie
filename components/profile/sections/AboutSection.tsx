@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { Profile } from "@/types/profile";
 
@@ -6,7 +6,7 @@ interface AboutSectionProps {
   profile: Profile;
 }
 
-export const AboutSection: React.FC<AboutSectionProps> = ({ profile }) => {
+export const AboutSection = memo<AboutSectionProps>(({ profile }) => {
   return (
     <Card className="bg-gray-900/50 border-gray-800 backdrop-blur-sm">
       <CardHeader>
@@ -19,4 +19,6 @@ export const AboutSection: React.FC<AboutSectionProps> = ({ profile }) => {
       </CardContent>
     </Card>
   );
-};
+});
+
+AboutSection.displayName = 'AboutSection';

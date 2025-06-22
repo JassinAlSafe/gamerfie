@@ -53,7 +53,7 @@ export default function NewsPage() {
             All News
           </h2>
           <NewsList 
-            variant="grid"
+            variant="list"
             limit={12}
             showFilters={true}
             showSearch={true}

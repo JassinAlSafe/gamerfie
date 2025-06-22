@@ -29,7 +29,7 @@ const categories: Array<{ value: NewsPost["category"]; label: string }> = [
 ];
 
 const NewsList: React.FC<NewsListProps> = ({
-  variant = "grid",
+  variant = "list",
   limit = 12,
   showFilters = true,
   showSearch = true,

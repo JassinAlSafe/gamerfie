@@ -210,9 +210,33 @@ export async function removeGameFromLibrary(gameId: string) {
     if (error) throw error
 }
 
-export async function fetchUserReviews(_userId: string): Promise<any[]> {
-    // TODO: Implement user reviews functionality
-    return [];
+export async function fetchUserReviews(userId: string) {
+    const { data, error } = await supabase
+        .from('unified_reviews')
+        .select(`
+            id,
+            game_id,
+            rating,
+            review_text,
+            is_public,
+            created_at,
+            updated_at,
+            user_id
+        `)
+        .eq('user_id', userId)
+        .eq('is_public', true)
+        .order('created_at', { ascending: false })
+
+    if (error) throw error
+
+    // For now, return simplified game objects since we don't have game details here
+    return (data || []).map(review => ({
+        ...review,
+        content: review.review_text,
+        game: {
+            name: `Game ${review.game_id}` // This would be populated from game details in a real implementation
+        }
+    }))
 }
 
 

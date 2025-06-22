@@ -1,125 +1,160 @@
 "use client";
 
-import { Suspense, useEffect } from "react";
+import { useEffect, useCallback, useMemo } from "react";
 import { useInView } from "react-intersection-observer";
-import dynamic from "next/dynamic";
-import { useGamesInfinite } from "@/hooks/Games/useGames"; // Updated import
+import { useGamesInfinite } from "@/hooks/Games/useGames";
 import { GamesGrid } from "../games/sections/games-grid";
 import { GamesError } from "../games/GamesError";
+import { GamesHeader } from "../games/sections/games-header";
 import { useGamesStore } from "@/stores/useGamesStore";
 import { useUrlParams } from "@/hooks/Settings/useUrlParams";
 
-// Dynamically import the GamesHeader component with loading state
-const GamesHeader = dynamic(
-  () => import("../games/sections/games-header").then((mod) => mod.GamesHeader),
-  {
-    loading: () => (
-      <div
-        className="h-24 bg-gray-900/80 animate-pulse rounded-xl mx-4 sm:mx-6 lg:mx-8 my-4"
-        aria-label="Loading games header"
-        role="status"
-      />
-    ),
-    ssr: false,
-  }
-);
-
 export default function AllGamesClient() {
-  const { ref: loadMoreRef, inView } = useInView({
-    threshold: 0, // Trigger as soon as element becomes visible
-    rootMargin: "300px", // Load more content even earlier for ultra-smooth scrolling
-  });
-
-  const { handleResetFilters } = useGamesStore();
+  const { fetchMetadata } = useGamesStore();
+  const { resetFiltersAndUrl } = useUrlParams();
 
   const {
+    data,
     error,
     isLoading,
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
-    allGames,
-  } = useGamesInfinite(); // Updated hook usage
+    isError,
+  } = useGamesInfinite();
 
-  useUrlParams(); // Add this line to enable URL syncing
+  // Simple intersection observer - load when user approaches the bottom
+  const { ref: loadMoreRef, inView } = useInView({
+    threshold: 0,
+    rootMargin: "200px", // Start loading 200px before reaching the element
+  });
 
-  // Load more when scrolling near bottom
-  useEffect(() => {
-    if (inView && hasNextPage && !isFetchingNextPage) {
+  // Get all games from all pages - memoized to avoid recalculation
+  const allGames = useMemo(() => 
+    data?.pages?.flatMap((page) => page.games || []) ?? [], 
+    [data?.pages]
+  );
+
+  // Clean load more function - simplified dependencies
+  const handleLoadMore = useCallback(() => {
+    if (hasNextPage && !isFetchingNextPage && !isLoading) {
+      if (process.env.NODE_ENV === 'development') {
+        console.log("🔄 Loading more games...", {
+          nextPage: (data?.pages?.length || 0) + 1,
+          currentTotalGames: allGames.length,
+          hasNextPage,
+          isFetchingNextPage,
+          isLoading,
+        });
+      }
+
       fetchNextPage();
+    } else if (process.env.NODE_ENV === 'development') {
+      console.log("⏸️ Not loading more games:", {
+        hasNextPage,
+        isFetchingNextPage,
+        isLoading,
+      });
     }
-  }, [inView, fetchNextPage, hasNextPage, isFetchingNextPage]);
+  }, [hasNextPage, isFetchingNextPage, isLoading, fetchNextPage, allGames.length, data?.pages?.length]);
 
-  if (error) {
-    return <GamesError error={error as Error} onReset={handleResetFilters} />;
+  // Fetch metadata once on mount
+  useEffect(() => {
+    fetchMetadata();
+  }, [fetchMetadata]);
+
+  // Trigger load more when intersection observer detects visibility
+  useEffect(() => {
+    if (inView) {
+      handleLoadMore();
+    }
+  }, [inView, handleLoadMore]);
+
+  const totalGames = allGames.length;
+  const isEndReached = !hasNextPage && !isFetchingNextPage;
+
+  // Error state
+  if (isError && error) {
+    return <GamesError error={error as Error} onReset={resetFiltersAndUrl} />;
   }
 
   return (
-    <div
-      className="min-h-screen bg-gradient-to-b from-gray-900/50 via-gray-950 to-gray-950"
-      role="region"
-      aria-label="All Games"
-    >
-      {/* Header with backdrop blur */}
-      <div className="sticky top-0 z-10">
-        <div className="absolute inset-0 bg-gradient-to-b from-gray-900 to-gray-950/80 backdrop-blur-sm" />
-        <Suspense
-          fallback={
-            <div
-              className="h-[140px] animate-pulse bg-gradient-to-b from-gray-900/80 to-transparent"
-              aria-label="Loading games header"
-              role="status"
-            />
-          }
-        >
-          <GamesHeader />
-        </Suspense>
+    <div className="min-h-screen bg-gradient-to-b from-gray-900/50 via-gray-950 to-gray-950">
+      {/* Header */}
+      <div className="sticky top-0 z-10 bg-gradient-to-b from-gray-900 to-gray-950/80 backdrop-blur-sm">
+        <GamesHeader />
       </div>
 
       {/* Main content */}
       <main className="relative pb-4 pt-2">
-        {/* Background pattern */}
-        <div
-          className="absolute inset-0 bg-grid-white/[0.02] bg-[size:32px_32px]"
-          aria-hidden="true"
-        />
+        <div className="max-w-[2400px] mx-auto px-2 sm:px-4 md:px-6 lg:px-8">
+          {/* Games Grid */}
+          <GamesGrid isLoading={isLoading} games={allGames} />
 
-        {/* Games grid */}
-        <div className="relative">
-          <div className="max-w-[2400px] mx-auto px-4 sm:px-6 lg:px-8">
-            <GamesGrid isLoading={isLoading} games={allGames} />
-
-            {/* Load more indicator */}
-            <div
-              ref={loadMoreRef}
-              className="flex justify-center py-6"
-              aria-live="polite"
-            >
-              {isFetchingNextPage && (
-                <div
-                  className="flex items-center gap-3 text-gray-200"
-                  role="status"
-                >
-                  <div
-                    className="h-5 w-5 border-2 border-current border-t-purple-500 rounded-full animate-spin"
-                    aria-hidden="true"
-                  />
+          {/* Infinite scroll status */}
+          <div className="py-8">
+            {/* Loading indicator */}
+            {isFetchingNextPage && (
+              <div className="flex justify-center">
+                <div className="flex items-center gap-3 text-gray-200 bg-gray-800/50 backdrop-blur-sm rounded-full px-6 py-3 border border-gray-700/30">
+                  <div className="h-5 w-5 border-2 border-gray-300 border-t-purple-500 rounded-full animate-spin" />
                   <span className="text-sm font-medium">
                     Loading more games...
                   </span>
+                  {totalGames > 0 && (
+                    <span className="text-xs text-gray-400">
+                      ({totalGames.toLocaleString()} loaded • Page{" "}
+                      {(data?.pages?.length || 0) + 1})
+                    </span>
+                  )}
                 </div>
-              )}
-              {!isFetchingNextPage && !hasNextPage && allGames.length > 0 && (
-                <div className="text-center">
+              </div>
+            )}
+
+            {/* Invisible load trigger */}
+            {hasNextPage && !isFetchingNextPage && (
+              <div ref={loadMoreRef} className="h-4" />
+            )}
+
+            {/* End state */}
+            {isEndReached && totalGames > 0 && (
+              <div className="flex justify-center">
+                <div className="text-center bg-gray-800/30 backdrop-blur-sm rounded-lg px-6 py-4 border border-gray-700/20">
                   <p className="text-sm text-gray-300 mb-1">
-                    You've reached the end of the list
+                    🎮 All games loaded!
                   </p>
                   <p className="text-xs text-gray-500">
-                    {allGames.length} games found
+                    {totalGames.toLocaleString()} games browsed across{" "}
+                    {data?.pages?.length || 0} pages
                   </p>
                 </div>
-              )}
-            </div>
+              </div>
+            )}
+
+            {/* Empty state */}
+            {!isLoading && !isFetchingNextPage && totalGames === 0 && (
+              <div className="flex justify-center">
+                <div className="text-center py-12">
+                  <p className="text-gray-400 text-lg mb-2">No games found</p>
+                  <p className="text-gray-500 text-sm">
+                    Try adjusting your search or filters
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Debug info (only in development) */}
+            {process.env.NODE_ENV === "development" && (
+              <div className="mt-4 text-center">
+                <div className="inline-block bg-gray-900/50 backdrop-blur-sm rounded-lg px-4 py-2 border border-gray-700/30">
+                  <p className="text-xs text-gray-400 font-mono">
+                    Pages: {data?.pages?.length || 0} • Games: {totalGames} •
+                    HasNext: {hasNextPage ? "✅" : "❌"} • Fetching:{" "}
+                    {isFetchingNextPage ? "🔄" : "⏸️"}
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </main>

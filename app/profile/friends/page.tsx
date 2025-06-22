@@ -43,35 +43,21 @@ export default function ProfileFriendsPage() {
   const router = useRouter();
   const { addFriend, friends, fetchFriends } = useFriendsStore();
 
-  // Check session and fetch friends
+  // Check session and get user data
   useEffect(() => {
     const checkSession = async () => {
       try {
         const {
           data: { session },
-          error: sessionError,
         } = await supabase.auth.getSession();
-        if (sessionError) throw sessionError;
 
-        if (!session?.access_token) {
-          console.log("No valid session found, redirecting to login");
-          router.push("/login");
-          return;
-        }
-
-        const {
-          data: { user },
-          error: userError,
-        } = await supabase.auth.getUser(session.access_token);
-
-        if (userError || !user?.id) {
-          console.error("Error getting user:", userError);
+        if (!session?.user) {
           router.push("/login");
           return;
         }
 
         setIsSessionLoading(false);
-        fetchFriends();
+        await fetchFriends();
       } catch (error) {
         console.error("Error checking session:", error);
         setIsSessionLoading(false);
@@ -80,7 +66,7 @@ export default function ProfileFriendsPage() {
     };
 
     checkSession();
-  }, [supabase, router, fetchFriends]);
+  }, [supabase, router, fetchFriends]); // Use store fetchFriends
 
   const searchUsers = async (query: string) => {
     if (!query.trim()) {
@@ -154,6 +140,34 @@ export default function ProfileFriendsPage() {
     } catch (error) {
       console.error("Error sending friend request:", error);
       toast.error((error as Error).message || "Failed to send friend request");
+    }
+  };
+
+  const acceptFriendRequest = async (friendId: string) => {
+    try {
+      const response = await fetch(`/api/friends/${friendId}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ status: "accepted" }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to accept friend request");
+      }
+
+      toast.success("Friend request accepted!");
+      // Refresh friends list and search results
+      fetchFriends();
+      if (searchQuery) {
+        searchUsers(searchQuery);
+      }
+    } catch (error) {
+      console.error("Error accepting friend request:", error);
+      toast.error(
+        (error as Error).message || "Failed to accept friend request"
+      );
     }
   };
 
@@ -365,14 +379,10 @@ export default function ProfileFriendsPage() {
                                                 "Accepting friend request..."
                                               );
                                               try {
-                                                await sendFriendRequest(
+                                                await acceptFriendRequest(
                                                   user.id
                                                 );
-                                                toast.success(
-                                                  "Friend request accepted!",
-                                                  { id: toastId }
-                                                );
-                                                searchUsers(searchQuery);
+                                                toast.dismiss(toastId);
                                               } catch {
                                                 toast.error(
                                                   "Failed to accept friend request",

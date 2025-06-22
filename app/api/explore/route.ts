@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { UnifiedGameService } from '@/services/unifiedGameService';
 import { PlaylistService } from '@/services/playlistService';
 
+// Force dynamic rendering to avoid static generation issues
+export const dynamic = 'force-dynamic';
+
 interface ExploreResponse {
   popular: any[];
   trending: any[];
@@ -19,14 +22,10 @@ interface ExploreResponse {
 const CACHE_TTL = 5 * 60 * 1000;
 let cachedResponse: { data: ExploreResponse; timestamp: number } | null = null;
 
-
-
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
-    const searchParams = request.nextUrl.searchParams;
-    const limit = parseInt(searchParams.get('limit') || '12');
-
-
+    // Make this static by providing a default limit instead of reading from searchParams
+    const limit = 12; // Fixed limit for static generation
 
     // Check cache first
     if (cachedResponse && Date.now() - cachedResponse.timestamp < CACHE_TTL) {
