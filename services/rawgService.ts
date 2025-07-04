@@ -1,8 +1,14 @@
 import { Game } from "@/types";
 import { RAWGGame, RAWGResponse } from "@/types/rawg";
 
-const RAWG_API_KEY = process.env.NEXT_PUBLIC_RAWG_API_KEY || "";
+// Use server-side environment variable for security
+const RAWG_API_KEY = process.env.RAWG_API_KEY || process.env.NEXT_PUBLIC_RAWG_API_KEY || "";
 const RAWG_BASE_URL = "https://api.rawg.io/api";
+
+// Validate API key is available
+if (!RAWG_API_KEY) {
+  console.warn('⚠️  RAWG API key not configured. Game metadata functionality will be limited.');
+}
 
 export class RAWGService {
   private static async fetchFromRAWG<T>(
