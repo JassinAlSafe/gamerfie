@@ -11,7 +11,9 @@
     "analyze": "ANALYZE=true next build",
     "analyze:bundle": "npm run analyze && echo '\\n📊 Bundle analysis complete! Check the browser for visualization.'",
     "check": "npm run type-check && npm run lint",
-    "check:all": "npm run type-check && npm run lint && npm run build"
+    "check:all": "npm run type-check && npm run lint && npm run build",
+    "validate-env": "dotenv -e .env.local -- node scripts/validate-env.js",
+    "setup-vercel": "./scripts/setup-vercel-env.sh"
   },
   "dependencies": {
     "@auth/supabase-adapter": "^1.7.4",
