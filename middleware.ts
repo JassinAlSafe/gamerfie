@@ -1,7 +1,29 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
+// Basic environment validation for critical variables
+function validateCriticalEnvVars() {
+  const required = ['NEXT_PUBLIC_SUPABASE_URL', 'NEXT_PUBLIC_SUPABASE_ANON_KEY'];
+  const missing = required.filter(key => !process.env[key]);
+  
+  if (missing.length > 0) {
+    console.error('❌ Critical environment variables missing:', missing.join(', '));
+    throw new Error(`Missing critical environment variables: ${missing.join(', ')}`);
+  }
+}
+
 export async function middleware(request: NextRequest) {
+  // Validate critical environment variables on first request
+  try {
+    validateCriticalEnvVars();
+  } catch (error) {
+    console.error('Environment validation failed in middleware:', error);
+    return NextResponse.json(
+      { error: 'Server configuration error. Please check environment variables.' },
+      { status: 500 }
+    );
+  }
+
   let supabaseResponse = NextResponse.next({
     request,
   })
@@ -74,15 +96,20 @@ export async function middleware(request: NextRequest) {
     }
   }
 
+  // Define protected routes that require authentication
+  const protectedPaths = ['/profile', '/dashboard', '/admin', '/settings'];
+  const isProtectedRoute = protectedPaths.some(path => 
+    request.nextUrl.pathname.startsWith(path)
+  );
+
   if (
     !user &&
+    isProtectedRoute &&
     !request.nextUrl.pathname.startsWith('/login') &&
     !request.nextUrl.pathname.startsWith('/signin') &&
     !request.nextUrl.pathname.startsWith('/signup') &&
     !request.nextUrl.pathname.startsWith('/auth') &&
-    !request.nextUrl.pathname.startsWith('/api/auth') &&
-    !request.nextUrl.pathname.startsWith('/') &&
-    request.nextUrl.pathname !== '/'
+    !request.nextUrl.pathname.startsWith('/api/auth')
   ) {
     // no user, potentially respond by redirecting the user to the login page
     const url = request.nextUrl.clone()

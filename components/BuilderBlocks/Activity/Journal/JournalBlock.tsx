@@ -101,10 +101,10 @@ function JournalEntryCard({ entry }: { entry: JournalEntry }) {
           </div>
 
           {entry.game && (
-            <p className="text-xs text-muted-foreground/80 truncate flex items-center gap-1.5">
+            <div className="text-xs text-muted-foreground/80 truncate flex items-center gap-1.5">
               <div className="h-1.5 w-1.5 bg-purple-400 rounded-full" />
               {entry.game.name}
-            </p>
+            </div>
           )}
 
           <div className="flex flex-wrap items-center gap-2">

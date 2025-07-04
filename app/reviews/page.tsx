@@ -7,6 +7,9 @@ import { GameReview } from "@/hooks/Reviews/use-all-reviews";
 import { Suspense } from "react";
 import { StaticReviewsLoading } from "@/components/reviews/StaticReviewsLoading";
 
+// Force dynamic rendering due to Supabase auth/cookies usage
+export const dynamic = 'force-dynamic';
+
 // Generate metadata with real stats
 export async function generateMetadata(): Promise<Metadata> {
   try {
