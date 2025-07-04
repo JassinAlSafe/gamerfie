@@ -82,11 +82,12 @@ export async function generateMetadata({ params }: GamePageProps): Promise<Metad
         'game:genre': genresList
       }
     };
-  } catch (error) {
-    console.error('Error generating game metadata:', error);
+  } catch {
+    // Handle metadata generation errors gracefully
     return {
       title: "Game Details | Game Vault",
-      description: "Explore game details, track your progress, and connect with the gaming community on Game Vault."
+      description: "Explore game details, track your progress, and connect with the gaming community on Game Vault.",
+      robots: { index: false, follow: false }
     };
   }
 }

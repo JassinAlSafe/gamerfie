@@ -733,7 +733,7 @@ export class UnifiedGameService {
   static async testConnectivity(): Promise<{ igdb: boolean; rawg: boolean }> {
     const results = await Promise.allSettled([
       IGDBService.testConnection(),
-      fetch('https://api.rawg.io/api/games?key=' + process.env.NEXT_PUBLIC_RAWG_API_KEY).then(r => r.ok)
+      fetch('https://api.rawg.io/api/games?key=' + (process.env.RAWG_API_KEY || process.env.NEXT_PUBLIC_RAWG_API_KEY)).then(r => r.ok)
     ]);
     
     return {

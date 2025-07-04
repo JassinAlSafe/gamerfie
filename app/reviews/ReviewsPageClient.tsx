@@ -4,7 +4,6 @@ import React, { useState, useMemo, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Star,
-  Search,
   Filter,
   TrendingUp,
   Users,
@@ -15,7 +14,6 @@ import {
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -31,6 +29,7 @@ import { ReviewCard } from "@/components/reviews/ReviewCard";
 import { ReviewPrefetcher } from "@/components/reviews/ReviewPrefetcher";
 import { ReviewSkeletons } from "@/components/reviews/ReviewCard/ReviewCardSkeleton";
 import { EmptyReviewsState } from "@/components/reviews/EmptyReviewsState";
+import { SearchWithSuggestions } from "@/components/reviews/SearchWithSuggestions";
 import { GameReview } from "@/hooks/Reviews/use-all-reviews";
 
 interface ReviewsPageClientProps {
@@ -42,6 +41,7 @@ export function ReviewsPageClient({ initialReviews }: ReviewsPageClientProps) {
   const [sortBy, setSortBy] = useState("newest");
   const [filterRating, setFilterRating] = useState("all");
   const [selectedGenre, setSelectedGenre] = useState("all");
+  const [recommendationFilter, setRecommendationFilter] = useState<'all' | 'recommended' | 'not-recommended'>('all');
 
   // Use the custom hook to fetch reviews
   const {
@@ -108,9 +108,14 @@ export function ReviewsPageClient({ initialReviews }: ReviewsPageClientProps) {
         selectedGenre === "all" ||
         review.game_details?.genres?.includes(selectedGenre);
 
-      return matchesSearch && matchesRating && matchesGenre;
+      const matchesRecommendation = 
+        recommendationFilter === 'all' ||
+        (recommendationFilter === 'recommended' && review.is_recommended === true) ||
+        (recommendationFilter === 'not-recommended' && review.is_recommended === false);
+
+      return matchesSearch && matchesRating && matchesGenre && matchesRecommendation;
     });
-  }, [sortedReviews, searchQuery, filterRating, selectedGenre]);
+  }, [sortedReviews, searchQuery, filterRating, selectedGenre, recommendationFilter]);
 
   // Generate structured data for reviews
   const generateStructuredData = () => {
@@ -307,12 +312,14 @@ export function ReviewsPageClient({ initialReviews }: ReviewsPageClientProps) {
     setSearchQuery("");
     setFilterRating("all");
     setSelectedGenre("all");
+    setRecommendationFilter('all');
   };
 
   const activeFiltersCount = [
     searchQuery,
     filterRating !== "all" ? filterRating : null,
     selectedGenre !== "all" ? selectedGenre : null,
+    recommendationFilter !== 'all' ? recommendationFilter : null,
   ].filter(Boolean).length;
 
   return (
@@ -415,24 +422,14 @@ export function ReviewsPageClient({ initialReviews }: ReviewsPageClientProps) {
               className="p-6 border border-gray-800/50"
             >
               <div className="flex flex-col lg:flex-row gap-6">
-                {/* Search */}
-                <div className="relative flex-1">
-                  <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-                  <Input
-                    placeholder="Search reviews, games, or users..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-12 bg-gray-800/50 border-gray-700/50 h-12 text-white placeholder:text-gray-400"
-                  />
-                  {searchQuery && (
-                    <button
-                      onClick={() => setSearchQuery("")}
-                      className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  )}
-                </div>
+                {/* Enhanced Search with Suggestions */}
+                <SearchWithSuggestions
+                  value={searchQuery}
+                  onChange={setSearchQuery}
+                  reviews={reviewsData || []}
+                  className="flex-1"
+                  placeholder="Search reviews, games, or users..."
+                />
 
                 {/* Filters Row */}
                 <div className="flex flex-col sm:flex-row gap-4">
@@ -494,6 +491,83 @@ export function ReviewsPageClient({ initialReviews }: ReviewsPageClientProps) {
                 </div>
               </div>
 
+              {/* Quick Filter Chips */}
+              <div className="flex flex-col gap-4 mt-6 pt-6 border-t border-gray-800/50">
+                {/* Star Rating Chips */}
+                <div className="flex flex-col gap-3">
+                  <div className="flex items-center gap-2">
+                    <Star className="w-4 h-4 text-yellow-400" />
+                    <span className="text-sm text-gray-300 font-medium">Quick Rating Filter:</span>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {[5, 4, 3, 2, 1].map((rating) => (
+                      <button
+                        key={rating}
+                        onClick={() => setFilterRating(filterRating === rating.toString() ? "all" : rating.toString())}
+                        className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                          filterRating === rating.toString()
+                            ? "bg-yellow-500/20 text-yellow-300 border border-yellow-500/30"
+                            : "bg-gray-800/50 text-gray-400 hover:bg-gray-700/50 hover:text-yellow-300 border border-gray-700/30"
+                        }`}
+                      >
+                        <div className="flex">
+                          {Array.from({ length: rating }, (_, i) => (
+                            <Star key={i} className="w-3 h-3 fill-current" />
+                          ))}
+                          {Array.from({ length: 5 - rating }, (_, i) => (
+                            <Star key={i + rating} className="w-3 h-3 text-gray-600" />
+                          ))}
+                        </div>
+                        <span>{rating}+ Stars</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Recommendation Filter */}
+                <div className="flex flex-col gap-3">
+                  <div className="flex items-center gap-2">
+                    <TrendingUp className="w-4 h-4 text-green-400" />
+                    <span className="text-sm text-gray-300 font-medium">Recommendation:</span>
+                    <span className="text-xs text-gray-500">Showing {filteredReviews.length} of {reviewsData?.length || 0} reviews</span>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      onClick={() => setRecommendationFilter(recommendationFilter === 'all' ? 'all' : 'all')}
+                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                        recommendationFilter === 'all'
+                          ? "bg-gray-500/20 text-gray-300 border border-gray-500/30"
+                          : "bg-gray-800/50 text-gray-400 hover:bg-gray-700/50 border border-gray-700/30"
+                      }`}
+                    >
+                      All Reviews
+                    </button>
+                    <button
+                      onClick={() => setRecommendationFilter(recommendationFilter === 'recommended' ? 'all' : 'recommended')}
+                      className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                        recommendationFilter === 'recommended'
+                          ? "bg-green-500/20 text-green-300 border border-green-500/30"
+                          : "bg-gray-800/50 text-gray-400 hover:bg-green-700/50 hover:text-green-300 border border-gray-700/30"
+                      }`}
+                    >
+                      <TrendingUp className="w-3.5 h-3.5" />
+                      Recommended
+                    </button>
+                    <button
+                      onClick={() => setRecommendationFilter(recommendationFilter === 'not-recommended' ? 'all' : 'not-recommended')}
+                      className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                        recommendationFilter === 'not-recommended'
+                          ? "bg-red-500/20 text-red-300 border border-red-500/30"
+                          : "bg-gray-800/50 text-gray-400 hover:bg-red-700/50 hover:text-red-300 border border-gray-700/30"
+                      }`}
+                    >
+                      <X className="w-3.5 h-3.5" />
+                      Not Recommended
+                    </button>
+                  </div>
+                </div>
+              </div>
+
               {/* Active Filters Display */}
               {activeFiltersCount > 0 && (
                 <div className="flex flex-wrap gap-2 mt-6 pt-6 border-t border-gray-800/50">
@@ -537,6 +611,24 @@ export function ReviewsPageClient({ initialReviews }: ReviewsPageClientProps) {
                       {selectedGenre}
                       <button
                         onClick={() => setSelectedGenre("all")}
+                        className="ml-2 hover:text-white"
+                      >
+                        ×
+                      </button>
+                    </Badge>
+                  )}
+                  {recommendationFilter !== 'all' && (
+                    <Badge
+                      variant="secondary"
+                      className={`${
+                        recommendationFilter === 'recommended' 
+                          ? 'bg-green-500/20 text-green-300 border-green-500/30'
+                          : 'bg-red-500/20 text-red-300 border-red-500/30'
+                      }`}
+                    >
+                      {recommendationFilter === 'recommended' ? 'Recommended' : 'Not Recommended'}
+                      <button
+                        onClick={() => setRecommendationFilter('all')}
                         className="ml-2 hover:text-white"
                       >
                         ×

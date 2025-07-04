@@ -3,15 +3,17 @@
 import Link from "next/link";
 import {
   ArrowLeft,
-  Search,
   Filter,
   X,
   Gamepad2,
   LayoutGrid,
   List,
+  Star,
+  Calendar,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,14 +22,20 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useGamesStore } from "@/stores/useGamesStore";
 import { GamesFilterDropdown } from "../filters/games-filter-dropdown";
+import { GameSearchWithSuggestions } from "../GameSearchWithSuggestions";
 import { cn } from "@/lib/utils";
-import { useId } from "react";
 import { Badge } from "@/components/ui/badge";
 import { useViewModeStore } from "@/stores/useViewModeStore";
 import { useUrlParams } from "@/hooks/Settings/useUrlParams";
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 
-export function GamesHeader() {
-  const searchInputId = useId();
+interface GamesHeaderProps {
+  games?: any[];
+}
+
+export function GamesHeader({ games = [] }: GamesHeaderProps = {}) {
+  const [isQuickFiltersExpanded, setIsQuickFiltersExpanded] = useState(false);
   const gamesStore = useGamesStore();
   const { resetFiltersAndUrl } = useUrlParams();
   const {
@@ -82,6 +90,32 @@ export function GamesHeader() {
     sortBy !== "popularity" ||
     searchQuery !== "";
 
+  // Count active quick filters
+  const activeQuickFiltersCount = [
+    minRating !== null,
+    selectedGenre !== "all",
+    selectedPlatform !== "all", 
+    selectedYear !== "all",
+    hasMultiplayer
+  ].filter(Boolean).length;
+
+  // Quick filter handlers
+  const handleRatingClick = (rating: number) => {
+    if (minRating === rating) {
+      setRatingRange(null, null);
+    } else {
+      setRatingRange(rating, null);
+    }
+  };
+
+  const clearQuickFilters = () => {
+    setRatingRange(null, null);
+    setSelectedGenre("all");
+    setSelectedPlatform("all");
+    setSelectedYear("all");
+    setHasMultiplayer(false);
+  };
+
   // Get platform name for display
   const getPlatformName = () => {
     if (selectedPlatform === "all") return null;
@@ -135,154 +169,304 @@ export function GamesHeader() {
               </div>
             </div>
 
-            {/* Search Input - Full width on mobile, auto on desktop */}
-            <div className="relative w-full sm:w-auto sm:min-w-[280px] md:min-w-[300px] lg:min-w-[400px]">
-              <label htmlFor={searchInputId} className="sr-only">
-                Search games
-              </label>
-              <Input
-                id={searchInputId}
-                type="text"
-                placeholder="Search games..."
-                value={searchQuery}
-                onChange={(e) => handleSearchChange(e.target.value)}
-                className="w-full bg-gray-800/70 border-gray-700/50 focus:border-purple-500/50 transition-colors pl-10 pr-10 rounded-full h-10 placeholder:text-gray-500"
-                aria-label="Search games"
-              />
-              <Search
-                className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400"
-                aria-hidden="true"
-              />
-              {searchQuery && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="absolute right-2 top-1/2 -translate-y-1/2 h-7 w-7 p-0 hover:bg-gray-700/50 rounded-full"
-                  onClick={handleClearSearch}
-                  aria-label="Clear search"
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              )}
-            </div>
+            {/* Enhanced Search with Suggestions */}
+            <GameSearchWithSuggestions
+              value={searchQuery}
+              onChange={handleSearchChange}
+              games={games}
+              className="w-full sm:w-auto sm:min-w-[280px] md:min-w-[300px] lg:min-w-[400px]"
+              placeholder="Search games, genres, developers..."
+            />
           </div>
         </div>
 
-        {/* Filters Bar */}
-        <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
-          <div className="flex flex-wrap gap-3 items-center flex-1 min-w-0">
-            {/* View Mode Toggle */}
-            <div className="flex bg-gray-800/70 border border-gray-700/50 rounded-full p-0.5">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setViewMode("grid")}
-                className={cn(
-                  "h-8 w-8 p-0 rounded-full",
-                  viewMode === "grid"
-                    ? "bg-purple-500/30 text-white"
-                    : "text-gray-400 hover:text-white hover:bg-gray-700/50"
-                )}
-                aria-label="Grid view"
-                aria-pressed={viewMode === "grid"}
-              >
-                <LayoutGrid className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setViewMode("list")}
-                className={cn(
-                  "h-8 w-8 p-0 rounded-full",
-                  viewMode === "list"
-                    ? "bg-purple-500/30 text-white"
-                    : "text-gray-400 hover:text-white hover:bg-gray-700/50"
-                )}
-                aria-label="List view"
-                aria-pressed={viewMode === "list"}
-              >
-                <List className="h-4 w-4" />
-              </Button>
+        {/* Enhanced Filters Bar with Quick Filters */}
+        <div className="bg-gray-900/30 rounded-lg border border-gray-800/30 p-4">
+          {/* Top Controls Row */}
+          <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between mb-3">
+            <div className="flex flex-wrap gap-3 items-center flex-1 min-w-0">
+              {/* View Mode Toggle */}
+              <div className="flex bg-gray-800/70 border border-gray-700/50 rounded-full p-0.5">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setViewMode("grid")}
+                  className={cn(
+                    "h-8 w-8 p-0 rounded-full",
+                    viewMode === "grid"
+                      ? "bg-purple-500/30 text-white"
+                      : "text-gray-400 hover:text-white hover:bg-gray-700/50"
+                  )}
+                  aria-label="Grid view"
+                  aria-pressed={viewMode === "grid"}
+                >
+                  <LayoutGrid className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setViewMode("list")}
+                  className={cn(
+                    "h-8 w-8 p-0 rounded-full",
+                    viewMode === "list"
+                      ? "bg-purple-500/30 text-white"
+                      : "text-gray-400 hover:text-white hover:bg-gray-700/50"
+                  )}
+                  aria-label="List view"
+                  aria-pressed={viewMode === "list"}
+                >
+                  <List className="h-4 w-4" />
+                </Button>
+              </div>
+
+              {/* Sort Dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="min-w-[140px] justify-between bg-gray-800/70 border-gray-700/50 hover:bg-gray-700/70 rounded-full"
+                    aria-label="Sort games"
+                  >
+                    <span className="truncate flex items-center gap-2">
+                      <Filter
+                        className="w-4 h-4 text-purple-400"
+                        aria-hidden="true"
+                      />
+                      {sortBy === "popularity"
+                        ? "Popular"
+                        : sortBy === "rating"
+                        ? "Top Rated"
+                        : sortBy === "release"
+                        ? "Release Date"
+                        : sortBy === "name"
+                        ? "Name (A-Z)"
+                        : "Sort By"}
+                    </span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  className="w-48 bg-gray-800 border-gray-700 rounded-lg shadow-lg"
+                  align="start"
+                  sideOffset={5}
+                  aria-label="Sort options"
+                >
+                  {[
+                    { value: "popularity", label: "Popular" },
+                    { value: "rating", label: "Top Rated" },
+                    { value: "release", label: "Release Date" },
+                    { value: "name", label: "Name (A-Z)" },
+                  ].map((option) => (
+                    <DropdownMenuItem
+                      key={option.value}
+                      onClick={() => setSortBy(option.value as any)}
+                      className={cn(
+                        "cursor-pointer focus:bg-purple-500/30 focus:text-white transition-colors",
+                        sortBy === option.value && "bg-purple-500/30 text-white"
+                      )}
+                      aria-selected={sortBy === option.value}
+                    >
+                      {option.label}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              {/* Advanced Filters Dropdown */}
+              <GamesFilterDropdown
+                platforms={platforms}
+                genres={genres}
+                selectedPlatform={selectedPlatform}
+                selectedGenre={selectedGenre}
+                selectedYear={selectedYear}
+                selectedTimeRange={timeRange}
+                selectedGameMode={selectedGameMode}
+                selectedTheme={selectedTheme}
+                minRating={minRating}
+                maxRating={maxRating}
+                hasMultiplayer={hasMultiplayer}
+                onPlatformChange={setSelectedPlatform}
+                onGenreChange={setSelectedGenre}
+                onYearChange={setSelectedYear}
+                onTimeRangeChange={setTimeRange}
+                onGameModeChange={setSelectedGameMode}
+                onThemeChange={setSelectedTheme}
+                onRatingRangeChange={setRatingRange}
+                onMultiplayerChange={setHasMultiplayer}
+              />
             </div>
 
-            {/* Sort Dropdown */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
+            {/* Quick Filters Toggle & Clear */}
+            <div className="flex items-center gap-2">
+              {activeQuickFiltersCount > 0 && (
                 <Button
-                  variant="outline"
-                  className="min-w-[140px] justify-between bg-gray-800/70 border-gray-700/50 hover:bg-gray-700/70 rounded-full"
-                  aria-label="Sort games"
+                  variant="ghost"
+                  size="sm"
+                  onClick={clearQuickFilters}
+                  className="text-xs text-gray-400 hover:text-white h-8 px-3"
                 >
-                  <span className="truncate flex items-center gap-2">
-                    <Filter
-                      className="w-4 h-4 text-purple-400"
-                      aria-hidden="true"
-                    />
-                    {sortBy === "popularity"
-                      ? "Popular"
-                      : sortBy === "rating"
-                      ? "Top Rated"
-                      : sortBy === "release"
-                      ? "Release Date"
-                      : sortBy === "name"
-                      ? "Name (A-Z)"
-                      : "Sort By"}
-                  </span>
+                  Clear Quick ({activeQuickFiltersCount})
                 </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                className="w-48 bg-gray-800 border-gray-700 rounded-lg shadow-lg"
-                align="start"
-                sideOffset={5}
-                aria-label="Sort options"
+              )}
+              
+              <button
+                onClick={() => setIsQuickFiltersExpanded(!isQuickFiltersExpanded)}
+                className="flex items-center gap-1 text-xs text-gray-400 hover:text-white transition-colors p-2 hover:bg-gray-700/50 rounded-md"
               >
-                {[
-                  { value: "popularity", label: "Popular" },
-                  { value: "rating", label: "Top Rated" },
-                  { value: "release", label: "Release Date" },
-                  { value: "name", label: "Name (A-Z)" },
-                ].map((option) => (
-                  <DropdownMenuItem
-                    key={option.value}
-                    onClick={() => setSortBy(option.value as any)}
-                    className={cn(
-                      "cursor-pointer focus:bg-purple-500/30 focus:text-white transition-colors",
-                      sortBy === option.value && "bg-purple-500/30 text-white"
-                    )}
-                    aria-selected={sortBy === option.value}
-                  >
-                    {option.label}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            {/* Filters Dropdown */}
-            <GamesFilterDropdown
-              platforms={platforms}
-              genres={genres}
-              selectedPlatform={selectedPlatform}
-              selectedGenre={selectedGenre}
-              selectedYear={selectedYear}
-              selectedTimeRange={timeRange}
-              selectedGameMode={selectedGameMode}
-              selectedTheme={selectedTheme}
-              minRating={minRating}
-              maxRating={maxRating}
-              hasMultiplayer={hasMultiplayer}
-              onPlatformChange={setSelectedPlatform}
-              onGenreChange={setSelectedGenre}
-              onYearChange={setSelectedYear}
-              onTimeRangeChange={setTimeRange}
-              onGameModeChange={setSelectedGameMode}
-              onThemeChange={setSelectedTheme}
-              onRatingRangeChange={setRatingRange}
-              onMultiplayerChange={setHasMultiplayer}
-            />
+                <Filter className="w-4 h-4" />
+                {isQuickFiltersExpanded ? (
+                  <>
+                    <ChevronUp className="w-4 h-4" />
+                    <span>Hide Quick Filters</span>
+                  </>
+                ) : (
+                  <>
+                    <ChevronDown className="w-4 h-4" />
+                    <span>Quick Filters</span>
+                  </>
+                )}
+              </button>
+            </div>
           </div>
-          
-          {/* Active Filter Pills */}
-          <div className="flex flex-wrap gap-2 overflow-x-auto scrollbar-hide">
+
+          {/* Quick Filters - Collapsible */}
+          <AnimatePresence>
+            {isQuickFiltersExpanded && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.2 }}
+                className="space-y-3 border-t border-gray-800/50 pt-3"
+              >
+                {/* Rating Filter Chips */}
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Star className="w-4 h-4 text-yellow-400" />
+                    <span className="text-sm text-gray-300 font-medium">Rating:</span>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {[9, 8, 7, 6].map((rating) => (
+                      <button
+                        key={rating}
+                        onClick={() => handleRatingClick(rating)}
+                        className={`flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium transition-all ${
+                          minRating === rating
+                            ? "bg-yellow-500/20 text-yellow-300 border border-yellow-500/30"
+                            : "bg-gray-800/50 text-gray-400 hover:bg-gray-700/50 hover:text-yellow-300 border border-gray-700/30"
+                        }`}
+                      >
+                        <Star className="w-3 h-3 fill-current" />
+                        <span>{rating}+</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Genre Filter Chips */}
+                {genres.length > 0 && (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="w-4 h-4 bg-purple-400 rounded-full" />
+                        <span className="text-sm text-gray-300 font-medium">Genres:</span>
+                      </div>
+                      {genres.length > 5 && (
+                        <span className="text-xs text-gray-500">+{genres.length - 5} more in advanced</span>
+                      )}
+                    </div>
+                    <div className="flex flex-wrap gap-1">
+                      {genres.slice(0, 5).map((genre) => (
+                        <button
+                          key={genre.id}
+                          onClick={() => setSelectedGenre(selectedGenre === genre.id ? "all" : genre.id)}
+                          className={`px-2 py-1 rounded-md text-xs font-medium transition-all ${
+                            selectedGenre === genre.id
+                              ? "bg-purple-500/20 text-purple-300 border border-purple-500/30"
+                              : "bg-gray-800/50 text-gray-400 hover:bg-gray-700/50 hover:text-purple-300 border border-gray-700/30"
+                          }`}
+                        >
+                          {genre.name}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Platform & Release Period Row */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Platform Filter Chips */}
+                  {platforms.length > 0 && (
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <Gamepad2 className="w-4 h-4 text-blue-400" />
+                        <span className="text-sm text-gray-300 font-medium">Platforms:</span>
+                      </div>
+                      <div className="flex flex-wrap gap-1">
+                        {platforms.slice(0, 3).map((platform) => {
+                          const shortName = platform.name
+                            .replace('PlayStation', 'PS')
+                            .replace('Nintendo', 'Nintendo')
+                            .replace('Xbox', 'Xbox');
+                          
+                          return (
+                            <button
+                              key={platform.id}
+                              onClick={() => setSelectedPlatform(selectedPlatform === platform.id ? "all" : platform.id)}
+                              className={`px-2 py-1 rounded-md text-xs font-medium transition-all ${
+                                selectedPlatform === platform.id
+                                  ? "bg-blue-500/20 text-blue-300 border border-blue-500/30"
+                                  : "bg-gray-800/50 text-gray-400 hover:bg-gray-700/50 hover:text-blue-300 border border-gray-700/30"
+                              }`}
+                            >
+                              {shortName}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Release Period & Features */}
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Calendar className="w-4 h-4 text-green-400" />
+                      <span className="text-sm text-gray-300 font-medium">Release & Features:</span>
+                    </div>
+                    <div className="flex flex-wrap gap-1">
+                      {["2024", "2023", "2020s"].map((year) => (
+                        <button
+                          key={year}
+                          onClick={() => setSelectedYear(selectedYear === year ? "all" : year)}
+                          className={`px-2 py-1 rounded-md text-xs font-medium transition-all ${
+                            selectedYear === year
+                              ? "bg-green-500/20 text-green-300 border border-green-500/30"
+                              : "bg-gray-800/50 text-gray-400 hover:bg-gray-700/50 hover:text-green-300 border border-gray-700/30"
+                          }`}
+                        >
+                          {year}
+                        </button>
+                      ))}
+                      <button
+                        onClick={() => setHasMultiplayer(!hasMultiplayer)}
+                        className={`px-2 py-1 rounded-md text-xs font-medium transition-all ${
+                          hasMultiplayer
+                            ? "bg-orange-500/20 text-orange-300 border border-orange-500/30"
+                            : "bg-gray-800/50 text-gray-400 hover:bg-gray-700/50 hover:text-orange-300 border border-gray-700/30"
+                        }`}
+                      >
+                        MP
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
+        {/* Active Filter Pills - Only for advanced filters */}
+        {hasActiveFilters && (
+          <div className="flex flex-wrap gap-2 overflow-x-auto scrollbar-hide mt-3">
             {getPlatformName() && (
               <Badge
                 variant="outline"
@@ -462,7 +646,7 @@ export function GamesHeader() {
               </Button>
             )}
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

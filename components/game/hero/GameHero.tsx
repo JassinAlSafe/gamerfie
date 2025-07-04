@@ -16,7 +16,7 @@ interface GameProgress {
 import { GameCover } from "./GameCover";
 import { GameQuickStats } from "./GameQuickStats";
 import { getOptimizedImageUrl } from "@/utils/image-utils";
-import { OptimizedImage } from "@/components/ui/optimized-image";
+import Image from "next/image";
 import { AddToLibraryButton } from "@/components/add-to-library-button";
 import { UpdateProgressButton } from "@/components/update-progress-button";
 import { ArrowLeft, Star, Calendar, Users, Play, Loader2 } from "lucide-react";
@@ -38,7 +38,7 @@ interface GameHeroProps {
   progress?: Partial<GameProgress>;
 }
 
-export const GameHero = memo(function GameHero({ game, profile, progress }: GameHeroProps) {
+export const GameHero = memo(function GameHero({ game, profile: _profile, progress }: GameHeroProps) {
   const [mounted, setMounted] = React.useState(false);
   const [backgroundLoaded, setBackgroundLoaded] = useState(false);
   const [trailerOpen, setTrailerOpen] = useState(false);
@@ -65,14 +65,47 @@ export const GameHero = memo(function GameHero({ game, profile, progress }: Game
     })),
   } as Game), [game]);
 
-  // Get the background image URL, using cover as fallback if no background image
-  const backgroundImage = useMemo(
-    () =>
-      (processedGame as any).background_image ||
-      (processedGame as any).cover_url ||
-      (processedGame as any).coverImage,
-    [processedGame]
-  );
+  // Get the background image URL with proper fallbacks and debugging
+  const backgroundImage = useMemo(() => {
+    const bg = (processedGame as any).background_image;
+    const coverUrl = (processedGame as any).cover_url;
+    const coverImage = (processedGame as any).coverImage;
+    const coverObj = processedGame.cover;
+    const artworks = (processedGame as any).artworks;
+    const screenshots = (processedGame as any).screenshots;
+    
+    // Debug log to see what we have (development only)
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Background image sources:', {
+        background_image: bg,
+        cover_url: coverUrl,
+        coverImage: coverImage,
+        cover: coverObj,
+        artworks: artworks?.length || 0,
+        screenshots: screenshots?.length || 0
+      });
+    }
+    
+    // Priority: background_image > artworks > screenshots > cover_url > coverImage > cover.url
+    let finalImage = null;
+    
+    if (bg) {
+      finalImage = bg;
+    } else if (artworks && artworks.length > 0) {
+      finalImage = artworks[0].url;
+    } else if (screenshots && screenshots.length > 0) {
+      finalImage = screenshots[0].url;
+    } else if (coverUrl) {
+      finalImage = coverUrl;
+    } else if (coverImage) {
+      finalImage = coverImage;
+    } else if (coverObj?.url) {
+      finalImage = coverObj.url;
+    }
+    
+    
+    return finalImage;
+  }, [processedGame]);
 
   // Check if game has a trailer
   const hasTrailer = useMemo(
@@ -150,28 +183,50 @@ export const GameHero = memo(function GameHero({ game, profile, progress }: Game
     [backgroundImage]
   );
 
-  // Log profile for debugging (this ensures the variable is used)
+  // Initialize component state
   React.useEffect(() => {
-    if (process.env.NODE_ENV === "development") {
-      console.log("Profile in GameHero:", profile);
-    }
-  }, [profile]);
+    setMounted(true);
+    return () => setMounted(false);
+  }, []);
 
   return (
     <div className="relative min-h-[80vh] w-full overflow-hidden">
-      {/* Background Image with Parallax */}
-      {optimizedBackgroundUrl && mounted && (
-        <OptimizedImage
-          src={optimizedBackgroundUrl}
-          alt=""
-          context="background"
-          priority={true}
-          className={`absolute inset-0 w-full h-full object-cover transform scale-105 filter blur-[2px] transition-opacity duration-500 ${
-            backgroundLoaded ? "opacity-70" : "opacity-0"
-          }`}
-          onLoad={() => setBackgroundLoaded(true)}
-        />
-      )}
+      {/* Background Image with better loading states */}
+      <div className="absolute inset-0 w-full h-full">
+        {/* Always show fallback gradient first */}
+        <div className="absolute inset-0 bg-gradient-to-br from-purple-900/30 via-blue-900/20 to-gray-950" />
+        
+        {/* Show background image if available */}
+        {backgroundImage && mounted && (
+          <>
+            <Image
+              src={optimizedBackgroundUrl || backgroundImage}
+              alt={`${processedGame.name} background`}
+              fill
+              priority={true}
+              sizes="100vw"
+              className={cn(
+                "object-cover transition-all duration-1000",
+                backgroundLoaded 
+                  ? "opacity-40 scale-100" 
+                  : "opacity-0 scale-110"
+              )}
+              onLoad={() => {
+                setBackgroundLoaded(true);
+              }}
+              onError={() => {
+                setBackgroundLoaded(false);
+              }}
+              unoptimized={backgroundImage.includes('rawg.io')}
+            />
+            
+            {/* Loading state for background */}
+            {!backgroundLoaded && (
+              <div className="absolute inset-0 bg-gradient-to-br from-gray-800/40 via-gray-900/60 to-gray-950 animate-pulse" />
+            )}
+          </>
+        )}
+      </div>
 
       {/* Background Overlay with Grid Pattern */}
       <div className="absolute inset-0 bg-gradient-to-b from-gray-950/30 via-gray-950/70 to-gray-950/90">
@@ -183,16 +238,16 @@ export const GameHero = memo(function GameHero({ game, profile, progress }: Game
 
       {/* Hero Content - Improved centering */}
       <div className="relative z-30 h-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col">
-        {/* Back Button */}
+        {/* Enhanced Back Button with Better Visibility */}
         <div className="pt-8">
           <Link href="/all-games">
             <Button
               variant="ghost"
-              size="icon"
-              className="rounded-full hover:bg-gray-800/70 text-gray-400 hover:text-white"
+              className="group flex items-center gap-2 px-5 py-3 bg-gray-900/80 backdrop-blur-md border-2 border-white/30 rounded-full hover:bg-gray-800/90 hover:border-purple-400/60 text-white hover:text-purple-300 transition-all duration-200 shadow-xl hover:shadow-2xl font-semibold"
               aria-label="Back to All Games"
             >
-              <ArrowLeft className="h-5 w-5" />
+              <ArrowLeft className="h-4 w-4 group-hover:-translate-x-0.5 transition-transform duration-200" />
+              <span className="text-sm">Back to Games</span>
             </Button>
           </Link>
         </div>

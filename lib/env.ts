@@ -10,7 +10,7 @@ export interface EnvConfig {
   SUPABASE_SERVICE_ROLE_KEY: string;
   
   // External APIs
-  NEXT_PUBLIC_RAWG_API_KEY: string;
+  RAWG_API_KEY: string; // Server-side only for security
   NEXT_PUBLIC_TWITCH_CLIENT_ID: string;
   TWITCH_CLIENT_SECRET: string;
   
@@ -39,7 +39,7 @@ export function validateEnvironment(): EnvConfig {
     'NEXT_PUBLIC_SUPABASE_URL',
     'NEXT_PUBLIC_SUPABASE_ANON_KEY',
     'SUPABASE_SERVICE_ROLE_KEY',
-    'NEXT_PUBLIC_RAWG_API_KEY',
+    'RAWG_API_KEY',
     'NEXT_PUBLIC_TWITCH_CLIENT_ID',
     'TWITCH_CLIENT_SECRET',
     'NEXTAUTH_URL',
@@ -93,7 +93,7 @@ export function validateEnvironment(): EnvConfig {
     NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL!,
     NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    NEXT_PUBLIC_RAWG_API_KEY: process.env.NEXT_PUBLIC_RAWG_API_KEY!,
+    RAWG_API_KEY: process.env.RAWG_API_KEY!,
     NEXT_PUBLIC_TWITCH_CLIENT_ID: process.env.NEXT_PUBLIC_TWITCH_CLIENT_ID!,
     TWITCH_CLIENT_SECRET: process.env.TWITCH_CLIENT_SECRET!,
     NEXTAUTH_URL: process.env.NEXTAUTH_URL!,
@@ -116,7 +116,7 @@ export function initializeEnvironment(): EnvConfig {
     console.log('✅ Environment validation successful');
     console.log(`📦 Supabase URL: ${env.NEXT_PUBLIC_SUPABASE_URL}`);
     console.log(`🔗 NextAuth URL: ${env.NEXTAUTH_URL}`);
-    console.log(`🎮 RAWG API: ${env.NEXT_PUBLIC_RAWG_API_KEY ? 'Configured' : 'Missing'}`);
+    console.log(`🎮 RAWG API: ${env.RAWG_API_KEY ? 'Configured' : 'Missing'}`);
     console.log(`📺 Twitch API: ${env.NEXT_PUBLIC_TWITCH_CLIENT_ID ? 'Configured' : 'Missing'}`);
     
     return env;

@@ -25,30 +25,41 @@ export function GameInfoSection({ gameDetails, gameId, rating }: GameInfoSection
 
   return (
     <div className="flex gap-4 mb-4">
-      {/* Game Cover */}
-      <div className="w-20 h-28 flex-shrink-0 relative">
-        <div className={`w-full h-full rounded-lg overflow-hidden shadow-lg relative ${
-          isDataMissing ? 'bg-slate-800/50 border border-amber-500/20' : 'bg-slate-800'
+      {/* Enhanced Game Cover */}
+      <div className="w-24 h-32 flex-shrink-0 relative group">
+        <div className={`w-full h-full rounded-lg overflow-hidden shadow-lg relative transform transition-all duration-300 group-hover:scale-[1.05] group-hover:shadow-xl ${
+          isDataMissing ? 'bg-slate-800/50 border border-amber-500/20' : 'bg-slate-800 border border-slate-700/30'
         }`}>
           {coverUrl ? (
-            <Image
-              src={coverUrl}
-              alt={`Cover for ${gameDetails.name}`}
-              fill
-              className="object-cover transition-transform duration-300 group-hover:scale-[1.02]"
-              sizes="80px"
-            />
+            <>
+              <Image
+                src={coverUrl}
+                alt={`Cover for ${gameDetails.name}`}
+                fill
+                className="object-cover transition-all duration-500 group-hover:brightness-110"
+                sizes="96px"
+                priority={false}
+              />
+              {/* Subtle overlay gradient */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+            </>
           ) : (
             <div className="w-full h-full flex items-center justify-center">
-              <Sparkles className={`w-6 h-6 ${isDataMissing ? 'text-amber-400' : 'text-slate-500'}`} />
+              <Sparkles className={`w-8 h-8 transition-colors duration-300 ${isDataMissing ? 'text-amber-400' : 'text-slate-500 group-hover:text-slate-400'}`} />
             </div>
           )}
         </div>
 
-        {/* Rating badge */}
+        {/* Enhanced Rating badge */}
         <div className="absolute -top-2 -right-2 z-10">
-          <div className="bg-white text-black font-bold text-xs px-2 py-1 rounded-md shadow-md">
-            {rating}
+          <div className={`font-bold text-xs px-2.5 py-1.5 rounded-lg shadow-lg border-2 transform transition-all duration-300 group-hover:scale-110 ${
+            rating >= 4 
+              ? 'bg-gradient-to-r from-emerald-400 to-green-400 text-white border-emerald-300/50' 
+              : rating >= 3 
+                ? 'bg-gradient-to-r from-amber-400 to-yellow-400 text-black border-amber-300/50'
+                : 'bg-gradient-to-r from-red-400 to-pink-400 text-white border-red-300/50'
+          }`}>
+            ★{rating}
           </div>
         </div>
       </div>

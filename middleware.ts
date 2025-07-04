@@ -8,8 +8,12 @@ function validateCriticalEnvVars() {
   
   if (missing.length > 0) {
     console.error('❌ Critical environment variables missing:', missing.join(', '));
+    console.error('Available environment variables:', Object.keys(process.env).filter(k => k.includes('SUPABASE')));
     throw new Error(`Missing critical environment variables: ${missing.join(', ')}`);
   }
+  
+  // Log successful validation
+  console.log('✅ Critical environment variables validated in middleware');
 }
 
 export async function middleware(request: NextRequest) {
