@@ -4,11 +4,13 @@ import {
   Flag,
   ExternalLink,
   Share2,
+  Clock,
 } from "lucide-react";
-import { format } from "date-fns";
+import { format, differenceInDays } from "date-fns";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -27,6 +29,10 @@ interface ReviewCardHeaderProps {
 }
 
 export function ReviewCardHeader({ user, createdAt }: ReviewCardHeaderProps) {
+  const reviewDate = new Date(createdAt);
+  const daysSinceReview = differenceInDays(new Date(), reviewDate);
+  const isRecent = daysSinceReview <= 7;
+
   return (
     <div className="flex items-center justify-between mb-4">
       <div className="flex items-center gap-3">
@@ -39,15 +45,28 @@ export function ReviewCardHeader({ user, createdAt }: ReviewCardHeaderProps) {
             {user.username[0].toUpperCase()}
           </AvatarFallback>
         </Avatar>
-        <div>
-          <Link
-            href={`/profile/${user.id}`}
-            className="font-medium text-white hover:text-slate-300 transition-colors text-sm"
-          >
-            {user.username}
-          </Link>
+        <div className="flex-1">
+          <div className="flex items-center gap-2">
+            <Link
+              href={`/profile/${user.id}`}
+              className="font-medium text-white hover:text-slate-300 transition-colors text-sm"
+            >
+              {user.username}
+            </Link>
+            {isRecent && (
+              <Badge className="bg-gradient-to-r from-emerald-500/20 to-green-500/20 text-emerald-300 border-emerald-500/30 text-xs px-2 py-0.5 h-5">
+                <Clock className="w-3 h-3 mr-1" />
+                New
+              </Badge>
+            )}
+          </div>
           <div className="text-xs text-slate-400 mt-0.5">
-            {format(new Date(createdAt), "MMM d, yyyy")}
+            {format(reviewDate, "MMM d, yyyy")}
+            {isRecent && (
+              <span className="text-emerald-400 ml-2">
+                ({daysSinceReview === 0 ? 'Today' : `${daysSinceReview} day${daysSinceReview === 1 ? '' : 's'} ago`})
+              </span>
+            )}
           </div>
         </div>
       </div>

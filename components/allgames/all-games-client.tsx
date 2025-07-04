@@ -10,7 +10,8 @@ import { useGamesStore } from "@/stores/useGamesStore";
 import { useUrlParams } from "@/hooks/Settings/useUrlParams";
 
 export default function AllGamesClient() {
-  const { fetchMetadata } = useGamesStore();
+  const gamesStore = useGamesStore();
+  const { fetchMetadata } = gamesStore;
   const { resetFiltersAndUrl } = useUrlParams();
 
   const {
@@ -38,25 +39,9 @@ export default function AllGamesClient() {
   // Clean load more function - simplified dependencies
   const handleLoadMore = useCallback(() => {
     if (hasNextPage && !isFetchingNextPage && !isLoading) {
-      if (process.env.NODE_ENV === 'development') {
-        console.log("🔄 Loading more games...", {
-          nextPage: (data?.pages?.length || 0) + 1,
-          currentTotalGames: allGames.length,
-          hasNextPage,
-          isFetchingNextPage,
-          isLoading,
-        });
-      }
-
       fetchNextPage();
-    } else if (process.env.NODE_ENV === 'development') {
-      console.log("⏸️ Not loading more games:", {
-        hasNextPage,
-        isFetchingNextPage,
-        isLoading,
-      });
     }
-  }, [hasNextPage, isFetchingNextPage, isLoading, fetchNextPage, allGames.length, data?.pages?.length]);
+  }, [hasNextPage, isFetchingNextPage, isLoading, fetchNextPage]);
 
   // Fetch metadata once on mount
   useEffect(() => {
@@ -78,54 +63,48 @@ export default function AllGamesClient() {
     return <GamesError error={error as Error} onReset={resetFiltersAndUrl} />;
   }
 
-  return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-900/50 via-gray-950 to-gray-950">
-      {/* Header */}
-      <div className="sticky top-0 z-10 bg-gradient-to-b from-gray-900 to-gray-950/80 backdrop-blur-sm">
-        <GamesHeader />
-      </div>
 
-      {/* Main content */}
-      <main className="relative pb-4 pt-2">
-        <div className="max-w-[2400px] mx-auto px-2 sm:px-4 md:px-6 lg:px-8">
+  return (
+    <>
+      {/* Header - Semi-sticky with better UX */}
+      <header className="sticky top-0 z-50 bg-gray-900/95 backdrop-blur-lg border-b border-gray-800/50">
+        <GamesHeader games={allGames} />
+      </header>
+
+      {/* Main content - Natural scroll */}
+      <main className="min-h-screen bg-gradient-to-b from-gray-900/50 via-gray-950 to-gray-950">
+        <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6">
           {/* Games Grid */}
           <GamesGrid isLoading={isLoading} games={allGames} />
 
-          {/* Infinite scroll status */}
-          <div className="py-8">
+          {/* Infinite scroll indicators */}
+          <div className="mt-12 mb-8">
             {/* Loading indicator */}
             {isFetchingNextPage && (
-              <div className="flex justify-center">
-                <div className="flex items-center gap-3 text-gray-200 bg-gray-800/50 backdrop-blur-sm rounded-full px-6 py-3 border border-gray-700/30">
+              <div className="flex justify-center mb-8">
+                <div className="flex items-center gap-3 bg-gray-800/50 backdrop-blur-sm rounded-full px-6 py-3 border border-gray-700/30">
                   <div className="h-5 w-5 border-2 border-gray-300 border-t-purple-500 rounded-full animate-spin" />
-                  <span className="text-sm font-medium">
+                  <span className="text-sm font-medium text-gray-200">
                     Loading more games...
                   </span>
-                  {totalGames > 0 && (
-                    <span className="text-xs text-gray-400">
-                      ({totalGames.toLocaleString()} loaded • Page{" "}
-                      {(data?.pages?.length || 0) + 1})
-                    </span>
-                  )}
                 </div>
               </div>
             )}
 
             {/* Invisible load trigger */}
             {hasNextPage && !isFetchingNextPage && (
-              <div ref={loadMoreRef} className="h-4" />
+              <div ref={loadMoreRef} className="h-10" aria-hidden="true" />
             )}
 
             {/* End state */}
             {isEndReached && totalGames > 0 && (
-              <div className="flex justify-center">
-                <div className="text-center bg-gray-800/30 backdrop-blur-sm rounded-lg px-6 py-4 border border-gray-700/20">
-                  <p className="text-sm text-gray-300 mb-1">
-                    🎮 All games loaded!
+              <div className="text-center">
+                <div className="inline-block bg-gradient-to-r from-purple-500/20 to-blue-500/20 backdrop-blur-sm rounded-xl px-6 py-4 border border-purple-500/30">
+                  <p className="text-sm text-gray-200 mb-1">
+                    🎮 All {totalGames.toLocaleString()} games loaded!
                   </p>
-                  <p className="text-xs text-gray-500">
-                    {totalGames.toLocaleString()} games browsed across{" "}
-                    {data?.pages?.length || 0} pages
+                  <p className="text-xs text-gray-400">
+                    Browse complete • Thanks for exploring our library
                   </p>
                 </div>
               </div>
@@ -133,31 +112,16 @@ export default function AllGamesClient() {
 
             {/* Empty state */}
             {!isLoading && !isFetchingNextPage && totalGames === 0 && (
-              <div className="flex justify-center">
-                <div className="text-center py-12">
-                  <p className="text-gray-400 text-lg mb-2">No games found</p>
-                  <p className="text-gray-500 text-sm">
-                    Try adjusting your search or filters
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {/* Debug info (only in development) */}
-            {process.env.NODE_ENV === "development" && (
-              <div className="mt-4 text-center">
-                <div className="inline-block bg-gray-900/50 backdrop-blur-sm rounded-lg px-4 py-2 border border-gray-700/30">
-                  <p className="text-xs text-gray-400 font-mono">
-                    Pages: {data?.pages?.length || 0} • Games: {totalGames} •
-                    HasNext: {hasNextPage ? "✅" : "❌"} • Fetching:{" "}
-                    {isFetchingNextPage ? "🔄" : "⏸️"}
-                  </p>
-                </div>
+              <div className="text-center py-16">
+                <p className="text-gray-400 text-lg mb-2">No games found</p>
+                <p className="text-gray-500 text-sm">
+                  Try adjusting your search or filters
+                </p>
               </div>
             )}
           </div>
         </div>
       </main>
-    </div>
+    </>
   );
 }

@@ -11,16 +11,48 @@ import Link from "next/link";
 
 function LoadingFallback() {
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen p-8 bg-gray-950">
-      <div className="relative">
-        <LoadingSpinner size="lg" />
-        <div className="absolute inset-0 flex items-center justify-center opacity-50">
-          <Gamepad2 size={24} className="text-purple-500" />
+    <div className="min-h-screen bg-gradient-to-b from-gray-900 via-gray-950 to-gray-950">
+      {/* Skeleton header */}
+      <div className="relative h-[80vh] bg-gray-900/50 overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-b from-gray-800/20 via-gray-900/60 to-gray-950/90" />
+        
+        <div className="relative z-10 h-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col">
+          <div className="pt-8">
+            <div className="w-10 h-10 bg-gray-800 rounded-full animate-pulse" />
+          </div>
+          
+          <div className="flex-grow flex items-end pb-20">
+            <div className="flex flex-col md:flex-row gap-16 items-center md:items-start w-full">
+              {/* Cover skeleton */}
+              <div className="w-72 aspect-[3/4] bg-gray-800 rounded-xl animate-pulse" />
+              
+              {/* Content skeleton */}
+              <div className="flex-1 space-y-6">
+                <div className="h-16 bg-gray-800 rounded animate-pulse" />
+                <div className="flex gap-3">
+                  <div className="h-8 w-20 bg-gray-800 rounded-full animate-pulse" />
+                  <div className="h-8 w-16 bg-gray-800 rounded-full animate-pulse" />
+                  <div className="h-8 w-24 bg-gray-800 rounded-full animate-pulse" />
+                </div>
+                <div className="space-y-3">
+                  <div className="h-4 bg-gray-800 rounded animate-pulse" />
+                  <div className="h-4 bg-gray-800 rounded animate-pulse w-3/4" />
+                  <div className="h-4 bg-gray-800 rounded animate-pulse w-1/2" />
+                </div>
+                <div className="flex gap-3">
+                  <div className="h-10 w-32 bg-gray-800 rounded animate-pulse" />
+                  <div className="h-10 w-28 bg-gray-800 rounded animate-pulse" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        {/* Centered loading indicator */}
+        <div className="absolute inset-0 flex items-center justify-center">
+          <LoadingSpinner size="xl" label="Loading game details..." />
         </div>
       </div>
-      <p className="mt-6 text-gray-400 animate-pulse font-medium">
-        Loading game details...
-      </p>
     </div>
   );
 }
@@ -89,8 +121,8 @@ function GameContent({ id }: { id: string }) {
               : "Failed to load game"}
           </p>
           <Link
-            href="/games"
-            className="inline-flex items-center px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+            href="/all-games"
+            className="inline-flex items-center px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-105"
           >
             <Gamepad2 size={18} className="mr-2" />
             Browse Games

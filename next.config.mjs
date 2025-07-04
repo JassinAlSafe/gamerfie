@@ -11,9 +11,6 @@ const nextConfig = {
   // Enable source maps for bundle analysis (only when analyzing)
   productionBrowserSourceMaps: process.env.ANALYZE === "true",
 
-  // Metadata base URL for social media previews
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://gamevault.app'),
-
   // Performance optimizations
   experimental: {
     optimizePackageImports: ["lodash", "@chakra-ui/react", "react-icons"],
@@ -138,7 +135,7 @@ const nextConfig = {
     NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
     NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
 
-    NEXT_PUBLIC_RAWG_API_KEY: process.env.NEXT_PUBLIC_RAWG_API_KEY,
+    RAWG_API_KEY: process.env.RAWG_API_KEY,
   },
 };
 

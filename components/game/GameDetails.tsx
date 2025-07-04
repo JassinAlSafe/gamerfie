@@ -81,26 +81,30 @@ function ScrollToTopButton() {
 
 // Type assertion function to ensure the game object conforms to the Game interface
 function ensureGameType(game: any): Game {
-  // Handle the cover property
+  // Handle the cover property consistently
   let coverObj = game.cover;
   if (typeof game.cover === "string") {
-    coverObj = { id: "placeholder", url: game.cover };
+    coverObj = { id: game.id || "placeholder", url: game.cover };
+  } else if (!coverObj && (game.cover_url || game.coverImage)) {
+    coverObj = { 
+      id: game.id || "placeholder", 
+      url: game.cover_url || game.coverImage 
+    };
   }
 
-  // Create a new object with the correct structure
-  const processedGame = {
+  // Create a new object with proper type structure
+  const processedGame: Game = {
     ...game,
-    // Override the cover property
-    cover: coverObj,
-    // Add achievements if not present
-    achievements: {
-      total: 0,
-      completed: 0,
-    },
+    id: game.id || Date.now().toString(),
+    name: game.name || game.title || "Unknown Game",
+    cover: coverObj || undefined,
+    achievements: game.achievements || { total: 0, completed: 0 },
+    platforms: game.platforms || [],
+    genres: game.genres || [],
+    videos: game.videos || [],
   };
 
-  // Use a type assertion to tell TypeScript this is a Game
-  return processedGame as unknown as Game;
+  return processedGame;
 }
 
 export function GameDetails({ game }: { game: Game }) {
