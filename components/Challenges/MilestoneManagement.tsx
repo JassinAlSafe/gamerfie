@@ -47,7 +47,7 @@ import type {
   RewardType,
   ChallengeGoal,
 } from "@/types/challenge";
-import { useChallengesStore } from "@/stores/challenges";
+import { useChallengesStore } from "@/stores/useChallengesStore";
 import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
 

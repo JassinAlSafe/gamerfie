@@ -13,10 +13,22 @@ interface AchievementsTabProps {
 }
 
 export function AchievementsTab({ game, profile }: AchievementsTabProps) {
-  if (!(game as any).achievements?.length) {
+  // Check if achievements exist in the game data
+  const hasAchievements = (game as any).achievements?.length > 0;
+  
+  if (!hasAchievements) {
     return (
       <div className="bg-gray-900/30 rounded-lg p-6 backdrop-blur-sm transition-all duration-300 hover:bg-gray-900/40">
-        <p className="text-gray-400 text-center">No achievements available</p>
+        <div className="flex flex-col items-center justify-center py-12">
+          <div className="w-16 h-16 rounded-full bg-gray-800/50 flex items-center justify-center mb-4">
+            <Trophy className="w-8 h-8 text-gray-600" />
+          </div>
+          <h3 className="text-lg font-semibold text-white mb-2">No Achievements Available</h3>
+          <p className="text-gray-400 text-center max-w-md">
+            This game doesn't have achievement data available in our database yet. 
+            Achievement tracking may be added in future updates.
+          </p>
+        </div>
       </div>
     );
   }

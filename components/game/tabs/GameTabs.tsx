@@ -123,7 +123,7 @@ export const GameTabs = memo(function GameTabs({
 
             <TabsContent value="related" className="focus-visible:outline-none">
               <Suspense fallback={<TabLoadingFallback />}>
-                <RelatedTab games={[]} />
+                <RelatedTab game={game} />
               </Suspense>
             </TabsContent>
 

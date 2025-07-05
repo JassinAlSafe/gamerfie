@@ -44,11 +44,13 @@ export function ActivityTab({ gameId, activities }: ActivityTabProps) {
     return (
       <div className="bg-gray-900/30 rounded-lg p-6 backdrop-blur-sm transition-all duration-300 hover:bg-gray-900/40">
         <div className="flex flex-col items-center justify-center py-12">
-          <Activity className="w-12 h-12 text-gray-600 mb-4" />
-          <p className="text-gray-400 text-center mb-2">No activity yet</p>
-          <p className="text-sm text-gray-500 text-center">
-            Activities will appear here when you or others interact with this
-            game
+          <div className="w-16 h-16 rounded-full bg-gray-800/50 flex items-center justify-center mb-4">
+            <Activity className="w-8 h-8 text-gray-600" />
+          </div>
+          <h3 className="text-lg font-semibold text-white mb-2">No Activity Yet</h3>
+          <p className="text-gray-400 text-center max-w-md">
+            Activities will appear here when you or others interact with this game.
+            This includes reviews, completions, progress updates, and social activities.
           </p>
         </div>
       </div>

@@ -1,7 +1,7 @@
 import { useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { useSearchStore } from "@/stores/useSearchStore";
+import { useSearchStore } from "@/stores/useGlobalSearchStore";
 import { useGamesStore } from "@/stores/useGamesStore";
 import { useDebounce } from "./useDebounce";
 import { GAME_CATEGORIES, CATEGORY_TIME_RANGES } from "@/config/categories";

@@ -575,7 +575,8 @@ export class IGDBService {
         const query = `
           fields name, cover.*, first_release_date, rating, total_rating, total_rating_count, 
           genres.*, platforms.*, summary, storyline, involved_companies.company.name, 
-          involved_companies.developer, involved_companies.publisher, screenshots.*, artworks.*;
+          involved_companies.developer, involved_companies.publisher, 
+          screenshots.url, screenshots.image_id, videos.name, videos.video_id, artworks.url, artworks.image_id;
           where id = ${gameId};
         `;
 
@@ -646,7 +647,31 @@ export class IGDBService {
           genres: game.genres?.map((g: { name: string }) => g.name) || [],
           summary: game.summary || null,
           storyline: game.storyline || null,
-          involved_companies: game.involved_companies || []
+          involved_companies: game.involved_companies || [],
+          screenshots: game.screenshots?.map((screenshot: any) => ({
+            id: screenshot.id || screenshot.image_id,
+            url: screenshot.url?.startsWith('//') 
+              ? `https:${screenshot.url.replace(/t_[a-zA-Z_]+/, 't_screenshot_huge')}`
+              : screenshot.url?.startsWith('https:') 
+                ? screenshot.url.replace(/t_[a-zA-Z_]+/, 't_screenshot_huge')
+                : `https://${screenshot.url?.replace(/t_[a-zA-Z_]+/, 't_screenshot_huge') || ''}`
+          })) || [],
+          videos: game.videos?.map((video: any) => ({
+            id: video.id,
+            name: video.name || 'Game Video',
+            video_id: video.video_id,
+            url: `https://www.youtube.com/watch?v=${video.video_id}`,
+            thumbnail_url: `https://img.youtube.com/vi/${video.video_id}/maxresdefault.jpg`,
+            provider: 'youtube'
+          })) || [],
+          artworks: game.artworks?.map((artwork: any) => ({
+            id: artwork.id || artwork.image_id,
+            url: artwork.url?.startsWith('//') 
+              ? `https:${artwork.url.replace(/t_[a-zA-Z_]+/, 't_1080p')}`
+              : artwork.url?.startsWith('https:') 
+                ? artwork.url.replace(/t_[a-zA-Z_]+/, 't_1080p')
+                : `https://${artwork.url?.replace(/t_[a-zA-Z_]+/, 't_1080p') || ''}`
+          })) || []
         };
 
 

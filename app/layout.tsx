@@ -17,6 +17,7 @@ import { BetaBanner } from "@/components/ui/BetaBanner";
 import { CookieConsent } from "@/components/ui/CookieConsent";
 import AdminShortcuts from "@/components/admin/AdminShortcuts";
 import { useUIStore } from "@/stores/useUIStore";
+import { Toaster } from "sonner";
 
 // Optimized font loading with display swap for better performance
 const inter = Inter({
@@ -197,6 +198,12 @@ export default function RootLayout({
                   </div>
                 )}
               </div>
+              <Toaster 
+                theme="dark" 
+                position="bottom-right" 
+                richColors 
+                closeButton 
+              />
             </ThemeProvider>
           </SupabaseProvider>
         </QueryClientProvider>

@@ -11,6 +11,7 @@ import {
 import Image from "next/image";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { getHighQualityImageUrl } from "@/utils/image-utils";
 
 const ensureAbsoluteUrl = (url: string) => {
   return url.startsWith("//") ? `https:${url}` : url;
@@ -62,8 +63,8 @@ export function ScreenshotModal({
     return null;
   }
 
-  // Replace 't_thumb' with 't_1080p' or 't_720p' for higher quality
-  const highQualityUrl = currentScreenshot.url.replace("t_thumb", "t_1080p");
+  // Use the proper high-quality image utility function
+  const highQualityUrl = getHighQualityImageUrl(currentScreenshot.url);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>

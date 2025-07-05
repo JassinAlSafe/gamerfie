@@ -6,7 +6,7 @@ import { Game } from '@/types';
 import { createClient } from "@/utils/supabase/client";
 import { useDebounce } from '@/hooks/Settings/use-debounce';
 import { useGamesStore } from '@/stores/useGamesStore';
-import { useSearchStore } from '@/stores/useSearchStore';
+import { useSearchStore } from '@/stores/useGlobalSearchStore';
 
 
 export interface SearchState {

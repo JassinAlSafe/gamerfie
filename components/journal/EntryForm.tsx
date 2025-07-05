@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/text/textarea";
 import { Label } from "@/components/ui/label";
 import { useLibraryStore } from "@/stores/useLibraryStore";
-import { useSearchStore } from "@/stores/useSearchStore";
+import { useSearchStore } from "@/stores/useGlobalSearchStore";
 import { createClient } from "@/utils/supabase/client";
 import { Separator } from "@/components/ui/separator";
 import { Loader2, Search } from "lucide-react";

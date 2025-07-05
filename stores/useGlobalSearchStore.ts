@@ -13,17 +13,28 @@ interface GlobalSearchState {
   setIsLoading: (isLoading: boolean) => void;
   setIsOpen: (isOpen: boolean) => void;
   search: (query: string) => Promise<void>;
+  searchWithPagination: (params: {
+    searchTerm: string;
+    page: number;
+    platformId: string;
+    sortBy: string;
+  }) => Promise<void>;
   reset: () => void;
 }
 
-export const useGlobalSearchStore = create<GlobalSearchState>()(
+const useGlobalSearchStoreImpl = create<GlobalSearchState>()(
   persist(
     (set) => ({
       query: '',
       results: [],
       isLoading: false,
       isOpen: false,
-      setQuery: (query) => set({ query }),
+      setQuery: (query) => {
+        set({ query });
+        if (query.length === 0) {
+          set({ results: [] });
+        }
+      },
       setResults: (results) => set({ results }),
       setIsLoading: (isLoading) => set({ isLoading }),
       setIsOpen: (isOpen) => set({ isOpen }),
@@ -42,6 +53,23 @@ export const useGlobalSearchStore = create<GlobalSearchState>()(
           set({ results: [], isLoading: false });
         }
       },
+      searchWithPagination: async (params) => {
+        if (params.searchTerm.length < 3) {
+          set({ results: [], isLoading: false });
+          return;
+        }
+        
+        set({ isLoading: true });
+        try {
+          const response = await GameService.fetchGames(params);
+          set({ results: response.games });
+        } catch (error) {
+          console.error('Search error:', error);
+          set({ results: [] });
+        } finally {
+          set({ isLoading: false });
+        }
+      },
       reset: () => set({ query: '', results: [], isLoading: false, isOpen: false }),
     }),
     {
@@ -49,3 +77,7 @@ export const useGlobalSearchStore = create<GlobalSearchState>()(
     }
   )
 );
+
+// Export the enhanced store as both names for compatibility
+export const useGlobalSearchStore = useGlobalSearchStoreImpl;
+export const useSearchStore = useGlobalSearchStoreImpl;
