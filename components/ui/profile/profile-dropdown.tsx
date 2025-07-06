@@ -21,7 +21,7 @@ type UserWithProfile = SupabaseUser & {
 
 interface ProfileDropdownProps {
   user: UserWithProfile;
-  onSignOut: () => void;
+  onSignOut: (scope?: 'global' | 'local' | 'others') => void;
 }
 
 export function ProfileDropdown({ user, onSignOut }: ProfileDropdownProps) {
@@ -81,7 +81,7 @@ export function ProfileDropdown({ user, onSignOut }: ProfileDropdownProps) {
         <DropdownMenuSeparator className="bg-gray-700/50" />
         <DropdownMenuItem
           className="flex items-center py-2 cursor-pointer text-red-400 hover:text-red-300 focus:text-red-300 hover:bg-white/10 focus:bg-white/10"
-          onClick={onSignOut}
+          onClick={() => onSignOut('local')}
         >
           <LogOut className="mr-3 h-4 w-4" />
           <span>Sign Out</span>

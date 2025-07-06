@@ -18,23 +18,23 @@ interface LoadingStage {
 const loadingStages: LoadingStage[] = [
   {
     icon: <Loader2 className="w-5 h-5 animate-spin" />,
-    message: "Initializing authentication...",
-    duration: 1000
+    message: "Preparing authentication...",
+    duration: 800
   },
   {
     icon: <Shield className="w-5 h-5" />,
-    message: "Verifying credentials...",
-    duration: 1500
+    message: "Securing your connection...",
+    duration: 1200
   },
   {
     icon: <User className="w-5 h-5" />,
-    message: "Loading your profile...",
+    message: "Setting up your profile...",
     duration: 1000
   },
   {
     icon: <CheckCircle className="w-5 h-5 text-green-500" />,
-    message: "Welcome back!",
-    duration: 500
+    message: "Almost ready!",
+    duration: 600
   }
 ];
 

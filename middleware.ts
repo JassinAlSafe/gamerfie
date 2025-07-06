@@ -1,20 +1,21 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { createServerClient } from '@supabase/ssr';
 
 /**
  * Content Security Policy configuration
  * This helps prevent XSS attacks by controlling which resources can be loaded
  */
-function getCSPHeader(nonce: string) {
+function getCSPHeader() {
   const csp = [
     "default-src 'self'",
-    `script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.youtube.com https://www.googletagmanager.com https://analytics.google.com https://ssl.google-analytics.com 'nonce-${nonce}'`,
+    `script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.youtube.com https://www.googletagmanager.com https://analytics.google.com https://ssl.google-analytics.com https://va.vercel-scripts.com`,
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "font-src 'self' https://fonts.gstatic.com data:",
     "img-src 'self' data: blob: https: http:",
     "media-src 'self' https://www.youtube.com https://youtube.com",
     "frame-src 'self' https://www.youtube.com https://youtube.com",
-    "connect-src 'self' https://api.rawg.io https://*.supabase.co wss://*.supabase.co https://analytics.google.com https://api.twitch.tv",
+    "connect-src 'self' https://api.rawg.io https://*.supabase.co wss://*.supabase.co https://analytics.google.com https://api.twitch.tv https://id.twitch.tv",
     "object-src 'none'",
     "frame-ancestors 'none'",
     "base-uri 'self'",
@@ -32,14 +33,43 @@ function generateNonce(): string {
   return Buffer.from(crypto.getRandomValues(new Uint8Array(16))).toString('base64');
 }
 
-export function middleware(_request: NextRequest) {
-  const response = NextResponse.next();
+export async function middleware(request: NextRequest) {
+  // Handle Supabase auth first
+  let supabaseResponse = NextResponse.next({
+    request,
+  });
+
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll()
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
+          supabaseResponse = NextResponse.next({
+            request,
+          })
+          cookiesToSet.forEach(({ name, value, options }) =>
+            supabaseResponse.cookies.set(name, value, options)
+          )
+        },
+      },
+    }
+  )
+
+  // Refresh session if exists
+  await supabase.auth.getSession()
+
+  // Generate nonce for CSP (if needed in future)
   const nonce = generateNonce();
 
   // Security Headers
   const securityHeaders = {
     // Content Security Policy
-    'Content-Security-Policy': getCSPHeader(nonce),
+    'Content-Security-Policy': getCSPHeader(),
     
     // Prevent clickjacking
     'X-Frame-Options': 'DENY',
@@ -74,15 +104,15 @@ export function middleware(_request: NextRequest) {
     ].join(', '),
   };
 
-  // Apply security headers
+  // Apply security headers to the supabase response
   Object.entries(securityHeaders).forEach(([key, value]) => {
-    response.headers.set(key, value);
+    supabaseResponse.headers.set(key, value);
   });
 
   // Set nonce for use in components (optional)
-  response.headers.set('X-Nonce', nonce);
+  supabaseResponse.headers.set('X-Nonce', nonce);
 
-  return response;
+  return supabaseResponse;
 }
 
 // Configure which routes the middleware runs on

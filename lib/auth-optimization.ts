@@ -221,9 +221,17 @@ export function getSmartRedirect(user: any, intendedPath?: string) {
     return '/signin';
   }
   
-  // If user doesn't have a complete profile, send to onboarding
+  // Only send to welcome if user specifically hasn't completed onboarding
+  // (not for missing profile data - that should be handled differently)
+  const onboardedStatus = user.profile?.settings?.onboarded;
+  if (onboardedStatus === false) {
+    return '/welcome?new=true';
+  }
+  
+  // If user has incomplete profile but onboarding is true/undefined, go to home
+  // The profile completion can be handled on the main page
   if (!user.profile?.display_name || !user.profile?.username) {
-    return '/onboarding';
+    return '/?profile_incomplete=true';
   }
   
   // Return to intended path or default home

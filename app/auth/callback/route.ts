@@ -36,8 +36,11 @@ export async function GET(request: Request) {
         .eq('id', user.id)
         .single();
 
+      let isNewUser = false;
+
       // If no profile exists, create one
       if (!existingProfile) {
+        isNewUser = true;
         const username = user.email?.split('@')[0] || `user_${user.id.slice(0, 8)}`;
         const displayName = user.user_metadata?.full_name || 
                            user.user_metadata?.name || 
@@ -52,13 +55,24 @@ export async function GET(request: Request) {
             email: user.email || null,
             avatar_url: user.user_metadata?.avatar_url || user.user_metadata?.picture || null,
             role: 'user',
+            settings: { onboarded: false },
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
           });
+      } else {
+        // Check if existing user has completed onboarding
+        const hasOnboarded = existingProfile.settings?.onboarded === true;
+        if (!hasOnboarded) {
+          isNewUser = true;
+        }
       }
 
-      // Successful authentication - redirect to home
-      return NextResponse.redirect(new URL('/?auth=success', requestUrl.origin));
+      // Redirect based on user status
+      if (isNewUser) {
+        return NextResponse.redirect(new URL('/welcome?new=true', requestUrl.origin));
+      } else {
+        return NextResponse.redirect(new URL('/?auth=success', requestUrl.origin));
+      }
 
     } catch (error) {
       console.error('Auth callback error:', error);

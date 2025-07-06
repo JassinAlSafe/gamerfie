@@ -408,7 +408,9 @@ export default function GamesTab({ filters }: GamesTabProps) {
         },
         (payload) => {
           // Only invalidate if the change affects this user's data
-          if (payload.new?.user_id === userId || payload.old?.user_id === userId) {
+          const newRecord = payload.new as any;
+          const oldRecord = payload.old as any;
+          if (newRecord?.user_id === userId || oldRecord?.user_id === userId) {
             debouncedInvalidate();
           }
         }
@@ -447,7 +449,6 @@ export default function GamesTab({ filters }: GamesTabProps) {
           user_rating,
           notes,
           last_played_at,
-          cover_url,
           games (
             id,
             name,
@@ -476,7 +477,6 @@ export default function GamesTab({ filters }: GamesTabProps) {
         userRating: item.user_rating,
         notes: item.notes,
         lastPlayedAt: item.last_played_at,
-        coverUrl: item.cover_url,
         games: item.games,
       }));
 

@@ -12,20 +12,38 @@ export const AuthButtons = React.memo(function AuthButtons() {
   const { toast } = useToast();
   const { user, signOut, isInitialized } = useAuthStore();
 
-  const handleSignOut = async () => {
+  const handleSignOut = async (scope: 'global' | 'local' | 'others' = 'local') => {
     try {
-      await signOut();
+      await signOut(scope);
+      
+      // Clear any client-side storage/cache
+      if (typeof window !== 'undefined') {
+        // Clear localStorage if needed
+        localStorage.removeItem('supabase.auth.token');
+        
+        // Clear any other app-specific storage
+        localStorage.removeItem('gameVault.preferences');
+      }
+      
+      // Navigate to home page
       router.push("/");
-      router.refresh();
+      router.refresh(); // Force refresh to ensure clean state
+      
+      const scopeMessage = scope === 'global' 
+        ? 'Signed out from all devices' 
+        : scope === 'others'
+        ? 'Signed out from other devices'
+        : 'Signed out successfully';
+        
       toast({
         title: "Signed out",
-        description: "Successfully signed out",
+        description: scopeMessage,
       });
     } catch (error) {
       console.error("Sign out error:", error);
       toast({
         title: "Error",
-        description: "Failed to sign out",
+        description: "Failed to sign out. Please try again.",
         variant: "destructive",
       });
     }
@@ -36,7 +54,7 @@ export const AuthButtons = React.memo(function AuthButtons() {
   }
 
   if (user) {
-    return <ProfileDropdown user={user} onSignOut={handleSignOut} />;
+    return <ProfileDropdown user={user} onSignOut={(scope) => handleSignOut(scope)} />;
   }
 
   return (

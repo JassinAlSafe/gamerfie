@@ -30,6 +30,7 @@ interface WelcomeHeaderProps {
   weeklyPlaytime?: number;
   currentStreak?: number;
   className?: string;
+  isNewUser?: boolean;
 }
 
 export const WelcomeHeader = memo(function WelcomeHeader({
@@ -38,6 +39,7 @@ export const WelcomeHeader = memo(function WelcomeHeader({
   weeklyPlaytime = 0,
   currentStreak = 0,
   className,
+  isNewUser = false,
 }: WelcomeHeaderProps) {
   const [mounted, setMounted] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -107,9 +109,11 @@ export const WelcomeHeader = memo(function WelcomeHeader({
               </motion.div>
               <div>
                 <h1 className="text-2xl font-bold text-white">
-                  {greeting}, {username}!
+                  {isNewUser ? "Welcome to GameVault" : greeting}, {username}!
                 </h1>
-                <p className="text-white/80 text-sm">{message}</p>
+                <p className="text-white/80 text-sm">
+                  {isNewUser ? "🎉 Your gaming journey starts here!" : message}
+                </p>
               </div>
             </motion.div>
 
