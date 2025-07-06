@@ -436,6 +436,22 @@ export class PlaylistService {
   }
 
   static subscribeToPlaylist(playlistId: string, callback: (playlist: Playlist) => void) {
+    let debounceTimer: NodeJS.Timeout;
+    
+    const debouncedCallback = async () => {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(async () => {
+        try {
+          const playlist = await this.getPlaylist(playlistId);
+          if (playlist) {
+            callback(playlist);
+          }
+        } catch (error) {
+          console.error(`Failed to fetch playlist ${playlistId} after change:`, error);
+        }
+      }, 300); // 300ms debounce
+    };
+
     const subscription = this.supabase
       .channel(`playlist_${playlistId}`)
       .on(
@@ -446,16 +462,12 @@ export class PlaylistService {
           table: 'playlist_games',
           filter: `playlist_id=eq.${playlistId}`,
         },
-        async () => {
-          const playlist = await this.getPlaylist(playlistId);
-          if (playlist) {
-            callback(playlist);
-          }
-        }
+        debouncedCallback
       )
       .subscribe();
 
     return () => {
+      clearTimeout(debounceTimer);
       subscription.unsubscribe();
     };
   }
@@ -767,6 +779,15 @@ export class PlaylistService {
 
     console.log('Setting up real-time playlist subscription...');
 
+    let debounceTimer: NodeJS.Timeout;
+    
+    const debouncedInvalidation = () => {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(async () => {
+        await this.invalidatePlaylistCaches();
+      }, 1000); // 1 second debounce for global changes
+    };
+
     const subscription = this.supabase
       .channel('playlist-changes')
       .on(
@@ -775,12 +796,11 @@ export class PlaylistService {
           event: '*',
           schema: 'public',
           table: 'playlists',
+          filter: 'is_published=eq.true', // Only listen to published playlist changes
         },
         async (payload) => {
           console.log('Playlist change detected:', payload.eventType, (payload.new as any)?.title || (payload.old as any)?.title);
-          
-          // Invalidate caches on any playlist change
-          await this.invalidatePlaylistCaches();
+          debouncedInvalidation();
         }
       )
       .on(
@@ -792,15 +812,14 @@ export class PlaylistService {
         },
         async (payload) => {
           console.log('Playlist games change detected:', payload.eventType);
-          
-          // Invalidate caches when playlist games are modified
-          await this.invalidatePlaylistCaches();
+          debouncedInvalidation();
         }
       )
       .subscribe();
 
     const unsubscribe = () => {
       console.log('Unsubscribing from playlist changes...');
+      clearTimeout(debounceTimer);
       subscription.unsubscribe();
       this.subscriptions.delete(subscriptionKey);
     };

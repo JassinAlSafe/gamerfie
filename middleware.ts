@@ -1,152 +1,101 @@
-import { createServerClient } from '@supabase/ssr'
-import { NextResponse, type NextRequest } from 'next/server'
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
 
-// Basic environment validation for critical variables
-function validateCriticalEnvVars() {
-  const required = ['NEXT_PUBLIC_SUPABASE_URL', 'NEXT_PUBLIC_SUPABASE_ANON_KEY'];
-  const missing = required.filter(key => !process.env[key]);
+/**
+ * Content Security Policy configuration
+ * This helps prevent XSS attacks by controlling which resources can be loaded
+ */
+function getCSPHeader(nonce: string) {
+  const csp = [
+    "default-src 'self'",
+    `script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.youtube.com https://www.googletagmanager.com https://analytics.google.com https://ssl.google-analytics.com 'nonce-${nonce}'`,
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+    "font-src 'self' https://fonts.gstatic.com data:",
+    "img-src 'self' data: blob: https: http:",
+    "media-src 'self' https://www.youtube.com https://youtube.com",
+    "frame-src 'self' https://www.youtube.com https://youtube.com",
+    "connect-src 'self' https://api.rawg.io https://*.supabase.co wss://*.supabase.co https://analytics.google.com https://api.twitch.tv",
+    "object-src 'none'",
+    "frame-ancestors 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
+    "upgrade-insecure-requests",
+  ];
   
-  if (missing.length > 0) {
-    console.error('❌ Critical environment variables missing:', missing.join(', '));
-    console.error('Available environment variables:', Object.keys(process.env).filter(k => k.includes('SUPABASE')));
-    throw new Error(`Missing critical environment variables: ${missing.join(', ')}`);
-  }
-  
-  // Log successful validation
-  console.log('✅ Critical environment variables validated in middleware');
+  return csp.join('; ');
 }
 
-export async function middleware(request: NextRequest) {
-  // Validate critical environment variables on first request
-  try {
-    validateCriticalEnvVars();
-  } catch (error) {
-    console.error('Environment validation failed in middleware:', error);
-    return NextResponse.json(
-      { error: 'Server configuration error. Please check environment variables.' },
-      { status: 500 }
-    );
-  }
-
-  let supabaseResponse = NextResponse.next({
-    request,
-  })
-
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll()
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
-          supabaseResponse = NextResponse.next({
-            request,
-          })
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
-          )
-        },
-      },
-    }
-  )
-
-  // Do not run code between createServerClient and
-  // supabase.auth.getUser(). A simple mistake could make it very hard to debug
-  // issues with users being randomly logged out.
-
-  // IMPORTANT: DO NOT REMOVE auth.getUser()
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  // If user is authenticated, ensure they have a profile
-  if (user) {
-    try {
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('id', user.id)
-        .single();
-
-      // If profile doesn't exist, create one
-      if (profileError && profileError.code === 'PGRST116') {
-        const username = user.email?.split('@')[0] || `user_${user.id.slice(0, 8)}`;
-        const displayName = user.user_metadata?.display_name ||
-                           user.user_metadata?.full_name ||
-                           user.user_metadata?.name ||
-                           username;
-
-        await supabase
-          .from('profiles')
-          .insert({
-            id: user.id,
-            username,
-            display_name: displayName,
-            email: user.email || null,
-            avatar_url: user.user_metadata?.avatar_url ||
-                       user.user_metadata?.picture || null,
-            role: 'user',
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          });
-      }
-    } catch (error) {
-      // Don't fail the request if profile creation fails
-      console.warn('Profile creation failed in middleware:', error);
-    }
-  }
-
-  // Define protected routes that require authentication
-  const protectedPaths = ['/profile', '/dashboard', '/admin', '/settings'];
-  const isProtectedRoute = protectedPaths.some(path => 
-    request.nextUrl.pathname.startsWith(path)
-  );
-
-  if (
-    !user &&
-    isProtectedRoute &&
-    !request.nextUrl.pathname.startsWith('/login') &&
-    !request.nextUrl.pathname.startsWith('/signin') &&
-    !request.nextUrl.pathname.startsWith('/signup') &&
-    !request.nextUrl.pathname.startsWith('/auth') &&
-    !request.nextUrl.pathname.startsWith('/api/auth')
-  ) {
-    // no user, potentially respond by redirecting the user to the login page
-    const url = request.nextUrl.clone()
-    url.pathname = '/signin'
-    return NextResponse.redirect(url)
-  }
-
-  // IMPORTANT: You *must* return the supabaseResponse object as it is.
-  // If you're creating a new response object with NextResponse.next() make sure to:
-  // 1. Pass the request in it, like so:
-  // const myNewResponse = NextResponse.next({ request })
-  // 2. Copy over the cookies, like so:
-  // myNewResponse.cookies.setAll(supabaseResponse.cookies.getAll())
-  // 3. Change the myNewResponse object to fit your needs, but avoid changing
-  // the cookies!
-  // 4. Finally:
-  // return myNewResponse
-  // If this is not done, you may be causing the browser and server to go out
-  // of sync and terminate the user's session prematurely!
-
-  return supabaseResponse
+/**
+ * Generate a random nonce for CSP
+ */
+function generateNonce(): string {
+  return Buffer.from(crypto.getRandomValues(new Uint8Array(16))).toString('base64');
 }
 
+export function middleware(_request: NextRequest) {
+  const response = NextResponse.next();
+  const nonce = generateNonce();
+
+  // Security Headers
+  const securityHeaders = {
+    // Content Security Policy
+    'Content-Security-Policy': getCSPHeader(nonce),
+    
+    // Prevent clickjacking
+    'X-Frame-Options': 'DENY',
+    
+    // Prevent MIME type sniffing
+    'X-Content-Type-Options': 'nosniff',
+    
+    // XSS Protection (legacy but still useful)
+    'X-XSS-Protection': '1; mode=block',
+    
+    // Referrer Policy
+    'Referrer-Policy': 'strict-origin-when-cross-origin',
+    
+    // Prevent Adobe Flash and PDF plugins from loading
+    'X-Permitted-Cross-Domain-Policies': 'none',
+    
+    // HSTS (HTTP Strict Transport Security) - only in production with HTTPS
+    ...(process.env.NODE_ENV === 'production' && {
+      'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload',
+    }),
+    
+    // Permissions Policy (formerly Feature Policy)
+    'Permissions-Policy': [
+      'camera=()',
+      'microphone=()',
+      'geolocation=()',
+      'payment=()',
+      'usb=()',
+      'magnetometer=()',
+      'accelerometer=()',
+      'gyroscope=()',
+    ].join(', '),
+  };
+
+  // Apply security headers
+  Object.entries(securityHeaders).forEach(([key, value]) => {
+    response.headers.set(key, value);
+  });
+
+  // Set nonce for use in components (optional)
+  response.headers.set('X-Nonce', nonce);
+
+  return response;
+}
+
+// Configure which routes the middleware runs on
 export const config = {
   matcher: [
     /*
      * Match all request paths except for the ones starting with:
+     * - api (API routes)
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
-     * Feel free to modify this pattern to include more paths.
+     * - public folder files
      */
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
-}
-
+};

@@ -13,6 +13,7 @@ import { ErrorBoundary } from "react-error-boundary";
 import { motion, AnimatePresence } from "framer-motion";
 import { AlertCircle, RefreshCw, ArrowUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { reportComponentError } from "@/utils/error-monitoring";
 
 function ErrorFallback({
   error,
@@ -107,18 +108,6 @@ function ensureGameType(game: any): Game {
   return processedGame;
 }
 
-export function GameDetails({ game }: { game: Game }) {
-  return (
-    <ErrorBoundary
-      FallbackComponent={ErrorFallback}
-      onReset={() => {
-        window.location.reload();
-      }}
-    >
-      <GameContent game={game} />
-    </ErrorBoundary>
-  );
-}
 
 function GameContent({ game }: { game: Game }) {
   const { profile } = useProfile();
@@ -206,5 +195,22 @@ function GameContent({ game }: { game: Game }) {
       {/* Scroll to top button */}
       <ScrollToTopButton />
     </motion.div>
+  );
+}
+
+// Main component with error boundary
+export function GameDetails({ game }: { game: Game }) {
+  return (
+    <ErrorBoundary
+      FallbackComponent={ErrorFallback}
+      onError={(error, errorInfo) => {
+        reportComponentError(error, errorInfo, 'GameDetails');
+      }}
+      onReset={() => {
+        window.location.reload();
+      }}
+    >
+      <GameContent game={game} />
+    </ErrorBoundary>
   );
 }

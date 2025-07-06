@@ -8,6 +8,7 @@ import { GamePageProps } from "@/types";
 import { motion } from "framer-motion";
 import { AlertTriangle, Gamepad2 } from "lucide-react";
 import Link from "next/link";
+import { createSafeJsonString, sanitizeString, sanitizeUrl, sanitizeStringArray } from "@/utils/sanitize";
 
 function LoadingFallback() {
   return (
@@ -61,30 +62,30 @@ function GameContent({ id }: { id: string }) {
   const { game, error } = useGameDetails(id);
   const isError = !!error;
 
-  // Generate structured data for the game
+  // Generate structured data for the game with proper sanitization
   const generateGameStructuredData = (gameData: any) => {
     if (!gameData) return null;
 
     const structuredData = {
       "@context": "https://schema.org",
       "@type": "VideoGame",
-      "name": gameData.name,
-      "description": gameData.description || `Track your progress and connect with other players of ${gameData.name} on Game Vault.`,
-      "url": `https://gamersvaultapp.com/game/${gameData.id}`,
-      "image": gameData.cover_url,
+      "name": sanitizeString(gameData.name),
+      "description": sanitizeString(gameData.description || `Track your progress and connect with other players of ${sanitizeString(gameData.name)} on Game Vault.`),
+      "url": sanitizeUrl(`https://gamersvaultapp.com/game/${gameData.id}`),
+      "image": sanitizeUrl(gameData.cover_url),
       "datePublished": gameData.release_date,
       "developer": gameData.developer ? {
         "@type": "Organization", 
-        "name": gameData.developer
+        "name": sanitizeString(gameData.developer)
       } : undefined,
       "publisher": gameData.publisher ? {
         "@type": "Organization",
-        "name": gameData.publisher  
+        "name": sanitizeString(gameData.publisher)  
       } : undefined,
-      "genre": Array.isArray(gameData.genres) ? gameData.genres : [gameData.genres].filter(Boolean),
-      "gamePlatform": gameData.platforms || [],
+      "genre": sanitizeStringArray(gameData.genres || []),
+      "gamePlatform": sanitizeStringArray(gameData.platforms || []),
       "applicationCategory": "Game",
-      "operatingSystem": gameData.platforms || "Multi-platform",
+      "operatingSystem": gameData.platforms ? sanitizeStringArray(gameData.platforms).join(", ") || "Multi-platform" : "Multi-platform",
       "offers": {
         "@type": "Offer",
         "availability": "https://schema.org/InStock",
@@ -92,8 +93,8 @@ function GameContent({ id }: { id: string }) {
       },
       "aggregateRating": gameData.rating ? {
         "@type": "AggregateRating",
-        "ratingValue": gameData.rating,
-        "ratingCount": gameData.rating_count || 1,
+        "ratingValue": typeof gameData.rating === 'number' ? gameData.rating : 0,
+        "ratingCount": typeof gameData.rating_count === 'number' ? gameData.rating_count : 1,
         "bestRating": 10,
         "worstRating": 1
       } : undefined
@@ -144,7 +145,7 @@ function GameContent({ id }: { id: string }) {
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
-            __html: JSON.stringify(structuredData),
+            __html: createSafeJsonString(structuredData),
           }}
         />
       )}
