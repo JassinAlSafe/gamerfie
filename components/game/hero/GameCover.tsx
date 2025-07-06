@@ -28,7 +28,7 @@ export function GameCover({ game, onLoad }: GameCoverProps) {
         animate={{ opacity: 1, scale: 1 }}
         whileHover={{ scale: 1.03 }}
         transition={{ duration: 0.3 }}
-        className="w-48 md:w-64 lg:w-72 flex-shrink-0"
+        className="w-32 sm:w-48 md:w-64 lg:w-72 flex-shrink-0"
       >
         <div className="relative w-full aspect-[3/4] rounded-xl overflow-hidden shadow-xl bg-gray-800/80 border border-gray-700/30" />
       </motion.div>
@@ -41,7 +41,7 @@ export function GameCover({ game, onLoad }: GameCoverProps) {
       animate={{ opacity: 1, scale: 1 }}
       whileHover={{ scale: 1.03 }}
       transition={{ duration: 0.3 }}
-      className="w-48 md:w-64 lg:w-72 flex-shrink-0"
+      className="w-32 sm:w-48 md:w-64 lg:w-72 flex-shrink-0"
     >
       <div className="relative w-full aspect-[3/4] rounded-xl overflow-hidden shadow-xl ring-1 ring-gray-700/30">
         {/* Shimmer effect while loading */}
@@ -57,7 +57,7 @@ export function GameCover({ game, onLoad }: GameCoverProps) {
             alt={game.name}
             fill
             priority
-            sizes="(max-width: 768px) 192px, (max-width: 1024px) 256px, 288px"
+            sizes="(max-width: 640px) 128px, (max-width: 768px) 192px, (max-width: 1024px) 256px, 288px"
             className={`object-cover transition-all duration-500 ${
               isLoading
                 ? "scale-110 blur-sm opacity-0"
