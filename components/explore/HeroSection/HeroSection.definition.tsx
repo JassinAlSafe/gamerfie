@@ -1,7 +1,10 @@
+import type { CategoryOption } from "@/types";
+
 export interface HeroSectionProps {
   searchQuery: string;
-  handleSearchChange: (_e: React.ChangeEvent<HTMLInputElement>) => void;
-  handleKeyPress: (_e: React.KeyboardEvent<HTMLInputElement>) => void;
-  searchButton: React.ReactNode;
-  categoryButtons: React.ReactNode;
+  isSearching: boolean;
+  onSearchChange: (value: string) => void;
+  onSearch: () => void;
+  onKeyPress: (e: React.KeyboardEvent<HTMLInputElement>) => void;
+  onCategorySelect: (category: CategoryOption) => void;
 }

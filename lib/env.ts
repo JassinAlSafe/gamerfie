@@ -14,10 +14,6 @@ export interface EnvConfig {
   NEXT_PUBLIC_TWITCH_CLIENT_ID: string;
   TWITCH_CLIENT_SECRET: string;
   
-  // NextAuth
-  NEXTAUTH_URL: string;
-  NEXTAUTH_SECRET: string;
-  AUTH_SECRET: string;
   
   // Optional
   NEXT_PUBLIC_SENTRY_DSN?: string;
@@ -42,9 +38,6 @@ export function validateEnvironment(): EnvConfig {
     'RAWG_API_KEY',
     'NEXT_PUBLIC_TWITCH_CLIENT_ID',
     'TWITCH_CLIENT_SECRET',
-    'NEXTAUTH_URL',
-    'NEXTAUTH_SECRET',
-    'AUTH_SECRET',
   ];
 
   const missing: string[] = [];
@@ -82,12 +75,6 @@ export function validateEnvironment(): EnvConfig {
     );
   }
 
-  const nextAuthUrl = process.env.NEXTAUTH_URL!;
-  if (!nextAuthUrl.startsWith('http://') && !nextAuthUrl.startsWith('https://')) {
-    throw new EnvironmentError(
-      'NEXTAUTH_URL must be a valid URL starting with http:// or https://'
-    );
-  }
 
   return {
     NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -96,9 +83,6 @@ export function validateEnvironment(): EnvConfig {
     RAWG_API_KEY: process.env.RAWG_API_KEY!,
     NEXT_PUBLIC_TWITCH_CLIENT_ID: process.env.NEXT_PUBLIC_TWITCH_CLIENT_ID!,
     TWITCH_CLIENT_SECRET: process.env.TWITCH_CLIENT_SECRET!,
-    NEXTAUTH_URL: process.env.NEXTAUTH_URL!,
-    NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET!,
-    AUTH_SECRET: process.env.AUTH_SECRET!,
     NEXT_PUBLIC_SENTRY_DSN: process.env.NEXT_PUBLIC_SENTRY_DSN,
     NEXT_PUBLIC_API_BASE: process.env.NEXT_PUBLIC_API_BASE,
   };
@@ -115,7 +99,6 @@ export function initializeEnvironment(): EnvConfig {
     // Log successful initialization (without sensitive values)
     console.log('✅ Environment validation successful');
     console.log(`📦 Supabase URL: ${env.NEXT_PUBLIC_SUPABASE_URL}`);
-    console.log(`🔗 NextAuth URL: ${env.NEXTAUTH_URL}`);
     console.log(`🎮 RAWG API: ${env.RAWG_API_KEY ? 'Configured' : 'Missing'}`);
     console.log(`📺 Twitch API: ${env.NEXT_PUBLIC_TWITCH_CLIENT_ID ? 'Configured' : 'Missing'}`);
     

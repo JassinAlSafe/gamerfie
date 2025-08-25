@@ -67,7 +67,6 @@
     "lucide-react": "^0.440.0",
     "mini-svg-data-uri": "^1.4.4",
     "next": "^14.2.8",
-    "next-auth": "^4.24.11",
     "next-themes": "^0.3.0",
     "react": "^18",
     "react-day-picker": "^9.4.4",

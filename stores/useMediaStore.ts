@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { getHighQualityImageUrl, getYouTubeEmbedUrl, getYouTubeThumbnail } from '@/utils/image-utils'
+import type { ScreenshotData, VideoData } from '@/types/auth.types'
 
 interface ProcessedMedia {
   screenshots: Array<{
@@ -36,7 +37,7 @@ interface MediaState {
   }
   
   // Actions
-  processGameMedia: (gameId: string, screenshots?: any[], videos?: any[]) => ProcessedMedia
+  processGameMedia: (gameId: string, screenshots?: ScreenshotData[], videos?: VideoData[]) => ProcessedMedia
   setPreferredTab: (tab: 'screenshots' | 'videos') => void
   openScreenshotModal: (gameId: string, index: number) => void
   closeScreenshotModal: () => void
@@ -76,7 +77,7 @@ export const useMediaStore = create<MediaState>()(
 
         // Process videos with caching
         const processedVideos = videos.map((video, index) => {
-          const videoId = video.video_id || video.id
+          const videoId = video.video_id || video.id || `video-${index}`
           return {
             id: video.id || `video-${index}`,
             name: video.name || `Video ${index + 1}`,

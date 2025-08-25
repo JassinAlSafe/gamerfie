@@ -3,7 +3,8 @@ import { persist } from 'zustand/middleware';
 import { GameService } from '@/services/gameService';
 import { GameExtended } from '@/types/gameService';
 
-interface GlobalSearchState {
+// Enhanced search state with backward compatibility
+interface SearchState {
   query: string;
   results: GameExtended[];
   isLoading: boolean;
@@ -20,9 +21,10 @@ interface GlobalSearchState {
     sortBy: string;
   }) => Promise<void>;
   reset: () => void;
+  clear: () => void;
 }
 
-const useGlobalSearchStoreImpl = create<GlobalSearchState>()(
+const useSearchStoreImpl = create<SearchState>()(
   persist(
     (set) => ({
       query: '',
@@ -71,13 +73,14 @@ const useGlobalSearchStoreImpl = create<GlobalSearchState>()(
         }
       },
       reset: () => set({ query: '', results: [], isLoading: false, isOpen: false }),
+      clear: () => set({ query: '', results: [] }),
     }),
     {
-      name: 'global-search-store',
+      name: 'search-store',
     }
   )
 );
 
-// Export the enhanced store as both names for compatibility
-export const useGlobalSearchStore = useGlobalSearchStoreImpl;
-export const useSearchStore = useGlobalSearchStoreImpl;
+// Export the store - keeping both names for backward compatibility
+export const useGlobalSearchStore = useSearchStoreImpl;
+export const useSearchStore = useSearchStoreImpl;

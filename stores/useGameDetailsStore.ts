@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { persist, subscribeWithSelector } from 'zustand/middleware'
 import { Game, Platform, Genre } from '@/types'
+import type { GameData } from '@/types/auth.types'
 
 // Enhanced game with metadata
 interface CachedGame extends Game {
@@ -60,9 +61,11 @@ interface GameDetailsState {
 }
 
 // Game data processing utility
-const processGameData = (game: any): Game => {
+const processGameData = (game: GameData): Game => {
   return {
     ...game,
+    id: game.id.toString(),
+    name: game.name || 'Unknown Game',
     // Ensure platforms are in correct format
     platforms: Array.isArray(game.platforms) 
       ? game.platforms.map((p: string | Platform) => 
@@ -79,6 +82,23 @@ const processGameData = (game: any): Game => {
     summary: game.summary || undefined,
     storyline: game.storyline || undefined,
     rating: game.rating || 0,
+    // Fix cover id type
+    cover: game.cover ? {
+      id: game.cover.id.toString(),
+      url: game.cover.url
+    } : undefined,
+    // Fix screenshots compatibility
+    screenshots: game.screenshots?.map((s, index) => ({
+      id: s.id || `screenshot-${index}`,
+      url: s.url
+    })),
+    // Fix videos compatibility
+    videos: game.videos?.map((v, index) => ({
+      id: v.id || `video-${index}`,
+      name: v.name || `Video ${index + 1}`,
+      url: v.external || '',
+      provider: 'youtube'
+    })),
     first_release_date: game.first_release_date || undefined
   }
 }
@@ -331,12 +351,12 @@ export const useGameDetailsStore = create<GameDetailsState>()(
         }),
         // Version for migration if schema changes
         version: 2,
-        migrate: (persistedState: any, version: number) => {
+        migrate: (persistedState: unknown, version: number) => {
           if (version < 2) {
             // Migrate old cache format
             const migratedGames: Record<string, CachedGame> = {}
             
-            Object.entries(persistedState.games || {}).forEach(([id, game]: [string, any]) => {
+            Object.entries((persistedState as any)?.games || {}).forEach(([id, game]: [string, any]) => {
               migratedGames[id] = {
                 ...game,
                 fetchCount: 1,
@@ -346,7 +366,7 @@ export const useGameDetailsStore = create<GameDetailsState>()(
             })
             
             return {
-              ...persistedState,
+              ...(persistedState as any),
               games: migratedGames,
               gameStates: {},
             }

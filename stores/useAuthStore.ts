@@ -1,17 +1,18 @@
 import { create } from 'zustand'
-import type { User as SupabaseUser, AuthResponse } from '@supabase/supabase-js'
+import type { AuthResponse } from '@supabase/supabase-js'
 import { createClient } from '@/utils/supabase/client'
 import { persist } from 'zustand/middleware'
-import type { Database } from '@/types/supabase'
 import { fetchUserProfileOptimized, ProfileCache, preWarmAuth } from '@/lib/auth-optimization'
-
-type Profile = Database['public']['Tables']['profiles']['Row']
-type User = SupabaseUser & {
-  profile?: Profile | null
-}
+import type { 
+  User, 
+  Profile, 
+  GoogleAuthResponse
+} from '@/types/auth.types'
 
 interface AuthState {
   user: User | null
+  session: any | null
+  profile: Profile | null
   isLoading: boolean
   error: string | null
   isInitialized: boolean
@@ -22,7 +23,7 @@ interface AuthState {
   setError: (_error: string | null) => void
   signIn: (_email: string, _password: string) => Promise<AuthResponse>
   signUp: (_email: string, _password: string, _username: string, _displayName?: string) => Promise<AuthResponse>
-  signInWithGoogle: () => Promise<{ data: { provider: string; url: string } | null; error: any }>
+  signInWithGoogle: () => Promise<GoogleAuthResponse>
   signOut: (_scope?: 'global' | 'local' | 'others') => Promise<void>
   resetPassword: (_email: string) => Promise<void>
   updatePassword: (_newPassword: string) => Promise<void>
@@ -53,6 +54,8 @@ export const useAuthStore = create<AuthState>()(
 
       return {
         user: null,
+        session: null,
+        profile: null,
         isLoading: false, // Start with false to prevent infinite loading
         error: null,
         isInitialized: false,

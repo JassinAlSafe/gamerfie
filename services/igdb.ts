@@ -67,7 +67,7 @@ export class IGDBService {
   private static getProxyUrl(): string {
     const isServer = typeof window === 'undefined';
     return isServer 
-      ? `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/igdb-proxy`
+      ? 'http://localhost:3000/api/igdb-proxy'
       : '/api/igdb-proxy';
   }
 
