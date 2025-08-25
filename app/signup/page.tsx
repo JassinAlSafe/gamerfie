@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Icons } from "@/components/ui/icons";
-import { SignUpForm } from "../components/auth/SignUpForm";
+import { SignUpForm } from "@/components/auth/SignUpForm";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { AuthErrorBoundary } from "@/components/auth/AuthErrorBoundary";

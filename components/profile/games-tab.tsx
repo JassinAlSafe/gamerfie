@@ -381,12 +381,23 @@ export default function GamesTab({ filters }: GamesTabProps) {
     checkSession();
   }, [supabase]);
 
-  // Subscribe to realtime changes
+  // Subscribe to realtime changes with optimized filtering and debouncing
   useEffect(() => {
     if (!userId) return;
 
+    let debounceTimer: NodeJS.Timeout;
+    
+    const debouncedInvalidate = () => {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        queryClient.invalidateQueries({
+          queryKey: ["userGames", userId, "v2"],
+        });
+      }, 500); // 500ms debounce to prevent excessive refetches
+    };
+
     const channel = supabase
-      .channel("user_games_changes")
+      .channel(`user_games_${userId}`) // User-specific channel name
       .on(
         "postgres_changes",
         {
@@ -395,16 +406,19 @@ export default function GamesTab({ filters }: GamesTabProps) {
           table: "user_games",
           filter: `user_id=eq.${userId}`,
         },
-        () => {
-          // Invalidate and refetch when there are changes
-          queryClient.invalidateQueries({
-            queryKey: ["userGames", userId, "v2"],
-          });
+        (payload) => {
+          // Only invalidate if the change affects this user's data
+          const newRecord = payload.new as any;
+          const oldRecord = payload.old as any;
+          if (newRecord?.user_id === userId || oldRecord?.user_id === userId) {
+            debouncedInvalidate();
+          }
         }
       )
       .subscribe();
 
     return () => {
+      clearTimeout(debounceTimer);
       supabase.removeChannel(channel);
     };
   }, [userId, queryClient, supabase]);
@@ -423,20 +437,27 @@ export default function GamesTab({ filters }: GamesTabProps) {
         .from("user_games")
         .select(
           `
-          *,
+          id,
+          user_id,
+          game_id,
+          status,
+          play_time,
+          created_at,
+          updated_at,
+          completion_percentage,
+          achievements_completed,
+          user_rating,
+          notes,
+          last_played_at,
           games (
             id,
             name,
-            cover_url,
-            platforms,
-            genres,
-            summary,
-            created_at,
-            updated_at
+            cover_url
           )
         `
         )
-        .eq("user_id", userId);
+        .eq("user_id", userId)
+        .order("last_played_at", { ascending: false, nullsFirst: false });
 
       if (error) {
         throw new Error(`Failed to fetch games: ${error.message}`);
@@ -456,7 +477,6 @@ export default function GamesTab({ filters }: GamesTabProps) {
         userRating: item.user_rating,
         notes: item.notes,
         lastPlayedAt: item.last_played_at,
-        coverUrl: item.cover_url,
         games: item.games,
       }));
 

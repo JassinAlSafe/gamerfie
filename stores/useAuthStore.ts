@@ -1,17 +1,18 @@
 import { create } from 'zustand'
-import type { User as SupabaseUser, AuthResponse } from '@supabase/supabase-js'
+import type { AuthResponse } from '@supabase/supabase-js'
 import { createClient } from '@/utils/supabase/client'
 import { persist } from 'zustand/middleware'
-import type { Database } from '@/types/supabase'
 import { fetchUserProfileOptimized, ProfileCache, preWarmAuth } from '@/lib/auth-optimization'
-
-type Profile = Database['public']['Tables']['profiles']['Row']
-type User = SupabaseUser & {
-  profile?: Profile | null
-}
+import type { 
+  User, 
+  Profile, 
+  GoogleAuthResponse
+} from '@/types/auth.types'
 
 interface AuthState {
   user: User | null
+  session: any | null
+  profile: Profile | null
   isLoading: boolean
   error: string | null
   isInitialized: boolean
@@ -21,9 +22,9 @@ interface AuthState {
   setLoading: (_isLoading: boolean) => void
   setError: (_error: string | null) => void
   signIn: (_email: string, _password: string) => Promise<AuthResponse>
-  signUp: (_email: string, _password: string, _username: string) => Promise<AuthResponse>
-  signInWithGoogle: () => Promise<{ data: { provider: string; url: string } | null; error: any }>
-  signOut: () => Promise<void>
+  signUp: (_email: string, _password: string, _username: string, _displayName?: string) => Promise<AuthResponse>
+  signInWithGoogle: () => Promise<GoogleAuthResponse>
+  signOut: (_scope?: 'global' | 'local' | 'others') => Promise<void>
   resetPassword: (_email: string) => Promise<void>
   updatePassword: (_newPassword: string) => Promise<void>
 
@@ -53,6 +54,8 @@ export const useAuthStore = create<AuthState>()(
 
       return {
         user: null,
+        session: null,
+        profile: null,
         isLoading: false, // Start with false to prevent infinite loading
         error: null,
         isInitialized: false,
@@ -111,6 +114,13 @@ export const useAuthStore = create<AuthState>()(
             
             if (response.error) {
               console.error('Auth store: Signin error:', response.error);
+              
+              // For email not confirmed, don't set generic error in store
+              if (response.error.message === "Email not confirmed") {
+                // Let the component handle this specific error
+                throw response.error;
+              }
+              
               throw response.error;
             }
             
@@ -136,17 +146,21 @@ export const useAuthStore = create<AuthState>()(
           }
         },
 
-        signUp: async (_email, _password, _username) => {
+        signUp: async (_email, _password, _username, _displayName) => {
           try {
             set({ isLoading: true, error: null });
+            
+            // Prepare user metadata following Supabase best practices
+            const userMetadata = {
+              username: _username,
+              display_name: _displayName || _username, // Use display_name if provided, fallback to username
+            };
             
             const response = await supabase.auth.signUp({
               email: _email,
               password: _password,
               options: {
-                data: {
-                  username: _username
-                },
+                data: userMetadata,
                 emailRedirectTo: `${window.location.origin}/auth/callback`
               }
             });
@@ -154,7 +168,7 @@ export const useAuthStore = create<AuthState>()(
             if (response.error) throw response.error;
 
             if (response.data.user) {
-              // Use the safe profile creation function with custom username
+              // Use the safe profile creation function with proper metadata
               const { error: profileError } = await supabase.rpc(
                 'create_user_profile_safe',
                 {
@@ -162,8 +176,7 @@ export const useAuthStore = create<AuthState>()(
                   user_email: response.data.user.email,
                   user_metadata: { 
                     ...response.data.user.user_metadata, 
-                    display_name: _username,
-                    username: _username 
+                    ...userMetadata  // Ensure our metadata is included
                   }
                 }
               );
@@ -194,15 +207,36 @@ export const useAuthStore = create<AuthState>()(
           }
         },
 
-        signOut: async () => {
+        signOut: async (scope: 'global' | 'local' | 'others' = 'local') => {
           try {
             set({ isLoading: true, error: null });
-            const { error } = await supabase.auth.signOut();
+            
+            // Sign out with specified scope (default to 'local' for better UX)
+            const { error } = await supabase.auth.signOut({ scope });
             if (error) throw error;
+            
+            // Clear local state
             set({ user: null });
+            
+            // Clear profile cache
+            ProfileCache.clear();
+            
+            // For SSR compatibility, also call server-side signout
+            // This ensures cookies are properly cleared on the server
+            try {
+              await fetch('/auth/signout', { 
+                method: 'POST',
+                credentials: 'same-origin' // Include cookies
+              });
+            } catch (serverError) {
+              // Server-side signout failed, but client-side succeeded
+              console.warn('Server-side signout failed:', serverError);
+            }
+            
           } catch (error) {
             const message = error instanceof Error ? error.message : 'Failed to sign out';
             set({ error: message });
+            throw error;
           } finally {
             set({ isLoading: false });
           }

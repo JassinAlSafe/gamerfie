@@ -85,7 +85,7 @@ export class BulkGameService {
       // Use the same proxy URL logic as IGDBService
       const isServer = typeof window === 'undefined';
       const proxyUrl = isServer 
-        ? `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/igdb-proxy`
+        ? 'http://localhost:3000/api/igdb-proxy'
         : '/api/igdb-proxy';
 
       const response = await fetch(proxyUrl, {

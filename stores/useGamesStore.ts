@@ -10,6 +10,7 @@ import {
   GameFilterUpdate,
   TimeRange
 } from '@/types';
+import type { FilterValue } from '@/types/auth.types';
 
 interface GamesState {
   // From GameFilterState
@@ -61,7 +62,7 @@ interface GamesState {
   setHasMultiplayer: (hasMultiplayer: boolean) => void;
   
   // Filter management
-  updateFilter: (filterType: keyof GamesState, value: any) => void;
+  updateFilter: (filterType: keyof GamesState, value: FilterValue) => void;
   removeFilter: (filterType: FilterType) => void;
   resetFilters: () => void;
   handleResetFilters: () => void;
@@ -210,7 +211,7 @@ export const useGamesStore = create<GamesState>()(
       },
 
       // Common filter update pattern - helper method
-      updateFilter: (filterType: keyof GamesState, value: any) => {
+      updateFilter: (filterType: keyof GamesState, value: FilterValue) => {
         const currentValue = get()[filterType];
         if (currentValue === value) return;
         

@@ -6,6 +6,8 @@ import { useFriends } from "@/hooks/Profile/useFriends";
 import { useRecentActivities } from "@/hooks/useRecentActivities";
 import { useLibraryStore } from "@/stores/useLibraryStore";
 import { useEffect, useMemo, memo, Suspense, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useToast } from "@/components/ui/use-toast";
 import { ProfileCard } from "./ProfileCard";
 import { WelcomeHeader } from "./WelcomeHeader";
 import { BentoGrid } from "@/components/BuilderBlocks/BentoGrid/index";
@@ -23,11 +25,47 @@ const AuthenticatedHomeComponent = memo(function AuthenticatedHome({
   const { activities = [], isLoading: activitiesLoading } =
     useRecentActivities(5);
   const { stats, loading: statsLoading, fetchUserLibrary } = useLibraryStore();
+  const router = useRouter();
+  const { toast } = useToast();
 
   // Stable loading state management
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [hasDataLoaded, setHasDataLoaded] = useState(false);
   const hasInitializedRef = useRef(false);
+
+  // Check if this is a new user or if welcome parameter is set
+  const urlParams = useMemo(() => new URLSearchParams(window.location.search), []);
+  const isWelcomeParam = urlParams.get("welcome") === "true";
+  const isAuthSuccess = urlParams.get("auth") === "success";
+  
+  // Fix: Only consider user as new if onboarding is explicitly false OR if they're a truly new user
+  const onboardedStatus = (user as any).profile?.settings?.onboarded;
+  const isExplicitlyNotOnboarded = onboardedStatus === false;
+  
+  // Only show welcome for users who are explicitly not onboarded AND have the welcome param
+  const isNewUser = isExplicitlyNotOnboarded && isWelcomeParam;
+
+  // Handle welcome messages and URL cleanup
+  useEffect(() => {
+    if (isWelcomeParam || isAuthSuccess) {
+      if (isWelcomeParam && isExplicitlyNotOnboarded) {
+        // True new user coming from onboarding
+        toast({
+          title: "🎉 Welcome to GameVault!",
+          description: "Your gaming adventure begins now. Start building your library!",
+        });
+      } else if (isAuthSuccess) {
+        // Existing user signing in
+        toast({
+          title: "Welcome back!",
+          description: "You've successfully signed in.",
+        });
+      }
+
+      // Clean up URL parameters
+      router.replace("/", undefined);
+    }
+  }, [isWelcomeParam, isAuthSuccess, isExplicitlyNotOnboarded, router, toast]);
 
   // Fetch library only once when component mounts with user
   useEffect(() => {
@@ -119,6 +157,7 @@ const AuthenticatedHomeComponent = memo(function AuthenticatedHome({
             totalGames={profileStats.totalGames}
             weeklyPlaytime={0}
             currentStreak={0}
+            isNewUser={isNewUser}
           />
         </section>
 

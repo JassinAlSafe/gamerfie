@@ -190,7 +190,7 @@ export const GameHero = memo(function GameHero({ game, profile: _profile, progre
   }, []);
 
   return (
-    <div className="relative min-h-[80vh] w-full overflow-hidden">
+    <div className="relative min-h-[85vh] w-full overflow-hidden">
       {/* Background Image with better loading states */}
       <div className="absolute inset-0 w-full h-full">
         {/* Always show fallback gradient first */}
@@ -238,30 +238,35 @@ export const GameHero = memo(function GameHero({ game, profile: _profile, progre
 
       {/* Hero Content - Improved centering */}
       <div className="relative z-30 h-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col">
-        {/* Enhanced Back Button with Better Visibility */}
-        <div className="pt-8">
+        {/* Enhanced Back Button with Better Visibility and Spacing */}
+        <motion.div 
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.5, delay: 0.1 }}
+          className="pt-6 pb-12 md:pt-8 md:pb-16"
+        >
           <Link href="/all-games">
             <Button
               variant="ghost"
-              className="group flex items-center gap-2 px-5 py-3 bg-gray-900/80 backdrop-blur-md border-2 border-white/30 rounded-full hover:bg-gray-800/90 hover:border-purple-400/60 text-white hover:text-purple-300 transition-all duration-200 shadow-xl hover:shadow-2xl font-semibold"
+              className="group flex items-center gap-3 px-6 py-3.5 bg-black/70 backdrop-blur-md border border-gray-600/40 rounded-xl hover:bg-black/80 hover:border-purple-400/60 text-white hover:text-purple-300 transition-all duration-300 shadow-xl hover:shadow-purple-500/25 font-medium text-sm hover:scale-[1.02] active:scale-[0.98]"
               aria-label="Back to All Games"
             >
-              <ArrowLeft className="h-4 w-4 group-hover:-translate-x-0.5 transition-transform duration-200" />
-              <span className="text-sm">Back to Games</span>
+              <ArrowLeft className="h-4 w-4 group-hover:-translate-x-1 transition-transform duration-300" />
+              <span>Back to Games</span>
             </Button>
           </Link>
-        </div>
+        </motion.div>
 
         {/* Game Info Container - Enhanced layout and spacing */}
-        <div className="flex-grow flex items-end pb-20">
+        <div className="flex-grow flex items-center md:items-end pb-16 md:pb-20">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, ease: "easeOut" }}
-            className="flex flex-col md:flex-row gap-10 md:gap-16 items-center md:items-start w-full max-w-7xl mx-auto"
+            className="flex flex-col md:flex-row gap-8 md:gap-16 items-center md:items-start w-full max-w-7xl mx-auto"
           >
             {/* Game Cover - Enhanced sizing and spacing */}
-            <div className="w-full md:w-72 lg:w-96 xl:w-80 flex-shrink-0">
+            <div className="flex justify-center md:justify-start w-full md:w-auto flex-shrink-0">
               <motion.div
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
@@ -272,19 +277,19 @@ export const GameHero = memo(function GameHero({ game, profile: _profile, progre
             </div>
 
             {/* Game Details - Enhanced typography and spacing */}
-            <div className="w-full md:flex-1 text-center md:text-left space-y-8">
+            <div className="w-full md:flex-1 text-center md:text-left space-y-6">
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.2 }}
                 className="space-y-4"
               >
-                <h1 className="text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold text-white leading-tight tracking-tight drop-shadow-lg">
+                <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold text-white leading-tight tracking-tight drop-shadow-lg px-4 md:px-0">
                   {processedGame.name}
                 </h1>
 
                 {/* Game metadata badges - Enhanced design */}
-                <div className="flex flex-wrap items-center gap-5 text-sm">
+                <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 sm:gap-5 text-sm px-4 md:px-0">
                   {releaseYear && (
                     <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-800/60 rounded-full backdrop-blur-sm border border-gray-700/30">
                       <Calendar
@@ -323,13 +328,15 @@ export const GameHero = memo(function GameHero({ game, profile: _profile, progre
                 </div>
               </motion.div>
 
-              <GameQuickStats game={processedGame} progress={progress} />
+              <div className="px-4 md:px-0">
+                <GameQuickStats game={processedGame} progress={progress} />
+              </div>
 
               <motion.p
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.4 }}
-                className="text-lg md:text-xl text-gray-300/90 leading-relaxed line-clamp-4 max-w-4xl drop-shadow-sm"
+                className="text-base sm:text-lg md:text-xl text-gray-300/90 leading-relaxed line-clamp-4 max-w-4xl drop-shadow-sm px-4 md:px-0"
               >
                 {(processedGame as any).summary}
               </motion.p>
@@ -340,7 +347,7 @@ export const GameHero = memo(function GameHero({ game, profile: _profile, progre
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: 0.5 }}
-                  className="flex flex-wrap gap-2 pt-1"
+                  className="flex flex-wrap justify-center md:justify-start gap-2 pt-1 px-4 md:px-0"
                 >
                   {processedGame.genres?.map((genre) => (
                     <span
@@ -358,7 +365,7 @@ export const GameHero = memo(function GameHero({ game, profile: _profile, progre
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.6 }}
-                className="flex flex-wrap items-center gap-4 pt-4"
+                className="flex flex-wrap items-center justify-center md:justify-start gap-4 pt-4 px-4 md:px-0"
               >
                 <AddToLibraryButton
                   key={`library-${refreshKey}`}

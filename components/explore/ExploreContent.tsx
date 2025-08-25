@@ -4,7 +4,7 @@ import dynamic from "next/dynamic";
 import { Suspense, memo } from "react";
 import { TracingBeam } from "@/components/ui/tracing-beam";
 import { ErrorBoundary } from "react-error-boundary";
-import { useExploreOptimized } from "@/hooks/useExploreOptimized";
+import { useExploreSearch } from "@/hooks/useExploreSearch";
 import { useExploreData } from "@/hooks/useExploreData";
 import { usePlaylistSubscription } from "@/hooks/usePlaylistSubscription";
 import { OptimizedGameSection } from "../shared/GameSection/OptimizedGameSection";
@@ -180,11 +180,12 @@ PlaylistSection.displayName = "PlaylistSection";
 export const ExploreContent = memo(() => {
   const {
     searchQuery,
+    isSearching,
     handleSearchChange,
+    handleSearch,
     handleKeyPress,
-    searchButton,
-    categoryButtons,
-  } = useExploreOptimized();
+    handleCategoryClick,
+  } = useExploreSearch();
 
   const { data: exploreData, isLoading, error } = useExploreData();
 
@@ -199,10 +200,11 @@ export const ExploreContent = memo(() => {
           <Suspense fallback={<HeroSkeleton />}>
             <HeroSection
               searchQuery={searchQuery}
-              handleSearchChange={handleSearchChange}
-              handleKeyPress={handleKeyPress}
-              searchButton={searchButton}
-              categoryButtons={categoryButtons}
+              isSearching={isSearching}
+              onSearchChange={handleSearchChange}
+              onSearch={handleSearch}
+              onKeyPress={handleKeyPress}
+              onCategorySelect={handleCategoryClick}
             />
           </Suspense>
 
@@ -227,7 +229,7 @@ export const ExploreContent = memo(() => {
                     animated
                     priority={key === "trending"}
                     isLoading={isLoading}
-                    error={error}
+                    error={error?.message || null}
                   />
                 </ErrorBoundary>
               ))}

@@ -7,6 +7,7 @@ import {
 } from '../types/friend';
 import { ActivityType, ActivityDetails } from '../types/activity';
 import { createClient } from '@/utils/supabase/client';
+import type { ActivityData, ReactionData, CommentData } from '@/types/auth.types';
 
 type FriendsStore = Omit<FriendsState, 'setFilter'> & {
   setFilter: (filter: FriendStatus | 'all') => void;
@@ -152,7 +153,7 @@ export const useFriendsStore = create<FriendsStore>((set, get) => {
         const data = await response.json();
         
         // Transform to expected format with proper type checking
-        const transformedActivities: FriendActivity[] = (data.activities || []).map((activity: any) => ({
+        const transformedActivities: FriendActivity[] = (data.activities || []).map((activity: ActivityData) => ({
           id: activity.id,
           type: activity.activity_type,
           user_id: activity.user_id,
@@ -163,14 +164,14 @@ export const useFriendsStore = create<FriendsStore>((set, get) => {
           reactions: activity.reactions || [],
           comments: activity.comments || [],
           user: {
-            id: activity.user_id,
+            id: activity.user_id || '',
             username: activity.username || 'Unknown User',
-            avatar_url: activity.avatar_url,
+            avatar_url: activity.avatar_url || null,
           },
           game: activity.game_name ? {
-            id: activity.game_id,
+            id: activity.game_id || '',
             name: activity.game_name,
-            cover_url: activity.game_cover_url,
+            cover_url: activity.game_cover_url || null,
           } : {
             id: activity.game_id || 'unknown',
             name: 'Unknown Game',
@@ -206,40 +207,49 @@ export const useFriendsStore = create<FriendsStore>((set, get) => {
           }
           
           // Transform fallback data to expected format
-          const transformedActivities: FriendActivity[] = (activities || []).map((activity: any) => ({
+          const transformedActivities: FriendActivity[] = (activities || []).map((activity: ActivityData) => ({
             id: activity.id,
-            type: activity.activity_type || activity.type,
-            user_id: activity.user_id,
-            game_id: activity.game_id,
+            type: (activity.activity_type || activity.type || 'game_complete') as ActivityType,
+            user_id: activity.user_id || '',
+            game_id: activity.game_id || '',
             timestamp: activity.created_at,
             created_at: activity.created_at,
             details: activity.details || {},
-            reactions: (activity.reactions || []).map((reaction: any) => ({
+            reactions: (activity.reactions || []).map((reaction: ReactionData) => ({
               id: reaction.id,
+              activity_id: activity.id,
               user_id: reaction.user_id,
-              emoji: reaction.emoji,
-              user: reaction.user
+              emoji: reaction.emoji || '👍',
+              created_at: reaction.created_at,
+              user: {
+                username: reaction.user?.username || 'Unknown User',
+                avatar_url: reaction.user?.avatar_url || null
+              }
             })),
-            comments: (activity.comments || []).map((comment: any) => ({
+            comments: (activity.comments || []).map((comment: CommentData) => ({
               id: comment.id,
+              activity_id: activity.id,
               user_id: comment.user_id,
               content: comment.content,
               created_at: comment.created_at,
-              user: comment.user
+              user: {
+                username: comment.user?.username || 'Unknown User',
+                avatar_url: comment.user?.avatar_url || null
+              }
             })),
             user: activity.user ? {
               id: activity.user.id,
               username: activity.user.username || 'Unknown User',
-              avatar_url: activity.user.avatar_url,
+              avatar_url: activity.user.avatar_url || null,
             } : {
-              id: activity.user_id,
+              id: activity.user_id || '',
               username: 'Unknown User',
               avatar_url: null,
             },
             game: activity.game ? {
               id: activity.game.id,
               name: activity.game.name,
-              cover_url: activity.game.cover_url,
+              cover_url: activity.game.cover_url || activity.game.cover_image || null,
             } : {
               id: activity.game_id || 'unknown',
               name: 'Unknown Game',

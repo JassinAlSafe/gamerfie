@@ -18,6 +18,8 @@ import { CookieConsent } from "@/components/ui/CookieConsent";
 import AdminShortcuts from "@/components/admin/AdminShortcuts";
 import { useUIStore } from "@/stores/useUIStore";
 import { Toaster } from "sonner";
+import { initializeErrorMonitoring } from "@/utils/error-monitoring";
+import { Analytics } from "@vercel/analytics/next";
 
 // Optimized font loading with display swap for better performance
 const inter = Inter({
@@ -69,6 +71,10 @@ export default function RootLayout({
 
   useEffect(() => {
     const cleanup = initTheme();
+    
+    // Initialize error monitoring
+    initializeErrorMonitoring();
+    
     return cleanup;
   }, [initTheme]);
 
@@ -207,6 +213,7 @@ export default function RootLayout({
             </ThemeProvider>
           </SupabaseProvider>
         </QueryClientProvider>
+        <Analytics />
       </body>
     </html>
   );

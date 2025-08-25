@@ -50,6 +50,7 @@ interface ValidationErrors {
 
 export function AuthForm({ mode, onSuccess }: AuthFormProps) {
   const [isLoading, setIsLoading] = useState(false);
+  const [submitPhase, setSubmitPhase] = useState<'idle' | 'validating' | 'authenticating' | 'redirecting'>('idle');
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState<FormData>({
     email: "",
@@ -63,10 +64,14 @@ export function AuthForm({ mode, onSuccess }: AuthFormProps) {
   const [userDetection, setUserDetection] =
     useState<UserDetectionResult | null>(null);
   const [isDetecting, setIsDetecting] = useState(false);
+  const [successMessage, setSuccessMessage] = useState<string>('');
+  const [usernameAvailable, setUsernameAvailable] = useState<boolean | null>(null);
+  const [checkingUsername, setCheckingUsername] = useState(false);
 
   // Debounce form data for validation
   const debouncedFormData = useDebounce(formData, 300);
   const debouncedEmail = useDebounce(formData.email, 800); // Longer debounce for user detection
+  const debouncedUsername = useDebounce(formData.username, 600); // Username availability check
 
   const router = useRouter();
   const { toast } = useToast();
@@ -131,12 +136,8 @@ export function AuthForm({ mode, onSuccess }: AuthFormProps) {
 
           // Show helpful message based on detection
           if (detection.exists && mode === "signup") {
-            toast({
-              title: "Account Found",
-              description:
-                "This email is already registered. Try signing in instead.",
-              variant: "default",
-            });
+            // Don't show toast immediately - let user decide
+            // We'll show this info in the UI instead
           }
         })
         .catch((error) => {
@@ -149,6 +150,23 @@ export function AuthForm({ mode, onSuccess }: AuthFormProps) {
       setUserDetection(null);
     }
   }, [debouncedEmail, errors.email, mode, toast]);
+
+  // Username availability check for signup
+  useEffect(() => {
+    if (mode === "signup" && debouncedUsername && debouncedUsername.length >= 3 && !errors.username) {
+      setCheckingUsername(true);
+      // Simulate username check - in real app, call your API
+      setTimeout(() => {
+        // Mock check - you'd replace this with actual API call
+        const isAvailable = !['admin', 'user', 'test', 'demo'].includes(debouncedUsername.toLowerCase());
+        setUsernameAvailable(isAvailable);
+        setCheckingUsername(false);
+      }, 500);
+    } else {
+      setUsernameAvailable(null);
+      setCheckingUsername(false);
+    }
+  }, [debouncedUsername, mode, errors.username]);
 
   const validateEmail = useCallback((email: string) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -257,21 +275,46 @@ export function AuthForm({ mode, onSuccess }: AuthFormProps) {
     if (!validateForm()) return;
 
     setIsLoading(true);
+    setSubmitPhase('validating');
 
+    // Small delay for better UX
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
     try {
+      setSubmitPhase('authenticating');
+      
       if (mode === "signin") {
         console.log("Attempting signin with:", formData.email);
         const response = await signIn(formData.email, formData.password);
 
         if (response.error) {
           console.error("Signin error:", response.error);
+          
+          // Since email confirmation is disabled, this error shouldn't occur
+          // but if it does, handle it gracefully
+          if (response.error.message === "Email not confirmed") {
+            toast({
+              title: "Account Issue",
+              description: "There seems to be an issue with your account. Please try signing up again.",
+              variant: "destructive",
+            });
+            router.push("/signup");
+            return;
+          }
+          
           throw response.error;
         }
 
         if (response.data?.user) {
+          setSubmitPhase('redirecting');
+          setSuccessMessage('Welcome back!');
+          
+          // Show success state briefly before redirect
+          await new Promise(resolve => setTimeout(resolve, 800));
+          
           toast({
-            title: "Welcome back!",
-            description: "You've successfully signed in.",
+            title: "Welcome back! 👋",
+            description: "Taking you to your dashboard...",
           });
 
           if (onSuccess) {
@@ -285,7 +328,7 @@ export function AuthForm({ mode, onSuccess }: AuthFormProps) {
             router.push(redirectTo);
           }
         }
-      } else {
+      } else if (mode === "signup") {
         console.log(
           "Attempting signup with:",
           formData.email,
@@ -294,7 +337,8 @@ export function AuthForm({ mode, onSuccess }: AuthFormProps) {
         const response = await signUp(
           formData.email,
           formData.password,
-          formData.username!
+          formData.username!,
+          formData.displayName
         );
 
         if (response.error) {
@@ -302,33 +346,86 @@ export function AuthForm({ mode, onSuccess }: AuthFormProps) {
           throw response.error;
         }
 
-        toast({
-          title: "Account created",
-          description: "Please check your email to verify your account",
-        });
+        // Check if user was automatically signed in (email confirmation disabled)
+        if (response.data?.user) {
+          setSubmitPhase('redirecting');
+          setSuccessMessage('Account created successfully!');
+          
+          // Show success state briefly before redirect
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          
+          toast({
+            title: "Welcome to GameVault! 🎉",
+            description: "Setting up your gaming experience...",
+          });
 
-        router.push("/signin");
+          if (onSuccess) {
+            onSuccess();
+          } else {
+            // Use smart redirect for new users
+            const { getSmartRedirect } = await import("@/lib/auth-optimization");
+            const redirectTo = getSmartRedirect(response.data.user);
+            router.push(redirectTo);
+          }
+        } else {
+          // Fallback - shouldn't happen with email confirmation disabled
+          toast({
+            title: "Account created!",
+            description: "Please sign in with your new credentials.",
+          });
+          router.push("/signin");
+        }
       }
     } catch (error) {
       console.error("Auth error:", error);
+      
+      // Better error messages based on error type
+      let errorTitle = "Something went wrong";
+      let errorDescription = `Failed to ${mode === "signin" ? "sign in" : "create account"}`;
+      
+      if (error instanceof Error) {
+        const message = error.message.toLowerCase();
+        
+        if (message.includes("invalid credentials") || message.includes("invalid login credentials")) {
+          errorTitle = "Invalid credentials";
+          errorDescription = "Please check your email and password and try again.";
+        } else if (message.includes("email") && message.includes("already") && message.includes("registered")) {
+          errorTitle = "Email already registered";
+          errorDescription = "An account with this email already exists. Try signing in instead.";
+        } else if (message.includes("weak password") || message.includes("password")) {
+          errorTitle = "Password issue";
+          errorDescription = "Please ensure your password meets the requirements.";
+        } else if (message.includes("network") || message.includes("fetch")) {
+          errorTitle = "Connection issue";
+          errorDescription = "Please check your internet connection and try again.";
+        } else {
+          errorDescription = error.message;
+        }
+      }
+      
       toast({
-        title: "Error",
-        description:
-          error instanceof Error
-            ? error.message
-            : `Failed to ${mode === "signin" ? "sign in" : "create account"}`,
+        title: errorTitle,
+        description: errorDescription,
         variant: "destructive",
       });
     } finally {
-      setIsLoading(false);
+      if (submitPhase !== 'redirecting') {
+        setIsLoading(false);
+        setSubmitPhase('idle');
+      }
     }
   };
 
-  const handleGoogleAuth = async () => {
+  const handleGoogleAuth = useCallback(async () => {
     setIsLoading(true);
+    setSubmitPhase('authenticating');
+    
     try {
+      // Show connecting to Google message
+      setSuccessMessage('Connecting to Google...');
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
       console.log("Starting Google OAuth flow...");
-      // Directly trigger Google OAuth
       const result = await signInWithGoogle();
 
       console.log("Google OAuth result:", result);
@@ -339,6 +436,8 @@ export function AuthForm({ mode, onSuccess }: AuthFormProps) {
       }
 
       if (result.data?.url) {
+        setSubmitPhase('redirecting');
+        setSuccessMessage('Redirecting to Google...');
         console.log("Redirecting to Google OAuth URL:", result.data.url);
         // OAuth will handle its own redirects
         // Don't reset loading state here since we're redirecting
@@ -347,16 +446,41 @@ export function AuthForm({ mode, onSuccess }: AuthFormProps) {
       console.error("Google auth error:", error);
       // If immediate error, show toast and reset loading state
       toast({
-        title: "Authentication Error",
+        title: "Google Sign-in Failed",
         description:
           error instanceof Error
             ? error.message
-            : `Failed to authenticate with Google`,
+            : `Unable to connect to Google. Please try again.`,
         variant: "destructive",
       });
       setIsLoading(false);
+      setSubmitPhase('idle');
+      setSuccessMessage('');
     }
-  };
+  }, [signInWithGoogle, toast]);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // Google OAuth shortcut (Cmd/Ctrl + G)
+      if ((event.metaKey || event.ctrlKey) && event.key === 'g' && !isLoading) {
+        event.preventDefault();
+        handleGoogleAuth();
+      }
+      
+      // Quick submit (Cmd/Ctrl + Enter)
+      if ((event.metaKey || event.ctrlKey) && event.key === 'Enter' && !isLoading) {
+        event.preventDefault();
+        const form = document.querySelector('form');
+        if (form) {
+          form.requestSubmit();
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isLoading, handleGoogleAuth]);
 
   const getPasswordStrength = (password: string) => {
     let strength = 0;
@@ -375,6 +499,15 @@ export function AuthForm({ mode, onSuccess }: AuthFormProps) {
     <div className="grid gap-6">
       {/* Progressive loading indicator */}
       <ProgressiveAuthLoader show={isLoading} />
+      
+      {/* Success message overlay */}
+      {successMessage && (
+        <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-3 text-center animate-in fade-in-50 duration-300">
+          <p className="text-sm text-green-700 dark:text-green-300 font-medium">
+            {successMessage}
+          </p>
+        </div>
+      )}
 
       <div className="grid gap-2">
         <Button
@@ -382,12 +515,19 @@ export function AuthForm({ mode, onSuccess }: AuthFormProps) {
           type="button"
           disabled={isLoading}
           onClick={handleGoogleAuth}
-          className="w-full h-12 bg-white hover:bg-gray-50 border-gray-200 hover:border-gray-300 text-gray-700 font-medium transition-all duration-200 shadow-sm hover:shadow-md"
+          className="auth-button w-full h-12 bg-white hover:bg-gray-50 border-gray-200 hover:border-gray-300 text-gray-700 font-medium transition-all duration-200 shadow-sm hover:shadow-md hover:scale-[1.02] active:scale-[0.98]"
         >
-          {isLoading ? (
+          {isLoading && submitPhase === 'authenticating' ? (
             <>
               <Loader2 className="mr-3 h-5 w-5 animate-spin text-purple-600" />
-              <span>Connecting...</span>
+              <span>{successMessage || 'Connecting to Google...'}</span>
+            </>
+          ) : isLoading && submitPhase === 'redirecting' ? (
+            <>
+              <div className="mr-3 h-5 w-5 bg-green-500 rounded-full flex items-center justify-center">
+                <Check className="h-3 w-3 text-white" />
+              </div>
+              <span>Redirecting...</span>
             </>
           ) : (
             <>
@@ -398,6 +538,9 @@ export function AuthForm({ mode, onSuccess }: AuthFormProps) {
         </Button>
         <p className="text-xs text-center text-muted-foreground mt-2">
           One click authentication with your Google account
+        </p>
+        <p className="text-xs text-center text-muted-foreground/60 mt-1">
+          Press <kbd className="px-1 py-0.5 bg-muted rounded text-xs">⌘/Ctrl+G</kbd> for quick Google sign-in
         </p>
       </div>
 
@@ -412,16 +555,13 @@ export function AuthForm({ mode, onSuccess }: AuthFormProps) {
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="grid gap-4">
+      <form onSubmit={handleSubmit} className="grid gap-4 auth-form-slide-in">
         <div className="grid gap-2">
-          <Label htmlFor="email" className="text-sm font-medium">
-            Email
-          </Label>
-          <div className="relative">
+          <div className="floating-input-group">
             <Input
               id="email"
               name="email"
-              placeholder="name@example.com"
+              placeholder={formData.email ? "" : "name@example.com"}
               type="email"
               autoCapitalize="none"
               autoComplete="email"
@@ -431,13 +571,20 @@ export function AuthForm({ mode, onSuccess }: AuthFormProps) {
               onChange={handleInputChange}
               onBlur={handleBlur}
               className={cn(
-                "input-custom",
+                "input-custom floating-input h-12",
+                formData.email && "pt-2",
                 errors.email &&
                   touched.email &&
                   "border-destructive focus:border-destructive"
               )}
               required
             />
+            <Label htmlFor="email" className={cn(
+              "floating-label text-sm font-medium text-muted-foreground",
+              (formData.email || touched.email) && "floating-label-up"
+            )}>
+              Email address
+            </Label>
             {/* Smart user detection indicators */}
             {isDetecting && (
               <Loader2 className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 animate-spin text-blue-500" />
@@ -474,20 +621,32 @@ export function AuthForm({ mode, onSuccess }: AuthFormProps) {
           )}
           {/* Smart user detection feedback */}
           {userDetection && !errors.email && (
-            <div className="text-xs">
+            <div className="text-xs animate-in slide-in-from-top-2 duration-300">
               {userDetection.exists ? (
-                <p className="text-blue-600 flex items-center gap-1">
-                  <UserCheck className="h-3 w-3" />
-                  {mode === "signup"
-                    ? "Account exists. Consider signing in instead."
-                    : "Welcome back! Enter your password below."}
-                </p>
+                <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
+                  <p className="text-blue-700 dark:text-blue-300 flex items-center gap-2">
+                    <UserCheck className="h-4 w-4" />
+                    {mode === "signup"
+                      ? "This email is already registered"
+                      : "Welcome back! We found your account"}
+                  </p>
+                  {mode === "signup" && (
+                    <div className="mt-2 flex items-center gap-2">
+                      <span className="text-blue-600 dark:text-blue-400">Want to sign in instead?</span>
+                      <Link href="/signin" className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 font-medium underline underline-offset-2">
+                        Sign in here
+                      </Link>
+                    </div>
+                  )}
+                </div>
               ) : (
                 mode === "signup" && (
-                  <p className="text-green-600 flex items-center gap-1">
-                    <Check className="h-3 w-3" />
-                    Email available for registration
-                  </p>
+                  <div className="bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg p-3">
+                    <p className="text-green-700 dark:text-green-300 flex items-center gap-2">
+                      <Check className="h-4 w-4" />
+                      Perfect! This email is available
+                    </p>
+                  </div>
                 )
               )}
             </div>
@@ -497,14 +656,11 @@ export function AuthForm({ mode, onSuccess }: AuthFormProps) {
         {mode === "signup" && (
           <>
             <div className="grid gap-2">
-              <Label htmlFor="username" className="text-sm font-medium">
-                Username
-              </Label>
-              <div className="relative">
+              <div className="floating-input-group">
                 <Input
                   id="username"
                   name="username"
-                  placeholder="Choose a unique username"
+                  placeholder={formData.username ? "" : "Choose a unique username"}
                   type="text"
                   autoCapitalize="none"
                   autoComplete="username"
@@ -514,31 +670,57 @@ export function AuthForm({ mode, onSuccess }: AuthFormProps) {
                   onChange={handleInputChange}
                   onBlur={handleBlur}
                   className={cn(
-                    "input-custom",
+                    "input-custom floating-input h-12",
+                    formData.username && "pt-2",
                     errors.username &&
                       touched.username &&
                       "border-destructive focus:border-destructive"
                   )}
                   required
                 />
-                {!errors.username && touched.username && formData.username && (
-                  <Check className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-green-500" />
+                <Label htmlFor="username" className={cn(
+                  "floating-label text-sm font-medium text-muted-foreground",
+                  (formData.username || touched.username) && "floating-label-up"
+                )}>
+                  Username
+                </Label>
+                {/* Username availability indicator */}
+                {checkingUsername && (
+                  <Loader2 className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 animate-spin text-blue-500" />
+                )}
+                {!checkingUsername && usernameAvailable === true && !errors.username && (
+                  <div className="absolute right-3 top-1/2 transform -translate-y-1/2 animate-in zoom-in-50 duration-200">
+                    <Check className="h-4 w-4 text-green-500" />
+                  </div>
+                )}
+                {!checkingUsername && usernameAvailable === false && !errors.username && (
+                  <div className="absolute right-3 top-1/2 transform -translate-y-1/2 animate-in zoom-in-50 duration-200">
+                    <UserCheck className="h-4 w-4 text-red-500" />
+                  </div>
                 )}
               </div>
               {errors.username && touched.username && (
                 <p className="text-xs text-destructive">{errors.username}</p>
               )}
+              {/* Username availability feedback */}
+              {!errors.username && usernameAvailable === false && (
+                <p className="text-xs text-red-600 dark:text-red-400 animate-in slide-in-from-top-2 duration-200">
+                  Username is already taken
+                </p>
+              )}
+              {!errors.username && usernameAvailable === true && (
+                <p className="text-xs text-green-600 dark:text-green-400 animate-in slide-in-from-top-2 duration-200">
+                  Username is available! ✨
+                </p>
+              )}
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="displayName" className="text-sm font-medium">
-                Display Name
-              </Label>
-              <div className="relative">
+              <div className="floating-input-group">
                 <Input
                   id="displayName"
                   name="displayName"
-                  placeholder="Enter your display name"
+                  placeholder={formData.displayName ? "" : "Enter your display name"}
                   type="text"
                   autoCapitalize="words"
                   autoComplete="name"
@@ -547,17 +729,26 @@ export function AuthForm({ mode, onSuccess }: AuthFormProps) {
                   onChange={handleInputChange}
                   onBlur={handleBlur}
                   className={cn(
-                    "input-custom",
+                    "input-custom floating-input h-12",
+                    formData.displayName && "pt-2",
                     errors.displayName &&
                       touched.displayName &&
                       "border-destructive focus:border-destructive"
                   )}
                   required
                 />
+                <Label htmlFor="displayName" className={cn(
+                  "floating-label text-sm font-medium text-muted-foreground",
+                  (formData.displayName || touched.displayName) && "floating-label-up"
+                )}>
+                  Display Name
+                </Label>
                 {!errors.displayName &&
                   touched.displayName &&
                   formData.displayName && (
-                    <Check className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-green-500" />
+                    <div className="absolute right-3 top-1/2 transform -translate-y-1/2 animate-in zoom-in-50 duration-200">
+                      <Check className="h-4 w-4 text-green-500" />
+                    </div>
                   )}
               </div>
               {errors.displayName && touched.displayName && (
@@ -568,26 +759,23 @@ export function AuthForm({ mode, onSuccess }: AuthFormProps) {
         )}
 
         <div className="grid gap-2">
-          <div className="flex items-center justify-between">
-            <Label htmlFor="password" className="text-sm font-medium">
-              Password
-            </Label>
-            {mode === "signin" && (
+          {mode === "signin" && (
+            <div className="flex items-center justify-end mb-1">
               <Link
                 href="/forgot-password"
-                className="text-sm text-muted-foreground hover:text-primary"
+                className="text-sm text-muted-foreground hover:text-purple-600 dark:hover:text-purple-400 transition-colors duration-200"
               >
                 Forgot password?
               </Link>
-            )}
-          </div>
-          <div className="relative">
+            </div>
+          )}
+          <div className="floating-input-group">
             <Input
               id="password"
               name="password"
               type={showPassword ? "text" : "password"}
               placeholder={
-                mode === "signin"
+                formData.password ? "" : mode === "signin"
                   ? "Enter your password"
                   : "Create a secure password"
               }
@@ -601,22 +789,29 @@ export function AuthForm({ mode, onSuccess }: AuthFormProps) {
               onChange={handleInputChange}
               onBlur={handleBlur}
               className={cn(
-                "input-custom pr-10",
+                "input-custom floating-input h-12 pr-12",
+                formData.password && "pt-2",
                 errors.password &&
                   touched.password &&
                   "border-destructive focus:border-destructive"
               )}
               required
             />
+            <Label htmlFor="password" className={cn(
+              "floating-label text-sm font-medium text-muted-foreground",
+              (formData.password || touched.password) && "floating-label-up"
+            )}>
+              Password
+            </Label>
             <button
               type="button"
-              className="absolute right-3 top-1/2 transform -translate-y-1/2"
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 p-1 hover:bg-muted/50 rounded-md transition-colors duration-200"
               onClick={() => setShowPassword(!showPassword)}
             >
               {showPassword ? (
-                <EyeOff className="h-4 w-4 text-muted-foreground" />
+                <EyeOff className="h-4 w-4 text-muted-foreground hover:text-foreground transition-colors duration-200" />
               ) : (
-                <Eye className="h-4 w-4 text-muted-foreground" />
+                <Eye className="h-4 w-4 text-muted-foreground hover:text-foreground transition-colors duration-200" />
               )}
             </button>
           </div>
@@ -624,29 +819,41 @@ export function AuthForm({ mode, onSuccess }: AuthFormProps) {
             <p className="text-xs text-destructive">{errors.password}</p>
           )}
           {mode === "signup" && formData.password && (
-            <div className="space-y-1">
+            <div className="space-y-2 animate-in slide-in-from-top-2 duration-300">
               <div className="flex space-x-1">
                 {[...Array(5)].map((_, i) => (
                   <div
                     key={i}
                     className={cn(
-                      "h-1 w-full rounded-full",
+                      "h-2 w-full rounded-full transition-all duration-300",
                       i < passwordStrength
                         ? passwordStrength <= 2
-                          ? "bg-red-500"
+                          ? "bg-red-500 shadow-sm"
                           : passwordStrength <= 3
-                          ? "bg-yellow-500"
-                          : "bg-green-500"
+                          ? "bg-yellow-500 shadow-sm"
+                          : "bg-green-500 shadow-sm"
                         : "bg-muted"
                     )}
                   />
                 ))}
               </div>
-              <p className="text-xs text-muted-foreground">
-                {passwordStrength <= 2 && "Weak password"}
-                {passwordStrength === 3 && "Good password"}
-                {passwordStrength >= 4 && "Strong password"}
-              </p>
+              <div className="flex items-center gap-2">
+                <p className={cn(
+                  "text-xs font-medium transition-colors duration-200",
+                  passwordStrength <= 2 && "text-red-600 dark:text-red-400",
+                  passwordStrength === 3 && "text-yellow-600 dark:text-yellow-400",
+                  passwordStrength >= 4 && "text-green-600 dark:text-green-400"
+                )}>
+                  {passwordStrength <= 2 && "🔴 Weak password"}
+                  {passwordStrength === 3 && "🟡 Good password"}
+                  {passwordStrength >= 4 && "🟢 Strong password"}
+                </p>
+                {passwordStrength >= 4 && (
+                  <div className="animate-in zoom-in-50 duration-200">
+                    <Check className="h-3 w-3 text-green-500" />
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </div>
@@ -667,10 +874,45 @@ export function AuthForm({ mode, onSuccess }: AuthFormProps) {
           </div>
         )}
 
-        <Button className="w-full mt-2" type="submit" disabled={isLoading}>
-          {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          {mode === "signin" ? "Sign In" : "Create Account"}
+        <Button 
+          className={cn(
+            "auth-button w-full mt-2 h-12 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]",
+            submitPhase === 'redirecting' && "success-pulse"
+          )} 
+          type="submit" 
+          disabled={isLoading}
+        >
+          {isLoading ? (
+            <>
+              {submitPhase === 'validating' && (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <span>Validating...</span>
+                </>
+              )}
+              {submitPhase === 'authenticating' && (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <span>{mode === "signin" ? "Signing in..." : "Creating account..."}</span>
+                </>
+              )}
+              {submitPhase === 'redirecting' && (
+                <>
+                  <div className="mr-2 h-4 w-4 bg-green-400 rounded-full flex items-center justify-center">
+                    <Check className="h-2.5 w-2.5 text-white" />
+                  </div>
+                  <span>{successMessage || "Success! Redirecting..."}</span>
+                </>
+              )}
+            </>
+          ) : (
+            <span>{mode === "signin" ? "Sign In" : "Create Account"}</span>
+          )}
         </Button>
+        
+        <p className="text-xs text-center text-muted-foreground/60 mt-2">
+          Press <kbd className="px-1 py-0.5 bg-muted rounded text-xs">⌘/Ctrl+Enter</kbd> to submit quickly
+        </p>
       </form>
     </div>
   );

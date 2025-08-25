@@ -2,14 +2,19 @@ import { HeroSectionProps } from "./HeroSection.definition";
 import { TextGenerateEffect } from "@/components/ui/text-generate-effect";
 import { motion } from "framer-motion";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { Search } from "lucide-react";
+import { SearchButton } from "@/components/explore/SearchButton";
+import { GAME_CATEGORIES } from "@/config/categories";
+import type { CategoryOption } from "@/types";
 
 export default function HeroSection({
   searchQuery,
-  handleSearchChange,
-  handleKeyPress,
-  searchButton,
-  categoryButtons,
+  isSearching,
+  onSearchChange,
+  onSearch,
+  onKeyPress,
+  onCategorySelect,
 }: HeroSectionProps) {
   return (
     <div className="relative flex flex-col items-center justify-center min-h-[60vh] text-center px-4 py-16">
@@ -40,16 +45,35 @@ export default function HeroSection({
               type="text"
               placeholder="Search for games..."
               value={searchQuery}
-              onChange={handleSearchChange}
-              onKeyPress={handleKeyPress}
+              onChange={(e) => onSearchChange(e.target.value)}
+              onKeyPress={onKeyPress}
               className="w-full bg-white/5 border-white/10 text-white placeholder:text-gray-400 pl-14 pr-24 py-7 rounded-full 
                          focus:ring-2 focus:ring-purple-500/50 focus:bg-white/10 text-xl
                          hover:bg-white/10 transition-all duration-200 shadow-lg"
             />
-            {searchButton}
+            {isSearching && <SearchButton onSearch={onSearch} />}
           </div>
 
-          <div className="pt-2">{categoryButtons}</div>
+          <div className="pt-2">
+            <div className="mt-6 flex flex-wrap gap-3 justify-center">
+              {GAME_CATEGORIES.map(({ id, label, icon: Icon, color }) => {
+                const categoryId = id as CategoryOption;
+                return (
+                  <Button
+                    key={id}
+                    variant="ghost"
+                    size="sm"
+                    className="bg-white/5 hover:bg-white/10 text-gray-300 flex items-center space-x-2 px-4 py-2 rounded-full transition-all duration-200 hover:scale-105"
+                    onClick={() => onCategorySelect(categoryId)}
+                    aria-label={`View ${label}`}
+                  >
+                    <Icon className={`w-4 h-4 ${color}`} />
+                    <span>{label}</span>
+                  </Button>
+                );
+              })}
+            </div>
+          </div>
         </div>
       </motion.div>
     </div>
