@@ -1,6 +1,6 @@
 import { Metadata } from "next/server";
 import { CategoryPageClient } from "./CategoryPageClient";
-import { createClient } from "@/utils/supabase/server";
+// import { createClient } from "@/utils/supabase/server";
 import { ForumCategory, ForumThread } from "@/types/forum";
 import { Suspense } from "react";
 
@@ -26,7 +26,7 @@ export async function generateMetadata({ params }: CategoryPageProps): Promise<M
 
 async function getCategoryData(categoryId: string) {
   try {
-    const supabase = await createClient();
+    // const supabase = await createClient();
 
     // Mock category data
     const categories = {

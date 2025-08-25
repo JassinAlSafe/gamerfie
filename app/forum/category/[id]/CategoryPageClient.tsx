@@ -2,8 +2,7 @@
 
 import { useState } from "react";
 import { ForumCategory, ForumThread } from "@/types/forum";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/text/textarea";
@@ -96,7 +95,9 @@ export function CategoryPageClient({ category, initialThreads }: CategoryPageCli
 
   return (
     <div className="min-h-screen bg-background text-foreground">
+      <a href="#main-content" className="forum-skip-link">Skip to main content</a>
       <div className="container mx-auto px-4 py-8 max-w-6xl">
+        <main id="main-content" role="main">
         {/* Header */}
         <div className="flex items-center gap-4 mb-6">
           <Button
@@ -117,7 +118,7 @@ export function CategoryPageClient({ category, initialThreads }: CategoryPageCli
         </div>
 
         {/* Category Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6 forum-stats">
           <Card className="bg-card border-border hover:bg-accent/5 transition-colors">
             <CardContent className="p-4">
               <div className="text-center">
@@ -136,36 +137,37 @@ export function CategoryPageClient({ category, initialThreads }: CategoryPageCli
             </CardContent>
           </Card>
 
-          <Card className="bg-gray-800 border-gray-700 md:block hidden">
+          <Card className="bg-card border-border md:block hidden">
             <CardContent className="p-4">
               <div className="text-center">
-                <p className="text-2xl font-bold text-white">{threads.length}</p>
-                <p className="text-sm text-gray-400">Active</p>
+                <p className="text-2xl font-bold text-foreground">{threads.length}</p>
+                <p className="text-sm text-muted-foreground">Active</p>
               </div>
             </CardContent>
           </Card>
         </div>
 
         {/* Actions Bar */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
-          <div className="relative flex-1 max-w-md">
-            <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 forum-actions">
+          <div className="relative flex-1 max-w-md forum-search">
+            <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
             <Input
               placeholder="Search threads..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 bg-gray-800 border-gray-700 text-white placeholder-gray-400"
+              className="pl-10 bg-card border-border"
+              aria-label="Search threads in this category"
             />
           </div>
 
           <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
             <DialogTrigger asChild>
-              <Button className="bg-purple-600 hover:bg-purple-700">
+              <Button className="bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600" aria-label={`Create new thread in ${category.name}`}>
                 <Plus className="w-4 h-4 mr-2" />
                 New Thread
               </Button>
             </DialogTrigger>
-            <DialogContent className="bg-gray-800 border-gray-700 text-white max-w-2xl">
+            <DialogContent className="bg-background border-border max-w-2xl forum-dialog">
               <DialogHeader>
                 <DialogTitle>Create New Thread in {category.name}</DialogTitle>
               </DialogHeader>
@@ -177,7 +179,7 @@ export function CategoryPageClient({ category, initialThreads }: CategoryPageCli
                     value={newThreadTitle}
                     onChange={(e) => setNewThreadTitle(e.target.value)}
                     placeholder="Enter thread title..."
-                    className="bg-gray-700 border-gray-600"
+                    className="bg-card border-border"
                   />
                 </div>
                 <div>
@@ -188,21 +190,21 @@ export function CategoryPageClient({ category, initialThreads }: CategoryPageCli
                     onChange={(e) => setNewThreadContent(e.target.value)}
                     placeholder="Write your post content..."
                     rows={8}
-                    className="bg-gray-700 border-gray-600"
+                    className="bg-card border-border"
                   />
                 </div>
                 <div className="flex justify-end gap-2">
                   <Button
                     variant="outline"
                     onClick={() => setIsCreateDialogOpen(false)}
-                    className="border-gray-600 text-gray-300 hover:bg-gray-700"
+                    className="border-border text-muted-foreground hover:bg-accent"
                   >
                     Cancel
                   </Button>
                   <Button
                     onClick={handleCreateThread}
                     disabled={!newThreadTitle.trim() || !newThreadContent.trim()}
-                    className="bg-purple-600 hover:bg-purple-700"
+                    className="bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600"
                   >
                     Create Thread
                   </Button>
@@ -215,8 +217,8 @@ export function CategoryPageClient({ category, initialThreads }: CategoryPageCli
         {/* Threads List */}
         <div className="space-y-3">
           {sortedThreads.map((thread) => (
-            <Link key={thread.id} href={`/forum/thread/${thread.id}`}>
-              <Card className="bg-gray-800 border-gray-700 hover:bg-gray-750 transition-colors cursor-pointer">
+            <Link key={thread.id} href={`/forum/thread/${thread.id}`} aria-label={`Read thread: ${thread.title}`}>
+              <Card className="bg-card border-border hover:bg-accent/5 transition-colors cursor-pointer forum-thread-item">
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex-1">
@@ -227,14 +229,14 @@ export function CategoryPageClient({ category, initialThreads }: CategoryPageCli
                         {thread.is_locked && (
                           <Lock className="w-4 h-4 text-red-500" />
                         )}
-                        <h3 className="font-semibold text-white hover:text-purple-400 transition-colors">
+                        <h3 className="font-semibold text-foreground hover:text-purple-400 transition-colors">
                           {thread.title}
                         </h3>
                       </div>
-                      <p className="text-gray-400 text-sm mb-3 line-clamp-2">
+                      <p className="text-muted-foreground text-sm mb-3 line-clamp-2">
                         {thread.content}
                       </p>
-                      <div className="flex items-center gap-4 text-xs text-gray-500">
+                      <div className="flex items-center gap-4 text-xs text-muted-foreground/70">
                         <span className="flex items-center gap-1">
                           <span className="text-purple-400">{thread.author?.username}</span>
                         </span>
@@ -250,7 +252,7 @@ export function CategoryPageClient({ category, initialThreads }: CategoryPageCli
                         )}
                       </div>
                     </div>
-                    <div className="text-right text-sm text-gray-400 space-y-1">
+                    <div className="text-right text-sm text-muted-foreground space-y-1">
                       <div className="flex items-center gap-3">
                         <span className="flex items-center gap-1">
                           <MessageSquare className="w-4 h-4" />
@@ -275,11 +277,11 @@ export function CategoryPageClient({ category, initialThreads }: CategoryPageCli
 
         {sortedThreads.length === 0 && (
           <div className="text-center py-12">
-            <MessageSquare className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-gray-400 mb-2">
+            <MessageSquare className="w-16 h-16 text-muted-foreground/60 mx-auto mb-4" />
+            <h3 className="text-xl font-semibold text-muted-foreground mb-2">
               {searchQuery ? "No threads found" : "No threads yet"}
             </h3>
-            <p className="text-gray-500 mb-4">
+            <p className="text-muted-foreground/70 mb-4">
               {searchQuery 
                 ? "Try adjusting your search terms" 
                 : "Be the first to start a discussion in this category!"
@@ -288,7 +290,7 @@ export function CategoryPageClient({ category, initialThreads }: CategoryPageCli
             {!searchQuery && (
               <Button
                 onClick={() => setIsCreateDialogOpen(true)}
-                className="bg-purple-600 hover:bg-purple-700"
+                className="bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600"
               >
                 <Plus className="w-4 h-4 mr-2" />
                 Create First Thread
@@ -296,6 +298,7 @@ export function CategoryPageClient({ category, initialThreads }: CategoryPageCli
             )}
           </div>
         )}
+        </main>
       </div>
     </div>
   );

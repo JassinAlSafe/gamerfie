@@ -1,6 +1,6 @@
 import { Metadata } from "next";
 import { ForumPageClient } from "./ForumPageClient";
-import { createClient } from "@/utils/supabase/server";
+// import { createClient } from "@/utils/supabase/server";
 import { ForumCategory, ForumStats } from "@/types/forum";
 import { Suspense } from "react";
 import { ForumSkeleton } from "@/components/forum/ForumSkeleton";
@@ -50,7 +50,7 @@ export const metadata: Metadata = {
 
 async function getForumData() {
   try {
-    const supabase = await createClient();
+    // const supabase = await createClient();
 
     // Mock data for initial implementation
     const categories: ForumCategory[] = [

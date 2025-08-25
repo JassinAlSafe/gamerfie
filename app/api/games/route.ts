@@ -10,76 +10,76 @@ export const revalidate = 0;
 export type GameCategory = 'all' | 'popular' | 'trending' | 'upcoming' | 'recent' | 'classic';
 export type GameSortOption = 'popularity' | 'rating' | 'name' | 'release';
 
-// Platform mapping helper
-function getPlatformId(platform: string): number | undefined {
-  const platformMap: Record<string, number> = {
-    'pc': 6,          // PC (Microsoft Windows)
-    'ps4': 48,        // PlayStation 4
-    'ps5': 167,       // PlayStation 5
-    'xbox-one': 49,   // Xbox One
-    'xbox-series': 169, // Xbox Series X|S
-    'switch': 130,    // Nintendo Switch
-    'ios': 131,       // iOS
-    'android': 137,   // Android
-  };
-  
-  return platformMap[platform];
-}
+// Platform mapping helper (currently unused)
+// function getPlatformId(platform: string): number | undefined {
+//   const platformMap: Record<string, number> = {
+//     'pc': 6,          // PC (Microsoft Windows)
+//     'ps4': 48,        // PlayStation 4
+//     'ps5': 167,       // PlayStation 5
+//     'xbox-one': 49,   // Xbox One
+//     'xbox-series': 169, // Xbox Series X|S
+//     'switch': 130,    // Nintendo Switch
+//     'ios': 131,       // iOS
+//     'android': 137,   // Android
+//   };
+//   
+//   return platformMap[platform];
+// }
 
-// Genre mapping helper
-function getGenreId(genre: string): number | undefined {
-  const genreMap: Record<string, number> = {
-    'action': 31,      // Action
-    'adventure': 32,   // Adventure
-    'rpg': 12,         // Role-playing (RPG)
-    'shooter': 5,      // Shooter
-    'strategy': 15,    // Strategy
-    'simulation': 13,  // Simulator
-    'sports': 14,      // Sport
-    'racing': 10,      // Racing
-    'fighting': 4,     // Fighting
-    'puzzle': 9,       // Puzzle
-    'platform': 8,     // Platform
-    'indie': 32,       // Indie (using Adventure as fallback)
-  };
-  
-  return genreMap[genre];
-}
+// Genre mapping helper (currently unused)
+// function getGenreId(genre: string): number | undefined {
+//   const genreMap: Record<string, number> = {
+//     'action': 31,      // Action
+//     'adventure': 32,   // Adventure
+//     'rpg': 12,         // Role-playing (RPG)
+//     'shooter': 5,      // Shooter
+//     'strategy': 15,    // Strategy
+//     'simulation': 13,  // Simulator
+//     'sports': 14,      // Sport
+//     'racing': 10,      // Racing
+//     'fighting': 4,     // Fighting
+//     'puzzle': 9,       // Puzzle
+//     'platform': 8,     // Platform
+//     'indie': 32,       // Indie (using Adventure as fallback)
+//   };
+//   
+//   return genreMap[genre];
+// }
 
-// Game mode mapping helper
-function getGameModeId(mode: string): number | undefined {
-  const gameModeMap: Record<string, number> = {
-    'single-player': 1,    // Single player
-    'multiplayer': 2,      // Multiplayer
-    'co-op': 3,           // Co-operative
-    'split-screen': 4,     // Split screen
-    'mmo': 5,             // Massively Multiplayer Online (MMO)    
-    'battle-royale': 6,   // Battle Royale
-  };
-  
-  return gameModeMap[mode];
-}
+// Game mode mapping helper (currently unused)
+// function getGameModeId(mode: string): number | undefined {
+//   const gameModeMap: Record<string, number> = {
+//     'single-player': 1,    // Single player
+//     'multiplayer': 2,      // Multiplayer
+//     'co-op': 3,           // Co-operative
+//     'split-screen': 4,     // Split screen
+//     'mmo': 5,             // Massively Multiplayer Online (MMO)    
+//     'battle-royale': 6,   // Battle Royale
+//   };
+//   
+//   return gameModeMap[mode];
+// }
 
-// Theme mapping helper
-function getThemeId(theme: string): number | undefined {
-  const themeMap: Record<string, number> = {
-    'action': 1,          // Action
-    'fantasy': 17,        // Fantasy
-    'sci-fi': 18,         // Science fiction
-    'horror': 19,         // Horror
-    'thriller': 20,       // Thriller
-    'survival': 21,       // Survival
-    'historical': 22,     // Historical
-    'stealth': 23,        // Stealth
-    'comedy': 27,         // Comedy
-    'mystery': 28,        // Mystery
-    'romance': 33,        // Romance
-    'war': 35,           // Warfare
-    'kids': 43,          // Kids
-  };
-  
-  return themeMap[theme];
-}
+// Theme mapping helper (currently unused)
+// function getThemeId(theme: string): number | undefined {
+//   const themeMap: Record<string, number> = {
+//     'action': 1,          // Action
+//     'fantasy': 17,        // Fantasy
+//     'sci-fi': 18,         // Science fiction
+//     'horror': 19,         // Horror
+//     'thriller': 20,       // Thriller
+//     'survival': 21,       // Survival
+//     'historical': 22,     // Historical
+//     'stealth': 23,        // Stealth
+//     'comedy': 27,         // Comedy
+//     'mystery': 28,        // Mystery
+//     'romance': 33,        // Romance
+//     'war': 35,           // Warfare
+//     'kids': 43,          // Kids
+//   };
+//   
+//   return themeMap[theme];
+// }
 
 interface GameResponse {
   games: Game[];
@@ -108,17 +108,17 @@ export async function GET(request: NextRequest) {
   const genre = searchParams.get('genre') || 'all';
   const category = searchParams.get('category') || 'all';
   const year = searchParams.get('year') || 'all';
-  const sortBy = searchParams.get('sort') || 'popularity';
+  // const sortBy = searchParams.get('sort') || 'popularity';
   const search = searchParams.get('search') || '';
   const timeRange = searchParams.get('timeRange') || 'all';
   const source = searchParams.get('source') || 'auto';
   
-  // Enhanced filter parameters
-  const gameMode = searchParams.get('gameMode') || 'all';
-  const theme = searchParams.get('theme') || 'all';
-  const minRating = searchParams.get('minRating');
-  const maxRating = searchParams.get('maxRating');
-  const hasMultiplayer = searchParams.get('multiplayer') === 'true';
+  // Enhanced filter parameters (currently unused)
+  // const gameMode = searchParams.get('gameMode') || 'all';
+  // const theme = searchParams.get('theme') || 'all';
+  // const minRating = searchParams.get('minRating');
+  // const maxRating = searchParams.get('maxRating');
+  // const hasMultiplayer = searchParams.get('multiplayer') === 'true';
 
   // IGDB cache duration - mobile gets longer cache to reduce network usage
   const isPopularGamesRequest = !search && platform === 'all' && genre === 'all' && 
@@ -132,27 +132,27 @@ export async function GET(request: NextRequest) {
 
 
   try {
-    // Build filters for IGDB using the correct interface structure
-    const filters = {
-      page,
-      limit,
-      search: search.trim(),
-      sortBy: sortBy as 'popularity' | 'rating' | 'name' | 'release',
-      ...(platform !== 'all' && { platformId: getPlatformId(platform) }),
-      ...(genre !== 'all' && { genreId: getGenreId(genre) }),
-      ...(gameMode !== 'all' && { gameMode: getGameModeId(gameMode) }),
-      ...(theme !== 'all' && { theme: getThemeId(theme) }),
-      ...(minRating && { minRating: parseFloat(minRating) }),
-      ...(maxRating && { maxRating: parseFloat(maxRating) }),
-      ...(hasMultiplayer && { hasMultiplayer: true }),
-      ...(year !== 'all' && {
-        releaseYear: {
-          start: Math.floor(new Date(parseInt(year), 0, 1).getTime() / 1000),
-          end: Math.floor(new Date(parseInt(year), 11, 31, 23, 59, 59).getTime() / 1000)
-        }
-      }),
-      ...(timeRange !== 'all' && { timeRange: timeRange as 'new_releases' | 'upcoming' | 'classic' })
-    };
+    // Build filters for IGDB using the correct interface structure (currently unused)
+    // const filters = {
+    //   page,
+    //   limit,
+    //   search: search.trim(),
+    //   sortBy: sortBy as 'popularity' | 'rating' | 'name' | 'release',
+    //   ...(platform !== 'all' && { platformId: getPlatformId(platform) }),
+    //   ...(genre !== 'all' && { genreId: getGenreId(genre) }),
+    //   ...(gameMode !== 'all' && { gameMode: getGameModeId(gameMode) }),
+    //   ...(theme !== 'all' && { theme: getThemeId(theme) }),
+    //   ...(minRating && { minRating: parseFloat(minRating) }),
+    //   ...(maxRating && { maxRating: parseFloat(maxRating) }),
+    //   ...(hasMultiplayer && { hasMultiplayer: true }),
+    //   ...(year !== 'all' && {
+    //     releaseYear: {
+    //       start: Math.floor(new Date(parseInt(year), 0, 1).getTime() / 1000),
+    //       end: Math.floor(new Date(parseInt(year), 11, 31, 23, 59, 59).getTime() / 1000)
+    //     }
+    //   }),
+    //   ...(timeRange !== 'all' && { timeRange: timeRange as 'new_releases' | 'upcoming' | 'classic' })
+    // };
 
     // Handle category-based requests using UnifiedGameService for smart source selection
     let games: Game[] = [];

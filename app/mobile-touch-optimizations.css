@@ -88,3 +88,76 @@ a:focus-visible {
     border-color: rgba(255, 255, 255, 0.3);
   }
 }
+
+/* Forum-specific mobile optimizations */
+@media (max-width: 768px) {
+  /* Forum category cards - better touch targets */
+  .forum-category-card {
+    min-height: 80px;
+    padding: 1rem;
+  }
+  
+  /* Forum thread items - improved readability */
+  .forum-thread-item {
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+  }
+  
+  /* Forum stats - stack on mobile */
+  .forum-stats {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 0.5rem !important;
+  }
+  
+  /* Forum search - full width on mobile */
+  .forum-search {
+    width: 100% !important;
+    max-width: none !important;
+  }
+  
+  /* Forum dialog - optimize for mobile */
+  .forum-dialog {
+    margin: 1rem !important;
+    width: calc(100% - 2rem) !important;
+    max-width: none !important;
+  }
+  
+  /* Better spacing for forum actions */
+  .forum-actions {
+    flex-direction: column !important;
+    gap: 1rem !important;
+    align-items: stretch !important;
+  }
+  
+  .forum-actions .forum-search {
+    order: 1;
+  }
+  
+  .forum-actions button {
+    order: 2;
+  }
+}
+
+/* Forum accessibility improvements */
+.forum-category-card:focus-within,
+.forum-thread-item:focus-within {
+  outline: 2px solid #7c3aed;
+  outline-offset: 2px;
+}
+
+/* Skip links for forum navigation */
+.forum-skip-link {
+  position: absolute;
+  top: -40px;
+  left: 6px;
+  background: #7c3aed;
+  color: white;
+  padding: 8px;
+  text-decoration: none;
+  border-radius: 4px;
+  z-index: 1000;
+}
+
+.forum-skip-link:focus {
+  top: 6px;
+}

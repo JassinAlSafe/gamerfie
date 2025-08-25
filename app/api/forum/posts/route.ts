@@ -3,7 +3,7 @@ import { createClient } from "@/utils/supabase/server";
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createClient();
+    // const supabase = await createClient();
     const { searchParams } = new URL(request.url);
     const threadId = searchParams.get("thread_id");
     const page = parseInt(searchParams.get("page") || "1");
