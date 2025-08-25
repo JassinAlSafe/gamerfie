@@ -445,7 +445,7 @@ export default function PopularGamesClient() {
                           sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 16vw"
                           loading={index < 12 ? "eager" : "lazy"}
                           priority={index < 6}
-                          quality={75}
+                          quality={90}
                         />
                       ) : (
                         <div className="absolute inset-0 flex items-center justify-center bg-gray-800">

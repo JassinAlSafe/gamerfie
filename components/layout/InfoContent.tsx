@@ -1,15 +1,27 @@
 import React from "react";
+import { InfoNavigation } from "@/components/info/InfoNavigation";
 
 interface InfoContentProps {
   children: React.ReactNode;
   title?: string;
   description?: string;
   className?: string;
+  showBreadcrumb?: boolean;
 }
 
-export function InfoContent({ children, title, description, className = "" }: InfoContentProps) {
+export function InfoContent({ 
+  children, 
+  title, 
+  description, 
+  className = "",
+  showBreadcrumb = true 
+}: InfoContentProps) {
   return (
     <div className={`p-6 lg:p-8 xl:p-12 ${className}`}>
+      {showBreadcrumb && (
+        <InfoNavigation variant="breadcrumb" />
+      )}
+      
       {(title || description) && (
         <div className="mb-12">
           {title && (

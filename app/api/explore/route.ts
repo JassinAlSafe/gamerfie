@@ -22,10 +22,48 @@ interface ExploreResponse {
 const CACHE_TTL = 5 * 60 * 1000;
 let cachedResponse: { data: ExploreResponse; timestamp: number } | null = null;
 
-export async function GET(_request: NextRequest) {
+// Helper function to clear cache (for development)
+function clearCache() {
+  cachedResponse = null;
+}
+
+// Helper function to detect mobile requests
+function isMobileRequest(request: NextRequest): boolean {
+  const userAgent = request.headers.get('user-agent') || '';
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
+}
+
+// Execute requests sequentially for mobile, parallel for desktop
+async function executeRequests(requests: Promise<any>[], isMobile: boolean) {
+  if (isMobile) {
+    // Sequential execution for mobile networks
+    const results = [];
+    for (const request of requests) {
+      try {
+        const result = await request;
+        results.push({ status: 'fulfilled', value: result });
+      } catch (error) {
+        results.push({ status: 'rejected', reason: error });
+      }
+    }
+    return results;
+  } else {
+    // Parallel execution for desktop
+    return await Promise.allSettled(requests);
+  }
+}
+
+export async function GET(request: NextRequest) {
   try {
     // Make this static by providing a default limit instead of reading from searchParams
     const limit = 12; // Fixed limit for static generation
+    const isMobile = isMobileRequest(request);
+
+    // Clear cache if refresh parameter is provided (for development)
+    const { searchParams } = new URL(request.url);
+    if (searchParams.get('refresh') === 'true') {
+      clearCache();
+    }
 
     // Check cache first
     if (cachedResponse && Date.now() - cachedResponse.timestamp < CACHE_TTL) {
@@ -38,9 +76,18 @@ export async function GET(_request: NextRequest) {
       });
     }
 
-    console.log('Fetching fresh explore data...');
+    console.log(`Fetching fresh explore data (${isMobile ? 'mobile' : 'desktop'} strategy)...`);
 
-    // Batch fetch all game categories in parallel
+    // Mobile-optimized batch fetch - sequential for mobile, parallel for desktop
+    const requests = [
+      UnifiedGameService.getPopularGames(limit, 'auto'),
+      UnifiedGameService.getTrendingGames(limit, 'auto'),
+      UnifiedGameService.getUpcomingGames(limit, 'auto'),
+      UnifiedGameService.getRecentGames(limit, 'auto'),
+      UnifiedGameService.getPopularGames(limit, 'auto'), // Use popular as fallback for classic
+      PlaylistService.getFeaturedPlaylists(5)
+    ];
+
     const [
       popularGames,
       trendingGames,
@@ -48,20 +95,13 @@ export async function GET(_request: NextRequest) {
       recentGames,
       classicGames,
       featuredPlaylists
-    ] = await Promise.allSettled([
-      UnifiedGameService.getPopularGames(limit, 'auto'),
-      UnifiedGameService.getTrendingGames(limit, 'auto'),
-      UnifiedGameService.getUpcomingGames(limit, 'auto'),
-      UnifiedGameService.getRecentGames(limit, 'auto'),
-      UnifiedGameService.getPopularGames(limit, 'auto'), // Use popular as fallback for classic
-      PlaylistService.getFeaturedPlaylists(5)
-    ]);
+    ] = await executeRequests(requests, isMobile);
 
     // Process featured playlists - ONLY add fallback games if the playlist truly has NO gameIds
     let processedPlaylists = featuredPlaylists.status === 'fulfilled' ? featuredPlaylists.value : [];
     
     // Log playlist details for debugging
-    processedPlaylists.forEach(playlist => {
+    processedPlaylists.forEach((playlist: any) => {
       console.log(`Playlist "${playlist.title}": gameIds=${playlist.gameIds?.length || 0}, games=${playlist.games?.length || 0}`);
       if (playlist.gameIds?.length > 0) {
         console.log(`  Game IDs: ${playlist.gameIds.slice(0, 3).join(', ')}${playlist.gameIds.length > 3 ? '...' : ''}`);
@@ -71,7 +111,7 @@ export async function GET(_request: NextRequest) {
     // Only add fallback games if playlist has NO gameIds in database
     if (processedPlaylists.length > 0) {
       processedPlaylists = await Promise.all(
-        processedPlaylists.map(async (playlist) => {
+        processedPlaylists.map(async (playlist: any) => {
           // Only add fallback if the playlist has NO gameIds stored in database
           if (!playlist.gameIds || playlist.gameIds.length === 0) {
             try {
@@ -81,7 +121,7 @@ export async function GET(_request: NextRequest) {
               return {
                 ...playlist,
                 games: fallbackGames,
-                gameIds: fallbackGames.map(g => g.id)
+                gameIds: fallbackGames.map((g: any) => g.id)
               };
             } catch (error) {
               console.warn('Failed to add fallback games to playlist:', error);

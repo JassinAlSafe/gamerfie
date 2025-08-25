@@ -8,6 +8,7 @@ import {
   Users, 
   Trophy, 
   Gamepad2,
+  MessageSquare,
   X,
   Zap,
   Star
@@ -38,6 +39,13 @@ export const FloatingActions = memo(function FloatingActions({
       href: "/all-games",
       color: "from-blue-500 to-blue-600",
       hoverColor: "hover:from-blue-600 hover:to-blue-700"
+    },
+    {
+      icon: MessageSquare,
+      label: "Join Forum",
+      href: "/forum",
+      color: "from-indigo-500 to-indigo-600",
+      hoverColor: "hover:from-indigo-600 hover:to-indigo-700"
     },
     {
       icon: Users,

@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { AuthResponse } from '@supabase/supabase-js'
+import type { AuthResponse, Session } from '@supabase/supabase-js'
 import { createClient } from '@/utils/supabase/client'
 import { persist } from 'zustand/middleware'
 import { fetchUserProfileOptimized, ProfileCache, preWarmAuth } from '@/lib/auth-optimization'
@@ -11,7 +11,7 @@ import type {
 
 interface AuthState {
   user: User | null
-  session: any | null
+  session: Session | null
   profile: Profile | null
   isLoading: boolean
   error: string | null

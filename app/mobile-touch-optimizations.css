@@ -1,0 +1,90 @@
+/* Mobile Touch Interaction Optimizations */
+
+/* Reduce scale effects for touch devices to improve performance */
+@media (hover: none) and (pointer: coarse) {
+  .hover\:scale-105:hover {
+    transform: scale(1.02) !important;
+  }
+  
+  .group-hover\:scale-105:hover {
+    transform: scale(1.02) !important;
+  }
+  
+  /* Optimize button transforms for mobile */
+  .hover\:scale-110:hover {
+    transform: scale(1.05) !important;
+  }
+}
+
+/* Enhanced touch targets for mobile accessibility */
+@media (max-width: 768px) {
+  /* Ensure minimum touch target size of 44px */
+  button, 
+  [role="button"], 
+  a {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Better spacing for touch interactions */
+  .touch-optimized {
+    padding: 0.75rem 1rem;
+  }
+}
+
+/* Performance optimizations for mobile devices */
+@media (max-width: 768px) {
+  /* Reduce animation complexity on mobile */
+  * {
+    animation-duration: 0.2s !important;
+    transition-duration: 0.2s !important;
+  }
+  
+  /* Disable hover effects that don't work on touch */
+  .hover\:bg-opacity-80:hover {
+    background-opacity: 1;
+  }
+  
+  /* Optimize gradients for mobile performance */
+  .bg-gradient-to-r,
+  .bg-gradient-to-b,
+  .bg-gradient-to-br {
+    background-attachment: scroll;
+  }
+}
+
+/* Focus improvements for keyboard navigation */
+button:focus-visible,
+[role="button"]:focus-visible,
+a:focus-visible {
+  outline: 2px solid #7c3aed;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Reduce motion for users who prefer reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* High contrast mode improvements */
+@media (prefers-contrast: high) {
+  .text-gray-300 {
+    color: #ffffff;
+  }
+  
+  .text-white\/60 {
+    color: #ffffff;
+  }
+  
+  .border-white\/10 {
+    border-color: rgba(255, 255, 255, 0.3);
+  }
+}

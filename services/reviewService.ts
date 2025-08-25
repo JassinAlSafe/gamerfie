@@ -12,7 +12,7 @@ export class ReviewService {
     if (!user) throw new Error('User not authenticated');
 
     const { data: review, error } = await this.supabase
-      .from('unified_reviews')
+      .from('reviews')
       .insert({
         user_id: user.id,
         game_id: data.game_id,
@@ -62,7 +62,7 @@ export class ReviewService {
     if (data.is_recommended !== undefined) updateData.is_recommended = data.is_recommended;
 
     const { data: review, error } = await this.supabase
-      .from('unified_reviews')
+      .from('reviews')
       .update(updateData)
       .eq('id', data.id)
       .eq('user_id', user.id) // Ensure user can only update their own reviews
@@ -99,7 +99,7 @@ export class ReviewService {
     if (!user) throw new Error('User not authenticated');
 
     const { error } = await this.supabase
-      .from('unified_reviews')
+      .from('reviews')
       .delete()
       .eq('id', reviewId)
       .eq('user_id', user.id); // Ensure user can only delete their own reviews
@@ -108,12 +108,19 @@ export class ReviewService {
   }
 
   /**
-   * Get a single review by ID
+   * Get a single review by ID - OPTIMIZED VERSION
    */
   static async getReview(reviewId: string): Promise<Review | null> {
+    const { data: { user: currentUser } } = await this.supabase.auth.getUser();
+
+    // Use the review_stats view for optimized single review fetch
     const { data: review, error } = await this.supabase
-      .from('unified_reviews')
-      .select('*')
+      .from('review_stats')
+      .select(`
+        id, user_id, game_id, rating, review_text, is_public, 
+        playtime_at_review, is_recommended, created_at, updated_at,
+        likes_count, bookmarks_count, comments_count
+      `)
       .eq('id', reviewId)
       .single();
 
@@ -122,34 +129,53 @@ export class ReviewService {
       throw error;
     }
 
-    // Manually fetch related data
-    const [userData, likesData, bookmarksData] = await Promise.all([
+    // Batch fetch user data and current user interactions
+    const [userData, userInteractions] = await Promise.all([
       this.supabase
         .from('profiles')
         .select('id, username, display_name, avatar_url')
         .eq('id', review.user_id)
         .single(),
-      this.supabase
-        .from('review_likes')
-        .select('*', { count: 'exact', head: true })
-        .eq('review_id', reviewId),
-      this.supabase
-        .from('review_bookmarks')
-        .select('*', { count: 'exact', head: true })
-        .eq('review_id', reviewId)
+      
+      currentUser ? Promise.all([
+        this.supabase
+          .from('review_likes')
+          .select('id')
+          .eq('review_id', reviewId)
+          .eq('user_id', currentUser.id)
+          .maybeSingle(),
+        this.supabase
+          .from('review_bookmarks')
+          .select('id')
+          .eq('review_id', reviewId)
+          .eq('user_id', currentUser.id)
+          .maybeSingle()
+      ]) : [{ data: null }, { data: null }]
     ]);
 
     return {
       ...review,
-      user: userData.data || { id: review.user_id, username: 'Unknown User', display_name: null, avatar_url: null },
-      likes_count: likesData.count || 0,
-      bookmarks_count: bookmarksData.count || 0,
-      comments_count: 0 // TODO: Add comments count when available
+      user: userData.data || { 
+        id: review.user_id, 
+        username: 'Unknown User', 
+        display_name: null, 
+        avatar_url: null 
+      },
+      likes_count: review.likes_count || 0,
+      bookmarks_count: review.bookmarks_count || 0,
+      comments_count: review.comments_count || 0,
+      user_has_liked: currentUser ? !!userInteractions[0]?.data : false,
+      user_has_bookmarked: currentUser ? !!userInteractions[1]?.data : false,
+      // Add compatibility aliases
+      is_liked: currentUser ? !!userInteractions[0]?.data : false,
+      is_bookmarked: currentUser ? !!userInteractions[1]?.data : false,
+      helpfulness_score: 0
     };
   }
 
   /**
-   * Get reviews with pagination and filtering
+   * Get reviews with pagination and filtering - OPTIMIZED VERSION
+   * Reduces from 5+ queries to 1 main query + optimized batch queries
    */
   static async getReviews(options: {
     limit?: number;
@@ -170,9 +196,25 @@ export class ReviewService {
       orderDirection = 'desc'
     } = options;
 
+    // Get current user for like/bookmark status
+    const { data: { user: currentUser } } = await this.supabase.auth.getUser();
+
+    // Use the optimized review_stats view if ordering by likes_count
+    let fromTable = 'reviews';
+    let selectFields = '*';
+
+    if (orderBy === 'likes_count') {
+      fromTable = 'review_stats';
+      selectFields = `
+        id, user_id, game_id, rating, review_text, is_public, 
+        playtime_at_review, is_recommended, created_at, updated_at,
+        likes_count, bookmarks_count, comments_count
+      `;
+    }
+
     let query = this.supabase
-      .from('unified_reviews')
-      .select('*', { count: 'exact' });
+      .from(fromTable)
+      .select(selectFields, { count: 'exact' });
 
     // Apply filters
     if (gameId) query = query.eq('game_id', gameId);
@@ -188,8 +230,9 @@ export class ReviewService {
     const { data: reviews, error, count } = await query;
 
     if (error) throw error;
+    if (!reviews) throw new Error('No reviews data returned');
 
-    if (!reviews || reviews.length === 0) {
+    if (reviews.length === 0) {
       return {
         reviews: [],
         totalCount: count || 0,
@@ -198,58 +241,88 @@ export class ReviewService {
       };
     }
 
-    // Manually fetch related data for all reviews
-    const userIds = [...new Set(reviews.map(r => r.user_id))];
-    const reviewIds = reviews.map(r => r.id);
+    // Batch fetch related data (much more efficient than N+1 queries)
+    const userIds = [...new Set(reviews.map((r: any) => r.user_id))];
+    const reviewIds = reviews.map((r: any) => r.id);
 
-    const [usersData, likesData, bookmarksData] = await Promise.all([
+    // Single batch query for all related data
+    const [usersData, statsData, currentUserInteractions] = await Promise.all([
+      // Fetch all user profiles in one query
       this.supabase
         .from('profiles')
         .select('id, username, display_name, avatar_url')
         .in('id', userIds),
-      this.supabase
-        .from('review_likes')
-        .select('review_id')
-        .in('review_id', reviewIds),
-      this.supabase
-        .from('review_bookmarks')
-        .select('review_id')
-        .in('review_id', reviewIds)
+      
+      // Only fetch stats if we're not using the stats view
+      orderBy === 'likes_count' ? 
+        { data: null } : // Skip stats query since we have it from review_stats view
+        this.supabase
+          .from('review_stats')
+          .select('id, likes_count, bookmarks_count, comments_count')
+          .in('id', reviewIds),
+      
+      // Fetch current user's interactions in one query
+      currentUser ? 
+        Promise.all([
+          this.supabase
+            .from('review_likes')
+            .select('review_id')
+            .eq('user_id', currentUser.id)
+            .in('review_id', reviewIds),
+          this.supabase
+            .from('review_bookmarks')
+            .select('review_id')
+            .eq('user_id', currentUser.id)
+            .in('review_id', reviewIds)
+        ]) : 
+        [{ data: [] }, { data: [] }]
     ]);
 
-    // Create lookup maps
-    const usersMap = new Map();
-    (usersData.data || []).forEach(user => {
-      usersMap.set(user.id, user);
+    // Create efficient lookup maps
+    const usersMap = new Map(
+      (usersData.data || []).map(user => [user.id, user])
+    );
+
+    const statsMap = new Map(
+      (statsData.data || []).map(stat => [stat.id, stat])
+    );
+
+    const likedReviewsSet = new Set(
+      Array.isArray(currentUserInteractions) 
+        ? (currentUserInteractions[0]?.data || []).map((like: any) => like.review_id)
+        : []
+    );
+
+    const bookmarkedReviewsSet = new Set(
+      Array.isArray(currentUserInteractions)
+        ? (currentUserInteractions[1]?.data || []).map((bookmark: any) => bookmark.review_id)
+        : []
+    );
+
+    // Transform reviews with optimized lookups
+    const transformedReviews = reviews.map((review: any) => {
+      const stats = statsMap.get(review.id);
+      const user = usersMap.get(review.user_id);
+
+      return {
+        ...review,
+        user: user || {
+          id: review.user_id,
+          username: 'Unknown User',
+          display_name: null,
+          avatar_url: null
+        },
+        likes_count: review.likes_count || stats?.likes_count || 0,
+        bookmarks_count: review.bookmarks_count || stats?.bookmarks_count || 0,
+        comments_count: review.comments_count || stats?.comments_count || 0,
+        user_has_liked: currentUser ? likedReviewsSet.has(review.id) : false,
+        user_has_bookmarked: currentUser ? bookmarkedReviewsSet.has(review.id) : false,
+        // Add compatibility aliases
+        is_liked: currentUser ? likedReviewsSet.has(review.id) : false,
+        is_bookmarked: currentUser ? bookmarkedReviewsSet.has(review.id) : false,
+        helpfulness_score: 0
+      };
     });
-
-    const likesCounts = (likesData.data || []).reduce((acc: Record<string, number>, like) => {
-      acc[like.review_id] = (acc[like.review_id] || 0) + 1;
-      return acc;
-    }, {});
-
-    const bookmarksCounts = (bookmarksData.data || []).reduce((acc: Record<string, number>, bookmark) => {
-      acc[bookmark.review_id] = (acc[bookmark.review_id] || 0) + 1;
-      return acc;
-    }, {});
-
-    // Transform reviews with manual joins
-    const transformedReviews = reviews.map(review => ({
-      ...review,
-      user: usersMap.get(review.user_id) || {
-        id: review.user_id,
-        username: 'Unknown User',
-        display_name: null,
-        avatar_url: null
-      },
-      likes_count: likesCounts[review.id] || 0,
-      bookmarks_count: bookmarksCounts[review.id] || 0,
-      comments_count: 0, // TODO: Add comments count when available
-      // Add compatibility aliases
-      is_liked: false, // TODO: Check user's like status when authenticated
-      is_bookmarked: false, // TODO: Check user's bookmark status when authenticated
-      helpfulness_score: 0
-    }));
 
     return {
       reviews: transformedReviews,
@@ -264,7 +337,7 @@ export class ReviewService {
    */
   static async getReviewStats(userId?: string): Promise<ReviewStats> {
     let query = this.supabase
-      .from('unified_reviews')
+      .from('reviews')
       .select('rating');
 
     if (userId) query = query.eq('user_id', userId);
@@ -435,7 +508,7 @@ export class ReviewService {
     if (!targetUserId) return null;
 
     const { data: review, error } = await this.supabase
-      .from('unified_reviews')
+      .from('reviews')
       .select('*')
       .eq('game_id', gameId)
       .eq('user_id', targetUserId)

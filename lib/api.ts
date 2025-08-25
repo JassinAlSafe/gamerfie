@@ -1,33 +1,40 @@
 import { createClient } from '@/utils/supabase/client'
+import { APIError } from '@/utils/api'
 import type { Profile } from '@/types/profile'
 import type { GameStatus, UserGame } from '@/types'
 
 const supabase = createClient()
 
 export async function fetchProfile() {
-    const { data: { user }, error: userError } = await supabase.auth.getUser()
+    try {
+        const { data: { user }, error: userError } = await supabase.auth.getUser()
 
-    if (userError) {
-        console.error('Error fetching user:', userError)
-        throw userError
-    }
+        if (userError) {
+            throw new APIError('Failed to authenticate user', 401, 'AUTH_ERROR', userError)
+        }
 
-    if (!user) {
-        throw new Error('No authenticated user')
-    }
+        if (!user) {
+            throw new APIError('No authenticated user', 401, 'NO_USER')
+        }
 
-    const { data, error } = await supabase
-        .from('profiles')
-        .select('id, username, display_name, bio, avatar_url, email, created_at, updated_at')
-        .eq('id', user.id)
-        .single()
+        const { data, error } = await supabase
+            .from('profiles')
+            .select('id, username, display_name, bio, avatar_url, email, created_at, updated_at')
+            .eq('id', user.id)
+            .single()
 
-    if (error) {
-        console.error('Error fetching user profile:', error)
+        if (error) {
+            if (error.code === 'PGRST116') {
+                throw new APIError('Profile not found', 404, 'PROFILE_NOT_FOUND')
+            }
+            throw new APIError('Failed to fetch profile', 500, 'DATABASE_ERROR', error)
+        }
+
+        return data as unknown as Profile
+    } catch (error) {
+        console.error('Error in fetchProfile:', error)
         throw error
     }
-
-    return data as unknown as Profile
 }
 
 export async function fetchUserGames(userId: string, page = 1, pageSize = 10) {
@@ -212,7 +219,7 @@ export async function removeGameFromLibrary(gameId: string) {
 
 export async function fetchUserReviews(userId: string) {
     const { data, error } = await supabase
-        .from('unified_reviews')
+        .from('reviews')
         .select(`
             id,
             game_id,

@@ -3,6 +3,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { Game } from '@/types';
 import { Playlist } from '@/types/playlist';
+import { createMobileOptimizedAbortController, handleMobileNetworkError } from '@/utils/mobile-detection';
 
 export interface ExploreData {
   popular: Game[];
@@ -17,34 +18,44 @@ export interface ExploreData {
   };
 }
 
-// Simple fetch function with proper error handling
+// Mobile-optimized fetch function with timeout handling
 async function fetchExploreData(limit: number = 12): Promise<ExploreData> {
-  const response = await fetch(`/api/explore?limit=${limit}`, {
-    headers: {
-      'Accept': 'application/json',
-      'Cache-Control': 'public, max-age=300',
-    }
-  });
+  const { controller, timeoutId } = createMobileOptimizedAbortController();
+  
+  try {
+    const response = await fetch(`/api/explore?limit=${limit}`, {
+      headers: {
+        'Accept': 'application/json',
+        'Cache-Control': 'public, max-age=300',
+      },
+      signal: controller.signal,
+    });
 
-  if (!response.ok) {
-    throw new Error(`Failed to fetch explore data: ${response.status} ${response.statusText}`);
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch explore data: ${response.status} ${response.statusText}`);
+    }
+
+    const data = await response.json();
+
+    // Return with sensible defaults
+    return {
+      popular: Array.isArray(data.popular) ? data.popular : [],
+      trending: Array.isArray(data.trending) ? data.trending : [],
+      upcoming: Array.isArray(data.upcoming) ? data.upcoming : [],
+      recent: Array.isArray(data.recent) ? data.recent : [],
+      classic: Array.isArray(data.classic) ? data.classic : [],
+      featuredPlaylists: Array.isArray(data.featuredPlaylists) ? data.featuredPlaylists : [],
+      stats: {
+        totalGames: data.stats?.totalGames || 0,
+        totalPlaylists: data.stats?.totalPlaylists || 0
+      }
+    };
+  } catch (error) {
+    clearTimeout(timeoutId);
+    throw new Error(handleMobileNetworkError(error as Error));
   }
-
-  const data = await response.json();
-
-  // Return with sensible defaults
-  return {
-    popular: Array.isArray(data.popular) ? data.popular : [],
-    trending: Array.isArray(data.trending) ? data.trending : [],
-    upcoming: Array.isArray(data.upcoming) ? data.upcoming : [],
-    recent: Array.isArray(data.recent) ? data.recent : [],
-    classic: Array.isArray(data.classic) ? data.classic : [],
-    featuredPlaylists: Array.isArray(data.featuredPlaylists) ? data.featuredPlaylists : [],
-    stats: {
-      totalGames: data.stats?.totalGames || 0,
-      totalPlaylists: data.stats?.totalPlaylists || 0
-    }
-  };
 }
 
 // Clean hook that leverages React Query's natural caching

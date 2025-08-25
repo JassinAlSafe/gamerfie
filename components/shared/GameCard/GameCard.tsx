@@ -7,6 +7,7 @@ import { Star, Gamepad2, Trophy } from "lucide-react";
 import { motion } from "framer-motion";
 import { Game } from "@/types";
 import { getCoverImageUrl } from "@/utils/image-utils";
+import { getImageConfig, getOptimizedCoverUrl, handleImageError } from "@/utils/image-optimization";
 import { cn } from "@/lib/utils";
 
 type CategoryOption =
@@ -33,6 +34,7 @@ interface GameCardProps {
 const GameCardContent = memo(({ 
   game, 
   variant, 
+  index,
   priority, 
   showActions: _showActions 
 }: Omit<GameCardProps, 'className' | 'animated'>) => {
@@ -68,32 +70,40 @@ const GameCardContent = memo(({
     );
   };
 
-  const renderImage = () => (
-    <div className={cn(
-      "relative overflow-hidden",
-      variant === 'list' ? "w-20 h-28 flex-shrink-0 rounded-md" : "aspect-[3/4] w-full"
-    )}>
-      {coverUrl && !imageError ? (
-        <>
-          <Image
-            src={coverUrl}
-            alt={title}
-            fill
-            priority={priority}
-            sizes={
-              variant === 'list' 
-                ? "80px"
-                : "(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, (max-width: 1280px) 25vw, 300px"
-            }
-            className={cn(
-              "object-cover transition-all duration-300",
-              isLoading ? "scale-100 opacity-0" : "scale-100 opacity-100",
-              variant !== 'list' && "group-hover:scale-105"
-            )}
-            quality={variant === 'list' ? 85 : 90}
-            unoptimized={false}
-            onLoad={() => setLoading(false)}
-            onError={() => setImageError(true)}
+  const renderImage = () => {
+    const imageConfig = getImageConfig(
+      variant === 'list' ? 'listView' : 'gameCard',
+      { priority },
+      index
+    );
+    const optimizedUrl = getOptimizedCoverUrl(coverUrl, 'cover_big');
+
+    return (
+      <div className={cn(
+        "relative overflow-hidden",
+        variant === 'list' ? "w-20 h-28 flex-shrink-0 rounded-md" : "aspect-[3/4] w-full"
+      )}>
+        {optimizedUrl && !imageError ? (
+          <>
+            <Image
+              src={optimizedUrl}
+              alt={title}
+              fill
+              priority={imageConfig.priority}
+              sizes={imageConfig.sizes}
+              quality={imageConfig.quality}
+              loading={imageConfig.loading}
+              className={cn(
+                "object-cover transition-all duration-300",
+                isLoading ? "scale-100 opacity-0" : "scale-100 opacity-100",
+                variant !== 'list' && "group-hover:scale-105"
+              )}
+              onLoad={() => setLoading(false)}
+              onError={(e) => {
+                setImageError(true);
+                handleImageError(e, coverUrl);
+              }}
+              unoptimized={false}
           />
           {variant !== 'list' && (
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
@@ -109,7 +119,8 @@ const GameCardContent = memo(({
         </div>
       )}
     </div>
-  );
+    );
+  };
 
   const renderInfo = () => {
     if (variant === 'list') {

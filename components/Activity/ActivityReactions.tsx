@@ -79,8 +79,10 @@ export function ActivityReactions({ activity }: ActivityReactionsProps) {
 
   // Group and count valid reactions
   const reactionCounts = localReactions.reduce((acc, reaction) => {
-    if (reaction && reaction.emoji) {
-      acc[reaction.emoji] = (acc[reaction.emoji] || 0) + 1;
+    // Handle both legacy emoji field and new reaction_type field
+    const reactionKey = (reaction as any)?.emoji || reaction?.reaction_type;
+    if (reaction && reactionKey) {
+      acc[reactionKey] = (acc[reactionKey] || 0) + 1;
     }
     return acc;
   }, {} as Record<string, number>);
@@ -105,7 +107,7 @@ export function ActivityReactions({ activity }: ActivityReactionsProps) {
               const userReaction = localReactions.find(
                 (r) => r.user_id === userId
               );
-              const isSelected = userReaction?.emoji === emoji;
+              const isSelected = (userReaction as any)?.emoji === emoji || userReaction?.reaction_type === emoji;
 
               return (
                 <Button
@@ -128,7 +130,7 @@ export function ActivityReactions({ activity }: ActivityReactionsProps) {
         <div className="flex flex-wrap gap-1">
           {Object.entries(reactionCounts).map(([emoji, count]) => {
             const userHasReaction = localReactions.some(
-              (r) => r.user_id === userId && r.emoji === emoji
+              (r) => r.user_id === userId && ((r as any).emoji === emoji || r.reaction_type === emoji)
             );
             
             return (

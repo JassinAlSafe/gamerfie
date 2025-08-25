@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
-import { IGDBService } from '@/services/igdb';
+import { UnifiedGameService } from '@/services/unifiedGameService';
 import { Game } from '@/types';
+import { isMobileUserAgent } from '@/utils/server-timeout';
 
 // Force dynamic rendering due to search params
 export const dynamic = 'force-dynamic';
@@ -96,6 +97,11 @@ interface GameResponse {
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   
+  // Mobile-aware configuration for caching
+  const userAgent = request.headers.get('user-agent');
+  const isMobile = isMobileUserAgent(userAgent);
+  // Note: Server timeout is handled within the IGDB service layer
+  
   const page = Math.max(1, parseInt(searchParams.get('page') || '1'));
   const limit = Math.min(48, Math.max(1, parseInt(searchParams.get('limit') || '24')));
   const platform = searchParams.get('platform') || 'all';
@@ -105,6 +111,7 @@ export async function GET(request: NextRequest) {
   const sortBy = searchParams.get('sort') || 'popularity';
   const search = searchParams.get('search') || '';
   const timeRange = searchParams.get('timeRange') || 'all';
+  const source = searchParams.get('source') || 'auto';
   
   // Enhanced filter parameters
   const gameMode = searchParams.get('gameMode') || 'all';
@@ -113,10 +120,15 @@ export async function GET(request: NextRequest) {
   const maxRating = searchParams.get('maxRating');
   const hasMultiplayer = searchParams.get('multiplayer') === 'true';
 
-  // IGDB cache duration - longer for popular games, shorter for searches
+  // IGDB cache duration - mobile gets longer cache to reduce network usage
   const isPopularGamesRequest = !search && platform === 'all' && genre === 'all' && 
                                 category === 'all' && year === 'all' && timeRange === 'all';
-  const cacheDuration = isPopularGamesRequest ? 900 : 300; // 15min for popular, 5min for searches (IGDB only)
+  
+  // Longer cache for mobile devices to reduce network requests
+  let cacheDuration = isPopularGamesRequest ? 900 : 300; // 15min for popular, 5min for searches
+  if (isMobile) {
+    cacheDuration *= 2; // Double cache time for mobile (30min/10min)
+  }
 
 
   try {
@@ -142,18 +154,124 @@ export async function GET(request: NextRequest) {
       ...(timeRange !== 'all' && { timeRange: timeRange as 'new_releases' | 'upcoming' | 'classic' })
     };
 
-    // Use IGDB exclusively for all-games page - no fallbacks
+    // Handle category-based requests using UnifiedGameService for smart source selection
+    let games: Game[] = [];
+    let totalCount = 0;
+    let actualPage = page;
+    let totalPages = 0;
+    let hasNextPage = false;
+    let hasPreviousPage = false;
+    let actualSource = 'igdb';
     
-    const igdbResponse = await IGDBService.getGames(page, limit, filters);
+    if (search.trim()) {
+      // Use UnifiedGameService for search-based requests (has search term)
+      const searchResult = await UnifiedGameService.searchGames(
+        search.trim(), 
+        page, 
+        limit,
+        { source: source as any }
+      );
+      
+      games = searchResult.games;
+      totalCount = searchResult.total;
+      actualPage = searchResult.page;
+      hasNextPage = searchResult.hasNextPage;
+      hasPreviousPage = searchResult.hasPreviousPage;
+      totalPages = Math.ceil(totalCount / limit);
+      actualSource = source === 'hybrid' ? 'hybrid' : (searchResult.sources[0] || 'igdb');
+      
+    } else if (category !== 'all') {
+      // Use UnifiedGameService for specific category requests
+      try {
+        switch (category as GameCategory) {
+          case 'popular':
+            games = await UnifiedGameService.getPopularGames(limit, source as any);
+            break;
+          case 'trending':
+            games = await UnifiedGameService.getTrendingGames(limit, source as any);
+            break;
+          case 'upcoming':
+            games = await UnifiedGameService.getUpcomingGames(limit, source as any);
+            break;
+          case 'recent':
+            games = await UnifiedGameService.getRecentGames(limit, source as any);
+            break;
+          default:
+            // Fallback to search for unknown categories
+            const igdbResponse = await UnifiedGameService.searchGames('', page, limit, {
+              source: source as any
+            });
+            games = igdbResponse.games;
+            totalCount = igdbResponse.total;
+            actualPage = igdbResponse.page;
+            hasNextPage = igdbResponse.hasNextPage;
+            hasPreviousPage = igdbResponse.hasPreviousPage;
+            totalPages = Math.ceil(totalCount / limit);
+        }
+        
+        // For category-based requests, calculate pagination info
+        if (['popular', 'trending', 'upcoming', 'recent'].includes(category)) {
+          totalCount = games.length * 10; // Estimate based on typical game APIs
+          actualPage = 1; // Category requests are typically single page
+          totalPages = 1;
+          hasNextPage = false;
+          hasPreviousPage = false;
+        }
+        
+        actualSource = source === 'hybrid' ? 'hybrid' : (games[0]?.dataSource || 'igdb');
+        
+      } catch (categoryError) {
+        console.warn(`Category-based request failed for ${category}, falling back to search:`, categoryError);
+        // Fallback to search-based approach
+        const searchResult = await UnifiedGameService.searchGames('', page, limit);
+        games = searchResult.games;
+        totalCount = searchResult.total;
+        actualPage = searchResult.page;
+        hasNextPage = searchResult.hasNextPage;
+        hasPreviousPage = searchResult.hasPreviousPage;
+        totalPages = Math.ceil(totalCount / limit);
+        actualSource = 'igdb';
+      }
+      
+    } else {
+      // Handle category='all' - use paginated popular games for proper page support
+      try {
+        // Use the new paginated popular games method for category='all'
+        const searchResult = await UnifiedGameService.getPopularGamesPaginated(
+          page, 
+          limit, 
+          source as any
+        );
+        
+        games = searchResult.games;
+        totalCount = searchResult.total;
+        actualPage = searchResult.page;
+        hasNextPage = searchResult.hasNextPage;
+        hasPreviousPage = searchResult.hasPreviousPage;
+        totalPages = Math.ceil(totalCount / limit);
+        actualSource = source === 'hybrid' ? 'hybrid' : (searchResult.sources[0] || 'igdb');
+        
+      } catch (allCategoryError) {
+        console.warn('All category request failed:', allCategoryError);
+        // If paginated popular games fails, return empty results
+        games = [];
+        totalCount = 0;
+        actualPage = page;
+        totalPages = 0;
+        hasNextPage = false;
+        hasPreviousPage = false;
+        actualSource = 'igdb';
+      }
+    }
     
     const response: GameResponse = {
-      games: igdbResponse.games as unknown as Game[],
-      totalCount: igdbResponse.totalCount,
-      currentPage: igdbResponse.currentPage,
-      totalPages: igdbResponse.totalPages,
-      hasNextPage: igdbResponse.hasNextPage,
-      hasPreviousPage: igdbResponse.hasPreviousPage,
-      source: 'igdb'
+      games,
+      totalCount,
+      currentPage: actualPage,
+      totalPages,
+      hasNextPage,
+      hasPreviousPage,
+      source: actualSource
     };
 
     // Set cache headers

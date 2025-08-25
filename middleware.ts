@@ -15,7 +15,7 @@ function getCSPHeader() {
     "img-src 'self' data: blob: https: http:",
     "media-src 'self' https://www.youtube.com https://youtube.com",
     "frame-src 'self' https://www.youtube.com https://youtube.com",
-    "connect-src 'self' https://api.rawg.io https://*.supabase.co wss://*.supabase.co https://analytics.google.com https://api.twitch.tv https://id.twitch.tv",
+    "connect-src 'self' https://api.rawg.io https://*.supabase.co wss://*.supabase.co https://analytics.google.com https://api.twitch.tv https://id.twitch.tv https://va.vercel-scripts.com https://api.stripe.com http://localhost:* ws://localhost:*",
     "object-src 'none'",
     "frame-ancestors 'none'",
     "base-uri 'self'",

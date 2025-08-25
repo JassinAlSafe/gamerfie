@@ -54,7 +54,7 @@ export const metadata: Metadata = {
   },
 };
 
-export default function AllGamesPage() {
+export default async function AllGamesPage() {
   return (
     <Suspense
       fallback={

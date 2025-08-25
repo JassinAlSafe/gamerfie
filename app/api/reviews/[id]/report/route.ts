@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { authenticateRequest } from "@/app/api/lib/auth";
+import { authenticateRequest, isAuthResult } from "@/app/api/lib/auth";
+import { validateReviewId, validateReportReview } from "@/lib/validations/review";
 
 export async function POST(
   request: NextRequest,
@@ -7,21 +8,33 @@ export async function POST(
 ) {
   try {
     const authResult = await authenticateRequest();
-    if (authResult instanceof NextResponse) {
-      return authResult;
+    if (!isAuthResult(authResult)) {
+      return authResult; // Return the error response
     }
-    
-    const { user, supabase } = authResult;
-    const reviewId = params.id;
 
-    const { reason } = await request.json();
-
-    if (!reason || typeof reason !== "string") {
+    // Validate review ID
+    const reviewIdValidation = validateReviewId(params.id);
+    if (!reviewIdValidation.success) {
       return NextResponse.json(
-        { error: "Report reason is required" },
+        { error: reviewIdValidation.error },
         { status: 400 }
       );
     }
+
+    const body = await request.json();
+    
+    // Validate request body with Zod
+    const validation = validateReportReview(body);
+    if (!validation.success) {
+      return NextResponse.json(
+        { error: "Invalid report data", details: validation.error },
+        { status: 400 }
+      );
+    }
+    
+    const { user, supabase } = authResult;
+    const reviewId = reviewIdValidation.data;
+    const { reason, description } = validation.data;
 
     // Check if already reported
     const { data: existingReport, error: checkError } = await supabase
@@ -53,6 +66,7 @@ export async function POST(
         review_id: reviewId,
         user_id: user.id,
         reason: reason,
+        description: description,
         status: "pending",
       });
 

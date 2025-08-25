@@ -20,6 +20,7 @@ import { useUIStore } from "@/stores/useUIStore";
 import { Toaster } from "sonner";
 import { initializeErrorMonitoring } from "@/utils/error-monitoring";
 import { Analytics } from "@vercel/analytics/next";
+import { getMobileOptimizedQueryConfig } from "@/utils/mobile-detection";
 
 // Optimized font loading with display swap for better performance
 const inter = Inter({
@@ -55,12 +56,7 @@ export default function RootLayout({
     () =>
       new QueryClient({
         defaultOptions: {
-          queries: {
-            staleTime: 60 * 1000, // 1 minute
-            gcTime: 5 * 60 * 1000, // 5 minutes
-            refetchOnWindowFocus: false,
-            retry: 1,
-          },
+          queries: getMobileOptimizedQueryConfig(),
         },
       })
   );
@@ -71,10 +67,10 @@ export default function RootLayout({
 
   useEffect(() => {
     const cleanup = initTheme();
-    
+
     // Initialize error monitoring
     initializeErrorMonitoring();
-    
+
     return cleanup;
   }, [initTheme]);
 
@@ -135,7 +131,10 @@ export default function RootLayout({
         <meta name="msapplication-TileColor" content="#7c3aed" />
 
         {/* Viewport */}
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta
+          name="viewport"
+          content="width=device-width, initial-scale=1, viewport-fit=cover"
+        />
 
         {/* Preconnect for performance */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -204,11 +203,11 @@ export default function RootLayout({
                   </div>
                 )}
               </div>
-              <Toaster 
-                theme="dark" 
-                position="bottom-right" 
-                richColors 
-                closeButton 
+              <Toaster
+                theme="dark"
+                position="bottom-right"
+                richColors
+                closeButton
               />
             </ThemeProvider>
           </SupabaseProvider>
