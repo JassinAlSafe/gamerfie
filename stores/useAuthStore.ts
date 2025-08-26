@@ -143,7 +143,8 @@ export const useAuthStore = create<AuthState>()(
 
               set({ 
                 user: { ...response.data.user, profile: profile || null },
-                error: null 
+                error: null,
+                isInitialized: true // Ensure initialized flag is set after successful sign-in
               });
               console.log('Auth store: Signin complete');
             }
@@ -206,7 +207,8 @@ export const useAuthStore = create<AuthState>()(
                   ...response.data.user, 
                   profile: profile || null
                 },
-                error: null 
+                error: null,
+                isInitialized: true // Ensure initialized flag is set after successful sign-up
               });
             }
 

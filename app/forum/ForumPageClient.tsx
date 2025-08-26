@@ -6,12 +6,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/text/textarea";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, Plus, MessageSquare, Users, Eye, TrendingUp, Activity } from "lucide-react";
 import Link from "next/link";
 import { formatDisplayDate } from "@/utils/date-formatting";
+import { useAuthStore } from "@/stores/useAuthStore";
+import { useAuthDialog } from "@/components/auth/AuthDialog";
 
 interface ForumPageClientProps {
   initialCategories: ForumCategory[];
@@ -19,6 +21,8 @@ interface ForumPageClientProps {
 }
 
 export function ForumPageClient({ initialCategories, initialStats }: ForumPageClientProps) {
+  const { user, isInitialized } = useAuthStore();
+  const { openDialog, Dialog: AuthDialog } = useAuthDialog();
   const [categories] = useState(initialCategories);
   const [stats] = useState(initialStats);
   const [searchQuery, setSearchQuery] = useState("");
@@ -27,10 +31,23 @@ export function ForumPageClient({ initialCategories, initialStats }: ForumPageCl
   const [selectedCategory, setSelectedCategory] = useState("");
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 
+  const isAuthenticated = isInitialized && !!user;
+
   const filteredCategories = categories.filter(category =>
     category.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     category.description?.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const handleNewThreadClick = () => {
+    if (!isAuthenticated) {
+      openDialog({
+        defaultTab: "signin",
+        actionContext: "to create a new thread"
+      });
+      return;
+    }
+    setIsCreateDialogOpen(true);
+  };
 
   const handleCreateThread = async () => {
     if (!newThreadTitle.trim() || !newThreadContent.trim() || !selectedCategory) {
@@ -83,13 +100,16 @@ export function ForumPageClient({ initialCategories, initialStats }: ForumPageCl
             </p>
           </div>
 
+          <Button 
+            onClick={handleNewThreadClick}
+            className="bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 shadow-lg hover:shadow-purple-500/25 transition-all duration-300" 
+            aria-label="Create new forum thread"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            New Thread
+          </Button>
+
           <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className="bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 shadow-lg hover:shadow-purple-500/25 transition-all duration-300" aria-label="Create new forum thread">
-                <Plus className="w-4 h-4 mr-2" />
-                New Thread
-              </Button>
-            </DialogTrigger>
             <DialogContent className="bg-background border-border max-w-2xl forum-dialog">
               <DialogHeader>
                 <DialogTitle>Create New Thread</DialogTitle>
@@ -281,6 +301,9 @@ export function ForumPageClient({ initialCategories, initialStats }: ForumPageCl
         )}
         </main>
       </div>
+
+      {/* Authentication Dialog */}
+      <AuthDialog />
     </div>
   );
 }

@@ -6,7 +6,7 @@ import { getCsrfTokenHandler, addSecurityHeaders } from '@/lib/csrf-protection';
  * GET /api/auth/csrf - Returns a new CSRF token
  */
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     const response = await getCsrfTokenHandler();
     return addSecurityHeaders(response);

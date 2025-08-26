@@ -5,7 +5,8 @@ import { Shell } from "@/app/layout/shell";
 import { useFriends } from "@/hooks/Profile/useFriends";
 import { useRecentActivities } from "@/hooks/useRecentActivities";
 import { useLibraryStore } from "@/stores/useLibraryStore";
-import { useEffect, useMemo, memo, Suspense, useRef, useState } from "react";
+import { useEffect, useMemo, memo, Suspense, useRef, useState, useCallback } from "react";
+import { useStableLoadingState } from "@/hooks/useStableLoadingState";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/components/ui/use-toast";
 import { ProfileCard } from "./ProfileCard";
@@ -13,6 +14,46 @@ import { WelcomeHeader } from "./WelcomeHeader";
 import { BentoGrid } from "@/components/BuilderBlocks/BentoGrid/index";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ErrorBoundary } from "@/components/error-boundary";
+import type { Friend } from "@/types/friend";
+
+// Extended user settings type
+interface UserSettings {
+  onboarded?: boolean;
+  theme?: string;
+  notifications?: boolean;
+  privacy?: string;
+  [key: string]: any;
+}
+
+// Extended user type with typed profile
+interface ExtendedUser extends User {
+  profile?: {
+    settings?: UserSettings | null;
+    username?: string;
+    display_name?: string | null;
+    avatar_url?: string | null;
+    bio?: string | null;
+    [key: string]: any;
+  } | null;
+}
+
+// Types for the actual data being passed to components
+interface ProcessedActivity {
+  id: string;
+  type: string;
+  user_id: string;
+  game_id: string;
+  user?: {
+    username: string;
+    avatar_url?: string;
+  };
+  game?: {
+    name: string;
+    coverImage: string | null;
+  };
+  details?: any;
+  created_at: string;
+}
 
 interface AuthenticatedHomeProps {
   user: User;
@@ -22,32 +63,59 @@ const AuthenticatedHomeComponent = memo(function AuthenticatedHome({
   user,
 }: AuthenticatedHomeProps) {
   const { friends = [], isLoading: friendsLoading } = useFriends();
-  const { activities = [], isLoading: activitiesLoading } =
-    useRecentActivities(5);
+  const { activities = [], isLoading: activitiesLoading } = useRecentActivities(5);
   const { stats, loading: statsLoading, fetchUserLibrary } = useLibraryStore();
   const router = useRouter();
   const { toast } = useToast();
 
-  // Stable loading state management
-  const [isInitialLoad, setIsInitialLoad] = useState(true);
-  const [hasDataLoaded, setHasDataLoaded] = useState(false);
+  // Stable loading state management using custom hook
+  const { isInitialLoad, hasDataLoaded } = useStableLoadingState([
+    statsLoading,    // Most critical data first
+    friendsLoading,
+    activitiesLoading
+  ]);
   const hasInitializedRef = useRef(false);
+
+  // URL parameter validation functions
+  const validateWelcomeParam = useCallback((param: string | null): boolean => {
+    return param === "true";
+  }, []);
+
+  const validateAuthParam = useCallback((param: string | null): boolean => {
+    return param === "success";
+  }, []);
 
   // Check if this is a new user or if welcome parameter is set
   const [isWelcomeParam, setIsWelcomeParam] = useState(false);
   const [isAuthSuccess, setIsAuthSuccess] = useState(false);
 
   useEffect(() => {
-    // Only run on client side
+    // Only run on client side with proper validation
     if (typeof window !== 'undefined') {
-      const params = new URLSearchParams(window.location.search);
-      setIsWelcomeParam(params.get("welcome") === "true");
-      setIsAuthSuccess(params.get("auth") === "success");
+      try {
+        const params = new URLSearchParams(window.location.search);
+        setIsWelcomeParam(validateWelcomeParam(params.get("welcome")));
+        setIsAuthSuccess(validateAuthParam(params.get("auth")));
+      } catch (error) {
+        console.warn('Failed to parse URL parameters:', error);
+        // Reset to safe defaults
+        setIsWelcomeParam(false);
+        setIsAuthSuccess(false);
+      }
     }
-  }, []);
+  }, [validateWelcomeParam, validateAuthParam]);
   
-  // Fix: Only consider user as new if onboarding is explicitly false OR if they're a truly new user
-  const onboardedStatus = (user as any).profile?.settings?.onboarded;
+  // Type-safe user onboarding status check
+  const getUserOnboardingStatus = useCallback((user: User): boolean | undefined => {
+    const extendedUser = user as ExtendedUser;
+    if (extendedUser.profile?.settings && typeof extendedUser.profile.settings === 'object') {
+      const settings = extendedUser.profile.settings as UserSettings;
+      return settings.onboarded;
+    }
+    return undefined;
+  }, []);
+
+  const onboardedStatus = getUserOnboardingStatus(user);
   const isExplicitlyNotOnboarded = onboardedStatus === false;
   
   // Only show welcome for users who are explicitly not onboarded AND have the welcome param
@@ -75,41 +143,20 @@ const AuthenticatedHomeComponent = memo(function AuthenticatedHome({
     }
   }, [isWelcomeParam, isAuthSuccess, isExplicitlyNotOnboarded, router, toast]);
 
-  // Fetch library only once when component mounts with user
-  useEffect(() => {
-    // Only fetch if we haven't initialized and have a user ID
-    if (!hasInitializedRef.current && user?.id) {
+  // Memoized fetch library function to prevent unnecessary re-renders
+  const fetchLibrary = useCallback(() => {
+    if (user?.id && !hasInitializedRef.current) {
       hasInitializedRef.current = true;
       fetchUserLibrary(user.id);
     }
   }, [user?.id, fetchUserLibrary]);
 
-  // Manage stable loading state to prevent flickering
+  // Fetch library only once when component mounts with user
   useEffect(() => {
-    const hasAnyData = !friendsLoading || !activitiesLoading || !statsLoading;
+    fetchLibrary();
+  }, [fetchLibrary]);
 
-    if (hasAnyData && isInitialLoad) {
-      // Once any data starts loading, mark as having data
-      setHasDataLoaded(true);
-    }
-
-    // Only hide loading after ALL critical data is loaded
-    if (!statsLoading && !isInitialLoad) {
-      setIsInitialLoad(false);
-    } else if (!statsLoading && hasDataLoaded) {
-      // Set a small delay to prevent flickering
-      const timer = setTimeout(() => {
-        setIsInitialLoad(false);
-      }, 100);
-      return () => clearTimeout(timer);
-    }
-  }, [
-    friendsLoading,
-    activitiesLoading,
-    statsLoading,
-    isInitialLoad,
-    hasDataLoaded,
-  ]);
+  // Loading state is now managed by the useStableLoadingState hook
 
   // Memoized calculations to prevent re-computation
   const recentFriends = useMemo(() => friends.slice(0, 5), [friends]);
@@ -176,7 +223,7 @@ const AuthenticatedHomeComponent = memo(function AuthenticatedHome({
             <ProfileCard
               user={user}
               stats={profileStats}
-              friends={friends}
+              friends={friends.length}
               isLoading={statsLoading}
             />
 
@@ -215,8 +262,8 @@ const BentoGridStable = memo(function BentoGridStable({
   activities,
 }: {
   user: User;
-  friends: any[];
-  activities: any[];
+  friends: Friend[];
+  activities: ProcessedActivity[];
 }) {
   const [isMounted, setIsMounted] = useState(false);
 
@@ -228,7 +275,7 @@ const BentoGridStable = memo(function BentoGridStable({
     return <BentoGridSkeleton />;
   }
 
-  return <BentoGrid user={user} friends={friends} activities={activities} />;
+  return <BentoGrid user={user} friends={friends} activities={activities as any} />;
 });
 
 // Loading skeleton component for the whole page

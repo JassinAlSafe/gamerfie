@@ -11,7 +11,7 @@ import {
   createPaginationMeta
 } from "@/app/api/lib/forum-helpers";
 import { validateCreateThread, validateThreadQuery } from "@/lib/validations/forum";
-import { withCsrfProtection, addSecurityHeaders } from "@/lib/csrf-protection";
+import { withCsrfProtection } from "@/lib/csrf-protection";
 import type { 
   ThreadsResponse, 
   ThreadResponse, 

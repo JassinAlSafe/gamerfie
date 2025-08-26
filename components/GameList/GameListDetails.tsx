@@ -16,6 +16,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/components/ui/use-toast";
 import Link from "next/link";
+import { useAuthDialog } from "@/components/auth/AuthDialog";
 import type { GameList, GameListItem } from "@/types/gamelist/game-list";
 
 interface ListComment {
@@ -43,6 +44,7 @@ function formatDate(dateString: string | undefined): string {
 
 export function GameListDetails({ listId }: { listId: string }) {
   const { toast } = useToast();
+  const { openDialog, Dialog } = useAuthDialog();
   const { currentList, isLoading, error, fetchListDetails } =
     useGameListStore();
   const { profile } = useProfile();
@@ -297,9 +299,15 @@ export function GameListDetails({ listId }: { listId: string }) {
           <div className="text-center p-4 bg-white/5 rounded-lg mb-8">
             <p className="text-gray-400">
               Please{" "}
-              <Link href="/signin" className="text-purple-400 hover:underline">
+              <button 
+                onClick={() => openDialog({
+                  defaultTab: "signin",
+                  actionContext: "to leave a comment"
+                })}
+                className="text-purple-400 hover:underline"
+              >
                 sign in
-              </Link>{" "}
+              </button>{" "}
               to leave a comment
             </p>
           </div>
@@ -382,6 +390,9 @@ function EmptyCommentsState() {
       <p className="text-gray-400 text-sm">
         Be the first to share your thoughts about this list!
       </p>
+    
+      {/* Authentication Dialog */}
+      <Dialog />
     </div>
   );
 }

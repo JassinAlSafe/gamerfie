@@ -15,38 +15,16 @@ import { navigationItems } from "@/config/navigation";
 import { HeaderSkeleton } from "./header-skeleton";
 
 export default function FloatingHeader() {
-  const { initialize, isInitialized, checkUser, user } = useAuthStore();
+  const { isInitialized, checkUser, user } = useAuthStore();
   const { isMobileMenuOpen, toggleMobileMenu, isBetaBannerVisible } =
     useUIStore();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [hasInitialized, setHasInitialized] = useState(false);
 
-  // Initialize auth state once
-  useEffect(() => {
-    const initAuth = async () => {
-      if (!hasInitialized && !isInitialized) {
-        try {
-          await initialize();
-          // Only check user after successful initialization
-          await checkUser();
-        } catch (error) {
-          // Silently fail initialization - user might not be logged in
-          console.debug(
-            "Auth initialization failed (user might not be logged in):",
-            error
-          );
-        } finally {
-          setHasInitialized(true);
-        }
-      }
-    };
-
-    initAuth();
-  }, [initialize, isInitialized, checkUser, hasInitialized]);
+  // Use isInitialized from store directly - AuthInitializer handles initialization
 
   // Refresh user state periodically only if user is logged in and initialized
   useEffect(() => {
-    if (!hasInitialized || !user) return;
+    if (!isInitialized || !user) return;
 
     const interval = setInterval(async () => {
       try {
@@ -58,7 +36,7 @@ export default function FloatingHeader() {
     }, 10 * 60 * 1000); // Check every 10 minutes only for logged in users
 
     return () => clearInterval(interval);
-  }, [checkUser, hasInitialized, user]);
+  }, [checkUser, isInitialized, user]);
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
@@ -101,7 +79,7 @@ export default function FloatingHeader() {
   );
 
   // Show skeleton during initial load
-  if (!hasInitialized) {
+  if (!isInitialized) {
     return <HeaderSkeleton />;
   }
 
