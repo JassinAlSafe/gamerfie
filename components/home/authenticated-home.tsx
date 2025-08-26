@@ -34,9 +34,17 @@ const AuthenticatedHomeComponent = memo(function AuthenticatedHome({
   const hasInitializedRef = useRef(false);
 
   // Check if this is a new user or if welcome parameter is set
-  const urlParams = useMemo(() => new URLSearchParams(window.location.search), []);
-  const isWelcomeParam = urlParams.get("welcome") === "true";
-  const isAuthSuccess = urlParams.get("auth") === "success";
+  const [isWelcomeParam, setIsWelcomeParam] = useState(false);
+  const [isAuthSuccess, setIsAuthSuccess] = useState(false);
+
+  useEffect(() => {
+    // Only run on client side
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      setIsWelcomeParam(params.get("welcome") === "true");
+      setIsAuthSuccess(params.get("auth") === "success");
+    }
+  }, []);
   
   // Fix: Only consider user as new if onboarding is explicitly false OR if they're a truly new user
   const onboardedStatus = (user as any).profile?.settings?.onboarded;

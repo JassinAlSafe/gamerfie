@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { createClient } from "@/utils/supabase/client";
 import { useFriendsStore } from "./useFriendsStore";
+import { formatDisplayDate } from "@/utils/date-formatting";
 
 type GameStatus = "playing" | "completed" | "want_to_play" | "dropped";
 
@@ -114,12 +115,12 @@ export const useProgressStore = create<ProgressStore>((set, get) => ({
 
       // Process history data with safe parsing
       const playTimeHistory = playTimeData?.map(entry => ({
-        date: new Date(entry.created_at).toLocaleDateString(),
+        date: formatDisplayDate(entry.created_at),
         hours: Number(entry.play_time) || 0
       })) || [];
 
       const achievementHistory = achievementData?.map(entry => ({
-        date: new Date(entry.created_at).toLocaleDateString(),
+        date: formatDisplayDate(entry.created_at),
         count: Number(entry.achievements_completed) || 0
       })) || [];
 
@@ -367,14 +368,14 @@ export const useProgressStore = create<ProgressStore>((set, get) => ({
         playTimeHistory: data.play_time !== undefined ? [
           ...currentState.playTimeHistory,
           {
-            date: new Date().toLocaleDateString(),
+            date: formatDisplayDate(new Date()),
             hours: data.play_time,
           },
         ] : currentState.playTimeHistory,
         achievementHistory: data.achievements_completed !== undefined ? [
           ...currentState.achievementHistory,
           {
-            date: new Date().toLocaleDateString(),
+            date: formatDisplayDate(new Date()),
             count: data.achievements_completed,
           },
         ] : currentState.achievementHistory,

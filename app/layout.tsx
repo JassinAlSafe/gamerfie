@@ -4,6 +4,7 @@ import { Inter } from "next/font/google";
 import localFont from "next/font/local";
 import "./globals.css";
 import FloatingHeader from "@/components/ui/header/FloatingHeader";
+import { HeaderErrorBoundary } from "@/components/ui/header/header-error-boundary";
 import { Footer } from "@/components/Footer";
 import { ThemeProvider } from "next-themes";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -196,7 +197,11 @@ export default function RootLayout({
                 <AuthInitializer />
                 <CacheBuster />
                 {!isAuthPage && <BetaBanner />}
-                {!isAuthPage && <FloatingHeader />}
+                {!isAuthPage && (
+                  <HeaderErrorBoundary>
+                    <FloatingHeader />
+                  </HeaderErrorBoundary>
+                )}
                 <main className={mainPaddingClass}>{children}</main>
                 {!isAuthPage && <FloatingActions />}
                 {!isAuthPage && <AdminShortcuts variant="floating" />}

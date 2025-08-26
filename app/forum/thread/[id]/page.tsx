@@ -32,7 +32,7 @@ export async function generateMetadata({ params }: ThreadPageProps): Promise<Met
         type: "website",
       },
     };
-  } catch (error) {
+  } catch {
     return {
       title: 'Thread - Forum | Game Vault',
       description: 'Forum discussion thread',

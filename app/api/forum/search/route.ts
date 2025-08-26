@@ -1,38 +1,63 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
+import {
+  ForumApiErrorHandler,
+  ForumApiResponse,
+  withDatabaseErrorHandling,
+  validateSearchParams,
+  createPaginationMeta
+} from "@/app/api/lib/forum-helpers";
+import { validateSearch } from "@/lib/validations/forum";
+import type { SearchResponse, SearchResult } from "@/types/forum";
 
-export async function GET(request: NextRequest) {
+export async function GET(request: NextRequest): Promise<NextResponse<SearchResponse>> {
   try {
     const { searchParams } = new URL(request.url);
-    const query = searchParams.get('q');
-
-    if (!query || query.trim().length < 2) {
-      return NextResponse.json(
-        { error: 'Query must be at least 2 characters long' },
-        { status: 400 }
-      );
+    
+    // Map 'q' parameter to 'query' for validation
+    const queryParam = searchParams.get('q');
+    if (queryParam) {
+      searchParams.set('query', queryParam);
     }
+    
+    // Validate search parameters
+    const validation = validateSearchParams(searchParams, validateSearch);
+    if (!validation.success) {
+      return validation.response;
+    }
+    
+    const { query, type, category_id, page, limit } = validation.data;
+    const offset = (page - 1) * limit;
+    const searchStart = performance.now();
 
     const supabase = await createClient();
 
     // Search forum content using the database function
-    const { data: results, error } = await supabase
-      .rpc('search_forum', { search_query: query.trim() });
+    const result = await withDatabaseErrorHandling<SearchResult[]>(
+      () => supabase.rpc('search_forum_content', {
+        p_query: query.trim(),
+        p_type: type,
+        p_category_id: category_id,
+        p_limit: limit,
+        p_offset: offset
+      })
+    );
 
-    if (error) {
-      console.error("Error searching forum:", error);
-      return NextResponse.json(
-        { error: "Failed to search forum" },
-        { status: 500 }
-      );
+    if (!result.success) {
+      return result.response;
     }
 
-    return NextResponse.json({ results: results || [] });
+    const searchTime = performance.now() - searchStart;
+    const pagination = createPaginationMeta(page, limit, result.data.length);
+
+    return ForumApiResponse.success({
+      results: result.data,
+      pagination,
+      query,
+      searchTime: Math.round(searchTime)
+    });
   } catch (error) {
-    console.error("Error in forum search:", error);
-    return NextResponse.json(
-      { error: "Failed to search forum" },
-      { status: 500 }
-    );
+    console.error("Unexpected error in forum search:", error);
+    return ForumApiErrorHandler.internalError('Failed to search forum');
   }
 }

@@ -12,9 +12,29 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/stores/useAuthStore";
 
+// API response post structure (flat fields)
+interface PostFromAPI {
+  id: string;
+  thread_id: string;
+  thread_title?: string;
+  content: string;
+  author_id: string;
+  author_username?: string;
+  author_avatar_url?: string;
+  likes_count: number;
+  is_liked?: boolean;
+  parent_post_id?: string | null;
+  replies_count: number;
+  depth: number;
+  is_thread_locked?: boolean;
+  category_id?: string;
+  created_at: string;
+  updated_at: string;
+}
+
 interface ThreadPageClientProps {
   thread: ForumThread;
-  initialPosts: ForumPost[];
+  initialPosts: (ForumPost | PostFromAPI)[];
 }
 
 export function ThreadPageClient({ thread, initialPosts }: ThreadPageClientProps) {
@@ -103,8 +123,9 @@ export function ThreadPageClient({ thread, initialPosts }: ThreadPageClientProps
     return username.substring(0, 2).toUpperCase();
   };
 
-  const getDisplayName = (author: any) => {
-    return author?.username || author?.display_name || "Anonymous User";
+  const getDisplayName = (post: any) => {
+    // Handle both nested author object and flat fields
+    return post.author?.username || post.author_username || post.author?.display_name || "Anonymous User";
   };
 
   return (
@@ -148,7 +169,7 @@ export function ThreadPageClient({ thread, initialPosts }: ThreadPageClientProps
                         {getAvatarFallback(thread.author?.username)}
                       </AvatarFallback>
                     </Avatar>
-                    <span className="text-foreground">{getDisplayName(thread.author)}</span>
+                    <span className="text-foreground">{getDisplayName(thread)}</span>
                   </div>
                   <span>{formatTimeAgo(thread.created_at)}</span>
                   {thread.category && (
@@ -204,16 +225,23 @@ export function ThreadPageClient({ thread, initialPosts }: ThreadPageClientProps
               <CardContent className="p-6">
                 <div className="flex items-start gap-4">
                   <Avatar className="w-10 h-10">
-                    <AvatarImage src={post.author?.avatar_url || undefined} />
+                    <AvatarImage src={
+                      (post as any).author?.avatar_url || 
+                      (post as PostFromAPI).author_avatar_url || 
+                      undefined
+                    } />
                     <AvatarFallback className="bg-purple-600 text-white">
-                      {getAvatarFallback(post.author?.username)}
+                      {getAvatarFallback(
+                        (post as any).author?.username || 
+                        (post as PostFromAPI).author_username
+                      )}
                     </AvatarFallback>
                   </Avatar>
 
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
                       <span className="font-semibold text-foreground">
-                        {getDisplayName(post.author)}
+                        {getDisplayName(post)}
                       </span>
                       <span className="text-sm text-muted-foreground">
                         {formatTimeAgo(post.created_at)}

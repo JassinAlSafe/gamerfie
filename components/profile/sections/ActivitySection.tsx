@@ -6,6 +6,7 @@ import Link from "next/link";
 import Image from "next/image";
 import type { FriendActivity } from "@/types/activity";
 import { isValidActivity } from "@/utils/profile-validation";
+import { formatDisplayDate } from "@/utils/date-formatting";
 
 interface ActivitySectionProps {
   activities: FriendActivity[];
@@ -69,9 +70,9 @@ export const ActivitySection: React.FC<ActivitySectionProps> = ({ activities }) 
                         </p>
                         <p className="text-xs text-gray-400">
                           {activity.created_at
-                            ? new Date(activity.created_at).toLocaleDateString()
+                            ? formatDisplayDate(activity.created_at)
                             : activity.timestamp
-                            ? new Date(activity.timestamp).toLocaleDateString()
+                            ? formatDisplayDate(activity.timestamp)
                             : "Recently"}
                         </p>
                       </div>

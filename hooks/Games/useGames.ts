@@ -2,7 +2,6 @@ import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { useGamesStore } from "@/stores/useGamesStore";
 import { useGameDetails } from "@/hooks/Games/use-game-details";
 import { useDebounce } from "@/hooks/Settings/useDebounce";
-import { Game } from "@/types";
 import { createMobileOptimizedAbortController, handleMobileNetworkError } from "@/utils/mobile-detection";
 
 const ITEMS_PER_PAGE = 24;

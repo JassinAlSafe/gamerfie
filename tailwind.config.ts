@@ -75,7 +75,8 @@ const config: Config = {
   		},
   		animation: {
   			spotlight: 'spotlight 2s ease .75s 1 forwards',
-  			scroll: 'scroll var(--animation-duration, 40s) var(--animation-direction, forwards) linear infinite'
+  			scroll: 'scroll var(--animation-duration, 40s) var(--animation-direction, forwards) linear infinite',
+  			slideDown: 'slideDown 0.2s ease-out'
   		},
   		keyframes: {
   			scroll: {
@@ -84,6 +85,16 @@ const config: Config = {
   				},
   				'100%': {
   					transform: 'translateX(-100%)'
+  				}
+  			},
+  			slideDown: {
+  				'0%': {
+  					opacity: '0',
+  					transform: 'translateY(-10px)'
+  				},
+  				'100%': {
+  					opacity: '1',
+  					transform: 'translateY(0)'
   				}
   			}
   		},

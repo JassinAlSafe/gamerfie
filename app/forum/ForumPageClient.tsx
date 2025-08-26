@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, Plus, MessageSquare, Users, Eye, TrendingUp, Activity } from "lucide-react";
 import Link from "next/link";
+import { formatDisplayDate } from "@/utils/date-formatting";
 
 interface ForumPageClientProps {
   initialCategories: ForumCategory[];
@@ -262,7 +263,7 @@ export function ForumPageClient({ initialCategories, initialStats }: ForumPageCl
                         Last post by{" "}
                         <span className="text-purple-400">{category.last_post_user.username}</span>
                       </span>
-                      <span>{new Date(category.last_post_at || "").toLocaleDateString()}</span>
+                      <span>{formatDisplayDate(category.last_post_at)}</span>
                     </div>
                   </CardContent>
                 )}

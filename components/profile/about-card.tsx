@@ -1,4 +1,5 @@
 import React from "react";
+import { formatDisplayDate } from "@/utils/date-formatting";
 
 interface AboutCardProps {
   bio?: string;
@@ -15,13 +16,13 @@ export function AboutCard({ bio, createdAt, updatedAt }: AboutCardProps) {
         <div>
           <h3 className="text-sm font-medium text-gray-400">Member since</h3>
           <p className="text-white">
-            {new Date(createdAt).toLocaleDateString()}
+            {formatDisplayDate(createdAt)}
           </p>
         </div>
         <div>
           <h3 className="text-sm font-medium text-gray-400">Last active</h3>
           <p className="text-white">
-            {new Date(updatedAt).toLocaleDateString()}
+            {formatDisplayDate(updatedAt)}
           </p>
         </div>
       </div>
