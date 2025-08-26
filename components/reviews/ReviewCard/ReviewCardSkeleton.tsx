@@ -1,5 +1,4 @@
 import React from "react";
-import { AnimatedCard } from "@/components/ui/animated-card";
 
 interface ReviewCardSkeletonProps {
   showGameInfo?: boolean;
@@ -11,8 +10,8 @@ export function ReviewCardSkeleton({
   className 
 }: ReviewCardSkeletonProps) {
   return (
-    <AnimatedCard
-      className={`group relative overflow-hidden border border-gray-800/50 bg-gradient-to-br from-gray-900/90 via-gray-900/50 to-gray-800/30 ${className}`}
+    <div
+      className={`group relative overflow-hidden border border-gray-800/50 bg-gradient-to-br from-gray-900/90 via-gray-900/50 to-gray-800/30 rounded-xl ${className}`}
     >
       <div className="relative z-10">
         <div className="flex flex-col lg:flex-row">
@@ -110,7 +109,7 @@ export function ReviewCardSkeleton({
           </div>
         </div>
       </div>
-    </AnimatedCard>
+    </div>
   );
 }
 
