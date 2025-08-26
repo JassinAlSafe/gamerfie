@@ -3,38 +3,14 @@
 import React from "react";
 import { formatDistanceToNow } from "date-fns";
 import Link from "next/link";
-import { Trophy, PlayCircle, CheckCircle, MessageCircle } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ActivityType } from "@/types/friend";
+import { ActivityType } from "@/types/activity";
 import { motion } from "framer-motion";
 import { useGameActivities } from "@/hooks/Games/use-game-activities";
 import { Button } from "@/components/ui/button";
 
-const activityIcons: Record<ActivityType, React.ReactNode> = {
-  started_playing: <PlayCircle className="w-5 h-5 text-blue-400" />,
-  completed: <CheckCircle className="w-5 h-5 text-green-400" />,
-  achievement: <Trophy className="w-5 h-5 text-yellow-400" />,
-  review: <MessageCircle className="w-5 h-5 text-purple-400" />,
-  want_to_play: <PlayCircle className="w-5 h-5 text-purple-400" />,
-  progress: <PlayCircle className="w-5 h-5 text-blue-400" />,
-  game_status_updated: <PlayCircle className="w-5 h-5 text-blue-400" />,
-  achievement_unlocked: <Trophy className="w-5 h-5 text-yellow-400" />,
-  game_completed: <CheckCircle className="w-5 h-5 text-green-400" />,
-  review_added: <MessageCircle className="w-5 h-5 text-purple-400" />,
-};
-
-const activityText: Record<ActivityType, string> = {
-  started_playing: "started playing",
-  completed: "completed",
-  achievement: "unlocked an achievement in",
-  review: "reviewed",
-  want_to_play: "wants to play",
-  progress: "made progress in",
-  game_status_updated: "updated status for",
-  achievement_unlocked: "unlocked an achievement in",
-  game_completed: "completed",
-  review_added: "added a review for",
-};
+// Import from centralized constants
+import { activityIcons, activityText } from "@/lib/activity-constants";
 
 interface GameActivitiesProps {
   gameId: string;

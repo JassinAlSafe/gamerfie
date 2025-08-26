@@ -5,12 +5,14 @@ import { AnimatedButton } from "../animated-button";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/components/ui/use-toast";
+import { Skeleton } from "@/components/ui/skeleton";
 import React from "react";
 
 export const AuthButtons = React.memo(function AuthButtons() {
   const router = useRouter();
   const { toast } = useToast();
   const { user, signOut, isInitialized } = useAuthStore();
+
 
   const handleSignOut = async (scope: 'global' | 'local' | 'others' = 'local') => {
     try {
@@ -50,7 +52,12 @@ export const AuthButtons = React.memo(function AuthButtons() {
   };
 
   if (!isInitialized) {
-    return null; // Don't render anything while initializing
+    return (
+      <div className="flex items-center gap-3">
+        <Skeleton className="h-9 w-16" />
+        <Skeleton className="h-9 w-20" />
+      </div>
+    );
   }
 
   if (user) {

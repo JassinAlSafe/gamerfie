@@ -1,4 +1,5 @@
 import { PlaylistType } from "@/types/playlist";
+import { formatDisplayDate } from "@/utils/date-formatting";
 
 export const PLAYLIST_TYPE_CONFIG = {
   featured: {
@@ -46,7 +47,7 @@ export const generateSlug = (title: string) => {
 };
 
 export const formatPlaylistDate = (date: string | Date) => {
-  return new Date(date).toLocaleDateString();
+  return formatDisplayDate(date);
 };
 
 export const getPlaylistStats = (playlists: any[]) => {

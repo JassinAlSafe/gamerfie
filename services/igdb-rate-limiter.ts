@@ -1,11 +1,13 @@
 // Advanced IGDB Rate Limiter to handle "Too Many Requests" errors
+interface QueuedRequest<T = unknown> {
+  resolve: (data: T) => void;
+  reject: (error: Error) => void;
+  request: () => Promise<T>;
+  gameId: string;
+}
+
 class IGDBRateLimiter {
-  private queue: Array<{
-    resolve: (data: any) => void;
-    reject: (error: any) => void;
-    request: () => Promise<any>;
-    gameId: string;
-  }> = [];
+  private queue: QueuedRequest[] = [];
   
   private processing = false;
   private activeRequests = 0;
@@ -19,7 +21,7 @@ class IGDBRateLimiter {
   private circuitBreakerResetTime = 0;
   
   // Request cache to avoid duplicate requests
-  private requestCache = new Map<string, Promise<any>>();
+  private requestCache = new Map<string, Promise<unknown>>();
   private readonly cacheTimeout = 5 * 60 * 1000; // 5 minutes
 
   async enqueue<T>(gameId: string, request: () => Promise<T>): Promise<T> {
@@ -27,14 +29,14 @@ class IGDBRateLimiter {
     const existingRequest = this.requestCache.get(gameId);
     if (existingRequest) {
       console.log(`🔄 Using cached request for game ${gameId}`);
-      return existingRequest;
+      return existingRequest as Promise<T>;
     }
 
     const promise = new Promise<T>((resolve, reject) => {
       this.queue.push({
-        resolve,
+        resolve: resolve as (data: unknown) => void,
         reject,
-        request,
+        request: request as () => Promise<unknown>,
         gameId
       });
       this.processQueue();
@@ -95,9 +97,9 @@ class IGDBRateLimiter {
         const result = await request();
         this.handleSuccess();
         resolve(result);
-      } catch (error: any) {
+      } catch (error) {
         this.handleFailure(error);
-        reject(error);
+        reject(error instanceof Error ? error : new Error(String(error)));
       } finally {
         this.activeRequests--;
       }
@@ -112,9 +114,9 @@ class IGDBRateLimiter {
     console.log('✅ IGDB request successful');
   }
 
-  private handleFailure(error: any) {
+  private handleFailure(error: unknown) {
     this.consecutiveFailures++;
-    const errorMessage = error?.message || String(error);
+    const errorMessage = (error instanceof Error ? error.message : String(error));
     
     if (errorMessage.includes('Too Many Requests') || errorMessage.includes('429')) {
       console.log('🚫 IGDB Rate limit hit, opening circuit breaker');

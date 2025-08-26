@@ -26,7 +26,7 @@ export function ProfileReviewsClient() {
   const [filterRating, setFilterRating] = useState("all");
   const supabase = createClient();
 
-  // Fetch user's reviews from unified_reviews table
+  // Fetch user's reviews from reviews table
   const { 
     data: reviewsResponse, 
     isLoading, 

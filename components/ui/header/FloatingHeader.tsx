@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useMemo, useCallback } from "react";
 import Link from "next/link";
-import { Menu, X } from "lucide-react";
+import { Menu, X, Search } from "lucide-react";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { useUIStore } from "@/stores/useUIStore";
 import { AnimatedNav } from "../animated-nav";
@@ -11,40 +11,20 @@ import { AuthButtons } from "./auth-buttons";
 import { MobileMenu } from "./mobile-menu";
 import { Button } from "@/components/ui/button";
 import AdminShortcuts from "@/components/admin/AdminShortcuts";
+import { navigationItems } from "@/config/navigation";
+import { HeaderSkeleton } from "./header-skeleton";
 
 export default function FloatingHeader() {
-  const { initialize, isInitialized, checkUser, user } = useAuthStore();
+  const { isInitialized, checkUser, user } = useAuthStore();
   const { isMobileMenuOpen, toggleMobileMenu, isBetaBannerVisible } =
     useUIStore();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [hasInitialized, setHasInitialized] = useState(false);
 
-  // Initialize auth state once
-  useEffect(() => {
-    const initAuth = async () => {
-      if (!hasInitialized && !isInitialized) {
-        try {
-          await initialize();
-          // Only check user after successful initialization
-          await checkUser();
-        } catch (error) {
-          // Silently fail initialization - user might not be logged in
-          console.debug(
-            "Auth initialization failed (user might not be logged in):",
-            error
-          );
-        } finally {
-          setHasInitialized(true);
-        }
-      }
-    };
-
-    initAuth();
-  }, [initialize, isInitialized, checkUser, hasInitialized]);
+  // Use isInitialized from store directly - AuthInitializer handles initialization
 
   // Refresh user state periodically only if user is logged in and initialized
   useEffect(() => {
-    if (!hasInitialized || !user) return;
+    if (!isInitialized || !user) return;
 
     const interval = setInterval(async () => {
       try {
@@ -56,7 +36,7 @@ export default function FloatingHeader() {
     }, 10 * 60 * 1000); // Check every 10 minutes only for logged in users
 
     return () => clearInterval(interval);
-  }, [checkUser, hasInitialized, user]);
+  }, [checkUser, isInitialized, user]);
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
@@ -70,16 +50,6 @@ export default function FloatingHeader() {
     return () => document.removeEventListener("keydown", down);
   }, []);
 
-  const navigationItems = useMemo(
-    () => [
-      { href: "/", label: "Home" },
-      { href: "/explore", label: "Explore" },
-      { href: "/all-games", label: "All Games" },
-      { href: "/reviews", label: "Reviews" },
-      { href: "/info/about", label: "About" },
-    ],
-    []
-  );
 
   const handleSearchOpen = useCallback(() => {
     setIsSearchOpen(true);
@@ -107,6 +77,11 @@ export default function FloatingHeader() {
     ),
     [isMobileMenuOpen, toggleMobileMenu]
   );
+
+  // Show skeleton during initial load
+  if (!isInitialized) {
+    return <HeaderSkeleton />;
+  }
 
   return (
     <header
@@ -163,19 +138,7 @@ export default function FloatingHeader() {
                 className="p-2 text-gray-400 hover:text-white"
                 aria-label="Search games"
               >
-                <svg
-                  className="h-5 w-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                  />
-                </svg>
+                <Search className="h-5 w-5" />
               </Button>
               <SearchDialog
                 open={isSearchOpen}

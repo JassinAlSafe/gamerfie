@@ -22,7 +22,11 @@ interface FeaturesSectionProps {
 
 export function FeaturesSection({ features }: FeaturesSectionProps) {
   return (
-    <section className="py-16 lg:py-24 xl:py-32">
+    <section 
+      className="py-16 lg:py-24 xl:py-32"
+      aria-label="Platform features overview"
+      role="region"
+    >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -42,7 +46,11 @@ export function FeaturesSection({ features }: FeaturesSectionProps) {
         </motion.div>
 
         {/* Features Grid - Modern Bento Layout */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
+        <div 
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8"
+          role="list"
+          aria-label="Platform features"
+        >
           {features.map((feature, index) => {
             const Icon = iconMap[feature.icon as keyof typeof iconMap];
             const isLargeCard = index === 0 || index === 3; // Make first and fourth cards larger
@@ -58,8 +66,12 @@ export function FeaturesSection({ features }: FeaturesSectionProps) {
                   isLargeCard && "md:col-span-2 lg:col-span-1",
                   "group"
                 )}
+                role="listitem"
               >
-                <Link href={feature.link}>
+                <Link 
+                  href={feature.link}
+                  aria-label={`Learn more about ${feature.title}`}
+                >
                   <AnimatedCard 
                     variant="feature" 
                     className={cn(

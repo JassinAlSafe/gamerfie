@@ -32,9 +32,9 @@ export function useReviewsQuery(initialData?: GameReview[]) {
       // Get current user for interaction status and private reviews
       const { data: { user: currentUser } } = await supabase.auth.getUser();
       
-      // Get total count efficiently from unified_reviews table
+      // Get total count efficiently from reviews table
       const { count: totalCount } = await supabase
-        .from('unified_reviews')
+        .from('reviews')
         .select('*', { count: 'exact', head: true })
         .or(`is_public.eq.true${currentUser ? `,user_id.eq.${currentUser.id}` : ''}`);
 
@@ -43,7 +43,7 @@ export function useReviewsQuery(initialData?: GameReview[]) {
       const to = from + REVIEWS_PER_PAGE - 1;
 
       const { data: reviewsData, error } = await supabase
-        .from('unified_reviews')
+        .from('reviews')
         .select(`
           id,
           game_id,
@@ -171,7 +171,7 @@ export function useReviewsStatsQuery() {
       console.log('📊 Fetching community reviews stats');
       
       const { data: statsData, error } = await supabase
-        .from('unified_reviews')
+        .from('reviews')
         .select('rating, review_text')
         .eq('is_public', true);
 

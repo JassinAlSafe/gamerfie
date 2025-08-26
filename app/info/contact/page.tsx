@@ -3,8 +3,14 @@ import { IconMail, IconBrandDiscord, IconBrandTwitter, IconMessageCircle } from 
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Contact Us - Game Vault",
-  description: "Get in touch with the Game Vault team. We're here to help with any questions or feedback.",
+  title: "Contact Us - Gamerfie | Get Support & Help",
+  description: "Get in touch with the Gamerfie team. We're here to help with any questions, feedback, or technical support.",
+  keywords: ["contact", "support", "help", "feedback", "gaming support", "community"],
+  openGraph: {
+    title: "Contact Us - Gamerfie",
+    description: "Get in touch with the Gamerfie team for support and help",
+    type: "website",
+  },
 };
 
 const contactMethods = [
@@ -12,33 +18,33 @@ const contactMethods = [
     title: "General Support",
     description: "For general questions, account issues, or technical support",
     icon: IconMail,
-    contact: "support@gamevault.com",
+    contact: "support@gamerfie.com",
     action: "Send Email",
-    href: "mailto:support@gamevault.com"
+    href: "mailto:support@gamerfie.com"
   },
   {
     title: "Community Discord",
     description: "Join our community for real-time help and discussions",
     icon: IconBrandDiscord,
-    contact: "discord.gg/gamevault",
+    contact: "discord.gg/gamerfie",
     action: "Join Discord",
-    href: "https://discord.gg/gamevault"
+    href: "https://discord.gg/gamerfie"
   },
   {
     title: "Feedback & Suggestions",
-    description: "Share your ideas to help us improve Game Vault",
+    description: "Share your ideas to help us improve Gamerfie",
     icon: IconMessageCircle,
-    contact: "feedback@gamevault.com",
+    contact: "feedback@gamerfie.com",
     action: "Send Feedback",
-    href: "mailto:feedback@gamevault.com"
+    href: "mailto:feedback@gamerfie.com"
   },
   {
     title: "Follow Updates",
     description: "Stay updated with the latest news and announcements",
     icon: IconBrandTwitter,
-    contact: "@GameVaultApp",
+    contact: "@GamefieApp",
     action: "Follow Us",
-    href: "https://twitter.com/gamevaultapp"
+    href: "https://twitter.com/gamerfieapp"
   }
 ];
 

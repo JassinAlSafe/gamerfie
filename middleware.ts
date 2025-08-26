@@ -9,13 +9,13 @@ import { createServerClient } from '@supabase/ssr';
 function getCSPHeader() {
   const csp = [
     "default-src 'self'",
-    `script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.youtube.com https://www.googletagmanager.com https://analytics.google.com https://ssl.google-analytics.com https://va.vercel-scripts.com`,
+    `script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.youtube.com https://www.googletagmanager.com https://analytics.google.com https://ssl.google-analytics.com https://va.vercel-scripts.com https://vercel.live`,
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "font-src 'self' https://fonts.gstatic.com data:",
-    "img-src 'self' data: blob: https: http:",
+    "img-src 'self' data: blob: https: http: https://*.googleusercontent.com https://googleusercontent.com",
     "media-src 'self' https://www.youtube.com https://youtube.com",
     "frame-src 'self' https://www.youtube.com https://youtube.com",
-    "connect-src 'self' https://api.rawg.io https://*.supabase.co wss://*.supabase.co https://analytics.google.com https://api.twitch.tv https://id.twitch.tv",
+    "connect-src 'self' https://api.rawg.io https://*.supabase.co wss://*.supabase.co https://analytics.google.com https://api.twitch.tv https://id.twitch.tv https://va.vercel-scripts.com https://vitals.vercel-insights.com https://vercel.live https://api.stripe.com https://images.igdb.com https://*.googleusercontent.com https://googleusercontent.com http://localhost:* ws://localhost:*",
     "object-src 'none'",
     "frame-ancestors 'none'",
     "base-uri 'self'",
@@ -109,6 +109,16 @@ export async function middleware(request: NextRequest) {
     supabaseResponse.headers.set(key, value);
   });
 
+  // Special handling for service worker - allow it to fetch images
+  if (request.nextUrl.pathname === '/sw.js') {
+    supabaseResponse.headers.set('Content-Security-Policy', 
+      "default-src 'self'; " +
+      "script-src 'self'; " +
+      "connect-src 'self' https://*.googleusercontent.com https://googleusercontent.com https://images.igdb.com; " +
+      "img-src 'self' data: blob: https: http: https://*.googleusercontent.com https://googleusercontent.com https://images.igdb.com"
+    );
+  }
+
   // Set nonce for use in components (optional)
   supabaseResponse.headers.set('X-Nonce', nonce);
 
@@ -125,7 +135,8 @@ export const config = {
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
      * - public folder files
+     * - sw.js (service worker)
      */
-    '/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!api|_next/static|_next/image|favicon.ico|sw.js|workbox-.*|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 };

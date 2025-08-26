@@ -60,22 +60,31 @@ function GameCard({ game, index }: { game: any; index: number }) {
       transition={{ duration: 0.5, delay: index * 0.05 }}
       viewport={{ once: true }}
       className="group cursor-pointer relative"
+      role="listitem"
     >
-      <Link href={`/game/${game.id}`}>
+      <Link 
+        href={`/game/${game.id}`}
+        aria-label={`View details for ${game.name}`}
+      >
         <div className="relative overflow-hidden rounded-lg bg-gray-900/50 backdrop-blur-sm border border-gray-800/50 hover:border-purple-500/30 transition-all duration-300 hover:scale-[1.02] min-h-[280px] flex flex-col">
           {/* Game Cover */}
           <div className="aspect-[3/4] relative overflow-hidden flex-shrink-0">
             {game.cover?.url || game.cover_url ? (
               <Image
                 src={getCoverImageUrl(game.cover?.url || game.cover_url)}
-                alt={game.name}
+                alt={`${game.name} game cover`}
                 fill
                 className="object-cover transition-transform duration-300 group-hover:scale-105"
                 sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 16vw"
-                priority={index === 0} // Add priority to first image for LCP
+                priority={index < 6} // Prioritize all above-the-fold images
+                loading={index < 6 ? "eager" : "lazy"}
               />
             ) : (
-              <div className="w-full h-full bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center">
+              <div 
+                className="w-full h-full bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center"
+                role="img"
+                aria-label={`${game.name} - No cover image available`}
+              >
                 <Gamepad2 className="w-12 h-12 text-gray-500" />
               </div>
             )}
@@ -163,7 +172,11 @@ export function GameShowcase() {
   });
 
   return (
-    <section className="py-12 sm:py-16 lg:py-24 relative">
+    <section 
+      className="py-12 sm:py-16 lg:py-24 relative"
+      aria-label="Trending games showcase"
+      role="region"
+    >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -305,7 +318,11 @@ export function GameShowcase() {
             </div>
           ) : (
             <>
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3 sm:gap-4 lg:gap-6 relative">
+              <div 
+                className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3 sm:gap-4 lg:gap-6 relative"
+                role="list"
+                aria-label="Trending games grid"
+              >
                 {trendingGames.slice(0, 12).map((game, index) => (
                   <GameCard key={game.id} game={game} index={index} />
                 ))}

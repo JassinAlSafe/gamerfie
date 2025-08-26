@@ -1,0 +1,163 @@
+/* Mobile Touch Interaction Optimizations */
+
+/* Reduce scale effects for touch devices to improve performance */
+@media (hover: none) and (pointer: coarse) {
+  .hover\:scale-105:hover {
+    transform: scale(1.02) !important;
+  }
+  
+  .group-hover\:scale-105:hover {
+    transform: scale(1.02) !important;
+  }
+  
+  /* Optimize button transforms for mobile */
+  .hover\:scale-110:hover {
+    transform: scale(1.05) !important;
+  }
+}
+
+/* Enhanced touch targets for mobile accessibility */
+@media (max-width: 768px) {
+  /* Ensure minimum touch target size of 44px */
+  button, 
+  [role="button"], 
+  a {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Better spacing for touch interactions */
+  .touch-optimized {
+    padding: 0.75rem 1rem;
+  }
+}
+
+/* Performance optimizations for mobile devices */
+@media (max-width: 768px) {
+  /* Reduce animation complexity on mobile */
+  * {
+    animation-duration: 0.2s !important;
+    transition-duration: 0.2s !important;
+  }
+  
+  /* Disable hover effects that don't work on touch */
+  .hover\:bg-opacity-80:hover {
+    background-opacity: 1;
+  }
+  
+  /* Optimize gradients for mobile performance */
+  .bg-gradient-to-r,
+  .bg-gradient-to-b,
+  .bg-gradient-to-br {
+    background-attachment: scroll;
+  }
+}
+
+/* Focus improvements for keyboard navigation */
+button:focus-visible,
+[role="button"]:focus-visible,
+a:focus-visible {
+  outline: 2px solid #7c3aed;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Reduce motion for users who prefer reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* High contrast mode improvements */
+@media (prefers-contrast: high) {
+  .text-gray-300 {
+    color: #ffffff;
+  }
+  
+  .text-white\/60 {
+    color: #ffffff;
+  }
+  
+  .border-white\/10 {
+    border-color: rgba(255, 255, 255, 0.3);
+  }
+}
+
+/* Forum-specific mobile optimizations */
+@media (max-width: 768px) {
+  /* Forum category cards - better touch targets */
+  .forum-category-card {
+    min-height: 80px;
+    padding: 1rem;
+  }
+  
+  /* Forum thread items - improved readability */
+  .forum-thread-item {
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+  }
+  
+  /* Forum stats - stack on mobile */
+  .forum-stats {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 0.5rem !important;
+  }
+  
+  /* Forum search - full width on mobile */
+  .forum-search {
+    width: 100% !important;
+    max-width: none !important;
+  }
+  
+  /* Forum dialog - optimize for mobile */
+  .forum-dialog {
+    margin: 1rem !important;
+    width: calc(100% - 2rem) !important;
+    max-width: none !important;
+  }
+  
+  /* Better spacing for forum actions */
+  .forum-actions {
+    flex-direction: column !important;
+    gap: 1rem !important;
+    align-items: stretch !important;
+  }
+  
+  .forum-actions .forum-search {
+    order: 1;
+  }
+  
+  .forum-actions button {
+    order: 2;
+  }
+}
+
+/* Forum accessibility improvements */
+.forum-category-card:focus-within,
+.forum-thread-item:focus-within {
+  outline: 2px solid #7c3aed;
+  outline-offset: 2px;
+}
+
+/* Skip links for forum navigation */
+.forum-skip-link {
+  position: absolute;
+  top: -40px;
+  left: 6px;
+  background: #7c3aed;
+  color: white;
+  padding: 8px;
+  text-decoration: none;
+  border-radius: 4px;
+  z-index: 1000;
+}
+
+.forum-skip-link:focus {
+  top: 6px;
+}

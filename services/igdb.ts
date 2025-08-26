@@ -2,6 +2,7 @@ import { Game } from "@/types";
 import { IGDBResponse, IGDBGame } from "@/types/igdb-types";
 import { IGDB_IMAGE_SIZES } from '@/utils/image-utils';
 import { igdbRateLimiter } from './igdb-rate-limiter';
+import { fetchWithTimeout, fetchWithRetry } from '@/utils/server-timeout';
 
 interface GameFilters {
   page: number;
@@ -34,7 +35,11 @@ interface IGDBGameResponse {
     url: string;
   };
   rating?: number;
+  total_rating?: number;
   total_rating_count?: number;
+  aggregated_rating?: number;
+  aggregated_rating_count?: number;
+  hypes?: number;
   genres?: Array<{
     id: number;
     name: string;
@@ -66,9 +71,12 @@ export class IGDBService {
 
   private static getProxyUrl(): string {
     const isServer = typeof window === 'undefined';
-    return isServer 
-      ? 'http://localhost:3000/api/igdb-proxy'
-      : '/api/igdb-proxy';
+    if (isServer) {
+      // Use the current server port from process.env or default to 3001
+      const port = process.env.PORT || '3001';
+      return `http://localhost:${port}/api/igdb-proxy`;
+    }
+    return '/api/igdb-proxy';
   }
 
   private static async getIGDBToken(): Promise<string> {
@@ -180,8 +188,10 @@ export class IGDBService {
             ? artwork.url.replace(/t_[a-zA-Z_]+/, IGDB_IMAGE_SIZES.ARTWORK.ULTRA)
             : `https://${artwork.url.replace(/t_[a-zA-Z_]+/, IGDB_IMAGE_SIZES.ARTWORK.ULTRA)}`
       })),
-      rating: game.rating ? Math.round(game.rating) : 0,
+      rating: game.total_rating ? Math.round(game.total_rating) : (game.rating ? Math.round(game.rating) : 0),
+      total_rating: game.total_rating,
       total_rating_count: game.total_rating_count || 0,
+      hype_count: game.hypes || 0,
       genres: game.genres?.map((g) => ({ id: g.id.toString(), name: g.name })) || [],
       platforms: game.platforms?.map((p) => ({ id: p.id.toString(), name: p.name })) || [],
       summary: game.summary,
@@ -320,7 +330,8 @@ export class IGDBService {
           // Count query uses the same conditions as the main query
           const countQuery = `where ${conditions.join(' & ')};`;
 
-          const countResponse = await fetch(this.getProxyUrl(), {
+          // Use timeout for count query - mobile networks need this
+          const countResponse = await fetchWithTimeout(this.getProxyUrl(), {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -329,7 +340,7 @@ export class IGDBService {
               endpoint: 'games/count',
               query: countQuery.trim()
             })
-          });
+          }, 15000); // 15 second timeout for count queries
 
           if (countResponse.ok) {
             const { count } = await countResponse.json();
@@ -385,7 +396,8 @@ export class IGDBService {
         `;
       }
 
-      const gamesResponse = await fetch(this.getProxyUrl(), {
+      // Main games query with retry logic for reliability on mobile networks
+      const gamesResponse = await fetchWithRetry(this.getProxyUrl(), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -394,7 +406,7 @@ export class IGDBService {
           endpoint: 'games',
           query: query.trim()
         })
-      });
+      }, 3, 20000); // 3 retries, 20 second timeout - best practice for mobile
 
       if (!gamesResponse.ok) {
         throw new Error('Failed to fetch games');
@@ -422,12 +434,14 @@ export class IGDBService {
     }
   }
 
-  static async getPopularGames(limit: number = 10): Promise<Game[]> {
+  static async getPopularGames(limit: number = 10, page: number = 1): Promise<Game[]> {
     try {
+      const offset = (page - 1) * limit;
       const query = `
-        fields name, cover.*, cover.url, cover.image_id, first_release_date, rating, genres.*, platforms.*, summary, screenshots.*, videos.*, artworks.*;
-        where rating != null & rating > 75 & cover != null;
+        fields name, cover.*, first_release_date, rating, total_rating, total_rating_count, aggregated_rating, aggregated_rating_count, hypes, genres.*, platforms.*, summary, screenshots.*, videos.*, artworks.*;
+        where category = 0 & cover != null & total_rating_count >= 10;
         sort total_rating_count desc;
+        offset ${offset};
         limit ${limit};
       `;
 
@@ -457,11 +471,11 @@ export class IGDBService {
   static async getTrendingGames(limit: number = 10): Promise<Game[]> {
     try {
       const now = Math.floor(Date.now() / 1000);
-      const sixMonthsAgo = now - (180 * 24 * 60 * 60); // Increased from 3 to 6 months
+      const threeMonthsAgo = now - (90 * 24 * 60 * 60); // 3 months for trending
 
       const query = `
-        fields name, cover.*, cover.url, cover.image_id, first_release_date, rating, genres.*, platforms.*, summary, screenshots.*, videos.*, artworks.*;
-        where first_release_date >= ${sixMonthsAgo} & first_release_date <= ${now} & cover != null & total_rating_count > 10;
+        fields name, cover.*, first_release_date, rating, total_rating, total_rating_count, aggregated_rating, aggregated_rating_count, hypes, genres.*, platforms.*, summary, screenshots.*, videos.*, artworks.*;
+        where category = 0 & cover != null & first_release_date >= ${threeMonthsAgo} & first_release_date <= ${now} & total_rating_count >= 5;
         sort total_rating_count desc;
         limit ${limit};
       `;
@@ -493,15 +507,13 @@ export class IGDBService {
   static async getUpcomingGames(limit: number = 10): Promise<Game[]> {
     try {
       const now = Math.floor(Date.now() / 1000);
-      const threeMonthsAhead = now + (90 * 24 * 60 * 60);
+      const oneWeekFromNow = now + (7 * 24 * 60 * 60); // 1 week from now to exclude very recent releases
+      const eighteenMonthsAhead = now + (18 * 30 * 24 * 60 * 60); // 18 months ahead for reasonable upcoming window
 
       const query = `
-        fields name, cover.*, cover.url, cover.image_id, rating, total_rating_count, genres.*, platforms.*, first_release_date, summary, screenshots.*, videos.*, artworks.*;
-        where cover != null 
-        & first_release_date > ${now}
-        & first_release_date <= ${threeMonthsAhead}
-        & hypes > 0;
-        sort first_release_date asc;
+        fields name, cover.*, first_release_date, rating, total_rating, total_rating_count, aggregated_rating, aggregated_rating_count, hypes, genres.*, platforms.*, summary, screenshots.*, videos.*, artworks.*;
+        where category = 0 & cover != null & first_release_date >= ${oneWeekFromNow} & first_release_date <= ${eighteenMonthsAhead} & hypes >= 5;
+        sort hypes desc;
         limit ${limit};
       `;
 
@@ -532,14 +544,12 @@ export class IGDBService {
   static async getRecentGames(limit: number = 10): Promise<Game[]> {
     try {
       const now = Math.floor(Date.now() / 1000);
-      const sixMonthsAgo = now - (180 * 24 * 60 * 60); // 6 months ago
+      const sixMonthsAgo = now - (6 * 30 * 24 * 60 * 60); // 6 months ago for recent window
+      // No upper bound - include games up to today to get the latest releases
 
       const query = `
-        fields name, cover.*, cover.url, cover.image_id, rating, total_rating_count, genres.*, platforms.*, first_release_date, summary, screenshots.*, videos.*, artworks.*;
-        where cover != null 
-        & first_release_date >= ${sixMonthsAgo}
-        & first_release_date <= ${now}
-        & total_rating_count > 5;
+        fields name, cover.*, first_release_date, rating, total_rating, total_rating_count, aggregated_rating, aggregated_rating_count, hypes, genres.*, platforms.*, summary, screenshots.*, videos.*, artworks.*;
+        where category = 0 & cover != null & first_release_date >= ${sixMonthsAgo} & first_release_date <= ${now} & total_rating_count >= 3;
         sort first_release_date desc;
         limit ${limit};
       `;
@@ -601,7 +611,7 @@ export class IGDBService {
             if (errorData.error && errorData.error.includes('Too Many Requests')) {
               throw new Error('Too Many Requests');
             }
-          } catch (parseError) {
+          } catch {
             // If can't parse, check text content
             if (errorText.includes('Too Many Requests') || errorText.includes('429')) {
               throw new Error('Too Many Requests');

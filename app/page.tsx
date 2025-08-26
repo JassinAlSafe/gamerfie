@@ -1,16 +1,7 @@
 import { createClient } from "@/utils/supabase/server";
 import { AuthenticatedHome } from "@/components/home/authenticated-home";
 import { UnauthenticatedHome } from "@/components/home/unauthenticated-home";
-import type { Database } from "@/types/supabase";
 
-// Extended User type that includes profile (same as auth store)
-type Profile = Database["public"]["Tables"]["profiles"]["Row"];
-type ExtendedUser = {
-  id: string;
-  email?: string;
-  user_metadata?: any;
-  profile?: Profile | null;
-};
 
 export default async function HomePage() {
   try {
@@ -41,7 +32,7 @@ export default async function HomePage() {
     if (user) {
       try {
         // Fetch the user's profile from the profiles table
-        const { data: profile, error: profileError } = await supabase
+        const { error: profileError } = await supabase
           .from("profiles")
           .select("*")
           .eq("id", user.id)
@@ -52,21 +43,11 @@ export default async function HomePage() {
           console.warn("Profile fetch error:", profileError.message);
         }
 
-        // Create extended user object with profile
-        const extendedUser: ExtendedUser = {
-          ...user,
-          profile: profile || null,
-        };
-
-        return <AuthenticatedHome user={extendedUser as any} />;
+        return <AuthenticatedHome user={user} />;
       } catch (profileError) {
         console.warn("Error fetching user profile during build:", profileError);
         // Still show authenticated home with user data, just without profile
-        const extendedUser: ExtendedUser = {
-          ...user,
-          profile: null,
-        };
-        return <AuthenticatedHome user={extendedUser as any} />;
+        return <AuthenticatedHome user={user} />;
       }
     }
 

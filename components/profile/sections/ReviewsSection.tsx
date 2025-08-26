@@ -4,6 +4,7 @@ import { Star } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import type { JournalEntry } from "@/types/journal";
+import { formatDisplayDate } from "@/utils/date-formatting";
 
 interface ReviewsSectionProps {
   reviews: JournalEntry[];
@@ -63,7 +64,7 @@ export const ReviewsSection: React.FC<ReviewsSectionProps> = ({ reviews }) => {
                       {review.content}
                     </p>
                     <p className="text-xs text-gray-400 mt-1">
-                      {new Date(review.createdAt).toLocaleDateString()}
+                      {formatDisplayDate(review.createdAt)}
                     </p>
                   </div>
                 </div>

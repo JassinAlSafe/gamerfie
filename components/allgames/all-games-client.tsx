@@ -8,7 +8,7 @@ import { GamesError } from "../games/GamesError";
 import { GamesHeader } from "../games/sections/games-header";
 import { useGamesStore } from "@/stores/useGamesStore";
 import { useUrlParams } from "@/hooks/Settings/useUrlParams";
-
+import { getMobileOptimizedIntersectionConfig } from "@/utils/mobile-detection";
 export default function AllGamesClient() {
   const gamesStore = useGamesStore();
   const { fetchMetadata } = gamesStore;
@@ -24,17 +24,13 @@ export default function AllGamesClient() {
     isError,
   } = useGamesInfinite();
 
-  // Simple intersection observer - load when user approaches the bottom
-  const { ref: loadMoreRef, inView } = useInView({
-    threshold: 0,
-    rootMargin: "200px", // Start loading 200px before reaching the element
-  });
+  // Mobile-optimized intersection observer - load when user approaches the bottom
+  const { ref: loadMoreRef, inView } = useInView(getMobileOptimizedIntersectionConfig());
 
   // Get all games from all pages - memoized to avoid recalculation
-  const allGames = useMemo(() => 
-    data?.pages?.flatMap((page) => page.games || []) ?? [], 
-    [data?.pages]
-  );
+  const allGames = useMemo(() => {
+    return data?.pages?.flatMap((page) => page.games || []) ?? [];
+  }, [data?.pages]);
 
   // Clean load more function - simplified dependencies
   const handleLoadMore = useCallback(() => {
@@ -74,6 +70,7 @@ export default function AllGamesClient() {
       {/* Main content - Natural scroll */}
       <main className="min-h-screen bg-gradient-to-b from-gray-900/50 via-gray-950 to-gray-950">
         <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6">
+
           {/* Games Grid */}
           <GamesGrid isLoading={isLoading} games={allGames} />
 

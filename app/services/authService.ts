@@ -1,4 +1,5 @@
 import { createClient } from "@/utils/supabase/client";
+import type { User } from '@supabase/supabase-js';
 
 const supabase = createClient();
 
@@ -9,12 +10,12 @@ interface AuthError {
 
 interface AuthResponse {
   success: boolean;
-  data?: any;
+  data?: User | { provider: string; url: string };
   error?: AuthError;
 }
 
-function isSupabaseError(error: any): error is { message: string } {
-  return error && typeof error.message === 'string';
+function isSupabaseError(error: unknown): error is { message: string } {
+  return typeof error === 'object' && error !== null && 'message' in error && typeof (error as { message: unknown }).message === 'string';
 }
 
 export const authService = {
@@ -29,7 +30,7 @@ export const authService = {
 
       return {
         success: true,
-        data: data.user,
+        data: data.user || undefined,
       };
     } catch (error) {
       return {
@@ -91,7 +92,7 @@ export const authService = {
 
       return {
         success: true,
-        data: data.user,
+        data: data.user || undefined,
       };
     } catch (error) {
       return {

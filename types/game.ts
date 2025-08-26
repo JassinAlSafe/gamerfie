@@ -1,5 +1,6 @@
 import { LucideIcon } from "lucide-react";
 import { ActivityType } from "./activity";
+import { PaginatedResponse } from "./core";
 
 // Base Types
 export type GameStatus = 'playing' | 'completed' | 'want_to_play' | 'dropped';
@@ -200,21 +201,15 @@ export interface GameQueryParams {
   sortBy: SortOption;
 }
 
-// Response Interfaces
-export interface GameListResponse {
-  games: Game[];
-  total: number;
-  page: number;
-  pageSize: number;
+// Response Interfaces - use core PaginatedResponse pattern
+export interface GameListResponse extends PaginatedResponse<Game> {
   platforms?: Platform[];
   genres?: Genre[];
+  pageSize: number; // Backward compatibility
 }
 
-export interface FetchGamesResponse {
-  games: Game[];
-  total: number;
-  page: number;
-  pageSize: number;
+export interface FetchGamesResponse extends PaginatedResponse<Game> {
+  pageSize: number; // Backward compatibility
 }
 
 // Component Props Interfaces
@@ -364,7 +359,7 @@ export interface GameStore {
   url: string;
 }
 
-export type DataSource = 'igdb' | 'rawg' | 'user' | 'unknown';
+export type DataSource = 'igdb' | 'rawg' | 'hybrid' | 'auto' | 'smart' | 'user' | 'unknown';
 
 export interface GameReview {
   id: string;

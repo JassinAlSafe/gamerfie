@@ -2,24 +2,15 @@ import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { useGamesStore } from "@/stores/useGamesStore";
 import { useGameDetails } from "@/hooks/Games/use-game-details";
 import { useDebounce } from "@/hooks/Settings/useDebounce";
-import { Game } from "@/types";
+import { createMobileOptimizedAbortController, handleMobileNetworkError } from "@/utils/mobile-detection";
 
 const ITEMS_PER_PAGE = 24;
-
-interface GameResponse {
-  games: Game[];
-  totalCount: number;
-  totalPages: number;
-  currentPage: number;
-  hasNextPage: boolean;
-  hasPreviousPage: boolean;
-}
 
 export function useGamesInfinite() {
   const store = useGamesStore();
   const debouncedSearchQuery = useDebounce(store.searchQuery, 500);
 
-  const query = useInfiniteQuery<GameResponse>({
+  const query = useInfiniteQuery({
     queryKey: [
       "popular-games",
       store.sortBy,
@@ -36,43 +27,54 @@ export function useGamesInfinite() {
       debouncedSearchQuery,
     ],
     queryFn: async ({ pageParam = 1 }) => {
-      const params = new URLSearchParams({
-        page: String(pageParam),
-        limit: String(ITEMS_PER_PAGE),
-        platform: store.selectedPlatform || 'all',
-        genre: store.selectedGenre || 'all',
-        category: store.selectedCategory || 'all',
-        year: store.selectedYear || 'all',
-        sort: store.sortBy || 'popularity',
-        search: debouncedSearchQuery || '',
-        timeRange: store.timeRange || 'all',
-        gameMode: store.selectedGameMode || 'all',
-        theme: store.selectedTheme || 'all',
-        multiplayer: store.hasMultiplayer.toString()
-      });
+      const { controller, timeoutId } = createMobileOptimizedAbortController();
+      
+      try {
+        const params = new URLSearchParams({
+          page: String(pageParam),
+          limit: String(ITEMS_PER_PAGE),
+          platform: store.selectedPlatform || 'all',
+          genre: store.selectedGenre || 'all',
+          category: store.selectedCategory || 'all',
+          year: store.selectedYear || 'all',
+          sort: store.sortBy || 'popularity',
+          search: debouncedSearchQuery || '',
+          timeRange: store.timeRange || 'all',
+          gameMode: store.selectedGameMode || 'all',
+          theme: store.selectedTheme || 'all',
+          multiplayer: store.hasMultiplayer.toString()
+        });
 
-      // Add rating filters if set
-      if (store.minRating !== null) {
-        params.set('minRating', store.minRating.toString());
-      }
-      if (store.maxRating !== null) {
-        params.set('maxRating', store.maxRating.toString());
-      }
+        // Add rating filters if set
+        if (store.minRating !== null) {
+          params.set('minRating', store.minRating.toString());
+        }
+        if (store.maxRating !== null) {
+          params.set('maxRating', store.maxRating.toString());
+        }
 
-      const response = await fetch(`/api/games?${params.toString()}`);
-      
-      if (!response.ok) {
-        throw new Error(`Failed to fetch popular games: ${response.status}`);
+        const response = await fetch(`/api/games?${params.toString()}`, {
+          signal: controller.signal,
+        });
+        
+        clearTimeout(timeoutId);
+        
+        if (!response.ok) {
+          throw new Error(`Failed to fetch games: ${response.status} ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        
+        // Validate response
+        if (!data || !Array.isArray(data.games)) {
+          throw new Error('Invalid response format');
+        }
+        
+        return data;
+      } catch (error) {
+        clearTimeout(timeoutId);
+        throw new Error(handleMobileNetworkError(error as Error));
       }
-      
-      const data = await response.json();
-      
-      // Validate response
-      if (!data || !Array.isArray(data.games)) {
-        throw new Error('Invalid response format');
-      }
-      
-      return data;
     },
     getNextPageParam: (lastPage) => {
       // Simple pagination logic - if we have games and API says there's more
@@ -108,7 +110,7 @@ export function useGame(id: string | number) {
 }
 
 export function useGamesList(type: 'trending' | 'popular' | 'upcoming', limit: number = 10) {
-  return useQuery<GameResponse>({
+  return useQuery({
     queryKey: [`${type}-games`, limit],
     queryFn: async () => {
       const response = await fetch(`/api/games/${type}?limit=${limit}`);

@@ -17,7 +17,11 @@ export interface GameExtended extends BaseGame {
     id: string;
     url: string;
   }>;
-  websites?: any[];
+  websites?: Array<{
+    id: string | number;
+    url: string;
+    category?: number;
+  }>;
   involved_companies?: Array<{
     id: string | number;
     company?: {

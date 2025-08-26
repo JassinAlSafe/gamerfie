@@ -133,7 +133,7 @@ async function getInitialReviewsData() {
 
     // Fetch initial community reviews for instant load (manual join)
     const { data: reviewsData, error } = await supabase
-      .from("unified_reviews")
+      .from("reviews")
       .select(
         `
         id,

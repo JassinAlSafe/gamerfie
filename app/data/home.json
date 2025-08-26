@@ -22,11 +22,11 @@
       "link": "/explore"
     },
     {
-      "title": "Connect with Gamers",
-      "description": "Join a vibrant community of gamers, share experiences, and make new friends.",
+      "title": "Join Community Discussions",
+      "description": "Connect with fellow gamers in our community forum. Share tips, get help, and discuss your favorite games.",
       "icon": "Users",
       "iconColor": "text-cyan-500",
-      "link": "/explore"
+      "link": "/forum"
     },
     {
       "title": "Trending Games",

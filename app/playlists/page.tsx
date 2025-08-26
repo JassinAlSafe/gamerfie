@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { GameShowcase } from "@/components/explore/GameShowcase/GameShowcase";
 import { PlaylistService } from "@/services/playlistService";
 import { Playlist } from "@/types/playlist";
+import { formatDisplayDate } from "@/utils/date-formatting";
 
 export default function PlaylistsPage() {
   const [playlists, setPlaylists] = useState<Playlist[]>([]);
@@ -41,7 +42,7 @@ export default function PlaylistsPage() {
           playlistId={playlist.id}
           title={playlist.title}
           description={playlist.description}
-          date={new Date(playlist.createdAt).toLocaleDateString()}
+          date={formatDisplayDate(playlist.createdAt)}
           type={playlist.type}
         />
       ))}

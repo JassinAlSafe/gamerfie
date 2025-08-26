@@ -149,3 +149,78 @@ Authentication State (Zustand) ← Session Management ← User Profile Fetch
 - **Type Safety**: Ensure `tsc --noEmit` passes without errors
 - **Lint Compliance**: Maintain ESLint compliance with `npm run lint`
 - **Manual Testing**: Test complete auth flows (signup, signin, profile creation)
+
+### All-Games Page Improvements (Completed - Aug 2024)
+#### Issues Fixed:
+- ✅ **Fixed Pagination Duplication**: All-games page was returning same games for all pages due to missing pagination support
+- ✅ **Resolved CSP Violations**: RAWG background images causing service worker CSP violations fixed by prioritizing IGDB images
+- ✅ **Enhanced Infinite Scroll**: Proper accumulation of game pages for seamless user experience
+
+#### Technical Implementation:
+- **IGDB Service Enhancement**: Added pagination support to `IGDBService.getPopularGames(limit, page)` using IGDB's offset parameter
+- **Unified Service Architecture**: Created `UnifiedGameService.getPopularGamesPaginated()` method for proper pagination with metadata
+- **API Route Optimization**: Updated `/api/games` route to use paginated method for `category='all'` requests
+- **Background Image Strategy**: Modified hybrid merging to prioritize IGDB images over RAWG to prevent CSP violations
+
+#### Sustainability Analysis:
+- **Performance**: ✅ Excellent - API performs well even at page 100+ (tested with 2400+ games offset)
+- **Scalability**: ✅ Good - IGDB offset-based pagination scales linearly, no performance degradation
+- **Caching**: ✅ Optimal - React Query handles client-side caching, 5-30min server cache depending on mobile
+- **Memory Usage**: ✅ Efficient - Infinite scroll only loads data as needed, React Query manages memory
+- **Rate Limiting**: ✅ Protected - IGDB rate limiter prevents API abuse
+- **Error Handling**: ✅ Robust - Fallback mechanisms and proper error states
+
+#### Key Files Modified:
+- `services/igdb.ts`: Added page parameter to getPopularGames method
+- `services/unifiedGameService.ts`: Created getPopularGamesPaginated + fixed hybrid background image priority
+- `app/api/games/route.ts`: Updated category='all' logic to use paginated method
+- `hooks/IGDB/use-igdb.ts`: Updated to use new pagination signature
+
+#### Cleanup Completed:
+- **Removed Dead Files**: Cleaned up deleted files from git status (migration docs, temp files, old SQL dumps)
+- **Fixed Compatibility**: Updated all IGDBService.getPopularGames() calls to use new (limit, page) signature
+- **No Redundant Code**: All changes are necessary and integrated, no duplicate implementations
+
+### Explore Page Data Quality Improvements (Completed - Aug 2024)
+#### Issues Fixed:
+- ✅ **Corrected Data Sources**: Fixed explore page sections showing incorrect data from RAWG instead of properly configured IGDB
+- ✅ **Fixed "Recently Released"**: Now shows actual latest releases sorted by date (newest first) instead of old games with high ratings
+- ✅ **Improved "Coming Soon"**: Enhanced upcoming games filtering to show truly anticipated titles with proper date ranges
+
+#### Root Cause Analysis:
+- **Source Selection Issue**: UnifiedGameService was configured to prefer RAWG for `recent` and `upcoming` games instead of IGDB
+- **Data Quality Problem**: RAWG was returning 2025 future releases in "Recently Released" section, causing user confusion
+- **Logic Mismatch**: "Recently Released" was sorting by rating count rather than actual release date
+
+#### Technical Implementation:
+- **Updated Source Priority**: Modified `getOptimalSource()` in UnifiedGameService to prefer IGDB for all game categories
+- **Enhanced Date Logic**: Implemented dynamic date calculations that adapt to current system date
+- **Improved Sorting Strategy**: Changed "Recently Released" to sort by `first_release_date desc` for true chronological order
+
+#### Date Range Logic:
+```typescript
+// Recent Games (Actually Released)
+const now = Math.floor(Date.now() / 1000);
+const sixMonthsAgo = now - (6 * 30 * 24 * 60 * 60);
+// Filter: first_release_date >= sixMonthsAgo & first_release_date <= now
+// Sort: first_release_date desc (newest first)
+// Requirements: total_rating_count >= 3, cover != null
+
+// Upcoming Games (Future Releases)
+const oneWeekFromNow = now + (7 * 24 * 60 * 60);
+const eighteenMonthsAhead = now + (18 * 30 * 24 * 60 * 60);
+// Filter: first_release_date >= oneWeekFromNow & first_release_date <= eighteenMonthsAhead
+// Sort: hypes desc (most anticipated first)
+// Requirements: hypes >= 5, cover != null
+```
+
+#### Results:
+- **Recently Released**: Shows actual latest games (e.g., "The Rogue Prince of Persia" Aug 2025, "Mafia: The Old Country" Aug 2025)
+- **Coming Soon**: Shows properly anticipated upcoming titles (e.g., "Grand Theft Auto VI" 2026, "Vampire: The Masquerade - Bloodlines 2" 2025)
+- **Data Source**: All sections now consistently use IGDB (`dataSource: "igdb"`) for unified data quality
+- **Sustainability**: Dynamic date calculations ensure logic continues working correctly over time
+
+#### Key Files Modified:
+- `services/unifiedGameService.ts`: Updated optimal source selection to prefer IGDB
+- `services/igdb.ts`: Enhanced `getRecentGames()` and `getUpcomingGames()` with proper date logic and sorting
+- `app/api/explore/route.ts`: Added cache refresh mechanism for development testing

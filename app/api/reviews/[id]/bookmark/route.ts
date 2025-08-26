@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { authenticateRequest, isAuthResult } from "@/app/api/lib/auth";
+import { validateReviewId } from "@/lib/validations/review";
 
 export async function POST(
   _request: NextRequest,
@@ -11,8 +12,17 @@ export async function POST(
       return authResult; // Return the error response
     }
 
+    // Validate review ID
+    const reviewIdValidation = validateReviewId(params.id);
+    if (!reviewIdValidation.success) {
+      return NextResponse.json(
+        { error: reviewIdValidation.error },
+        { status: 400 }
+      );
+    }
+
     const { supabase } = authResult;
-    const reviewId = params.id;
+    const reviewId = reviewIdValidation.data;
 
     // Use the enhanced toggle_review_bookmark function
     const { data: result, error } = await supabase.rpc('toggle_review_bookmark', {
@@ -46,8 +56,17 @@ export async function GET(
       return NextResponse.json({ bookmarked: false }); // Return false if not authenticated
     }
 
+    // Validate review ID
+    const reviewIdValidation = validateReviewId(params.id);
+    if (!reviewIdValidation.success) {
+      return NextResponse.json(
+        { error: reviewIdValidation.error },
+        { status: 400 }
+      );
+    }
+
     const { user, supabase } = authResult;
-    const reviewId = params.id;
+    const reviewId = reviewIdValidation.data;
 
     const { data, error } = await supabase
       .from('review_bookmarks')

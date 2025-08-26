@@ -2,7 +2,7 @@ import { createClient } from "@/utils/supabase/server";
 import { NextResponse } from 'next/server';
 import { FriendActivity, ActivityType } from '../../../../../types/activity';
 
-const COOLDOWN_PERIODS: Record<ActivityType, number> = {
+const COOLDOWN_PERIODS: Partial<Record<ActivityType, number>> = {
   started_playing: 24 * 60 * 60, // 24 hours in seconds
   completed: 0, // No cooldown for completing games
   achievement: 5 * 60, // 5 minutes in seconds
@@ -12,7 +12,7 @@ const COOLDOWN_PERIODS: Record<ActivityType, number> = {
   game_status_updated: 0, // No cooldown
   achievement_unlocked: 5 * 60, // 5 minutes in seconds
   game_completed: 0, // No cooldown
-  review_added: 0 // No cooldown
+  review_added: 0, // No cooldown
 };
 
 export async function POST(request: Request) {
@@ -42,7 +42,7 @@ export async function POST(request: Request) {
     }
 
     // Check cooldown period
-    const cooldownPeriod = COOLDOWN_PERIODS[activity_type];
+    const cooldownPeriod = COOLDOWN_PERIODS[activity_type] || 0;
     if (cooldownPeriod > 0) {
       const { data: recentActivity } = await supabase
         .from('friend_activities')

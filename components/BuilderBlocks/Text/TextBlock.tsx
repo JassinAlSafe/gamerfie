@@ -4,6 +4,7 @@ import ASCIIText from "./ASCIIText/ASCIIText";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { useMemo } from "react";
+import { formatDisplayDate } from "@/utils/date-formatting";
 
 interface TextBlockProps {
   className?: string;
@@ -60,11 +61,15 @@ export function TextBlock({
     // Add more dynamic replacements as needed
     processedText = processedText.replace(
       /\{date\}/g,
-      new Date().toLocaleDateString()
+      formatDisplayDate(new Date())
     );
     processedText = processedText.replace(
       /\{time\}/g,
-      new Date().toLocaleTimeString()
+      new Date().toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true
+      })
     );
 
     return processedText;

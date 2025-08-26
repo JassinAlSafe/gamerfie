@@ -3,8 +3,9 @@ import { IGDBService } from "./igdb";
 import { RAWGService } from "./rawgService";
 import { createClient } from "@/utils/supabase/client";
 
-export type DataSource = 'igdb' | 'rawg' | 'auto';
-export type SearchStrategy = 'combined' | 'igdb_first' | 'rawg_first' | 'parallel';
+export type DataSource = 'igdb' | 'rawg' | 'auto' | 'hybrid' | 'smart';
+export type SearchStrategy = 'combined' | 'igdb_first' | 'rawg_first' | 'parallel' | 'smart' | 'hybrid';
+export type GameRequestType = 'trending' | 'popular' | 'upcoming' | 'recent' | 'search';
 
 interface SearchResult {
   games: Game[];
@@ -36,13 +37,13 @@ interface IGDBGameData {
   id: number;
   name: string;
   cover: { id: number; url: string; } | null;
-  platforms: any[];
-  genres: any[];
+  platforms: Array<{ id: number; name: string; category?: number; }>;
+  genres: Array<{ id: number; name: string; slug?: string; }>;
   summary?: string;
   first_release_date?: number;
   total_rating?: number;
-  screenshots?: any[];
-  videos?: any[];
+  screenshots?: Array<{ id: number; url: string; width?: number; height?: number; }>;
+  videos?: Array<{ id: number; video_id?: string; name?: string; }>;
 }
 
 export class UnifiedGameService {
@@ -52,25 +53,105 @@ export class UnifiedGameService {
   
   private static defaultPreferences: UserPreferences = {
     preferredSource: 'auto',
-    searchStrategy: 'combined',
+    searchStrategy: 'smart',
     cacheEnabled: true,
     fallbackEnabled: true
   };
+
+  /**
+   * API Health tracking for smart decisions
+   */
+  private static apiHealthStatus = {
+    igdb: { isHealthy: true, lastChecked: 0, failures: 0, avgResponseTime: 0 },
+    rawg: { isHealthy: true, lastChecked: 0, failures: 0, avgResponseTime: 0 }
+  };
+
+  /**
+   * Smart source selection based on request type and API strengths
+   */
+  private static getOptimalSource(requestType: GameRequestType): DataSource {
+    // Define each API's strengths based on data quality and performance analysis
+    const sourceStrengths: Record<GameRequestType, DataSource> = {
+      popular: 'igdb',    // IGDB has superior popularity metrics (total_rating_count, hypes)
+      trending: 'igdb',   // IGDB has better trending indicators (hypes, recent ratings)
+      upcoming: 'igdb',   // IGDB has better date filtering and quality control for upcoming games
+      recent: 'igdb',     // IGDB has better quality control for recent releases with fixed 2024 date range
+      search: 'igdb'      // IGDB has better metadata quality for search results
+    };
+    
+    const preferredSource = sourceStrengths[requestType];
+    
+    // Check API health - if preferred source is down, use alternative
+    const healthStatus = this.apiHealthStatus[preferredSource as keyof typeof this.apiHealthStatus];
+    if (!healthStatus?.isHealthy && Date.now() - healthStatus?.lastChecked < 5 * 60 * 1000) {
+      // If preferred source failed in last 5 minutes, use alternative
+      return preferredSource === 'igdb' ? 'rawg' : 'igdb';
+    }
+    
+    return preferredSource;
+  }
+
+  /**
+   * Update API health status based on request results
+   */
+  private static updateApiHealth(source: 'igdb' | 'rawg', success: boolean, responseTime: number = 0) {
+    const health = this.apiHealthStatus[source];
+    health.lastChecked = Date.now();
+    
+    if (success) {
+      health.failures = Math.max(0, health.failures - 1); // Recover gradually
+      health.isHealthy = health.failures < 3; // Mark healthy if less than 3 recent failures
+      health.avgResponseTime = (health.avgResponseTime + responseTime) / 2;
+    } else {
+      health.failures += 1;
+      health.isHealthy = health.failures < 3; // Mark unhealthy after 3 failures
+    }
+  }
 
   /**
    * Transform IGDB game data to match our Game interface
    */
   private static transformIGDBGame(igdbGame: IGDBGameData): Game {
     return {
-      ...igdbGame,
-      id: `igdb_${igdbGame.id}`, // Prefix with source to avoid ID conflicts
-      source_id: igdbGame.id.toString(), // Keep original ID for API calls
+      id: `igdb_${igdbGame.id}`,
+      name: igdbGame.name,
+      summary: igdbGame.summary,
+      cover_url: igdbGame.cover?.url,
+      rating: igdbGame.total_rating,
+      releaseDate: igdbGame.first_release_date ? new Date(igdbGame.first_release_date * 1000).toISOString().split('T')[0] : undefined,
+      platforms: igdbGame.platforms?.map(p => ({
+        id: p.id.toString(),
+        name: p.name,
+        slug: p.name.toLowerCase().replace(/\s+/g, '-'),
+        category: p.category?.toString()
+      })),
+      genres: igdbGame.genres?.map(g => ({
+        id: g.id.toString(),
+        name: g.name,
+        slug: g.slug || g.name.toLowerCase().replace(/\s+/g, '-')
+      })),
+      // Extended properties for IGDB
+      source_id: igdbGame.id.toString(),
+      dataSource: 'igdb' as const,
       cover: igdbGame.cover ? {
         id: igdbGame.cover.id.toString(),
         url: igdbGame.cover.url
-      } : undefined, // Transform IGDBCover | null to { id: string; url: string; } | undefined
-      dataSource: 'igdb' as const
-    } as Game;
+      } : undefined,
+      screenshots: igdbGame.screenshots?.map(s => ({
+        id: s.id.toString(),
+        url: s.url,
+        width: s.width,
+        height: s.height
+      })),
+      videos: igdbGame.videos?.map(v => ({
+        id: v.id.toString(),
+        video_id: v.video_id,
+        name: v.name || 'Untitled Video',
+        url: v.video_id ? `https://www.youtube.com/watch?v=${v.video_id}` : '',
+        thumbnail_url: v.video_id ? `https://img.youtube.com/vi/${v.video_id}/maxresdefault.jpg` : '',
+        provider: 'youtube' as const
+      }))
+    };
   }
 
   /**
@@ -212,50 +293,239 @@ export class UnifiedGameService {
   }
 
   /**
-   * Merge and deduplicate results from multiple sources
+   * Advanced hybrid merging that combines the best data from both sources for each game
    */
-  private static mergeResults(igdbResult?: SearchResult, rawgResult?: SearchResult): SearchResult {
+  private static hybridMergeGameData(igdbGame: Game, rawgGame: Game): Game {
+    // Create hybrid game by taking the best fields from each source
+    const hybridGame: Game = {
+      // Identifiers - prefer IGDB for consistency
+      id: igdbGame.id || rawgGame.id,
+      source_id: igdbGame.source_id || rawgGame.source_id,
+      
+      // Basic info - prefer IGDB for accuracy
+      name: igdbGame.name || rawgGame.name,
+      title: igdbGame.title || rawgGame.title,
+      
+      // Visual assets - prefer IGDB covers and backgrounds for better CSP compliance
+      cover_url: igdbGame.cover_url || rawgGame.cover_url,
+      background_image: igdbGame.background_image || rawgGame.background_image, // IGDB first to avoid CSP issues
+      cover: igdbGame.cover || rawgGame.cover,
+      
+      // Media arrays - merge both sources for comprehensive coverage
+      screenshots: [...(igdbGame.screenshots || []), ...(rawgGame.screenshots || [])].
+        filter((screenshot, index, array) => 
+          array.findIndex(s => s.url === screenshot.url) === index
+        ).slice(0, 10), // Limit to 10 unique screenshots
+      
+      artworks: [...(igdbGame.artworks || []), ...(rawgGame.artworks || [])].
+        filter((artwork, index, array) => 
+          array.findIndex(a => a.url === artwork.url) === index
+        ).slice(0, 8), // Limit to 8 unique artworks
+      
+      videos: [...(igdbGame.videos || []), ...(rawgGame.videos || [])].
+        filter((video, index, array) => 
+          array.findIndex(v => v.video_id === video.video_id) === index
+        ).slice(0, 6), // Limit to 6 unique videos
+      
+      // Ratings - prefer IGDB ratings, but use RAWG as fallback
+      rating: igdbGame.rating || rawgGame.rating,
+      total_rating: igdbGame.total_rating || rawgGame.total_rating,
+      total_rating_count: igdbGame.total_rating_count || rawgGame.total_rating_count,
+      metacritic: rawgGame.metacritic || igdbGame.metacritic, // RAWG often has more metacritic scores
+      
+      // Content - prefer longer, more detailed descriptions
+      summary: (igdbGame.summary && igdbGame.summary.length > (rawgGame.summary?.length || 0)) 
+        ? igdbGame.summary 
+        : (rawgGame.summary || igdbGame.summary),
+      storyline: igdbGame.storyline,
+      
+      // Metadata arrays - merge unique entries
+      platforms: this.mergeUniqueArrays(
+        igdbGame.platforms || [], 
+        rawgGame.platforms || [], 
+        'name'
+      ),
+      
+      genres: this.mergeUniqueArrays(
+        igdbGame.genres || [], 
+        rawgGame.genres || [], 
+        'name'
+      ),
+      
+      // Dates - prefer IGDB's more accurate dates
+      first_release_date: igdbGame.first_release_date || rawgGame.first_release_date,
+      releaseDate: igdbGame.releaseDate || rawgGame.releaseDate,
+      
+      // Company info - prefer IGDB's structured data
+      involved_companies: igdbGame.involved_companies,
+      
+      // IGDB-specific fields
+      hype_count: igdbGame.hype_count,
+      follows_count: igdbGame.follows_count,
+      
+      // Mark as hybrid source
+      dataSource: 'hybrid' as const
+    };
+    
+    return hybridGame;
+  }
+  
+  /**
+   * Merge arrays of objects, removing duplicates based on a key field
+   */
+  private static mergeUniqueArrays<T extends Record<string, any>>(
+    array1: T[], 
+    array2: T[], 
+    keyField: keyof T
+  ): T[] {
+    const merged = [...array1];
+    const seenKeys = new Set(array1.map(item => item[keyField]));
+    
+    array2.forEach(item => {
+      if (!seenKeys.has(item[keyField])) {
+        merged.push(item);
+        seenKeys.add(item[keyField]);
+      }
+    });
+    
+    return merged;
+  }
+  
+  /**
+   * Find matching games between two result sets based on name similarity
+   */
+  private static findMatchingGames(igdbGames: Game[], rawgGames: Game[]): Array<{
+    igdbGame: Game;
+    rawgGame: Game;
+    similarity: number;
+  }> {
+    const matches: Array<{ igdbGame: Game; rawgGame: Game; similarity: number }> = [];
+    const usedRawgIndices = new Set<number>();
+    
+    igdbGames.forEach(igdbGame => {
+      let bestMatch: { rawgGame: Game; similarity: number; index: number } | null = null;
+      
+      rawgGames.forEach((rawgGame, index) => {
+        if (usedRawgIndices.has(index)) return;
+        
+        const similarity = this.calculateSimilarity(
+          igdbGame.name.toLowerCase(), 
+          rawgGame.name.toLowerCase()
+        );
+        
+        if (similarity > 0.8 && (!bestMatch || similarity > bestMatch.similarity)) {
+          bestMatch = { rawgGame, similarity, index } as { rawgGame: Game; similarity: number; index: number };
+        }
+      });
+      
+      if (bestMatch) {
+        const match = bestMatch as { rawgGame: Game; similarity: number; index: number };
+        matches.push({
+          igdbGame,
+          rawgGame: match.rawgGame,
+          similarity: match.similarity
+        });
+        usedRawgIndices.add(match.index);
+      }
+    });
+    
+    return matches;
+  }
+  
+  /**
+   * Merge and deduplicate results from multiple sources with hybrid enhancement
+   */
+  private static mergeResults(igdbResult?: SearchResult, rawgResult?: SearchResult, useHybridMerging: boolean = false): SearchResult {
     const games: Game[] = [];
     const seenGameKeys = new Set<string>();
     const sources: DataSource[] = [];
     
-    // Add IGDB results first (higher quality metadata)
-    if (igdbResult) {
-      sources.push('igdb');
+    if (!igdbResult && !rawgResult) {
+      return {
+        games: [],
+        total: 0,
+        page: 1,
+        pageSize: 20,
+        hasNextPage: false,
+        hasPreviousPage: false,
+        sources: []
+      };
+    }
+    
+    // If hybrid merging is enabled and we have both sources
+    if (useHybridMerging && igdbResult && rawgResult) {
+      sources.push('hybrid');
+      
+      // Find matching games between sources for hybrid merging
+      const matches = this.findMatchingGames(igdbResult.games, rawgResult.games);
+      const usedIgdbIds = new Set<string>();
+      const usedRawgIds = new Set<string>();
+      
+      // Create hybrid games from matches
+      matches.forEach(({ igdbGame, rawgGame }) => {
+        const hybridGame = this.hybridMergeGameData(igdbGame, rawgGame);
+        games.push(hybridGame);
+        usedIgdbIds.add(igdbGame.id);
+        usedRawgIds.add(rawgGame.id);
+      });
+      
+      // Add remaining IGDB games (no matches found)
       igdbResult.games.forEach(game => {
-        const gameKey = `${game.dataSource || 'igdb'}_${game.source_id || game.id}`;
-        if (!seenGameKeys.has(gameKey)) {
-          seenGameKeys.add(gameKey);
+        if (!usedIgdbIds.has(game.id)) {
           games.push({ ...game, dataSource: 'igdb' });
         }
       });
-    }
-    
-    // Add RAWG results, avoiding duplicates
-    if (rawgResult) {
-      sources.push('rawg');
+      
+      // Add remaining RAWG games (no matches found)
       rawgResult.games.forEach(game => {
-        const gameKey = `${game.dataSource || 'rawg'}_${game.source_id || game.id}`;
-        
-        // Skip if we've already seen this exact game
-        if (seenGameKeys.has(gameKey)) {
-          return;
-        }
-        
-        // Try to match by name similarity for cross-source deduplication
-        const isDuplicate = games.some(existingGame => 
-          this.calculateSimilarity(existingGame.name.toLowerCase(), game.name.toLowerCase()) > 0.85
-        );
-        
-        if (!isDuplicate) {
-          seenGameKeys.add(gameKey);
+        if (!usedRawgIds.has(game.id)) {
           games.push({ ...game, dataSource: 'rawg' });
         }
       });
+      
+    } else {
+      // Standard merging logic (original behavior)
+      
+      // Add IGDB results first (higher quality metadata)
+      if (igdbResult) {
+        sources.push('igdb');
+        igdbResult.games.forEach(game => {
+          const gameKey = `${game.dataSource || 'igdb'}_${game.source_id || game.id}`;
+          if (!seenGameKeys.has(gameKey)) {
+            seenGameKeys.add(gameKey);
+            games.push({ ...game, dataSource: 'igdb' });
+          }
+        });
+      }
+      
+      // Add RAWG results, avoiding duplicates
+      if (rawgResult) {
+        sources.push('rawg');
+        rawgResult.games.forEach(game => {
+          const gameKey = `${game.dataSource || 'rawg'}_${game.source_id || game.id}`;
+          
+          // Skip if we've already seen this exact game
+          if (seenGameKeys.has(gameKey)) {
+            return;
+          }
+          
+          // Try to match by name similarity for cross-source deduplication
+          const isDuplicate = games.some(existingGame => 
+            this.calculateSimilarity(existingGame.name.toLowerCase(), game.name.toLowerCase()) > 0.85
+          );
+          
+          if (!isDuplicate) {
+            seenGameKeys.add(gameKey);
+            games.push({ ...game, dataSource: 'rawg' });
+          }
+        });
+      }
     }
     
-    // Sort by relevance (IGDB first, then by rating)
+    // Sort by relevance (hybrid first, then IGDB, then RAWG, then by rating)
     games.sort((a, b) => {
+      if (a.dataSource === 'hybrid' && b.dataSource !== 'hybrid') return -1;
+      if (a.dataSource !== 'hybrid' && b.dataSource === 'hybrid') return 1;
       if (a.dataSource === 'igdb' && b.dataSource === 'rawg') return -1;
       if (a.dataSource === 'rawg' && b.dataSource === 'igdb') return 1;
       return (b.total_rating || 0) - (a.total_rating || 0);
@@ -506,200 +776,339 @@ export class UnifiedGameService {
   }
 
   /**
-   * Get popular games with fallback strategy
+   * Smart game fetching with optimal source selection and health monitoring
+   */
+  private static async fetchGamesSmartly(
+    requestType: GameRequestType,
+    limit: number,
+    source?: DataSource
+  ): Promise<Game[]> {
+    const preferences = await this.getUserPreferences();
+    let targetSource = source || preferences.preferredSource;
+    
+    // If source is 'auto' or 'smart', use intelligent selection
+    if (targetSource === 'auto' || targetSource === 'smart') {
+      targetSource = this.getOptimalSource(requestType);
+    }
+    
+    const startTime = Date.now();
+    
+    try {
+      let games: Game[] = [];
+      
+      if (targetSource === 'igdb') {
+        switch (requestType) {
+          case 'popular':
+            games = await IGDBService.getPopularGames(limit, 1); // Always use page 1 for category requests
+            break;
+          case 'trending':
+            games = await IGDBService.getTrendingGames(limit);
+            break;
+          case 'upcoming':
+            games = await IGDBService.getUpcomingGames(limit);
+            break;
+          case 'recent':
+            games = await IGDBService.getRecentGames(limit);
+            break;
+        }
+        
+        // Mark success and update health
+        this.updateApiHealth('igdb', true, Date.now() - startTime);
+        
+        return games.map(game => ({
+          ...game,
+          source_id: game.id.replace('igdb_', ''),
+          dataSource: 'igdb' as const
+        }));
+        
+      } else if (targetSource === 'rawg') {
+        let result;
+        switch (requestType) {
+          case 'popular':
+            result = await RAWGService.getPopularGames(1, limit);
+            break;
+          case 'trending':
+            result = await RAWGService.getTrendingGames(1, limit);
+            break;
+          case 'upcoming':
+            result = await RAWGService.getUpcomingGames(1, limit);
+            break;
+          case 'recent':
+            result = await RAWGService.getRecentGames(1, limit);
+            break;
+        }
+        
+        // Mark success and update health
+        this.updateApiHealth('rawg', true, Date.now() - startTime);
+        
+        return result?.games.map(game => ({
+          ...game,
+          id: `rawg_${game.id.replace('rawg_', '')}`,
+          source_id: game.id.replace('rawg_', ''),
+          dataSource: 'rawg' as const
+        })) || [];
+      }
+      
+      return [];
+      
+    } catch (primaryError) {
+      console.warn(`${targetSource} failed for ${requestType}:`, primaryError);
+      
+      // Mark failure and update health
+      this.updateApiHealth(targetSource as 'igdb' | 'rawg', false);
+      
+      // Try fallback if enabled
+      if (preferences.fallbackEnabled) {
+        const fallbackSource = targetSource === 'igdb' ? 'rawg' : 'igdb';
+        console.log(`Falling back to ${fallbackSource} for ${requestType}`);
+        
+        try {
+          return await this.fetchGamesSmartly(requestType, limit, fallbackSource);
+        } catch (fallbackError) {
+          console.error(`Fallback to ${fallbackSource} also failed:`, fallbackError);
+          return [];
+        }
+      }
+      
+      return [];
+    }
+  }
+
+  /**
+   * Hybrid fetching that combines data from both sources for comprehensive results
+   */
+  private static async fetchGamesHybrid(
+    requestType: GameRequestType,
+    limit: number
+  ): Promise<Game[]> {
+    const startTime = Date.now();
+    
+    try {
+      // Fetch from both sources in parallel for hybrid merging
+      const [igdbResult, rawgResult] = await Promise.allSettled([
+        // IGDB fetch
+        (async () => {
+          let games: Game[] = [];
+          switch (requestType) {
+            case 'popular':
+              games = await IGDBService.getPopularGames(Math.ceil(limit * 0.7), 1); // 70% from IGDB, page 1
+              break;
+            case 'trending':
+              games = await IGDBService.getTrendingGames(Math.ceil(limit * 0.7));
+              break;
+            case 'upcoming':
+              games = await IGDBService.getUpcomingGames(Math.ceil(limit * 0.7));
+              break;
+            case 'recent':
+              games = await IGDBService.getRecentGames(Math.ceil(limit * 0.7));
+              break;
+          }
+          
+          this.updateApiHealth('igdb', true, Date.now() - startTime);
+          return {
+            games: games.map(game => ({
+              ...game,
+              source_id: game.id.replace('igdb_', ''),
+              dataSource: 'igdb' as const
+            })),
+            total: games.length,
+            page: 1,
+            pageSize: games.length,
+            hasNextPage: false,
+            hasPreviousPage: false,
+            sources: ['igdb' as const]
+          };
+        })(),
+        
+        // RAWG fetch
+        (async () => {
+          let result;
+          switch (requestType) {
+            case 'popular':
+              result = await RAWGService.getPopularGames(1, Math.ceil(limit * 0.5)); // 50% from RAWG
+              break;
+            case 'trending':
+              result = await RAWGService.getTrendingGames(1, Math.ceil(limit * 0.5));
+              break;
+            case 'upcoming':
+              result = await RAWGService.getUpcomingGames(1, Math.ceil(limit * 0.5));
+              break;
+            case 'recent':
+              result = await RAWGService.getRecentGames(1, Math.ceil(limit * 0.5));
+              break;
+          }
+          
+          this.updateApiHealth('rawg', true, Date.now() - startTime);
+          return {
+            ...result,
+            total: result?.total || 0,
+            page: result?.page || 1,
+            pageSize: result?.pageSize || limit,
+            hasNextPage: result?.hasNextPage || false,
+            hasPreviousPage: result?.hasPreviousPage || false,
+            games: result?.games.map(game => ({
+              ...game,
+              id: `rawg_${game.id.replace('rawg_', '')}`,
+              source_id: game.id.replace('rawg_', ''),
+              dataSource: 'rawg' as const
+            })) || [],
+            sources: ['rawg' as DataSource]
+          };
+        })()
+      ]);
+      
+      // Process results
+      const igdbData = igdbResult.status === 'fulfilled' ? igdbResult.value : undefined;
+      const rawgData = rawgResult.status === 'fulfilled' ? rawgResult.value : undefined;
+      
+      // Handle failures
+      if (igdbResult.status === 'rejected') {
+        console.warn(`IGDB failed for hybrid ${requestType}:`, igdbResult.reason);
+        this.updateApiHealth('igdb', false);
+      }
+      if (rawgResult.status === 'rejected') {
+        console.warn(`RAWG failed for hybrid ${requestType}:`, rawgResult.reason);
+        this.updateApiHealth('rawg', false);
+      }
+      
+      // If both failed, return empty array
+      if (!igdbData && !rawgData) {
+        console.error(`All sources failed for hybrid ${requestType}`);
+        return [];
+      }
+      
+      // Merge results with hybrid enhancement
+      const mergedResult = this.mergeResults(igdbData, rawgData, true); // Enable hybrid merging
+      
+      console.log(`Hybrid ${requestType} fetch completed:`, {
+        igdbGames: igdbData?.games.length || 0,
+        rawgGames: rawgData?.games.length || 0,
+        hybridGames: mergedResult.games.filter(g => g.dataSource === 'hybrid').length,
+        totalGames: mergedResult.games.length,
+        sources: mergedResult.sources
+      });
+      
+      return mergedResult.games.slice(0, limit);
+      
+    } catch (error) {
+      console.error(`Hybrid fetch failed for ${requestType}:`, error);
+      return [];
+    }
+  }
+  
+  /**
+   * Get popular games with smart source selection and optional hybrid merging
    */
   static async getPopularGames(limit: number = 10, source?: DataSource): Promise<Game[]> {
+    if (source === 'hybrid') {
+      return this.fetchGamesHybrid('popular', limit);
+    }
+    return this.fetchGamesSmartly('popular', limit, source);
+  }
+
+  /**
+   * Get paginated popular games for the all-games page
+   */
+  static async getPopularGamesPaginated(
+    page: number = 1,
+    limit: number = 20,
+    source?: DataSource
+  ): Promise<SearchResult> {
     const preferences = await this.getUserPreferences();
-    const targetSource = source || preferences.preferredSource;
+    let targetSource = source || preferences.preferredSource;
+    
+    // If source is 'auto', use IGDB for popular games as it has better popularity metrics
+    if (targetSource === 'auto') {
+      targetSource = 'igdb';
+    }
     
     try {
-      if (targetSource === 'igdb' || targetSource === 'auto') {
-        const games = await IGDBService.getPopularGames(limit);
-        // IGDBService already returns games with igdb_ prefix, no need to add it again
-        return games.map(game => ({
-          ...game,
-          source_id: game.id.replace('igdb_', ''), // Extract numeric ID for source_id
-          dataSource: 'igdb' as const
-        }));
-      } else {
-        const result = await RAWGService.getPopularGames(1, limit);
-        // Ensure consistent ID prefixing for RAWG games
-        return result.games.map(game => ({
-          ...game,
-          id: `rawg_${game.id}`,
-          source_id: game.id,
-          dataSource: 'rawg' as const
-        }));
-      }
-    } catch (primaryError) {
-      if (preferences.fallbackEnabled && targetSource !== 'rawg') {
-        console.warn('Primary source failed, falling back:', primaryError);
-        try {
-          const result = await RAWGService.getPopularGames(1, limit);
-          // Ensure consistent ID prefixing for RAWG fallback games
-          return result.games.map(game => ({
+      let games: Game[] = [];
+      
+      if (targetSource === 'igdb') {
+        games = await IGDBService.getPopularGames(limit, page);
+        
+        return {
+          games: games.map(game => ({
             ...game,
-            id: `rawg_${game.id.replace('rawg_', '')}`, // Avoid double prefixing
+            source_id: game.id.replace('igdb_', ''),
+            dataSource: 'igdb' as const
+          })),
+          total: 25000, // Reasonable estimate for total popular games
+          page,
+          pageSize: limit,
+          hasNextPage: page < Math.ceil(25000 / limit),
+          hasPreviousPage: page > 1,
+          sources: ['igdb']
+        };
+      } else if (targetSource === 'rawg') {
+        const result = await RAWGService.getPopularGames(page, limit);
+        
+        return {
+          ...result,
+          games: result?.games.map(game => ({
+            ...game,
+            id: `rawg_${game.id.replace('rawg_', '')}`,
             source_id: game.id.replace('rawg_', ''),
             dataSource: 'rawg' as const
-          }));
-        } catch (fallbackError) {
-          console.error('Fallback also failed:', fallbackError);
-          throw primaryError;
-        }
+          })) || [],
+          sources: ['rawg']
+        };
       }
-      throw primaryError;
+      
+      // Fallback to empty result
+      return {
+        games: [],
+        total: 0,
+        page,
+        pageSize: limit,
+        hasNextPage: false,
+        hasPreviousPage: false,
+        sources: []
+      };
+      
+    } catch (error) {
+      console.error('Paginated popular games fetch failed:', error);
+      return {
+        games: [],
+        total: 0,
+        page,
+        pageSize: limit,
+        hasNextPage: false,
+        hasPreviousPage: false,
+        sources: []
+      };
     }
   }
 
   /**
-   * Get trending games with fallback strategy
+   * Get trending games with smart source selection and optional hybrid merging
    */
   static async getTrendingGames(limit: number = 10, source?: DataSource): Promise<Game[]> {
-    const preferences = await this.getUserPreferences();
-    const targetSource = source || preferences.preferredSource;
-    
-    try {
-      if (targetSource === 'igdb' || targetSource === 'auto') {
-        const games = await IGDBService.getTrendingGames(limit);
-        // IGDBService already returns games with igdb_ prefix, no need to add it again
-        return games.map(game => ({
-          ...game,
-          source_id: game.id.replace('igdb_', ''), // Extract numeric ID for source_id
-          dataSource: 'igdb' as const
-        }));
-      } else {
-        const result = await RAWGService.getTrendingGames(1, limit);
-        // Ensure consistent ID prefixing for RAWG games
-        return result.games.map(game => ({
-          ...game,
-          id: `rawg_${game.id.replace('rawg_', '')}`, // Avoid double prefixing
-          source_id: game.id.replace('rawg_', ''),
-          dataSource: 'rawg' as const
-        }));
-      }
-    } catch (primaryError) {
-      if (preferences.fallbackEnabled && targetSource !== 'rawg') {
-        try {
-          const result = await RAWGService.getTrendingGames(1, limit);
-          console.log(`Fallback successful: fetched ${result.games.length} trending games from RAWG`);
-          // Ensure consistent ID prefixing for RAWG fallback games
-          return result.games.map(game => ({
-            ...game,
-            id: `rawg_${game.id.replace('rawg_', '')}`, // Avoid double prefixing
-            source_id: game.id.replace('rawg_', ''),
-            dataSource: 'rawg' as const
-          }));
-        } catch (fallbackError) {
-          console.error('Trending games: All sources failed, returning empty array');
-          return [];
-        }
-      }
-      
-      // If no fallback is enabled or fallback failed, return empty array
-      console.error('Trending games: No fallback available, returning empty array');
-      return [];
+    if (source === 'hybrid') {
+      return this.fetchGamesHybrid('trending', limit);
     }
+    return this.fetchGamesSmartly('trending', limit, source);
   }
 
   /**
-   * Get upcoming games with fallback strategy
+   * Get upcoming games with smart source selection and optional hybrid merging
    */
   static async getUpcomingGames(limit: number = 10, source?: DataSource): Promise<Game[]> {
-    const preferences = await this.getUserPreferences();
-    const targetSource = source || preferences.preferredSource;
-    
-    try {
-      if (targetSource === 'igdb' || targetSource === 'auto') {
-        const games = await IGDBService.getUpcomingGames(limit);
-        // IGDBService already returns games with igdb_ prefix, no need to add it again
-        return games.map(game => ({
-          ...game,
-          source_id: game.id.replace('igdb_', ''), // Extract numeric ID for source_id
-          dataSource: 'igdb' as const
-        }));
-      } else {
-        const result = await RAWGService.getUpcomingGames(1, limit);
-        // Ensure consistent ID prefixing for RAWG games
-        return result.games.map(game => ({
-          ...game,
-          id: `rawg_${game.id.replace('rawg_', '')}`, // Avoid double prefixing
-          source_id: game.id.replace('rawg_', ''),
-          dataSource: 'rawg' as const
-        }));
-      }
-    } catch (primaryError) {
-      if (preferences.fallbackEnabled && targetSource !== 'rawg') {
-        try {
-          const result = await RAWGService.getUpcomingGames(1, limit);
-          console.log(`Fallback successful: fetched ${result.games.length} upcoming games from RAWG`);
-          // Ensure consistent ID prefixing for RAWG fallback games
-          return result.games.map(game => ({
-            ...game,
-            id: `rawg_${game.id.replace('rawg_', '')}`, // Avoid double prefixing
-            source_id: game.id.replace('rawg_', ''),
-            dataSource: 'rawg' as const
-          }));
-        } catch (fallbackError) {
-          console.error('Upcoming games: All sources failed, returning empty array');
-          return [];
-        }
-      }
-      
-      // If no fallback is enabled or fallback failed, return empty array
-      console.error('Upcoming games: No fallback available, returning empty array');
-      return [];
+    if (source === 'hybrid') {
+      return this.fetchGamesHybrid('upcoming', limit);
     }
+    return this.fetchGamesSmartly('upcoming', limit, source);
   }
 
   /**
-   * Get recent games with fallback strategy
+   * Get recent games with smart source selection and optional hybrid merging
    */
   static async getRecentGames(limit: number = 10, source?: DataSource): Promise<Game[]> {
-    const preferences = await this.getUserPreferences();
-    const targetSource = source || preferences.preferredSource;
-    
-    try {
-      if (targetSource === 'igdb' || targetSource === 'auto') {
-        const games = await IGDBService.getRecentGames(limit);
-        // IGDBService already returns games with igdb_ prefix, no need to add it again
-        return games.map(game => ({
-          ...game,
-          source_id: game.id.replace('igdb_', ''), // Extract numeric ID for source_id
-          dataSource: 'igdb' as const
-        }));
-      } else {
-        const result = await RAWGService.getRecentGames(1, limit);
-        // Ensure consistent ID prefixing for RAWG games
-        return result.games.map(game => ({
-          ...game,
-          id: `rawg_${game.id.replace('rawg_', '')}`, // Avoid double prefixing
-          source_id: game.id.replace('rawg_', ''),
-          dataSource: 'rawg' as const
-        }));
-      }
-    } catch (primaryError) {
-      if (preferences.fallbackEnabled && targetSource !== 'rawg') {
-        try {
-          const result = await RAWGService.getRecentGames(1, limit);
-          console.log(`Fallback successful: fetched ${result.games.length} recent games from RAWG`);
-          // Ensure consistent ID prefixing for RAWG fallback games
-          return result.games.map(game => ({
-            ...game,
-            id: `rawg_${game.id.replace('rawg_', '')}`, // Avoid double prefixing
-            source_id: game.id.replace('rawg_', ''),
-            dataSource: 'rawg' as const
-          }));
-        } catch (fallbackError) {
-          console.error('Recent games: All sources failed, returning empty array');
-          return [];
-        }
-      }
-      
-      // If no fallback is enabled or fallback failed, return empty array
-      console.error('Recent games: No fallback available, returning empty array');
-      return [];
+    if (source === 'hybrid') {
+      return this.fetchGamesHybrid('recent', limit);
     }
+    return this.fetchGamesSmartly('recent', limit, source);
   }
 
   /**

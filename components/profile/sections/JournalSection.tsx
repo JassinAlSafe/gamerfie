@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BookText } from "lucide-react";
 import Link from "next/link";
 import type { JournalEntry } from "@/types/journal";
+import { formatDisplayDate } from "@/utils/date-formatting";
 
 interface JournalSectionProps {
   entries: JournalEntry[];
@@ -39,7 +40,7 @@ export const JournalSection: React.FC<JournalSectionProps> = ({ entries }) => {
                 </p>
                 <div className="flex items-center justify-between mt-2">
                   <span className="text-xs text-gray-400">
-                    {new Date(entry.createdAt).toLocaleDateString()}
+                    {formatDisplayDate(entry.createdAt)}
                   </span>
                   <span className="text-xs px-2 py-0.5 rounded bg-gray-800 text-gray-300">
                     {entry.type === "progress" && "Progress"}

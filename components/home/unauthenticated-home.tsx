@@ -1,15 +1,18 @@
 "use client";
 
+import { Suspense, lazy } from "react";
 import { SparklesCore } from "@/components/ui/sparkles";
 import { TracingBeam } from "@/components/ui/tracing-beam";
 import { ClientOnly } from "@/components/ui/client-only";
 import { HeroSection } from "./sections/HeroSection";
-import { GameShowcase } from "./sections/GameShowcase";
-import { TestimonialsSection } from "./sections/TestimonialsSection";
-import { FeaturesSection } from "./sections/FeaturesSection";
-import { FinalSection } from "./sections/FinalSection";
 import homeData from "@/app/data/home.json";
 import { HomePageData } from "@/types/home";
+
+// Lazy load sections that appear later in the page for better initial load performance
+const GameShowcase = lazy(() => import("./sections/GameShowcase").then(m => ({ default: m.GameShowcase })));
+const TestimonialsSection = lazy(() => import("./sections/TestimonialsSection").then(m => ({ default: m.TestimonialsSection })));
+const FeaturesSection = lazy(() => import("./sections/FeaturesSection").then(m => ({ default: m.FeaturesSection })));
+const FinalSection = lazy(() => import("./sections/FinalSection").then(m => ({ default: m.FinalSection })));
 
 export function UnauthenticatedHome() {
   const typedHomeData = homeData as HomePageData;
@@ -36,11 +39,21 @@ export function UnauthenticatedHome() {
       <div className="relative z-10">
         <TracingBeam className="px-4 sm:px-6">
           <div className="max-w-7xl mx-auto space-y-8 sm:space-y-12 lg:space-y-16">
-            <HeroSection stats={typedHomeData.stats} />
-            <GameShowcase />
-            <TestimonialsSection />
-            <FeaturesSection features={typedHomeData.features} />
-            <FinalSection />
+            <Suspense fallback={<div className="h-[calc(100vh-64px)] flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500"></div></div>}>
+              <HeroSection stats={typedHomeData.stats} />
+            </Suspense>
+            <Suspense fallback={<div className="h-64 bg-white/5 rounded-lg animate-pulse"></div>}>
+              <GameShowcase />
+            </Suspense>
+            <Suspense fallback={<div className="h-48 bg-white/5 rounded-lg animate-pulse"></div>}>
+              <TestimonialsSection />
+            </Suspense>
+            <Suspense fallback={<div className="h-96 bg-white/5 rounded-lg animate-pulse"></div>}>
+              <FeaturesSection features={typedHomeData.features} />
+            </Suspense>
+            <Suspense fallback={<div className="h-32 bg-white/5 rounded-lg animate-pulse"></div>}>
+              <FinalSection />
+            </Suspense>
           </div>
         </TracingBeam>
       </div>

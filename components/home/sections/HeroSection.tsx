@@ -1,14 +1,18 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { TextGenerateEffect } from "@/components/ui/text-generate-effect";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { AnimatedCard } from "@/components/ui/animated-card";
 import { ArrowRight, Play, Trophy, Users, Star, BarChart3 } from "lucide-react";
 import Link from "next/link";
 import { Stat } from "@/types/home";
 import { useUIStore } from "@/stores/useUIStore";
+import { isMobileDevice } from "@/utils/mobile-detection";
+import { useMemo, lazy, Suspense } from "react";
+
+// Lazy load heavy components for better performance
+const TextGenerateEffect = lazy(() => import("@/components/ui/text-generate-effect").then(m => ({ default: m.TextGenerateEffect })));
+const AnimatedCard = lazy(() => import("@/components/ui/animated-card").then(m => ({ default: m.AnimatedCard })));
 
 interface HeroSectionProps {
   stats: Stat[];
@@ -21,11 +25,21 @@ export function HeroSection({ stats }: HeroSectionProps) {
   const minHeightClass = isBetaBannerVisible 
     ? "min-h-[calc(100vh-108px)] sm:min-h-[calc(100vh-112px)]" 
     : "min-h-[calc(100vh-64px)]";
+    
+  // Performance optimization: Only render floating elements on desktop
+  const shouldRenderFloatingElements = useMemo(() => {
+    return !isMobileDevice();
+  }, []);
 
   return (
-    <section className={`${minHeightClass} flex flex-col justify-center items-center text-center py-8 sm:py-12 lg:py-16 xl:py-20 relative px-4 sm:px-6`}>
-      {/* Floating Elements - Hidden on mobile for better performance */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none hidden sm:block">
+    <section 
+      className={`${minHeightClass} flex flex-col justify-center items-center text-center py-8 sm:py-12 lg:py-16 xl:py-20 relative px-4 sm:px-6`}
+      aria-label="Hero section - Start your gaming journey"
+      role="banner"
+    >
+      {/* Floating Elements - Only rendered on desktop for performance */}
+      {shouldRenderFloatingElements && (
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
         {[
           { icon: "🎮", top: "20%", left: "10%", delay: 0, duration: 6 },
           { icon: "🔥", top: "30%", right: "15%", delay: 1, duration: 8 },
@@ -57,7 +71,8 @@ export function HeroSection({ stats }: HeroSectionProps) {
             {item.icon}
           </motion.div>
         ))}
-      </div>
+        </div>
+      )}
 
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -81,6 +96,7 @@ export function HeroSection({ stats }: HeroSectionProps) {
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1, delay: 0.3 }}
+          aria-label="Main heading: Track, Connect, Conquer your gaming experience"
         >
           <motion.span 
             className="block bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-400 bg-clip-text text-transparent"
@@ -111,10 +127,16 @@ export function HeroSection({ stats }: HeroSectionProps) {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.6 }}
         >
-          <TextGenerateEffect
-            words="Your ultimate gaming companion. Track your progress, connect with fellow gamers, and unlock achievements across your entire gaming library."
-            className="text-gray-300 text-base sm:text-lg md:text-xl leading-relaxed"
-          />
+          <Suspense fallback={
+            <p className="text-gray-300 text-base sm:text-lg md:text-xl leading-relaxed">
+              Your ultimate gaming companion. Track your progress, connect with fellow gamers, and unlock achievements across your entire gaming library.
+            </p>
+          }>
+            <TextGenerateEffect
+              words="Your ultimate gaming companion. Track your progress, connect with fellow gamers, and unlock achievements across your entire gaming library."
+              className="text-gray-300 text-base sm:text-lg md:text-xl leading-relaxed"
+            />
+          </Suspense>
         </motion.div>
 
         <motion.div
@@ -122,6 +144,8 @@ export function HeroSection({ stats }: HeroSectionProps) {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.8 }}
           className="flex flex-col sm:flex-row gap-4 justify-center mt-12"
+          role="group"
+          aria-label="Call to action buttons"
         >
           <Link href="/signin">
             <motion.div
@@ -131,6 +155,7 @@ export function HeroSection({ stats }: HeroSectionProps) {
               <Button
                 size="lg"
                 className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-8 py-4 h-auto text-lg font-semibold rounded-xl shadow-lg shadow-purple-500/20 hover:shadow-purple-500/40 hover:shadow-xl transition-all duration-300 relative overflow-hidden group border border-purple-500/20 hover:border-purple-400/30"
+                aria-label="Sign up to start your gaming journey"
               >
                 <span className="relative z-10">Start Your Journey</span>
                 <ArrowRight className="ml-2 h-5 w-5 relative z-10 group-hover:translate-x-1 transition-transform" />
@@ -147,6 +172,7 @@ export function HeroSection({ stats }: HeroSectionProps) {
                 size="lg"
                 variant="outline"
                 className="border-2 border-purple-500/50 text-purple-300 hover:bg-purple-500/10 hover:border-purple-400/70 px-8 py-4 h-auto text-lg font-semibold rounded-xl transition-all duration-300 backdrop-blur-sm bg-black/20 hover:shadow-lg hover:shadow-purple-500/10"
+                aria-label="Explore available games without signing up"
               >
                 <Play className="mr-2 h-5 w-5" />
                 Explore Games
@@ -161,6 +187,8 @@ export function HeroSection({ stats }: HeroSectionProps) {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 1.2 }}
           className="flex flex-wrap justify-center gap-3 md:gap-4 mt-12 lg:mt-16 text-sm text-gray-400"
+          role="list"
+          aria-label="Key platform features"
         >
           {[
             { icon: Trophy, text: "Track Achievements" },
@@ -175,6 +203,8 @@ export function HeroSection({ stats }: HeroSectionProps) {
                 className="flex items-center space-x-2 px-3 py-2 rounded-full bg-gray-900/30 backdrop-blur-sm border border-gray-800/50"
                 whileHover={{ scale: 1.05, backgroundColor: "rgba(139, 92, 246, 0.1)" }}
                 transition={{ duration: 0.2 }}
+                role="listitem"
+                aria-label={`Feature: ${feature.text}`}
               >
                 <Icon className="h-4 w-4 text-purple-400" />
                 <span>{feature.text}</span>
@@ -190,6 +220,8 @@ export function HeroSection({ stats }: HeroSectionProps) {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8, delay: 0.8 }}
         className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 mt-20 lg:mt-24 w-full max-w-6xl"
+        role="region"
+        aria-label="Platform statistics"
       >
         {stats.map((stat, index) => (
           <motion.div
@@ -198,19 +230,33 @@ export function HeroSection({ stats }: HeroSectionProps) {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.9 + index * 0.1 }}
           >
-            <AnimatedCard variant="stat" className="p-6 md:p-8 text-center h-full">
-              <div className="space-y-3">
-                <div className="text-2xl md:text-4xl lg:text-5xl font-bold bg-gradient-to-br from-purple-400 via-pink-400 to-cyan-400 bg-clip-text text-transparent leading-tight">
-                  {stat.value}
+            <Suspense fallback={
+              <div className="p-6 md:p-8 text-center h-full bg-white/5 backdrop-blur-sm border border-white/10 rounded-lg">
+                <div className="space-y-3">
+                  <div className="text-2xl md:text-4xl lg:text-5xl font-bold bg-gradient-to-br from-purple-400 via-pink-400 to-cyan-400 bg-clip-text text-transparent leading-tight">
+                    {stat.value}
+                  </div>
+                  <div className="text-gray-300 text-sm md:text-base font-medium tracking-wide">
+                    {stat.label}
+                  </div>
                 </div>
-                <div className="text-gray-300 text-sm md:text-base font-medium tracking-wide">
-                  {stat.label}
-                </div>
+                <div className="absolute top-3 right-3 w-2 h-2 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full opacity-60" />
               </div>
-              
-              {/* Decorative element */}
-              <div className="absolute top-3 right-3 w-2 h-2 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full opacity-60" />
-            </AnimatedCard>
+            }>
+              <AnimatedCard variant="stat" className="p-6 md:p-8 text-center h-full">
+                <div className="space-y-3">
+                  <div className="text-2xl md:text-4xl lg:text-5xl font-bold bg-gradient-to-br from-purple-400 via-pink-400 to-cyan-400 bg-clip-text text-transparent leading-tight">
+                    {stat.value}
+                  </div>
+                  <div className="text-gray-300 text-sm md:text-base font-medium tracking-wide">
+                    {stat.label}
+                  </div>
+                </div>
+                
+                {/* Decorative element */}
+                <div className="absolute top-3 right-3 w-2 h-2 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full opacity-60" />
+              </AnimatedCard>
+            </Suspense>
           </motion.div>
         ))}
       </motion.div>

@@ -69,7 +69,7 @@ export function usePopularGames(limit: number = 10) {
   return useQuery<Game[]>({
     queryKey: ['popular-games', limit],
     queryFn: async () => {
-      const games = await IGDBService.getPopularGames(limit);
+      const games = await IGDBService.getPopularGames(limit, 1); // Always page 1 for this hook
       return games.map((game: any) => transformIGDBGame(game));
     },
     staleTime: STALE_TIME

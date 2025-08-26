@@ -217,6 +217,7 @@ export const useFriendsStore = create<FriendsStore>((set, get) => {
             details: activity.details || {},
             reactions: (activity.reactions || []).map((reaction: ReactionData) => ({
               id: reaction.id,
+              reaction_type: reaction.emoji as any, // Map emoji to reaction_type for compatibility
               activity_id: activity.id,
               user_id: reaction.user_id,
               emoji: reaction.emoji || '👍',
