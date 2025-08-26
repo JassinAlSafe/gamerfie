@@ -28,7 +28,7 @@ export function ForumPageClient({ initialCategories, initialStats }: ForumPageCl
 
   const filteredCategories = categories.filter(category =>
     category.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    category.description.toLowerCase().includes(searchQuery.toLowerCase())
+    category.description?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const handleCreateThread = async () => {
@@ -233,7 +233,7 @@ export function ForumPageClient({ initialCategories, initialStats }: ForumPageCl
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-3">
-                      <div className={`w-12 h-12 rounded-lg ${getCategoryColor(category.color)} flex items-center justify-center text-2xl`}>
+                      <div className={`w-12 h-12 rounded-lg ${getCategoryColor(category.color || 'blue')} flex items-center justify-center text-2xl`}>
                         {category.icon}
                       </div>
                       <div>

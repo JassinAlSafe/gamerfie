@@ -184,7 +184,7 @@ export function RoadmapClient() {
   }, []);
 
   const categories = ["all", "core", "social", "mobile", "performance", "security"] as const;
-  const quarters = ["all", "Q4 2024", "Q1 2025", "Q2 2025", "Q3 2025", "Future"] as const;
+  const quarters = useMemo(() => ["all", "Q4 2024", "Q1 2025", "Q2 2025", "Q3 2025", "Future"] as const, []);
 
   const filteredItems = useMemo(() => {
     return roadmapData.filter(item => {
@@ -202,7 +202,7 @@ export function RoadmapClient() {
         items: filteredItems.filter(item => item.quarter === quarter)
       }))
       .filter(group => group.items.length > 0);
-  }, [filteredItems]);
+  }, [filteredItems, quarters]);
 
   const handleCategoryChange = useCallback((category: string) => {
     setSelectedCategory(category);

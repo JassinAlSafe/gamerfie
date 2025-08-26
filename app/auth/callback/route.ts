@@ -60,11 +60,11 @@ export async function GET(request: Request) {
             updated_at: new Date().toISOString()
           });
       } else {
-        // Check if existing user has completed onboarding
-        const hasOnboarded = existingProfile.settings?.onboarded === true;
-        if (!hasOnboarded) {
-          isNewUser = true;
-        }
+        // Existing user - they should go to the main app
+        // Only treat as new user if profile was literally just created (within last minute)
+        const profileCreatedAt = new Date(existingProfile.created_at);
+        const oneMinuteAgo = new Date(Date.now() - 60 * 1000);
+        isNewUser = profileCreatedAt > oneMinuteAgo;
       }
 
       // Redirect based on user status

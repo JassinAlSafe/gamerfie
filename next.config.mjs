@@ -27,6 +27,30 @@ const nextConfig = {
         : false,
   },
 
+  // Headers configuration for security and Vercel Analytics
+  async headers() {
+    return [
+      {
+        // Apply to all routes
+        source: '/(.*)',
+        headers: [
+          {
+            key: 'X-Frame-Options',
+            value: 'DENY'
+          },
+          {
+            key: 'X-Content-Type-Options',
+            value: 'nosniff'
+          },
+          {
+            key: 'Referrer-Policy',
+            value: 'strict-origin-when-cross-origin'
+          }
+        ]
+      }
+    ]
+  },
+
   // Webpack optimizations for smaller bundles
   webpack: (config, { isServer }) => {
     // Only apply optimizations that don't conflict with Next.js defaults

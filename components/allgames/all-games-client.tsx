@@ -9,11 +9,7 @@ import { GamesHeader } from "../games/sections/games-header";
 import { useGamesStore } from "@/stores/useGamesStore";
 import { useUrlParams } from "@/hooks/Settings/useUrlParams";
 import { getMobileOptimizedIntersectionConfig } from "@/utils/mobile-detection";
-import { Game } from "@/types";
-
-interface AllGamesClientProps {}
-
-export default function AllGamesClient({}: AllGamesClientProps = {}) {
+export default function AllGamesClient() {
   const gamesStore = useGamesStore();
   const { fetchMetadata } = gamesStore;
   const { resetFiltersAndUrl } = useUrlParams();

@@ -108,7 +108,7 @@ export function CategoryPageClient({ category, initialThreads }: CategoryPageCli
           >
             <ArrowLeft className="w-4 h-4" />
           </Button>
-          <div className={`w-16 h-16 rounded-xl ${getCategoryColor(category.color)} flex items-center justify-center text-3xl shadow-lg`}>
+          <div className={`w-16 h-16 rounded-xl ${getCategoryColor(category.color || 'blue')} flex items-center justify-center text-3xl shadow-lg`}>
             {category.icon}
           </div>
           <div>

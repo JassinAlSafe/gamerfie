@@ -67,21 +67,34 @@ export const useAuthStore = create<AuthState>()(
         
         initialize: async () => {
           const currentState = get();
-          if (currentState.isInitialized) return;
+          if (currentState.isInitialized) {
+            console.log('Auth already initialized, skipping');
+            return;
+          }
           
           const initWithTimeout = async () => {
+            console.log('Starting auth initialization...');
             set({ isLoading: true, error: null });
             const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+            
+            console.log('Auth session:', { hasSession: !!session, hasUser: !!session?.user, error: sessionError });
             
             if (sessionError) throw sessionError;
             
             if (session?.user) {
+              console.log('Fetching user profile for:', session.user.id);
               const profile = await fetchUserProfile(session.user.id);
               
+              const userData = { ...session.user, profile: profile || null };
+              console.log('Setting user data:', { userId: userData.id, hasProfile: !!profile });
+              
               set({ 
-                user: { ...session.user, profile: profile || null },
+                user: userData,
                 error: null 
               });
+            } else {
+              console.log('No session found, user is not authenticated');
+              set({ user: null });
             }
           };
 
@@ -411,9 +424,7 @@ export const useAuthStore = create<AuthState>()(
             set({ isLoading: true, error: null });
             
             // Determine the correct redirect URL based on environment
-            const isDev = process.env.NODE_ENV === 'development';
-            const baseUrl = isDev ? 'http://localhost:3000' : window.location.origin;
-            const redirectUrl = `${baseUrl}/auth/callback`;
+            const redirectUrl = `${window.location.origin}/auth/callback`;
             
             console.log('Auth store: Redirect URL:', redirectUrl);
             

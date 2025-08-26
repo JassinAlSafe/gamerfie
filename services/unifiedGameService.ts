@@ -3,7 +3,7 @@ import { IGDBService } from "./igdb";
 import { RAWGService } from "./rawgService";
 import { createClient } from "@/utils/supabase/client";
 
-export type DataSource = 'igdb' | 'rawg' | 'auto' | 'hybrid';
+export type DataSource = 'igdb' | 'rawg' | 'auto' | 'hybrid' | 'smart';
 export type SearchStrategy = 'combined' | 'igdb_first' | 'rawg_first' | 'parallel' | 'smart' | 'hybrid';
 export type GameRequestType = 'trending' | 'popular' | 'upcoming' | 'recent' | 'search';
 
@@ -71,7 +71,7 @@ export class UnifiedGameService {
    */
   private static getOptimalSource(requestType: GameRequestType): DataSource {
     // Define each API's strengths based on data quality and performance analysis
-    const sourceStrengths = {
+    const sourceStrengths: Record<GameRequestType, DataSource> = {
       popular: 'igdb',    // IGDB has superior popularity metrics (total_rating_count, hypes)
       trending: 'igdb',   // IGDB has better trending indicators (hypes, recent ratings)
       upcoming: 'igdb',   // IGDB has better date filtering and quality control for upcoming games
@@ -331,8 +331,6 @@ export class UnifiedGameService {
       rating: igdbGame.rating || rawgGame.rating,
       total_rating: igdbGame.total_rating || rawgGame.total_rating,
       total_rating_count: igdbGame.total_rating_count || rawgGame.total_rating_count,
-      aggregated_rating: igdbGame.aggregated_rating,
-      aggregated_rating_count: igdbGame.aggregated_rating_count,
       metacritic: rawgGame.metacritic || igdbGame.metacritic, // RAWG often has more metacritic scores
       
       // Content - prefer longer, more detailed descriptions
@@ -416,17 +414,18 @@ export class UnifiedGameService {
         );
         
         if (similarity > 0.8 && (!bestMatch || similarity > bestMatch.similarity)) {
-          bestMatch = { rawgGame, similarity, index };
+          bestMatch = { rawgGame, similarity, index } as { rawgGame: Game; similarity: number; index: number };
         }
       });
       
       if (bestMatch) {
+        const match = bestMatch as { rawgGame: Game; similarity: number; index: number };
         matches.push({
           igdbGame,
-          rawgGame: bestMatch.rawgGame,
-          similarity: bestMatch.similarity
+          rawgGame: match.rawgGame,
+          similarity: match.similarity
         });
-        usedRawgIndices.add(bestMatch.index);
+        usedRawgIndices.add(match.index);
       }
     });
     
@@ -942,12 +941,18 @@ export class UnifiedGameService {
           this.updateApiHealth('rawg', true, Date.now() - startTime);
           return {
             ...result,
+            total: result?.total || 0,
+            page: result?.page || 1,
+            pageSize: result?.pageSize || limit,
+            hasNextPage: result?.hasNextPage || false,
+            hasPreviousPage: result?.hasPreviousPage || false,
             games: result?.games.map(game => ({
               ...game,
               id: `rawg_${game.id.replace('rawg_', '')}`,
               source_id: game.id.replace('rawg_', ''),
               dataSource: 'rawg' as const
-            })) || []
+            })) || [],
+            sources: ['rawg' as DataSource]
           };
         })()
       ]);

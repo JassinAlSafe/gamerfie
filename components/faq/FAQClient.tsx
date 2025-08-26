@@ -73,7 +73,7 @@ export function FAQClient() {
   const filteredCategories = useMemo(() => {
     if (!searchTerm.trim()) return faqCategories;
 
-    const filtered: typeof faqCategories = {};
+    const filtered: Partial<typeof faqCategories> = {};
     
     Object.entries(faqCategories).forEach(([category, faqs]) => {
       const filteredFaqs = faqs.filter(faq =>

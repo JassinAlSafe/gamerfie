@@ -136,6 +136,10 @@ export default function RootLayout({
           content="width=device-width, initial-scale=1, viewport-fit=cover"
         />
 
+        {/* Vercel Analytics DNS prefetch */}
+        <link rel="dns-prefetch" href="https://va.vercel-scripts.com" />
+        <link rel="preconnect" href="https://va.vercel-scripts.com" crossOrigin="" />
+
         {/* Preconnect for performance */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link
@@ -212,7 +216,10 @@ export default function RootLayout({
             </ThemeProvider>
           </SupabaseProvider>
         </QueryClientProvider>
-        <Analytics />
+        <Analytics 
+          mode="production" 
+          debug={process.env.NODE_ENV === 'development'}
+        />
       </body>
     </html>
   );

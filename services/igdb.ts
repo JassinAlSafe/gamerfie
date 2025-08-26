@@ -191,8 +191,6 @@ export class IGDBService {
       rating: game.total_rating ? Math.round(game.total_rating) : (game.rating ? Math.round(game.rating) : 0),
       total_rating: game.total_rating,
       total_rating_count: game.total_rating_count || 0,
-      aggregated_rating: game.aggregated_rating,
-      aggregated_rating_count: game.aggregated_rating_count || 0,
       hype_count: game.hypes || 0,
       genres: game.genres?.map((g) => ({ id: g.id.toString(), name: g.name })) || [],
       platforms: game.platforms?.map((p) => ({ id: p.id.toString(), name: p.name })) || [],
@@ -613,7 +611,7 @@ export class IGDBService {
             if (errorData.error && errorData.error.includes('Too Many Requests')) {
               throw new Error('Too Many Requests');
             }
-          } catch (parseError) {
+          } catch {
             // If can't parse, check text content
             if (errorText.includes('Too Many Requests') || errorText.includes('429')) {
               throw new Error('Too Many Requests');

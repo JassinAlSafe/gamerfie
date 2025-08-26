@@ -1,5 +1,5 @@
 import { InfoContent } from "@/components/layout/InfoContent";
-import { Scale, FileText, AlertCircle, Shield, Users, Gavel } from "lucide-react";
+import { Scale, FileText, AlertCircle, Shield, Users } from "lucide-react";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {

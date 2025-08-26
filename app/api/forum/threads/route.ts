@@ -3,69 +3,67 @@ import { createClient } from "@/utils/supabase/server";
 
 export async function GET(request: NextRequest) {
   try {
-    // const supabase = await createClient();
+    const supabase = await createClient();
     const { searchParams } = new URL(request.url);
     const categoryId = searchParams.get("category_id");
     const page = parseInt(searchParams.get("page") || "1");
     const limit = parseInt(searchParams.get("limit") || "20");
 
-    // Mock data for now - will be replaced with actual database queries
-    const mockThreads = [
-      {
-        id: "thread-1",
-        category_id: categoryId || "general",
-        title: "What's your favorite game of 2024?",
-        content: "I'm curious to hear what games have stood out to you this year. For me, it's been Baldur's Gate 3 - the depth of storytelling is incredible!",
-        author_id: "user-1",
-        author: {
-          id: "user-1",
-          username: "GameMaster2024",
-          avatar_url: null,
-        },
-        is_pinned: false,
-        is_locked: false,
-        views_count: 156,
-        replies_count: 23,
-        likes_count: 45,
-        last_post_at: new Date().toISOString(),
-        created_at: new Date(Date.now() - 3600000).toISOString(), // 1 hour ago
-        updated_at: new Date().toISOString(),
-      },
-      {
-        id: "thread-2",
-        category_id: categoryId || "general",
-        title: "Looking for co-op game recommendations",
-        content: "My friend and I are looking for good co-op games to play together. We've already played It Takes Two and Portal 2. Any suggestions?",
-        author_id: "user-2",
-        author: {
-          id: "user-2",
-          username: "CoopGamer",
-          avatar_url: null,
-        },
-        is_pinned: true,
-        is_locked: false,
-        views_count: 89,
-        replies_count: 15,
-        likes_count: 22,
-        last_post_at: new Date(Date.now() - 1800000).toISOString(), // 30 minutes ago
-        created_at: new Date(Date.now() - 7200000).toISOString(), // 2 hours ago
-        updated_at: new Date(Date.now() - 1800000).toISOString(),
-      },
-    ];
+    if (categoryId) {
+      // Get threads for specific category
+      const offset = (page - 1) * limit;
+      const { data: threads, error } = await supabase
+        .rpc('get_category_threads', {
+          p_category_id: categoryId,
+          p_limit: limit,
+          p_offset: offset
+        });
 
-    const filteredThreads = categoryId 
-      ? mockThreads.filter(thread => thread.category_id === categoryId)
-      : mockThreads;
-
-    return NextResponse.json({ 
-      threads: filteredThreads,
-      pagination: {
-        page,
-        limit,
-        total: filteredThreads.length,
-        hasMore: false,
+      if (error) {
+        console.error("Error fetching category threads:", error);
+        return NextResponse.json(
+          { error: "Failed to fetch threads" },
+          { status: 500 }
+        );
       }
-    });
+
+      return NextResponse.json({ 
+        threads: threads || [],
+        pagination: {
+          page,
+          limit,
+          total: threads?.length || 0,
+          hasMore: (threads?.length || 0) >= limit,
+        }
+      });
+    } else {
+      // Get all threads with details
+      const offset = (page - 1) * limit;
+      const { data: threads, error } = await supabase
+        .from('forum_threads_with_details')
+        .select('*')
+        .order('is_pinned', { ascending: false })
+        .order('created_at', { ascending: false })
+        .range(offset, offset + limit - 1);
+
+      if (error) {
+        console.error("Error fetching threads:", error);
+        return NextResponse.json(
+          { error: "Failed to fetch threads" },
+          { status: 500 }
+        );
+      }
+
+      return NextResponse.json({ 
+        threads: threads || [],
+        pagination: {
+          page,
+          limit,
+          total: threads?.length || 0,
+          hasMore: (threads?.length || 0) >= limit,
+        }
+      });
+    }
   } catch (error) {
     console.error("Error fetching forum threads:", error);
     return NextResponse.json(
@@ -98,28 +96,49 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // TODO: Implement actual database creation
-    // For now, return success response
-    const newThread = {
-      id: `thread-${Date.now()}`,
-      category_id,
-      title,
-      content,
-      author_id: user.id,
-      author: {
-        id: user.id,
-        username: user.user_metadata?.username || user.email?.split('@')[0] || "Unknown",
-        avatar_url: user.user_metadata?.avatar_url || null,
-      },
-      is_pinned: false,
-      is_locked: false,
-      views_count: 1,
-      replies_count: 0,
-      likes_count: 0,
-      last_post_at: new Date().toISOString(),
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    };
+    // Ensure user profile exists before creating thread
+    const { data: existingProfile } = await supabase
+      .from('user_profiles')
+      .select('id')
+      .eq('id', user.id)
+      .single();
+
+    if (!existingProfile) {
+      // Create user profile if it doesn't exist
+      const username = user.user_metadata?.username || 
+                      user.user_metadata?.full_name || 
+                      user.email?.split('@')[0] || 
+                      'User';
+      
+      await supabase
+        .from('user_profiles')
+        .insert({
+          id: user.id,
+          username: username,
+          avatar_url: user.user_metadata?.avatar_url || null,
+          bio: null
+        });
+    }
+
+    // Create thread in database
+    const { data: newThread, error: insertError } = await supabase
+      .from('forum_threads')
+      .insert({
+        category_id,
+        title,
+        content,
+        author_id: user.id
+      })
+      .select()
+      .single();
+
+    if (insertError) {
+      console.error("Error creating forum thread:", insertError);
+      return NextResponse.json(
+        { error: "Failed to create thread" },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json({ thread: newThread }, { status: 201 });
   } catch (error) {

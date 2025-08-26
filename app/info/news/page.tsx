@@ -2,7 +2,7 @@ import { InfoContent } from "@/components/layout/InfoContent";
 import NewsList from "@/components/news/NewsList";
 import { NewsErrorBoundary } from "@/components/error/NewsErrorBoundary";
 import { Suspense } from "react";
-import { Loader2, Newspaper, Bell, Users } from "lucide-react";
+import { Newspaper, Bell, Users } from "lucide-react";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {

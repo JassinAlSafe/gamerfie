@@ -12,6 +12,11 @@ export const AuthButtons = React.memo(function AuthButtons() {
   const { toast } = useToast();
   const { user, signOut, isInitialized } = useAuthStore();
 
+  // Debug logging to help identify the issue
+  React.useEffect(() => {
+    console.log('AuthButtons state:', { user: !!user, isInitialized, userId: user?.id });
+  }, [user, isInitialized]);
+
   const handleSignOut = async (scope: 'global' | 'local' | 'others' = 'local') => {
     try {
       await signOut(scope);

@@ -359,7 +359,7 @@ export interface GameStore {
   url: string;
 }
 
-export type DataSource = 'igdb' | 'rawg' | 'user' | 'unknown';
+export type DataSource = 'igdb' | 'rawg' | 'hybrid' | 'auto' | 'smart' | 'user' | 'unknown';
 
 export interface GameReview {
   id: string;

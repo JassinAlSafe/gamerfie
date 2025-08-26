@@ -1,7 +1,6 @@
 import { Metadata } from "next";
 import { ForumPageClient } from "./ForumPageClient";
-// import { createClient } from "@/utils/supabase/server";
-import { ForumCategory, ForumStats } from "@/types/forum";
+import { createClient } from "@/utils/supabase/server";
 import { Suspense } from "react";
 import { ForumSkeleton } from "@/components/forum/ForumSkeleton";
 
@@ -50,68 +49,33 @@ export const metadata: Metadata = {
 
 async function getForumData() {
   try {
-    // const supabase = await createClient();
+    const supabase = await createClient();
 
-    // Mock data for initial implementation
-    const categories: ForumCategory[] = [
-      {
-        id: "general",
-        name: "General Discussion",
-        description: "Talk about anything gaming related",
-        icon: "💬",
-        color: "blue",
-        threads_count: 45,
-        posts_count: 312,
-        last_post_at: new Date().toISOString(),
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      },
-      {
-        id: "game-reviews",
-        name: "Game Reviews & Recommendations",
-        description: "Share your thoughts on games you've played",
-        icon: "⭐",
-        color: "yellow",
-        threads_count: 28,
-        posts_count: 156,
-        last_post_at: new Date().toISOString(),
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      },
-      {
-        id: "help-support",
-        name: "Help & Support",
-        description: "Get help with games, technical issues, and more",
-        icon: "🆘",
-        color: "red",
-        threads_count: 12,
-        posts_count: 67,
-        last_post_at: new Date().toISOString(),
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      },
-      {
-        id: "showcases",
-        name: "Screenshots & Showcases",
-        description: "Show off your gaming achievements and screenshots",
-        icon: "📸",
-        color: "purple",
-        threads_count: 34,
-        posts_count: 89,
-        last_post_at: new Date().toISOString(),
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      },
-    ];
+    // Fetch categories with stats from the database
+    const { data: categories, error: categoriesError } = await supabase
+      .from('forum_categories_with_stats')
+      .select('*')
+      .order('name');
 
-    const stats: ForumStats = {
-      total_threads: 119,
-      total_posts: 624,
-      total_users: 89,
-      active_users_today: 23,
-    };
+    if (categoriesError) {
+      console.error("Error fetching categories:", categoriesError);
+      return { categories: [], stats: { total_threads: 0, total_posts: 0, total_users: 0, active_users_today: 0 } };
+    }
 
-    return { categories, stats };
+    // Fetch forum stats
+    const { data: stats, error: statsError } = await supabase
+      .rpc('get_forum_stats');
+
+    if (statsError) {
+      console.error("Error fetching forum stats:", statsError);
+      // Return categories with fallback stats
+      return { 
+        categories: categories || [], 
+        stats: { total_threads: 0, total_posts: 0, total_users: 0, active_users_today: 0 } 
+      };
+    }
+
+    return { categories: categories || [], stats: stats || { total_threads: 0, total_posts: 0, total_users: 0, active_users_today: 0 } };
   } catch (error) {
     console.error("Error fetching forum data:", error);
     return { categories: [], stats: { total_threads: 0, total_posts: 0, total_users: 0, active_users_today: 0 } };

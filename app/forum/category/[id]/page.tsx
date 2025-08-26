@@ -1,7 +1,6 @@
-import { Metadata } from "next/server";
+import { Metadata } from "next";
 import { CategoryPageClient } from "./CategoryPageClient";
-// import { createClient } from "@/utils/supabase/server";
-import { ForumCategory, ForumThread } from "@/types/forum";
+import { createClient } from "@/utils/supabase/server";
 import { Suspense } from "react";
 
 export const dynamic = 'force-dynamic';
@@ -26,107 +25,34 @@ export async function generateMetadata({ params }: CategoryPageProps): Promise<M
 
 async function getCategoryData(categoryId: string) {
   try {
-    // const supabase = await createClient();
+    const supabase = await createClient();
 
-    // Mock category data
-    const categories = {
-      "general": {
-        id: "general",
-        name: "General Discussion",
-        description: "Talk about anything gaming related",
-        icon: "💬",
-        color: "blue",
-        threads_count: 45,
-        posts_count: 312,
-        last_post_at: new Date().toISOString(),
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      },
-      "game-reviews": {
-        id: "game-reviews",
-        name: "Game Reviews & Recommendations",
-        description: "Share your thoughts on games you've played",
-        icon: "⭐",
-        color: "yellow",
-        threads_count: 28,
-        posts_count: 156,
-        last_post_at: new Date().toISOString(),
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      },
-      "help-support": {
-        id: "help-support",
-        name: "Help & Support",
-        description: "Get help with games, technical issues, and more",
-        icon: "🆘",
-        color: "red",
-        threads_count: 12,
-        posts_count: 67,
-        last_post_at: new Date().toISOString(),
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      },
-      "showcases": {
-        id: "showcases",
-        name: "Screenshots & Showcases",
-        description: "Show off your gaming achievements and screenshots",
-        icon: "📸",
-        color: "purple",
-        threads_count: 34,
-        posts_count: 89,
-        last_post_at: new Date().toISOString(),
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      },
-    };
+    // Fetch category data from the database
+    const { data: category, error: categoryError } = await supabase
+      .from('forum_categories_with_stats')
+      .select('*')
+      .eq('id', categoryId)
+      .single();
 
-    const category = categories[categoryId as keyof typeof categories] || null;
+    if (categoryError || !category) {
+      console.error("Error fetching category:", categoryError);
+      return { category: null, threads: [] };
+    }
 
-    // Mock threads data
-    const threads: ForumThread[] = [
-      {
-        id: "thread-1",
-        category_id: categoryId,
-        title: "What's your favorite game of 2024?",
-        content: "I'm curious to hear what games have stood out to you this year.",
-        author_id: "user-1",
-        author: {
-          id: "user-1",
-          username: "GameMaster2024",
-          avatar_url: null,
-        },
-        is_pinned: false,
-        is_locked: false,
-        views_count: 156,
-        replies_count: 23,
-        likes_count: 45,
-        last_post_at: new Date().toISOString(),
-        created_at: new Date(Date.now() - 3600000).toISOString(),
-        updated_at: new Date().toISOString(),
-      },
-      {
-        id: "thread-2",
-        category_id: categoryId,
-        title: "Looking for co-op game recommendations",
-        content: "My friend and I are looking for good co-op games to play together.",
-        author_id: "user-2",
-        author: {
-          id: "user-2",
-          username: "CoopGamer",
-          avatar_url: null,
-        },
-        is_pinned: true,
-        is_locked: false,
-        views_count: 89,
-        replies_count: 15,
-        likes_count: 22,
-        last_post_at: new Date(Date.now() - 1800000).toISOString(),
-        created_at: new Date(Date.now() - 7200000).toISOString(),
-        updated_at: new Date(Date.now() - 1800000).toISOString(),
-      },
-    ];
+    // Fetch threads for this category
+    const { data: threads, error: threadsError } = await supabase
+      .rpc('get_category_threads', {
+        p_category_id: categoryId,
+        p_limit: 50,
+        p_offset: 0
+      });
 
-    return { category, threads };
+    if (threadsError) {
+      console.error("Error fetching threads:", threadsError);
+      return { category, threads: [] };
+    }
+
+    return { category, threads: threads || [] };
   } catch (error) {
     console.error("Error fetching category data:", error);
     return { category: null, threads: [] };

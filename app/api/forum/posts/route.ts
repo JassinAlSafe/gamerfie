@@ -3,7 +3,7 @@ import { createClient } from "@/utils/supabase/server";
 
 export async function GET(request: NextRequest) {
   try {
-    // const supabase = await createClient();
+    const supabase = await createClient();
     const { searchParams } = new URL(request.url);
     const threadId = searchParams.get("thread_id");
     const page = parseInt(searchParams.get("page") || "1");
@@ -16,68 +16,33 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Mock data for now - will be replaced with actual database queries
-    const mockPosts = [
-      {
-        id: "post-1",
-        thread_id: threadId,
-        content: "Great question! I've been absolutely loving Tears of the Kingdom. The building mechanics add so much creativity to exploration.",
-        author_id: "user-3",
-        author: {
-          id: "user-3",
-          username: "ZeldaFan",
-          avatar_url: null,
-        },
-        likes_count: 12,
-        is_liked: false,
-        parent_post_id: null,
-        replies: [],
-        created_at: new Date(Date.now() - 3000000).toISOString(), // 50 minutes ago
-        updated_at: new Date(Date.now() - 3000000).toISOString(),
-      },
-      {
-        id: "post-2",
-        thread_id: threadId,
-        content: "I have to agree with ZeldaFan! But I'm also really enjoying Hogwarts Legacy. The magic system is so well done.",
-        author_id: "user-4",
-        author: {
-          id: "user-4",
-          username: "WizardGamer",
-          avatar_url: null,
-        },
-        likes_count: 8,
-        is_liked: false,
-        parent_post_id: null,
-        replies: [
-          {
-            id: "post-3",
-            thread_id: threadId,
-            content: "Yes! The spell combinations in Hogwarts Legacy are amazing. Have you tried the Room of Requirement yet?",
-            author_id: "user-5",
-            author: {
-              id: "user-5",
-              username: "HogwartsFan",
-              avatar_url: null,
-            },
-            likes_count: 3,
-            is_liked: false,
-            parent_post_id: "post-2",
-            created_at: new Date(Date.now() - 1800000).toISOString(), // 30 minutes ago
-            updated_at: new Date(Date.now() - 1800000).toISOString(),
-          },
-        ],
-        created_at: new Date(Date.now() - 2400000).toISOString(), // 40 minutes ago
-        updated_at: new Date(Date.now() - 2400000).toISOString(),
-      },
-    ];
+    // Fetch posts for the thread from database
+    const offset = (page - 1) * limit;
+    const { data: posts, error } = await supabase
+      .rpc('get_thread_posts', {
+        p_thread_id: threadId,
+        p_limit: limit,
+        p_offset: offset
+      });
+
+    if (error) {
+      console.error("Error fetching forum posts:", error);
+      return NextResponse.json(
+        { error: "Failed to fetch posts" },
+        { status: 500 }
+      );
+    }
+
+    // Increment view count
+    await supabase.rpc('increment_thread_views', { thread_uuid: threadId });
 
     return NextResponse.json({ 
-      posts: mockPosts,
+      posts: posts || [],
       pagination: {
         page,
         limit,
-        total: mockPosts.length,
-        hasMore: false,
+        total: posts?.length || 0,
+        hasMore: (posts?.length || 0) >= limit,
       }
     });
   } catch (error) {
@@ -112,25 +77,60 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // TODO: Implement actual database creation
-    // For now, return success response
-    const newPost = {
-      id: `post-${Date.now()}`,
-      thread_id,
-      content,
-      author_id: user.id,
-      author: {
-        id: user.id,
-        username: user.user_metadata?.username || user.email?.split('@')[0] || "Unknown",
-        avatar_url: user.user_metadata?.avatar_url || null,
-      },
-      likes_count: 0,
-      is_liked: false,
-      parent_post_id: parent_post_id || null,
-      replies: [],
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    };
+    // Check if thread is locked
+    const { data: thread } = await supabase
+      .from('forum_threads')
+      .select('is_locked')
+      .eq('id', thread_id)
+      .single();
+
+    if (thread?.is_locked) {
+      return NextResponse.json({ error: 'Thread is locked' }, { status: 403 });
+    }
+
+    // Ensure user profile exists before creating post
+    const { data: existingProfile } = await supabase
+      .from('user_profiles')
+      .select('id')
+      .eq('id', user.id)
+      .single();
+
+    if (!existingProfile) {
+      // Create user profile if it doesn't exist
+      const username = user.user_metadata?.username || 
+                      user.user_metadata?.full_name || 
+                      user.email?.split('@')[0] || 
+                      'User';
+      
+      await supabase
+        .from('user_profiles')
+        .insert({
+          id: user.id,
+          username: username,
+          avatar_url: user.user_metadata?.avatar_url || null,
+          bio: null
+        });
+    }
+
+    // Create post in database
+    const { data: newPost, error: insertError } = await supabase
+      .from('forum_posts')
+      .insert({
+        thread_id,
+        content,
+        author_id: user.id,
+        parent_post_id: parent_post_id || null
+      })
+      .select()
+      .single();
+
+    if (insertError) {
+      console.error("Error creating forum post:", insertError);
+      return NextResponse.json(
+        { error: "Failed to create post" },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json({ post: newPost }, { status: 201 });
   } catch (error) {
