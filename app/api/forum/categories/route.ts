@@ -23,15 +23,15 @@ export async function GET(): Promise<NextResponse<CategoriesResponse>> {
     );
 
     if (!result.success) {
-      return result.response;
+      return result.response as NextResponse<CategoriesResponse>;
     }
 
     return ForumApiResponse.success({
       categories: result.data
-    });
+    }) as NextResponse<CategoriesResponse>;
   } catch (error) {
     console.error("Unexpected error fetching forum categories:", error);
-    return ForumApiErrorHandler.internalError('Failed to fetch categories');
+    return ForumApiErrorHandler.internalError('Failed to fetch categories') as NextResponse<CategoriesResponse>;
   }
 }
 

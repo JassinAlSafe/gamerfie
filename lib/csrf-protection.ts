@@ -6,7 +6,6 @@ import { createHash, randomBytes } from 'crypto';
  * Provides token generation, validation, and middleware functions
  */
 
-const _CSRF_TOKEN_LENGTH = 32;
 const CSRF_SECRET_LENGTH = 32;
 const CSRF_COOKIE_NAME = 'csrf-token';
 const CSRF_HEADER_NAME = 'x-csrf-token';

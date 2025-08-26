@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, createContext, useContext } from 'react';
 
 /**
  * Hook for managing CSRF tokens in React components
@@ -103,7 +103,6 @@ export function withCsrfProtection<P extends object>(
 /**
  * Context for CSRF token sharing across components
  */
-import React, { createContext, useContext } from 'react';
 
 interface CsrfTokenContextValue extends CsrfTokenHook {}
 

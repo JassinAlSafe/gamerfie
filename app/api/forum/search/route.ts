@@ -8,6 +8,9 @@ import {
   createPaginationMeta
 } from "@/app/api/lib/forum-helpers";
 import { validateSearch } from "@/lib/validations/forum";
+
+// Force dynamic route
+export const dynamic = 'force-dynamic';
 import type { SearchResponse, SearchResult } from "@/types/forum";
 
 export async function GET(request: NextRequest): Promise<NextResponse<SearchResponse>> {

@@ -9,7 +9,6 @@ import React from 'react';
 interface SanitizationOptions {
   allowedTags?: string[];
   allowedAttributes?: string[];
-  removeEmptyElements?: boolean;
 }
 
 const DEFAULT_ALLOWED_TAGS = [
@@ -34,15 +33,13 @@ export function sanitizeHtml(
 
   const {
     allowedTags = DEFAULT_ALLOWED_TAGS,
-    allowedAttributes = DEFAULT_ALLOWED_ATTRIBUTES,
-    removeEmptyElements = true
+    allowedAttributes = DEFAULT_ALLOWED_ATTRIBUTES
   } = options;
 
   try {
     const cleaned = DOMPurify.sanitize(content, {
       ALLOWED_TAGS: allowedTags,
       ALLOWED_ATTR: allowedAttributes,
-      REMOVE_EMPTY_ELEMENTS: removeEmptyElements,
       FORBID_SCRIPT: true,
       FORBID_TAGS: ['script', 'object', 'embed', 'base', 'link', 'meta', 'style'],
       FORBID_ATTR: ['onerror', 'onload', 'onclick', 'onmouseover', 'onfocus', 'onblur'],

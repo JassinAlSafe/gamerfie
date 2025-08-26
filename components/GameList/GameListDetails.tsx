@@ -44,7 +44,7 @@ function formatDate(dateString: string | undefined): string {
 
 export function GameListDetails({ listId }: { listId: string }) {
   const { toast } = useToast();
-  const { openDialog, Dialog } = useAuthDialog();
+  const { openDialog, Dialog: AuthDialog } = useAuthDialog();
   const { currentList, isLoading, error, fetchListDetails } =
     useGameListStore();
   const { profile } = useProfile();
@@ -343,6 +343,9 @@ export function GameListDetails({ listId }: { listId: string }) {
           )}
         </ScrollArea>
       </div>
+
+      {/* Authentication Dialog */}
+      <AuthDialog />
     </div>
   );
 }
@@ -390,9 +393,6 @@ function EmptyCommentsState() {
       <p className="text-gray-400 text-sm">
         Be the first to share your thoughts about this list!
       </p>
-    
-      {/* Authentication Dialog */}
-      <Dialog />
     </div>
   );
 }
