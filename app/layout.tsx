@@ -13,6 +13,7 @@ import SupabaseProvider from "@/components/providers/supabase-provider";
 import { usePathname } from "next/navigation";
 import { CacheBuster } from "@/components/ui/cache-buster";
 import { AuthInitializer } from "@/components/auth/AuthInitializer";
+import { AuthErrorHandler } from "@/components/auth/AuthErrorHandler";
 import { FloatingActions } from "@/components/home/FloatingActions";
 import { BetaBanner } from "@/components/ui/BetaBanner";
 import { CookieConsent } from "@/components/ui/CookieConsent";
@@ -193,6 +194,7 @@ export default function RootLayout({
             >
               <div className="min-h-screen flex flex-col">
                 <AuthInitializer />
+                <AuthErrorHandler />
                 <CacheBuster />
                 {!isAuthPage && <BetaBanner />}
                 {!isAuthPage && (

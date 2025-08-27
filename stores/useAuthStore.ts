@@ -37,6 +37,9 @@ interface AuthState {
   updateProfile: (_profile: Partial<Profile>) => Promise<void>
   uploadAvatar: (_file: File) => Promise<string>
   
+  // Auth State Monitoring
+  onAuthStateChange: (_callback: (event: string, session: Session | null) => void) => { unsubscribe: () => void }
+  
   // Performance Optimizations
   preWarmAuth: () => Promise<void>
   clearCache: () => void
@@ -293,11 +296,26 @@ export const useAuthStore = create<AuthState>()(
 
         resetPassword: async (_email) => {
           try {
+            console.log('Auth store: Starting password reset for:', _email);
             set({ isLoading: true, error: null });
-            const { error } = await supabase.auth.resetPasswordForEmail(_email);
-            if (error) throw error;
+            
+            // Use auth callback URL for proper token handling
+            const redirectUrl = `${window.location.origin}/auth/callback`;
+            console.log('Auth store: Reset password redirect URL:', redirectUrl);
+            
+            const { error } = await supabase.auth.resetPasswordForEmail(_email, {
+              redirectTo: redirectUrl
+            });
+            
+            if (error) {
+              console.error('Auth store: Password reset error:', error);
+              throw error;
+            }
+            
+            console.log('Auth store: Password reset email sent successfully');
           } catch (error) {
-            const message = error instanceof Error ? error.message : 'Failed to reset password';
+            console.error('Auth store: Password reset caught error:', error);
+            const message = error instanceof Error ? error.message : 'Failed to send reset email';
             set({ error: message });
             throw error;
           } finally {
@@ -474,6 +492,17 @@ export const useAuthStore = create<AuthState>()(
 
         clearCache: () => {
           ProfileCache.clear();
+        },
+
+        // Auth state monitoring
+        onAuthStateChange: (callback) => {
+          const { data: { subscription } } = supabase.auth.onAuthStateChange(callback);
+          return { 
+            unsubscribe: () => {
+              console.log('Auth store: Unsubscribing from auth state changes');
+              subscription.unsubscribe();
+            }
+          };
         }
       }
     },
