@@ -314,9 +314,40 @@ html {
   
   /* Exclude auth pages and other special cases */
   main.no-header-spacing,
-  .auth-page main {
-    padding-top: 0;
-    min-height: 100vh;
+  .auth-page main,
+  .auth-page main > * {
+    padding-top: 0 !important;
+    margin-top: 0 !important;
+    min-height: 100vh !important;
+  }
+  
+  /* Nuclear override for auth pages - ensures no spacing leaks through */
+  body.auth-page main.no-header-spacing {
+    padding-top: 0 !important;
+    margin-top: 0 !important;
+    min-height: 100vh !important;
+    --header-height: 0px !important;
+    --header-offset-top: 0px !important;
+  }
+  
+  /* Complete reset for auth pages */
+  .auth-page {
+    padding-top: 0 !important;
+  }
+  
+  /* Nuclear override - highest specificity for auth pages */
+  body.auth-page main.no-header-spacing {
+    padding-top: 0 !important;
+    margin-top: 0 !important;
+    min-height: 100vh !important;
+    --header-height: 0px !important;
+    --header-offset-top: 0px !important;
+  }
+  
+  .auth-page * {
+    /* Reset any inherited padding that might come from universal system */
+    --header-offset-top: 0px;
+    --header-height: 0px;
   }
   
   /* Legacy support for the original class */

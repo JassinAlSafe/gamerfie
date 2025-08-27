@@ -61,11 +61,7 @@ export default function AllGamesClient() {
 
 
   return (
-    <div className="w-full pt-0">
-      {/* Since main element padding isn't working, add explicit spacing */}
-      {/* This accounts for the 4rem (64px) header height */}
-      <div className="h-0" aria-hidden="true" />
-      
+    <div className="w-full">
       {/* Games Header */}
       <div className="bg-gray-900/95 backdrop-blur-lg border-b border-gray-800/50">
         <GamesHeader games={allGames} />

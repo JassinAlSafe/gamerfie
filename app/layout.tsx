@@ -77,7 +77,7 @@ export default function RootLayout({
 
   const mainPaddingClass = !isAuthPage
     ? `flex-1 main-content-with-header`
-    : "flex-1";
+    : "flex-1 no-header-spacing";
 
   return (
     <html lang="en" suppressHydrationWarning>

@@ -66,8 +66,7 @@ interface IGDBGameResponse {
 }
 
 export class IGDBService {
-  private static cachedToken: string | null = null;
-  private static tokenExpiry: number | null = null;
+  // Token caching is now handled by the proxy route
 
   private static getProxyUrl(): string {
     const isServer = typeof window === 'undefined';
@@ -98,78 +97,10 @@ export class IGDBService {
     return '/api/igdb-proxy';
   }
 
-  private static async getIGDBToken(): Promise<string> {
-    try {
-      // Return cached token if still valid (with 5 minute buffer)
-      if (this.cachedToken && this.tokenExpiry && Date.now() < this.tokenExpiry - 5 * 60 * 1000) {
-        return this.cachedToken;
-      }
+  // Token management is now handled entirely by the proxy route
+  // This ensures consistent authentication and avoids CORS issues
 
-      // Validate environment variables
-      if (!process.env.NEXT_PUBLIC_TWITCH_CLIENT_ID) {
-        throw new Error('NEXT_PUBLIC_TWITCH_CLIENT_ID is not configured');
-      }
-      if (!process.env.TWITCH_CLIENT_SECRET) {
-        throw new Error('TWITCH_CLIENT_SECRET is not configured');
-      }
-
-      const response = await fetch('https://id.twitch.tv/oauth2/token', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          client_id: process.env.NEXT_PUBLIC_TWITCH_CLIENT_ID,
-          client_secret: process.env.TWITCH_CLIENT_SECRET,
-          grant_type: 'client_credentials'
-        }),
-        cache: 'no-store'
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Failed to get IGDB token: ${response.status} ${response.statusText} - ${errorText}`);
-      }
-
-      const data = await response.json();
-      
-      if (!data.access_token || typeof data.expires_in !== 'number') {
-        console.error('Invalid token response:', data);
-        throw new Error('Invalid token response from Twitch');
-      }
-
-      // Cache the token with a 5-minute buffer before expiry
-      this.cachedToken = data.access_token;
-      this.tokenExpiry = Date.now() + (data.expires_in * 1000);
-
-      return data.access_token;
-    } catch (error) {
-      // Clear cached token in case of error
-      this.cachedToken = null;
-      this.tokenExpiry = null;
-      console.error('Error getting IGDB token:', error);
-      throw error;
-    }
-  }
-
-  static async getHeaders() {
-    try {
-      const token = await this.getIGDBToken();
-      if (!token) {
-        throw new Error('Failed to get IGDB access token');
-      }
-
-      return {
-        "Client-ID": process.env.NEXT_PUBLIC_TWITCH_CLIENT_ID!,
-        "Authorization": `Bearer ${token}`,
-        "Accept": "application/json",
-        "Content-Type": "text/plain"
-      };
-    } catch (error) {
-      console.error('Error getting IGDB headers:', error);
-      throw error;
-    }
-  }
+  // Headers are now managed by the proxy route for consistent authentication
 
   private static async makeIGDBRequest(endpoint: string, query: string): Promise<any> {
     try {
@@ -320,7 +251,6 @@ export class IGDBService {
       if (filters?.timeRange) {
         const now = Math.floor(Date.now() / 1000);
         const sixMonthsAgo = now - (180 * 24 * 60 * 60);
-        const oneYearAgo = now - (365 * 24 * 60 * 60);
         const thisYearStart = Math.floor(new Date(new Date().getFullYear(), 0, 1).getTime() / 1000);
         const lastYearStart = Math.floor(new Date(new Date().getFullYear() - 1, 0, 1).getTime() / 1000);
         const lastYearEnd = Math.floor(new Date(new Date().getFullYear() - 1, 11, 31, 23, 59, 59).getTime() / 1000);
@@ -769,26 +699,15 @@ export class IGDBService {
 
   static async fetchRelatedGames(gameId: string) {
     try {
-      const headers = await this.getHeaders();
       console.log(`Fetching related games for game ID: ${gameId}`);
       
       // First, get the game's company and series info
-      const gameInfoResponse = await fetch('https://api.igdb.com/v4/games', {
-        method: 'POST',
-        headers,
-        body: `
-          fields name, involved_companies.company.*, collection.*, dlcs.*, expanded_games.*, expansions.*, standalone_expansions.*;
-          where id = ${gameId};
-        `,
-      });
-
-      if (!gameInfoResponse.ok) {
-        const errorText = await gameInfoResponse.text();
-        console.error('Failed to fetch game info:', errorText);
-        throw new Error(`Failed to fetch game info: ${errorText}`);
-      }
-
-      const gameInfoData = await gameInfoResponse.json();
+      const gameInfoQuery = `
+        fields name, involved_companies.company.*, collection.*, dlcs.*, expanded_games.*, expansions.*, standalone_expansions.*;
+        where id = ${gameId};
+      `;
+      
+      const gameInfoData = await this.makeIGDBRequest('games', gameInfoQuery);
       console.log('Game info response:', gameInfoData);
       
       const [gameInfo] = gameInfoData as IGDBGame[];
@@ -825,27 +744,17 @@ export class IGDBService {
       // If we have no related games yet, get games from the same company
       if (relatedGameIds.size === 0 && companyIds.length > 0) {
         console.log('No direct relations found, fetching games from same companies');
-        const companyGamesResponse = await fetch('https://api.igdb.com/v4/games', {
-          method: 'POST',
-          headers,
-          body: `
-            fields name, cover.url, rating, total_rating_count, first_release_date, version_parent;
-            where involved_companies.company = (${companyIds.join(',')}) 
-            & id != ${gameId} 
-            & cover != null 
-            & category = (0,8,9,10,11);
-            sort total_rating_count desc;
-            limit 12;
-          `,
-        });
-
-        if (!companyGamesResponse.ok) {
-          const errorText = await companyGamesResponse.text();
-          console.error('Failed to fetch company games:', errorText);
-          throw new Error(`Failed to fetch company games: ${errorText}`);
-        }
-
-        const companyGames = await companyGamesResponse.json();
+        const companyGamesQuery = `
+          fields name, cover.url, rating, total_rating_count, first_release_date, version_parent;
+          where involved_companies.company = (${companyIds.join(',')}) 
+          & id != ${gameId} 
+          & cover != null 
+          & category = (0,8,9,10,11);
+          sort total_rating_count desc;
+          limit 12;
+        `;
+        
+        const companyGames = await this.makeIGDBRequest('games', companyGamesQuery);
         console.log('Found company games:', companyGames.length);
         return companyGames;
       }
@@ -853,26 +762,16 @@ export class IGDBService {
       // If we have related games (DLCs, series games), fetch their details
       if (relatedGameIds.size > 0) {
         console.log('Fetching details for related games');
-        const relatedGamesResponse = await fetch('https://api.igdb.com/v4/games', {
-          method: 'POST',
-          headers,
-          body: `
-            fields name, cover.url, rating, total_rating_count, first_release_date, version_parent;
-            where id = (${Array.from(relatedGameIds).join(',')}) 
-            & cover != null 
-            & category = (0,8,9,10,11);
-            sort total_rating_count desc;
-            limit 12;
-          `,
-        });
-
-        if (!relatedGamesResponse.ok) {
-          const errorText = await relatedGamesResponse.text();
-          console.error('Failed to fetch related games:', errorText);
-          throw new Error(`Failed to fetch related games: ${errorText}`);
-        }
-
-        const relatedGames = await relatedGamesResponse.json();
+        const relatedGamesQuery = `
+          fields name, cover.url, rating, total_rating_count, first_release_date, version_parent;
+          where id = (${Array.from(relatedGameIds).join(',')}) 
+          & cover != null 
+          & category = (0,8,9,10,11);
+          sort total_rating_count desc;
+          limit 12;
+        `;
+        
+        const relatedGames = await this.makeIGDBRequest('games', relatedGamesQuery);
         console.log('Found related games:', relatedGames.length);
         return relatedGames;
       }
@@ -1034,8 +933,10 @@ export class IGDBService {
 
   static async testConnection(): Promise<boolean> {
     try {
-      const token = await this.getIGDBToken();
-      return !!token;
+      // Test connection by making a simple query through the proxy
+      const testQuery = `fields name; limit 1;`;
+      await this.makeIGDBRequest('games', testQuery);
+      return true;
     } catch (error) {
       console.error('IGDB connection test failed:', error);
       return false;

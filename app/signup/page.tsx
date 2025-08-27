@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { Icons } from "@/components/ui/icons";
 import { SignUpForm } from "@/components/auth/SignUpForm";
-import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { AuthErrorBoundary } from "@/components/auth/AuthErrorBoundary";
 import { Suspense } from "react";
@@ -9,18 +8,15 @@ import { AuthFormSkeleton } from "@/components/auth/AuthSkeleton";
 
 export default function SignUpPage() {
   return (
-    <div className="flex min-h-[100dvh] overflow-hidden">
-      {/* Back Button */}
-      <Button
-        asChild
-        variant="ghost"
-        className="absolute top-4 left-4 sm:top-6 sm:left-6 md:top-8 md:left-8 p-2 text-muted-foreground hover:text-white transition-colors group z-10"
+    <div className="fixed inset-0 flex overflow-hidden">
+      {/* Back Button - Enhanced positioning */}
+      <Link 
+        href="/"
+        className="absolute top-6 left-6 sm:top-8 sm:left-8 flex items-center gap-2 px-4 py-2 text-white/80 hover:text-white transition-all duration-200 group z-20 rounded-lg hover:bg-white/10 backdrop-blur-sm border border-white/20 hover:border-white/30"
       >
-        <Link href="/" className="flex items-center text-base sm:text-lg">
-          <ArrowLeft className="h-5 w-5 sm:h-6 sm:w-6 mr-2 group-hover:-translate-x-1 transition-transform duration-150" />
-          <span className="hidden sm:inline">Back to home</span>
-        </Link>
-      </Button>
+        <ArrowLeft className="h-4 w-4 group-hover:-translate-x-1 transition-transform duration-200" />
+        <span className="text-sm font-medium">Back to home</span>
+      </Link>
 
       {/* Left side - Hero/Branding */}
       <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500">
@@ -35,7 +31,7 @@ export default function SignUpPage() {
       </div>
 
       {/* Right side - Sign Up Form */}
-      <div className="flex-1 flex flex-col justify-center items-center p-4 sm:p-6 lg:p-8 xl:p-12 bg-background">
+      <div className="flex-1 flex flex-col justify-center items-center p-6 sm:p-8 lg:p-12 xl:p-16 bg-background">
         <div className="w-full max-w-[min(500px,90vw)] space-y-4 sm:space-y-6">
           <div className="flex flex-col space-y-2 text-center lg:text-left">
             <div className="flex items-center justify-center lg:justify-start gap-2">
