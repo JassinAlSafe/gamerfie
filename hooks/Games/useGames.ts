@@ -9,6 +9,7 @@ const ITEMS_PER_PAGE = 24;
 export function useGamesInfinite() {
   const store = useGamesStore();
   const debouncedSearchQuery = useDebounce(store.searchQuery, 500);
+  const isMobile = typeof window !== 'undefined' && /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
   const query = useInfiniteQuery({
     queryKey: [
@@ -28,6 +29,10 @@ export function useGamesInfinite() {
     ],
     queryFn: async ({ pageParam = 1 }) => {
       const { controller, timeoutId } = createMobileOptimizedAbortController();
+      
+      if (isMobile) {
+        console.log('🔍 [Mobile] Fetching games page:', pageParam);
+      }
       
       try {
         const params = new URLSearchParams({
@@ -60,10 +65,22 @@ export function useGamesInfinite() {
         clearTimeout(timeoutId);
         
         if (!response.ok) {
-          throw new Error(`Failed to fetch games: ${response.status} ${response.statusText}`);
+          const errorMsg = `Failed to fetch games: ${response.status} ${response.statusText}`;
+          if (isMobile) {
+            console.error('❌ [Mobile] Games API error:', errorMsg, 'Page:', pageParam);
+          }
+          throw new Error(errorMsg);
         }
         
         const data = await response.json();
+        
+        if (isMobile) {
+          console.log('✅ [Mobile] Games fetched successfully:', {
+            page: pageParam,
+            gamesCount: data.games?.length || 0,
+            hasNextPage: data.hasNextPage
+          });
+        }
         
         // Validate response
         if (!data || !Array.isArray(data.games)) {
@@ -73,7 +90,11 @@ export function useGamesInfinite() {
         return data;
       } catch (error) {
         clearTimeout(timeoutId);
-        throw new Error(handleMobileNetworkError(error as Error));
+        const errorMsg = handleMobileNetworkError(error as Error);
+        if (isMobile) {
+          console.error('❌ [Mobile] Games fetch failed:', errorMsg, error);
+        }
+        throw new Error(errorMsg);
       }
     },
     getNextPageParam: (lastPage) => {
@@ -84,11 +105,13 @@ export function useGamesInfinite() {
       return undefined;
     },
     initialPageParam: 1,
-    staleTime: 5 * 60 * 1000, // 5 minutes for popular games
-    gcTime: 15 * 60 * 1000, // 15 minutes in memory
+    staleTime: store.searchQuery ? (isMobile ? 2 * 60 * 1000 : 60 * 1000) : (isMobile ? 10 * 60 * 1000 : 5 * 60 * 1000), // Shorter for searches, longer for browsing
+    gcTime: isMobile ? 30 * 60 * 1000 : 15 * 60 * 1000, // 30 min mobile, 15 min desktop
     refetchOnWindowFocus: false,
-    refetchOnReconnect: false,
-    retry: 2, // Simple retry logic
+    refetchOnReconnect: isMobile, // Reconnect only on mobile
+    retry: isMobile ? 5 : 2, // More retries for mobile
+    retryDelay: (attemptIndex: number) => Math.min(2000 * 2 ** attemptIndex, 60000),
+    networkMode: 'online' as const // Only run queries when online
   });
 
   return {

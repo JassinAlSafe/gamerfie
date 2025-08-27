@@ -20,7 +20,12 @@ export interface ExploreData {
 
 // Mobile-optimized fetch function with timeout handling
 async function fetchExploreData(limit: number = 12): Promise<ExploreData> {
+  const isMobile = typeof window !== 'undefined' && /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
   const { controller, timeoutId } = createMobileOptimizedAbortController();
+  
+  if (isMobile) {
+    console.log('🔍 [Mobile] Fetching explore data...', { limit });
+  }
   
   try {
     const response = await fetch(`/api/explore?limit=${limit}`, {
@@ -34,10 +39,23 @@ async function fetchExploreData(limit: number = 12): Promise<ExploreData> {
     clearTimeout(timeoutId);
 
     if (!response.ok) {
-      throw new Error(`Failed to fetch explore data: ${response.status} ${response.statusText}`);
+      const errorMsg = `Failed to fetch explore data: ${response.status} ${response.statusText}`;
+      if (isMobile) {
+        console.error('❌ [Mobile] Explore API error:', errorMsg);
+      }
+      throw new Error(errorMsg);
     }
 
     const data = await response.json();
+    
+    if (isMobile) {
+      console.log('✅ [Mobile] Explore data fetched successfully:', {
+        popular: data.popular?.length || 0,
+        trending: data.trending?.length || 0,
+        upcoming: data.upcoming?.length || 0,
+        recent: data.recent?.length || 0,
+      });
+    }
 
     // Return with sensible defaults
     return {
@@ -54,19 +72,27 @@ async function fetchExploreData(limit: number = 12): Promise<ExploreData> {
     };
   } catch (error) {
     clearTimeout(timeoutId);
-    throw new Error(handleMobileNetworkError(error as Error));
+    const errorMsg = handleMobileNetworkError(error as Error);
+    if (isMobile) {
+      console.error('❌ [Mobile] Explore fetch failed:', errorMsg, error);
+    }
+    throw new Error(errorMsg);
   }
 }
 
 // Clean hook that leverages React Query's natural caching
 export function useExploreData(limit: number = 12) {
+  const isMobile = typeof window !== 'undefined' && /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  
   return useQuery({
     queryKey: ['explore-data', limit],
     queryFn: () => fetchExploreData(limit),
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000, // 10 minutes (was cacheTime)
-    retry: 2,
+    staleTime: isMobile ? 10 * 60 * 1000 : 5 * 60 * 1000, // 10 min mobile, 5 min desktop
+    gcTime: isMobile ? 30 * 60 * 1000 : 10 * 60 * 1000, // 30 min mobile, 10 min desktop
+    retry: isMobile ? 5 : 2, // More retries for mobile
+    retryDelay: (attemptIndex: number) => Math.min(2000 * 2 ** attemptIndex, 60000),
     refetchOnWindowFocus: false,
+    networkMode: 'online' as const, // Only run queries when online
   });
 }
 

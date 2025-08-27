@@ -113,10 +113,39 @@ export const GameHero = memo(function GameHero({ game, profile: _profile, progre
     [processedGame.videos]
   );
 
-  const trailerUrl = useMemo(
-    () => (hasTrailer ? (processedGame.videos?.[0] as any)?.url : null),
-    [hasTrailer, processedGame.videos]
-  );
+  const trailerUrl = useMemo(() => {
+    if (!hasTrailer || !processedGame.videos?.length) return null;
+    
+    // Prioritize videos that are likely to be main trailers
+    const trailerKeywords = ['trailer', 'launch', 'official', 'announcement', 'reveal', 'cinematic'];
+    
+    // First try to find a video with "trailer" in the name
+    let selectedVideo = processedGame.videos.find((video: any) => 
+      trailerKeywords.some(keyword => 
+        video.name?.toLowerCase().includes(keyword)
+      )
+    );
+    
+    // If no trailer found, use the first video
+    if (!selectedVideo) {
+      selectedVideo = processedGame.videos[0];
+    }
+    
+    const video = selectedVideo as any;
+    
+    // Check if we already have a full URL
+    if (video.url && video.url.includes('youtube.com')) {
+      return video.url;
+    }
+    
+    // If we have a video_id, construct the URL
+    if (video.video_id) {
+      return `https://www.youtube.com/watch?v=${video.video_id}`;
+    }
+    
+    // Fallback to url if it exists
+    return video.url || null;
+  }, [hasTrailer, processedGame.videos]);
 
   // If it's a YouTube URL, convert it to an embed URL
   const getEmbedUrl = useCallback((url: string) => {

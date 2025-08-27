@@ -4,6 +4,7 @@
 
 @import "../styles/responsive.css";
 @import "./mobile-touch-optimizations.css";
+@import "../styles/apple-animations.css";
 
 /* Custom responsive breakpoint for extra small screens */
 @media (min-width: 475px) {

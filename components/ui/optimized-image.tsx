@@ -27,7 +27,7 @@ export const OptimizedImage = memo(function OptimizedImage({
   priority = false,
   onLoad,
   onError,
-  placeholder = "/placeholder.png",
+  placeholder = "/images/placeholders/game-cover.jpg",
   sizes,
   width = 300,
   height = 400,

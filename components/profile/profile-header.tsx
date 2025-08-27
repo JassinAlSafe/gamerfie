@@ -23,14 +23,15 @@ interface StatItemProps {
   value: number | string;
   color: string;
   bgColor: string;
+  progressBgColor: string;
   subtext?: string;
   progress?: number;
 }
 
-function StatItem({ icon: Icon, label, value, color, bgColor, subtext, progress }: StatItemProps) {
+function StatItem({ icon: Icon, label, value, color, bgColor, progressBgColor, subtext, progress }: StatItemProps) {
   return (
-    <div className="group p-4 rounded-xl bg-gray-800/30 hover:bg-gray-800/50 transition-all duration-300 border border-gray-700/30 hover:border-gray-600/50">
-      <div className="flex items-start space-x-3">
+    <div className="group p-4 sm:p-5 rounded-xl bg-gray-800/30 hover:bg-gray-800/50 transition-all duration-300 border border-gray-700/30 hover:border-gray-600/50">
+      <div className="flex flex-col sm:flex-row items-center sm:items-start text-center sm:text-left space-y-3 sm:space-y-0 sm:space-x-3">
         <div className={`${bgColor} p-3 rounded-lg group-hover:scale-110 transition-transform duration-200`}>
           <Icon className={`h-6 w-6 ${color}`} />
         </div>
@@ -42,7 +43,7 @@ function StatItem({ icon: Icon, label, value, color, bgColor, subtext, progress 
             <div className="mt-3">
               <div className="w-full bg-gray-700/50 rounded-full h-2">
                 <div 
-                  className={`h-2 rounded-full transition-all duration-500 ${color.replace('text-', 'bg-')}`}
+                  className={`h-2 rounded-full transition-all duration-500 ${progressBgColor}`}
                   style={{ width: `${Math.min(progress, 100)}%` }}
                 />
               </div>
@@ -84,9 +85,9 @@ export function ProfileHeader({
 
       {/* Profile Content */}
       <div className="relative max-w-7xl mx-auto px-4 pt-6 pb-8">
-        <div className="flex flex-col md:flex-row items-start space-y-6 md:space-y-0 md:space-x-8">
+        <div className="flex flex-col md:flex-row items-center md:items-start space-y-6 md:space-y-0 md:space-x-8">
           {/* Avatar Section */}
-          <div className="relative mx-auto md:mx-0">
+          <div className="relative">
             <div className="relative w-28 h-28 md:w-36 md:h-36 rounded-full overflow-hidden ring-4 ring-purple-500/30 shadow-2xl group">
               <AvatarUpload
                 userId={profile.id}
@@ -104,13 +105,13 @@ export function ProfileHeader({
           </div>
 
           {/* Profile Info */}
-          <div className="flex-grow text-center md:text-left">
+          <div className="flex-grow w-full md:w-auto text-center md:text-left">
             <div className="space-y-3">
-              <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white leading-tight">
+              <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white leading-tight tracking-tight">
                 {profile.display_name || profile.username}
               </h1>
-              <p className="text-lg md:text-xl text-purple-300 font-medium">@{profile.username}</p>
-              <p className="text-gray-300 max-w-2xl mt-4 text-sm md:text-base leading-relaxed">
+              <p className="text-lg md:text-xl text-purple-300 font-medium tracking-wide">@{profile.username}</p>
+              <p className="text-gray-300 max-w-2xl mx-auto md:mx-0 mt-4 text-sm md:text-base leading-relaxed px-4 md:px-0">
                 {profile.bio || "No bio provided yet. Click 'Edit Profile' to add a bio and showcase your gaming personality!"}
               </p>
             </div>
@@ -134,16 +135,17 @@ export function ProfileHeader({
         </div>
 
         {/* Detailed Stats */}
-        <div className="mt-6">
-          <Card className="bg-gray-900/50 border-gray-800 backdrop-blur-sm">
-            <CardContent className="p-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="mt-8">
+          <Card className="bg-gray-900/50 border-gray-800 backdrop-blur-sm mx-auto max-w-6xl">
+            <CardContent className="p-4 sm:p-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <StatItem
                   icon={GameController}
                   label="Total Games"
                   value={stats.total_played}
                   color="text-purple-400"
                   bgColor="bg-purple-500/20"
+                  progressBgColor="bg-purple-400"
                   subtext="Games in your collection"
                 />
                 <StatItem
@@ -152,6 +154,7 @@ export function ProfileHeader({
                   value={stats.played_this_year}
                   color="text-blue-400"
                   bgColor="bg-blue-500/20"
+                  progressBgColor="bg-blue-400"
                   subtext={`${new Date().getFullYear()} progress`}
                   progress={stats.total_played > 0 ? (stats.played_this_year / stats.total_played) * 100 : 0}
                 />
@@ -161,6 +164,7 @@ export function ProfileHeader({
                   value={stats.backlog}
                   color="text-pink-400"
                   bgColor="bg-pink-500/20"
+                  progressBgColor="bg-pink-400"
                   subtext="Games to play"
                 />
                 <StatItem
@@ -169,6 +173,7 @@ export function ProfileHeader({
                   value={completionRate}
                   color="text-green-400"
                   bgColor="bg-green-500/20"
+                  progressBgColor="bg-green-400"
                   subtext="Of total collection"
                   progress={parseFloat(completionRate.replace('%', ''))}
                 />

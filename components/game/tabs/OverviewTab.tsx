@@ -31,7 +31,7 @@ export function OverviewTab({ game, onViewMoreRelated }: OverviewTabProps) {
   const summaryMaxLength = 300;
   const storylineMaxLength = 300;
 
-  const gameSummary = (game as any).summary;
+  const gameSummary = game.summary;
   const truncatedSummary = React.useMemo(() => {
     if (!gameSummary || gameSummary.length <= summaryMaxLength)
       return gameSummary;
@@ -40,7 +40,7 @@ export function OverviewTab({ game, onViewMoreRelated }: OverviewTabProps) {
       : `${gameSummary.slice(0, summaryMaxLength)}...`;
   }, [gameSummary, isAboutExpanded]);
 
-  const gameStoryline = (game as any).storyline;
+  const gameStoryline = game.storyline;
   const truncatedStoryline = React.useMemo(() => {
     if (!gameStoryline || gameStoryline.length <= storylineMaxLength)
       return gameStoryline;
@@ -65,7 +65,7 @@ export function OverviewTab({ game, onViewMoreRelated }: OverviewTabProps) {
   };
 
   // Get related games (if available)
-  const relatedGames = (game as any).relatedGames || [];
+  const relatedGames = game.relatedGames || [];
   const hasRelatedGames = relatedGames.length > 0;
 
   return (
@@ -152,12 +152,12 @@ export function OverviewTab({ game, onViewMoreRelated }: OverviewTabProps) {
                 Genres
               </h4>
               <div className="flex flex-wrap gap-2">
-                {game.genres.slice(0, 4).map((genre: any) => (
+                {game.genres.slice(0, 4).map((genre) => (
                   <span
-                    key={genre.id || genre.name}
+                    key={typeof genre === 'string' ? genre : genre.id || genre.name}
                     className="bg-purple-500/20 text-purple-300 px-3 py-1 rounded-full text-sm font-medium transition-colors hover:bg-purple-500/30"
                   >
-                    {genre.name}
+                    {typeof genre === 'string' ? genre : genre.name}
                   </span>
                 ))}
               </div>
@@ -172,12 +172,12 @@ export function OverviewTab({ game, onViewMoreRelated }: OverviewTabProps) {
                 Platforms
               </h4>
               <div className="flex flex-wrap gap-2">
-                {game.platforms.slice(0, 6).map((platform: any) => (
+                {game.platforms.slice(0, 6).map((platform) => (
                   <span
-                    key={platform.id || platform.name}
+                    key={typeof platform === 'string' ? platform : platform.id || platform.name}
                     className="bg-green-500/20 text-green-300 px-3 py-1 rounded-full text-sm font-medium transition-colors hover:bg-green-500/30"
                   >
-                    {platform.name}
+                    {typeof platform === 'string' ? platform : platform.name}
                   </span>
                 ))}
               </div>
@@ -193,9 +193,9 @@ export function OverviewTab({ game, onViewMoreRelated }: OverviewTabProps) {
               </h4>
               <div className="space-y-1">
                 {game.involved_companies
-                  .filter((company: any) => company.developer)
+                  .filter((company) => company.developer)
                   .slice(0, 3)
-                  .map((company: any) => (
+                  .map((company) => (
                     <p key={company.id} className="text-orange-300 font-medium">
                       {company.company?.name}
                     </p>
@@ -244,7 +244,7 @@ export function OverviewTab({ game, onViewMoreRelated }: OverviewTabProps) {
           </div>
 
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            {relatedGames.slice(0, 4).map((relatedGame: any) => (
+            {relatedGames.slice(0, 4).map((relatedGame) => (
               <motion.div
                 key={relatedGame.id}
                 whileHover={{ scale: 1.05 }}
@@ -271,11 +271,11 @@ export function OverviewTab({ game, onViewMoreRelated }: OverviewTabProps) {
                     </h4>
 
                     <div className="flex items-center justify-between">
-                      {(relatedGame as any).rating && (
+                      {(relatedGame.rating || relatedGame.total_rating) && (
                         <div className="flex items-center gap-1">
                           <Star className="w-3 h-3 text-yellow-400" />
                           <span className="text-xs font-medium text-yellow-400">
-                            {(relatedGame as any).rating.toFixed(1)}
+                            {((relatedGame.rating || relatedGame.total_rating || 0) / (relatedGame.total_rating ? 1 : 10)).toFixed(1)}
                           </span>
                         </div>
                       )}

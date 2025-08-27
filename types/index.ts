@@ -29,6 +29,13 @@ export type {
 // Export GameListResponse from IGDB types with a specific name
 export type { GameListResponse as IGDBGameListResponse } from './igdb-types';
 
+// Export new type-safe patterns
+export type {
+  RelatedGameData,
+  GameApiResponse,
+  SafeGameAccess
+} from './game';
+
 // Utility function for Supabase error checking
 export function isSupabaseError(error: unknown): error is AuthError {
   return (

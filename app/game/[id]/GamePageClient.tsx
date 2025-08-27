@@ -1,6 +1,6 @@
 "use client";
 
-import React, { Suspense } from "react";
+import React, { Suspense, useMemo } from "react";
 import { GameDetails } from "@/components/game/GameDetails";
 import { useGameDetails } from "@/hooks/Games/use-game-details";
 import { LoadingSpinner } from "@/components/loadingSpinner";
@@ -62,46 +62,47 @@ function GameContent({ id }: { id: string }) {
   const { game, error } = useGameDetails(id);
   const isError = !!error;
 
-  // Generate structured data for the game with proper sanitization
-  const generateGameStructuredData = (gameData: any) => {
-    if (!gameData) return null;
+  // Must call all hooks before any conditional returns (Rules of Hooks)
+  const structuredData = useMemo(() => {
+    if (!game) return null;
 
+    const gameData = game;
     const structuredData = {
       "@context": "https://schema.org",
       "@type": "VideoGame",
       "name": sanitizeString(gameData.name),
-      "description": sanitizeString(gameData.description || `Track your progress and connect with other players of ${sanitizeString(gameData.name)} on Game Vault.`),
+      "description": sanitizeString(gameData.summary || `Track your progress and connect with other players of ${sanitizeString(gameData.name)} on Game Vault.`),
       "url": sanitizeUrl(`https://gamersvaultapp.com/game/${gameData.id}`),
       "image": sanitizeUrl(gameData.cover_url),
-      "datePublished": gameData.release_date,
-      "developer": gameData.developer ? {
+      "datePublished": gameData.first_release_date ? new Date(gameData.first_release_date * 1000).toISOString() : undefined,
+      "developer": gameData.involved_companies?.find(c => c.developer) ? {
         "@type": "Organization", 
-        "name": sanitizeString(gameData.developer)
+        "name": sanitizeString(gameData.involved_companies.find(c => c.developer)?.company?.name || '')
       } : undefined,
-      "publisher": gameData.publisher ? {
+      "publisher": gameData.involved_companies?.find(c => c.publisher) ? {
         "@type": "Organization",
-        "name": sanitizeString(gameData.publisher)  
+        "name": sanitizeString(gameData.involved_companies.find(c => c.publisher)?.company?.name || '')  
       } : undefined,
-      "genre": sanitizeStringArray(gameData.genres || []),
-      "gamePlatform": sanitizeStringArray(gameData.platforms || []),
+      "genre": sanitizeStringArray(gameData.genres?.map(g => typeof g === 'string' ? g : g.name) || []),
+      "gamePlatform": sanitizeStringArray(gameData.platforms?.map(p => typeof p === 'string' ? p : p.name) || []),
       "applicationCategory": "Game",
-      "operatingSystem": gameData.platforms ? sanitizeStringArray(gameData.platforms).join(", ") || "Multi-platform" : "Multi-platform",
+      "operatingSystem": gameData.platforms ? sanitizeStringArray(gameData.platforms.map(p => typeof p === 'string' ? p : p.name)).join(", ") || "Multi-platform" : "Multi-platform",
       "offers": {
         "@type": "Offer",
         "availability": "https://schema.org/InStock",
         "category": "Video Game"
       },
-      "aggregateRating": gameData.rating ? {
+      "aggregateRating": (gameData.rating || gameData.total_rating) ? {
         "@type": "AggregateRating",
-        "ratingValue": typeof gameData.rating === 'number' ? gameData.rating : 0,
-        "ratingCount": typeof gameData.rating_count === 'number' ? gameData.rating_count : 1,
-        "bestRating": 10,
-        "worstRating": 1
+        "ratingValue": gameData.rating || gameData.total_rating || 0,
+        "ratingCount": gameData.rating_count || gameData.total_rating_count || 1,
+        "bestRating": 100,
+        "worstRating": 0
       } : undefined
     };
 
     return structuredData;
-  };
+  }, [game]);
 
   if (isError) {
     return (
@@ -136,8 +137,6 @@ function GameContent({ id }: { id: string }) {
   if (!game) {
     return <LoadingFallback />;
   }
-
-  const structuredData = generateGameStructuredData(game);
 
   return (
     <>

@@ -1,7 +1,8 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { isMobileDevice } from "@/utils/mobile-detection";
 import { ProfileHeader } from "@/components/profile/profile-header";
 import { ProfileNav } from "@/components/profile/profile-nav";
 import { ProfileActions } from "@/components/profile/profile-actions";
@@ -19,6 +20,11 @@ import { useProfileData } from "@/hooks/Profile/useProfileData";
 
 export default function ProfilePage(): JSX.Element {
   const router = useRouter();
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    setIsMobile(isMobileDevice());
+  }, []);
   const {
     profile,
     isLoading,
@@ -31,7 +37,11 @@ export default function ProfilePage(): JSX.Element {
     friendsLoading,
     activitiesLoading,
     journalLoading,
+    retryFriends,
+    retryActivities,
+    retryJournal,
     totalGames,
+    gameStatsBreakdown,
     acceptedFriends,
     recentReviews,
     recentActivities,
@@ -69,7 +79,7 @@ export default function ProfilePage(): JSX.Element {
     <div className="flex flex-col min-h-screen">
       <div className="relative">
         {/* Background Gradient */}
-        <div className="absolute inset-0 h-[300px] bg-gradient-to-b from-purple-900/50 via-gray-900/50 to-gray-950" />
+        <div className="absolute inset-0 h-[280px] sm:h-[300px] bg-gradient-to-b from-purple-900/50 via-gray-900/50 to-gray-950" />
 
         {/* Profile Header */}
         <div className="relative">
@@ -81,29 +91,31 @@ export default function ProfilePage(): JSX.Element {
         </div>
       </div>
 
-      {/* Profile Navigation */}
-      <div className="sticky top-16 z-40 bg-gray-950/90 backdrop-blur-md border-b border-white/10">
+      {/* Profile Navigation - Clean, Apple-inspired design */}
+      <div className="sticky top-16 z-40 bg-gray-950/95 border-b border-gray-800/50">
         <ProfileNav />
       </div>
 
       {/* Profile Content */}
       <div className="flex-grow bg-gradient-to-b from-gray-950 to-gray-900 py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold text-white">Profile Overview</h2>
+          <div className="flex justify-between items-center mb-6 px-2 sm:px-0">
+            <h2 className="text-xl sm:text-2xl font-semibold text-white tracking-tight">Overview</h2>
             <ProfileActions
               onEdit={handleEditProfile}
               onSettings={handleSettingsClick}
             />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
             {/* Left Column - About & Stats & Activity */}
-            <div className="md:col-span-2 space-y-6">
+            <div className="lg:col-span-2 space-y-4 sm:space-y-6">
               <ProfileSection 
                 isLoading={isLoading} 
                 section="About"
                 error={error}
+                priority="high"
+                className="animate-fade-in-up"
               >
                 <AboutSection profile={profile} />
               </ProfileSection>
@@ -112,6 +124,9 @@ export default function ProfilePage(): JSX.Element {
                 isLoading={statsLoading} 
                 section="Statistics"
                 onRetry={refreshStats}
+                priority="high"
+                className="animate-fade-in-up"
+                style={{ animationDelay: '0.1s' }}
               >
                 <StatsSection 
                   stats={optimizedStats} 
@@ -123,26 +138,35 @@ export default function ProfilePage(): JSX.Element {
               <ProfileSection 
                 isLoading={activitiesLoading} 
                 section="Activity"
-                onRetry={() => window.location.reload()}
+                onRetry={retryActivities}
+                priority="medium"
+                className="animate-fade-in-up"
+                style={{ animationDelay: '0.2s' }}
               >
                 <ActivitySection activities={recentActivities} />
               </ProfileSection>
             </div>
 
             {/* Right Column - Games & Friends */}
-            <div className="space-y-6">
+            <div className="space-y-4 sm:space-y-6">
               <ProfileSection 
-                isLoading={isLoading} 
+                isLoading={statsLoading} 
                 section="Games"
-                error={error}
+                onRetry={refreshStats}
+                priority="medium"
+                className="animate-fade-in-up"
+                style={{ animationDelay: '0.3s' }}
               >
-                <GamesSection totalGames={totalGames} />
+                <GamesSection totalGames={totalGames} gameStatsBreakdown={gameStatsBreakdown} />
               </ProfileSection>
 
               <ProfileSection 
                 isLoading={friendsLoading} 
                 section="Friends"
-                onRetry={() => window.location.reload()}
+                onRetry={retryFriends}
+                priority="medium"
+                className="animate-fade-in-up"
+                style={{ animationDelay: '0.4s' }}
               >
                 <FriendsSection friends={acceptedFriends} />
               </ProfileSection>
@@ -150,11 +174,14 @@ export default function ProfilePage(): JSX.Element {
           </div>
 
           {/* Bottom Row - Reviews & Journal */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mt-4 sm:mt-6">
             <ProfileSection 
               isLoading={journalLoading} 
               section="Reviews"
-              onRetry={() => window.location.reload()}
+              onRetry={retryJournal}
+              priority="low"
+              className="animate-fade-in-up"
+              style={{ animationDelay: '0.5s' }}
             >
               <ReviewsSection reviews={recentReviews} />
             </ProfileSection>
@@ -162,7 +189,10 @@ export default function ProfilePage(): JSX.Element {
             <ProfileSection 
               isLoading={journalLoading} 
               section="Journal"
-              onRetry={() => window.location.reload()}
+              onRetry={retryJournal}
+              priority="low"
+              className="animate-fade-in-up"
+              style={{ animationDelay: '0.6s' }}
             >
               <JournalSection entries={recentJournalEntries} />
             </ProfileSection>
