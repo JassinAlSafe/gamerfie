@@ -37,7 +37,7 @@ export function UnauthenticatedHome() {
 
       {/* Content */}
       <div className="relative z-10">
-        <TracingBeam className="px-4 sm:px-6">
+        <TracingBeam className="pt-20 px-4 sm:px-6">
           <div className="max-w-7xl mx-auto space-y-8 sm:space-y-12 lg:space-y-16">
             <Suspense fallback={<div className="h-[calc(100vh-64px)] flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500"></div></div>}>
               <HeroSection stats={typedHomeData.stats} />

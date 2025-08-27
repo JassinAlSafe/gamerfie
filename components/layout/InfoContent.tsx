@@ -17,7 +17,7 @@ export function InfoContent({
   showBreadcrumb = true 
 }: InfoContentProps) {
   return (
-    <div className={`p-6 lg:p-8 xl:p-12 ${className}`}>
+    <div className={`pt-20 px-6 pb-6 lg:px-8 lg:pb-8 xl:px-12 xl:pb-12 ${className}`}>
       {showBreadcrumb && (
         <InfoNavigation variant="breadcrumb" />
       )}

@@ -17,9 +17,7 @@ export function InfoLayout({ children, title }: InfoLayoutProps) {
     <div className="min-h-screen bg-gray-950">
       {/* Mobile Header */}
       <div 
-        className={`lg:hidden bg-gray-900/95 backdrop-blur-sm border-b border-gray-800/50 p-4 sticky z-50 transition-all duration-300 ${
-          isBetaBannerVisible ? "top-[44px] sm:top-[48px]" : "top-0"
-        }`}
+        className="lg:hidden bg-gray-900/95 backdrop-blur-sm border-b border-gray-800/50 p-4 z-50 transition-all duration-300"
       >
         <div className="flex items-center justify-between">
           <button

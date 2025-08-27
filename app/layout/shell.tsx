@@ -35,9 +35,9 @@ const maxWidthClasses = {
 
 const paddingClasses = {
   none: "",
-  sm: "py-4 md:py-6",
-  md: "py-6 md:py-8",
-  lg: "py-8 md:py-12",
+  sm: "pt-20 pb-4 md:pb-6",
+  md: "pt-20 pb-6 md:pb-8",
+  lg: "pt-20 pb-8 md:pb-12",
 };
 
 export const Shell = memo(function Shell({
