@@ -13,11 +13,19 @@ import { FloatingPasswordInput } from "@/components/ui/floating-password-input";
 import { Loader2, Check, UserCheck } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { useAuthActions } from "@/hooks/useAuthOptimized";
+import { useAuthStore } from "@/stores/useAuthStore";
+import { useFormValidation } from "@/hooks/useFormValidation";
+import { useUsernameCheck } from "@/hooks/useUsernameCheck";
 import { cn } from "@/lib/utils";
 import {
   detectExistingUser,
-  type UserDetectionResult,
 } from "@/lib/auth-optimization";
+import {
+  type UserDetectionResult,
+  type FormData,
+  type ValidationErrors,
+  type TouchedFields,
+} from "@/types/auth-form.types";
 import { ProgressiveAuthLoader } from "./ProgressiveAuthLoader";
 
 const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
@@ -34,20 +42,6 @@ interface AuthFormProps {
   onSuccess?: () => void;
 }
 
-interface FormData {
-  email: string;
-  password: string;
-  username?: string;
-  displayName?: string;
-  rememberMe?: boolean;
-}
-
-interface ValidationErrors {
-  email?: string;
-  password?: string;
-  username?: string;
-  displayName?: string;
-}
 
 export function AuthForm({ mode, onSuccess }: AuthFormProps) {
   const [isLoading, setIsLoading] = useState(false);
@@ -60,7 +54,12 @@ export function AuthForm({ mode, onSuccess }: AuthFormProps) {
     rememberMe: false,
   });
   const [errors, setErrors] = useState<ValidationErrors>({});
-  const [touched, setTouched] = useState<Record<string, boolean>>({});
+  const [touched, setTouched] = useState<TouchedFields>({
+    email: false,
+    password: false,
+    username: false,
+    displayName: false,
+  });
   const [userDetection, setUserDetection] =
     useState<UserDetectionResult | null>(null);
   const [isDetecting, setIsDetecting] = useState(false);
@@ -77,6 +76,9 @@ export function AuthForm({ mode, onSuccess }: AuthFormProps) {
   const router = useRouter();
   const { toast } = useToast();
   const { signIn, signUp, signInWithGoogle } = useAuthActions();
+  const checkUser = useAuthStore((state) => state.checkUser);
+  const { validateField, validateForm } = useFormValidation({ mode });
+  const { checkUsername, cleanup } = useUsernameCheck();
 
   // Check for auth errors in URL parameters
   useEffect(() => {
@@ -156,69 +158,47 @@ export function AuthForm({ mode, onSuccess }: AuthFormProps) {
   useEffect(() => {
     if (mode === "signup" && debouncedUsername && debouncedUsername.length >= 3 && !errors.username) {
       setCheckingUsername(true);
-      // Simulate username check - in real app, call your API
-      setTimeout(() => {
-        // Mock check - you'd replace this with actual API call
-        const isAvailable = !['admin', 'user', 'test', 'demo'].includes(debouncedUsername.toLowerCase());
-        setUsernameAvailable(isAvailable);
-        setCheckingUsername(false);
-      }, 500);
+      
+      checkUsername(debouncedUsername)
+        .then((result) => {
+          setUsernameAvailable(result.available);
+          if (!result.available && result.reason) {
+            setErrors(prev => ({ ...prev, username: result.reason }));
+          }
+        })
+        .catch((error) => {
+          console.error('Username check failed:', error);
+          // Don't block the user if API fails, just show warning
+          if (error.message !== 'Request aborted') {
+            setUsernameAvailable(null);
+            toast({
+              title: "Username check failed",
+              description: "Could not verify username availability",
+              variant: "destructive",
+            });
+          }
+        })
+        .finally(() => {
+          setCheckingUsername(false);
+        });
     } else {
       setUsernameAvailable(null);
       setCheckingUsername(false);
     }
-  }, [debouncedUsername, mode, errors.username]);
+    
+    // Cleanup on unmount
+    return () => {
+      cleanup();
+    };
+  }, [debouncedUsername, mode, errors.username, checkUsername, cleanup, toast]);
 
-  const validateEmail = useCallback((email: string) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!email) return "Email is required";
-    if (!emailRegex.test(email)) return "Please enter a valid email address";
-    return "";
-  }, []);
-
-  const validatePassword = useCallback(
-    (password: string) => {
-      if (!password) return "Password is required";
-      if (mode === "signup" && password.length < 8)
-        return "Password must be at least 8 characters";
-      return "";
-    },
-    [mode]
-  );
-
-  const validateUsername = useCallback(
-    (username: string) => {
-      if (mode === "signup" && !username) return "Username is required";
-      if (mode === "signup" && username.length < 3)
-        return "Username must be at least 3 characters";
-      return "";
-    },
-    [mode]
-  );
-
-  const validateField = useCallback(
-    (name: string, value: string) => {
-      switch (name) {
-        case "email":
-          return validateEmail(value);
-        case "password":
-          return validatePassword(value);
-        case "username":
-          return validateUsername(value);
-        case "displayName":
-          return mode === "signup" && !value ? "Display name is required" : "";
-        default:
-          return "";
-      }
-    },
-    [mode, validateEmail, validatePassword, validateUsername]
-  );
 
   // Auto-validate with debounced values
   useEffect(() => {
-    Object.keys(touched).forEach((fieldName) => {
+    const fields = Object.keys(touched) as (keyof TouchedFields)[];
+    fields.forEach((fieldName) => {
       if (touched[fieldName]) {
-        const value = debouncedFormData[fieldName as keyof FormData] as string;
+        const value = debouncedFormData[fieldName];
         const error = validateField(fieldName, value);
         setErrors((prev) => ({ ...prev, [fieldName]: error }));
       }
@@ -235,7 +215,19 @@ export function AuthForm({ mode, onSuccess }: AuthFormProps) {
         setAuthError(null);
       }
 
-      setFormData((prev) => ({ ...prev, [name]: fieldValue }));
+      // Type-safe form data update
+      if (name in formData && typeof fieldValue === 'string') {
+        setFormData((prev) => ({ 
+          ...prev, 
+          [name as keyof FormData]: fieldValue 
+        }));
+      } else if (name === 'rememberMe' && typeof fieldValue === 'boolean') {
+        // Handle checkbox separately since it's not in FormData interface
+        setFormData((prev) => ({ 
+          ...prev, 
+          rememberMe: fieldValue 
+        }));
+      }
     },
     [authError]
   );
@@ -243,42 +235,33 @@ export function AuthForm({ mode, onSuccess }: AuthFormProps) {
   const handleBlur = useCallback(
     (e: React.FocusEvent<HTMLInputElement>) => {
       const { name, value } = e.target;
-      setTouched((prev) => ({ ...prev, [name]: true }));
-
-      const error = validateField(name, value);
-      setErrors((prev) => ({ ...prev, [name]: error }));
+      
+      // Type-safe field name validation
+      if (name in formData) {
+        setTouched((prev) => ({ ...prev, [name as keyof TouchedFields]: true }));
+        
+        const error = validateField(name, value);
+        setErrors((prev) => ({ ...prev, [name as keyof ValidationErrors]: error }));
+      }
     },
-    [validateField]
+    [validateField, formData]
   );
 
-  const validateForm = useCallback(() => {
-    const fields =
-      mode === "signup"
-        ? ["email", "password", "username", "displayName"]
-        : ["email", "password"];
-
-    const newErrors: ValidationErrors = {};
-    let isValid = true;
-
-    fields.forEach((field) => {
-      const error = validateField(
-        field,
-        formData[field as keyof FormData] as string
-      );
-      if (error) {
-        newErrors[field as keyof ValidationErrors] = error;
-        isValid = false;
-      }
-    });
-
-    setErrors(newErrors);
-    return isValid;
-  }, [mode, formData, validateField]);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
 
-    if (!validateForm()) return;
+    // Validate form using custom hook - convert FormData to Record<string, string>
+    const formDataForValidation = {
+      email: formData.email,
+      password: formData.password,
+      username: formData.username,
+      displayName: formData.displayName,
+    };
+    const errors = validateForm(formDataForValidation);
+    setErrors(errors);
+    
+    if (Object.keys(errors).length > 0) return;
 
     // Clear any previous auth errors
     setAuthError(null);
@@ -316,6 +299,12 @@ export function AuthForm({ mode, onSuccess }: AuthFormProps) {
         if (response.data?.user) {
           setSubmitPhase('redirecting');
           setSuccessMessage('Welcome back!');
+          
+          // Force auth state refresh to update header immediately
+          await checkUser();
+          
+          // Force router refresh to ensure header updates
+          router.refresh();
           
           // Show success state briefly before redirect
           await new Promise(resolve => setTimeout(resolve, 800));
