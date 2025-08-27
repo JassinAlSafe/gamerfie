@@ -181,7 +181,7 @@ export default function RootLayout({
         />
       </head>
       <body
-        className={`${inter.className} ${geistSans.variable} ${geistMono.variable} ${isBetaBannerVisible ? 'beta-banner-visible' : ''}`}
+        className={`${inter.className} ${geistSans.variable} ${geistMono.variable} ${isBetaBannerVisible ? 'beta-banner-visible' : ''} ${isAuthPage ? 'auth-page' : ''}`}
       >
         <QueryClientProvider client={queryClient}>
           <SupabaseProvider initialSession={null}>

@@ -1439,3 +1439,5038 @@ Error in IGDB proxy: SyntaxError: Unexpected end of JSON input
  ✓ Compiled in 452ms (1230 modules)
  ✓ Compiled in 441ms (1230 modules)
  ✓ Compiled in 1126ms (1230 modules)
+ ✓ Compiled in 1279ms (1230 modules)
+ ✓ Compiled in 202ms (1230 modules)
+ ✓ Compiled in 373ms (1230 modules)
+ ✓ Compiled in 296ms (1230 modules)
+ ✓ Compiled in 920ms (1230 modules)
+ ✓ Compiled in 480ms (1230 modules)
+ ✓ Compiled in 586ms (1230 modules)
+ ✓ Compiled in 273ms (1230 modules)
+ ✓ Compiled in 284ms (1230 modules)
+ ✓ Compiled in 1150ms (1230 modules)
+ ✓ Compiled in 366ms (1230 modules)
+ ✓ Compiled in 414ms (1230 modules)
+ ✓ Compiled in 1400ms (1230 modules)
+ ✓ Compiled in 1471ms (1230 modules)
+ ✓ Compiled in 359ms (1230 modules)
+ ✓ Compiled in 431ms (1230 modules)
+ ✓ Compiled in 318ms (1213 modules)
+ ✓ Compiled in 203ms (1213 modules)
+ ○ Compiling /_not-found ...
+ ✓ Compiled /_not-found in 1218ms (2269 modules)
+ POST /api/igdb-proxy 404 in 1570ms
+ POST /api/igdb-proxy 404 in 1576ms
+ POST /api/igdb-proxy 404 in 1568ms
+ POST /api/igdb-proxy 404 in 1567ms
+IGDB Request: {
+  endpoint: 'games',
+  query: 'fields name, cover.*, first_release_date, rating, total_rating, total_rating_count, aggregated_rating, aggregated_rating_count, hypes, genres.*, platforms.*, summary, screenshots.*, videos.*, artworks.*;\n' +
+    '        where category = 0 & cover != null & total_rating_count >= 10;\n' +
+    '        sort total_rating_count desc;\n' +
+    '        offset 0;\n' +
+    '        limit 12;'
+}
+Requesting token from: https://id.twitch.tv/oauth2/token
+Token response: 200 {"access_token":"2gz7o8szupd1xch9o7ifw5rw1btdqh","expires_in":4709972,"token_type":"bearer"}
+
+Making IGDB request: {
+  url: 'https://api.igdb.com/v4/games',
+  clientId: 'wi3ma4jpl7mz5qp5wbg44xujau4il7',
+  query: 'fields name, cover.*, first_release_date, rating, total_rating, total_rating_count, aggregated_rating, aggregated_rating_count, hypes, genres.*, platforms.*, summary, screenshots.*, videos.*, artworks.*;\n' +
+    '        where category = 0 & cover != null & total_rating_count >= 10;\n' +
+    '        sort total_rating_count desc;\n' +
+    '        offset 0;\n' +
+    '        limit 12;'
+}
+IGDB response: 200 [
+  {
+    "id": 1020,
+    "aggregated_rating": 88.13793103448276,
+    "aggregated_rating_count": 27,
+    "artworks": [
+      {
+        "id": 2633,
+        "game": 1020,
+        "height": 790,
+        "image_id": "rrrqdvbz5lhuhqudjgza",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/rrrqdvbz5lhuhqudjgza.jpg",
+        "width": 1260,
+        "checksum": "5ae04db9-1a76-9910-34bb-13993028fb40",
+        "artwork_type": 1
+      },
+      {
+        "id": 168666,
+        "alpha_channel": true,
+        "animated": false,
+        "game": 1020,
+        "height": 956,
+        "image_id": "ar3m56",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/ar3m56.jpg",
+        "width": 1106,
+        "checksum": "5eb24cff-4015-9334-1d43-1363f86784ab",
+        "artwork_type": 7
+      },
+      {
+        "id": 2631,
+        "game": 1020,
+        "height": 790,
+        "image_id": "s7eojwfwa0viamaa68gs",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/s7eojwfwa0viamaa68gs.jpg",
+        "width": 1260,
+        "checksum": "ce3955c6-b62b-3d79-5c23-fd14900e1398",
+        "artwork_type": 1
+      },
+      {
+        "id": 2632,
+        "game": 1020,
+        "height": 790,
+        "image_id": "lg34eavl7phmabgceods",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/lg34eavl7phmabgceods.jpg",
+        "width": 1260,
+        "checksum": "cfa7df59-3c26-b7e2-c0a4-266fccffa74a",
+        "artwork_type": 1
+      },
+      {
+        "id": 5848,
+        "alpha_channel": false,
+        "animated": false,
+        "game": 1020,
+        "height": 1272,
+        "image_id": "ar4ig",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/ar4ig.jpg",
+        "width": 1800,
+        "checksum": "d8242b8c-11af-ee6b-e965-86a1777ad3b5",
+        "artwork_type": 1
+      },
+      {
+        "id": 2630,
+        "game": 1020,
+        "height": 790,
+        "image_id": "nsi3tc7jk2evyici425s",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/nsi3tc7jk2evyici425s.jpg",
+        "width": 1260,
+        "checksum": "eddaa76e-8572-8eb1-f6fd-35c7ea85ceb3",
+        "artwork_type": 1
+      },
+      {
+        "id": 2634,
+        "game": 1020,
+        "height": 790,
+        "image_id": "btyih5vofmjwex2tkm8w",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/btyih5vofmjwex2tkm8w.jpg",
+        "width": 1260,
+        "checksum": "e20e8c61-fe6c-80be-e46b-eb21450e25d5",
+        "artwork_type": 1
+      },
+      {
+        "id": 2628,
+        "game": 1020,
+        "height": 790,
+        "image_id": "gtng284ejjted82pncis",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/gtng284ejjted82pncis.jpg",
+        "width": 1260,
+        "checksum": "eeadb5b3-8710-9c84-5a15-2fe5fb33d683",
+        "artwork_type": 1
+      },
+      {
+        "id": 2636,
+        "game": 1020,
+        "height": 790,
+        "image_id": "uzc3v8bb2gow8feq3eji",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/uzc3v8bb2gow8feq3eji.jpg",
+        "width": 1260,
+        "checksum": "38bbac83-1411-208f-0aa1-fb61a0d0c3e3",
+        "artwork_type": 1
+      },
+      {
+        "id": 2629,
+        "game": 1020,
+        "height": 790,
+        "image_id": "mqkw6ohfcnovwjkxtbue",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/mqkw6ohfcnovwjkxtbue.jpg",
+        "width": 1260,
+        "checksum": "f8d4f3d4-dfa8-4ef4-ae39-2a58fa19b109",
+        "artwork_type": 1
+      },
+      {
+        "id": 2635,
+        "game": 1020,
+        "height": 790,
+        "image_id": "cxvw3qhv2qgvf71rjedb",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/cxvw3qhv2qgvf71rjedb.jpg",
+        "width": 1260,
+        "checksum": "769d1a40-7da2-2a69-ed1b-509ea06b3fd7",
+        "artwork_type": 1
+      },
+      {
+        "id": 5650,
+        "alpha_channel": true,
+        "animated": false,
+        "game": 1020,
+        "height": 1080,
+        "image_id": "ar4cy",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/ar4cy.jpg",
+        "width": 1920,
+        "checksum": "1ddb4a72-fd2c-f3b2-2b33-0cc1ea021b24",
+        "artwork_type": 1
+      },
+      {
+        "id": 5849,
+        "alpha_channel": false,
+        "animated": false,
+        "game": 1020,
+        "height": 1272,
+        "image_id": "ar4ih",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/ar4ih.jpg",
+        "width": 1800,
+        "checksum": "78c490fa-33ae-fb67-4e23-3e8288388d70",
+        "artwork_type": 1
+      }
+    ],
+    "cover": {
+      "id": 120937,
+      "alpha_channel": false,
+      "animated": false,
+      "game": 1020,
+      "height": 1580,
+      "image_id": "co2lbd",
+      "url": "//images.igdb.com/igdb/image/upload/t_thumb/co2lbd.jpg",
+      "width": 1185,
+      "checksum": "c7b97e95-637d-9021-9f94-52342cad21a2"
+    },
+    "first_release_date": 1379376000,
+    "genres": [
+      {
+        "id": 5,
+        "created_at": 1297639288,
+        "name": "Shooter",
+        "slug": "shooter",
+        "updated_at": 1323289215,
+        "url": "https://www.igdb.com/genres/shooter",
+        "checksum": "20c255bc-ec2d-c219-34bd-47995b0a79f1"
+      },
+      {
+        "id": 10,
+        "created_at": 1297639288,
+        "name": "Racing",
+        "slug": "racing",
+        "updated_at": 1323289215,
+        "url": "https://www.igdb.com/genres/racing",
+        "checksum": "41227287-0a1a-0f14-90f2-05655314e8b4"
+      },
+      {
+        "id": 31,
+        "created_at": 1323568041,
+        "name": "Adventure",
+        "slug": "adventure",
+        "updated_at": 1323568041,
+        "url": "https://www.igdb.com/genres/adventure",
+        "checksum": "a93a77df-3927-13fa-1d50-5d443cbb695f"
+      }
+    ],
+    "name": "Grand Theft Auto V",
+    "platforms": [
+      {
+        "id": 9,
+        "abbreviation": "PS3",
+        "alternative_name": "PS3",
+        "category": 1,
+        "created_at": 1297639288,
+        "generation": 7,
+        "name": "PlayStation 3",
+        "platform_logo": 79,
+        "platform_family": 1,
+        "slug": "ps3",
+        "updated_at": 1718027289,
+        "url": "https://www.igdb.com/platforms/ps3",
+        "versions": [
+          5,
+          4,
+          6
+        ],
+        "websites": [
+          3
+        ],
+        "checksum": "7194dbc7-fcb0-7fb8-44a7-609db3aee29e",
+        "platform_type": 1
+      },
+      {
+        "id": 48,
+        "abbreviation": "PS4",
+        "alternative_name": "PS4",
+        "category": 1,
+        "created_at": 1326544944,
+        "generation": 8,
+        "name": "PlayStation 4",
+        "platform_logo": 231,
+        "platform_family": 1,
+        "slug": "ps4--1",
+        "summary": "The PlayStation 4 system opens the door to an incredible journey through immersive new gaming worlds and a deeply connected gaming community. PS4 puts gamers first with an astounding launch line-up and over 180 games in development. Play amazing top-tier blockbusters and innovative indie hits on PS4. Developer inspired, gamer focused.",
+        "updated_at": 1718027289,
+        "url": "https://www.igdb.com/platforms/ps4--1",
+        "versions": [
+          17,
+          178,
+          179
+        ],
+        "websites": [
+          11
+        ],
+        "checksum": "499977cf-16b6-1abf-3664-be1a369a656e",
+        "platform_type": 1
+      },
+      {
+        "id": 6,
+        "abbreviation": "PC",
+        "alternative_name": "mswin",
+        "category": 4,
+        "created_at": 1297639288,
+        "name": "PC (Microsoft Windows)",
+        "platform_logo": 670,
+        "slug": "win",
+        "updated_at": 1718027289,
+        "url": "https://www.igdb.com/platforms/win",
+        "versions": [
+          14,
+          1,
+          15,
+          13,
+          530,
+          531,
+          534,
+          532,
+          513,
+          529,
+          124,
+          533
+        ],
+        "websites": [
+          2
+        ],
+        "checksum": "50ef0869-39cd-be87-5221-8ef3f082834a",
+        "platform_type": 4
+      },
+      {
+        "id": 12,
+        "abbreviation": "X360",
+        "alternative_name": "X360",
+        "category": 1,
+        "created_at": 1297639288,
+        "generation": 7,
+        "name": "Xbox 360",
+        "platform_logo": 622,
+        "platform_family": 2,
+        "slug": "xbox360",
+        "summary": "Xbox 360 brings you a total games and entertainment experience. The largest library of games, including titles that get you right into the thick of it with Kinect. Plus, your whole family can watch HD movies, TV shows, live events, music, sports and more—across all your devices. Xbox 360 is the center of your games and entertainment universe.",
+        "updated_at": 1718027289,
+        "url": "https://www.igdb.com/platforms/xbox360",
+        "versions": [
+          2,
+          3,
+          495,
+          83
+        ],
+        "websites": [
+          4
+        ],
+        "checksum": "34a16af2-775f-f963-b611-406f09935eaa",
+        "platform_type": 1
+      },
+      {
+        "id": 49,
+        "abbreviation": "XONE",
+        "alternative_name": "XONE",
+        "category": 1,
+        "created_at": 1326545022,
+        "generation": 8,
+        "name": "Xbox One",
+        "platform_logo": 329,
+        "platform_family": 2,
+        "slug": "xboxone",
+        "summary": "Welcome to a new generation of games and entertainment. Where games push the boundaries of realism. And television obeys your every command. Where listening to music while playing a game is a snap. And you can jump from TV to movies to music to a game in an instant. Where your experience is custom tailored to you. And the entertainment you love is all in one place. Welcome to the all-in-one, Xbox One",
+        "updated_at": 1718027289,
+        "url": "https://www.igdb.com/platforms/xboxone",
+        "versions": [
+          78,
+          188,
+          185,
+          180
+        ],
+        "websites": [
+          12
+        ],
+        "checksum": "7f035357-e820-732f-cb2e-f2cd9e2c8aad",
+        "platform_type": 1
+      }
+    ],
+    "rating": 89.55570845494165,
+    "screenshots": [
+      {
+        "id": 5673,
+        "game": 1020,
+        "height": 720,
+        "image_id": "hjnzngnrtwr82jzmmkef",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/hjnzngnrtwr82jzmmkef.jpg",
+        "width": 1280,
+        "checksum": "5cd631ad-c54e-67b3-9b37-b86b024f021d"
+      },
+      {
+        "id": 6913,
+        "game": 1020,
+        "height": 720,
+        "image_id": "n3t2agwuxlqggp3kryf9",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/n3t2agwuxlqggp3kryf9.jpg",
+        "width": 1280,
+        "checksum": "e6a026f7-a8c0-fa9c-34f3-d774096e7f98"
+      },
+      {
+        "id": 5670,
+        "game": 1020,
+        "height": 720,
+        "image_id": "o7q3ikzmkjxbftrd64ok",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/o7q3ikzmkjxbftrd64ok.jpg",
+        "width": 1280,
+        "checksum": "f5f22023-60ca-670c-e7b3-9a37a7a7058b"
+      },
+      {
+        "id": 5672,
+        "game": 1020,
+        "height": 720,
+        "image_id": "eepecmqsq6uqxiaukar1",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/eepecmqsq6uqxiaukar1.jpg",
+        "width": 1280,
+        "checksum": "00d8f2c9-2fba-39ab-ce48-72317665d678"
+      },
+      {
+        "id": 5671,
+        "game": 1020,
+        "height": 720,
+        "image_id": "vfdeo6kgu0o4cyzd0sng",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/vfdeo6kgu0o4cyzd0sng.jpg",
+        "width": 1280,
+        "checksum": "bce75bfb-89ec-4f8f-fdc5-522a4d97b614"
+      },
+      {
+        "id": 5674,
+        "game": 1020,
+        "height": 720,
+        "image_id": "glvmulyejlde31q8b70z",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/glvmulyejlde31q8b70z.jpg",
+        "width": 1280,
+        "checksum": "beaea78f-9bd5-3605-e2f8-38572a541b19"
+      },
+      {
+        "id": 1379882,
+        "alpha_channel": false,
+        "animated": false,
+        "game": 1020,
+        "height": 1080,
+        "image_id": "sctkq2",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/sctkq2.jpg",
+        "width": 1920,
+        "checksum": "54a317a9-b9f6-03da-1b22-f309d4d2f16c"
+      },
+      {
+        "id": 1379883,
+        "alpha_channel": false,
+        "animated": false,
+        "game": 1020,
+        "height": 1080,
+        "image_id": "sctkq3",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/sctkq3.jpg",
+        "width": 1920,
+        "checksum": "5b912673-7e1e-34ff-d58e-b28923bcfd62"
+      },
+      {
+        "id": 1379884,
+        "alpha_channel": false,
+        "animated": false,
+        "game": 1020,
+        "height": 1080,
+        "image_id": "sctkq4",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/sctkq4.jpg",
+        "width": 1920,
+        "checksum": "dafbb2cf-b407-6c64-796c-ae7624b62bb4"
+      },
+      {
+        "id": 1379881,
+        "alpha_channel": false,
+        "animated": false,
+        "game": 1020,
+        "height": 1080,
+        "image_id": "sctkq1",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/sctkq1.jpg",
+        "width": 1920,
+        "checksum": "bba990e5-8395-ec57-a6a3-aace70678abc"
+      }
+    ],
+    "summary": "Grand Theft Auto V is a vast open world game set in Los Santos, a sprawling sun-soaked metropolis struggling to stay afloat in an era of economic uncertainty and cheap reality TV. The game blends storytelling and gameplay in new ways as players repeatedly jump in and out of the lives of the game’s three lead characters, playing all sides of the game’s interwoven story.",
+    "total_rating": 88.8468197447122,
+    "total_rating_count": 5188,
+    "videos": [
+      {
+        "id": 3164,
+        "game": 1020,
+        "name": "Next-gen Launch Trailer",
+        "video_id": "PIF_fqFZEuk",
+        "checksum": "bda7b570-a541-c887-3391-ecb458267960"
+      },
+      {
+        "id": 710,
+        "game": 1020,
+        "name": "Trailer",
+        "video_id": "QkkoHAzjnUs",
+        "checksum": "0bd75f77-7752-28d8-7283-335c5da8c273"
+      },
+      {
+        "id": 1420,
+        "game": 1020,
+        "name": "Gameplay video",
+        "video_id": "N-xHcvug3WI",
+        "checksum": "78730f2e-fdfd-fc29-46c7-2a9e00c0cadf"
+      },
+      {
+        "id": 120376,
+        "game": 1020,
+        "name": "Trailer",
+        "video_id": "UWzV0AFXukI",
+        "checksum": "2b6e4ad9-762f-971f-502d-c31f2de11da5"
+      }
+    ]
+  },
+  {
+    "id": 1942,
+    "aggregated_rating": 91.73076923076923,
+    "aggregated_rating_count": 26,
+    "artworks": [
+      {
+        "id": 168455,
+        "alpha_channel": false,
+        "animated": false,
+        "game": 1942,
+        "height": 675,
+        "image_id": "ar3lzb",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/ar3lzb.jpg",
+        "width": 1200,
+        "checksum": "9b91f1cb-a2a6-b2d5-af2c-16e098552b10",
+        "artwork_type": 4
+      },
+      {
+        "id": 168456,
+        "alpha_channel": false,
+        "animated": false,
+        "game": 1942,
+        "height": 630,
+        "image_id": "ar3lzc",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/ar3lzc.jpg",
+        "width": 1200,
+        "checksum": "ebb6bae1-840a-22c1-e7c3-5356a007736b",
+        "artwork_type": 4
+      },
+      {
+        "id": 168457,
+        "alpha_channel": false,
+        "animated": false,
+        "game": 1942,
+        "height": 610,
+        "image_id": "ar3lzd",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/ar3lzd.jpg",
+        "width": 1260,
+        "checksum": "3a0107e1-8f3e-7f5f-57a8-6a627e3a0116",
+        "artwork_type": 4
+      },
+      {
+        "id": 168458,
+        "alpha_channel": false,
+        "animated": false,
+        "game": 1942,
+        "height": 4463,
+        "image_id": "ar3lze",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/ar3lze.jpg",
+        "width": 7133,
+        "checksum": "ca1c789e-2c0f-62ef-72e9-75ec70f9f9c3",
+        "artwork_type": 4
+      },
+      {
+        "id": 168459,
+        "alpha_channel": false,
+        "animated": false,
+        "game": 1942,
+        "height": 780,
+        "image_id": "ar3lzf",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/ar3lzf.jpg",
+        "width": 1200,
+        "checksum": "811c3287-6553-49b3-cc49-710c1fa1763c",
+        "artwork_type": 4
+      },
+      {
+        "id": 168460,
+        "alpha_channel": false,
+        "animated": false,
+        "game": 1942,
+        "height": 6071,
+        "image_id": "ar3lzg",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/ar3lzg.jpg",
+        "width": 10000,
+        "checksum": "0d08482a-f502-e628-7019-73d42bfdda10",
+        "artwork_type": 4
+      },
+      {
+        "id": 168461,
+        "alpha_channel": false,
+        "animated": false,
+        "game": 1942,
+        "height": 800,
+        "image_id": "ar3lzh",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/ar3lzh.jpg",
+        "width": 1100,
+        "checksum": "b82b6b45-be8c-4f8c-cd91-fe5637a6793e",
+        "artwork_type": 4
+      },
+      {
+        "id": 168463,
+        "alpha_channel": false,
+        "animated": false,
+        "game": 1942,
+        "height": 710,
+        "image_id": "ar3lzj",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/ar3lzj.jpg",
+        "width": 1200,
+        "checksum": "f2068ad1-986c-c79a-7a43-029627fd3594",
+        "artwork_type": 4
+      },
+      {
+        "id": 168465,
+        "alpha_channel": false,
+        "animated": false,
+        "game": 1942,
+        "height": 670,
+        "image_id": "ar3lzl",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/ar3lzl.jpg",
+        "width": 1200,
+        "checksum": "70445589-03c5-980e-abc5-d7c7286da31e",
+        "artwork_type": 4
+      },
+      {
+        "id": 168466,
+        "alpha_channel": false,
+        "animated": false,
+        "game": 1942,
+        "height": 640,
+        "image_id": "ar3lzm",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/ar3lzm.jpg",
+        "width": 1200,
+        "checksum": "3f76112f-34e3-3cfe-a303-ce0b1d3ba9ec",
+        "artwork_type": 4
+      },
+      {
+        "id": 168467,
+        "alpha_channel": false,
+        "animated": false,
+        "game": 1942,
+        "height": 2160,
+        "image_id": "ar3lzn",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/ar3lzn.jpg",
+        "width": 4069,
+        "checksum": "391cee32-70e4-8246-4cc2-d831a056b08c",
+        "artwork_type": 3
+      },
+      {
+        "id": 168532,
+        "alpha_channel": true,
+        "animated": false,
+        "game": 1942,
+        "height": 2849,
+        "image_id": "ar3m1g",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/ar3m1g.jpg",
+        "width": 5736,
+        "checksum": "8352aa3b-e85d-8a2e-95a9-a862d2fc0343",
+        "artwork_type": 7
+      },
+      {
+        "id": 168533,
+        "alpha_channel": true,
+        "animated": false,
+        "game": 1942,
+        "height": 2849,
+        "image_id": "ar3m1h",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/ar3m1h.jpg",
+        "width": 5736,
+        "checksum": "3f138b97-fced-451a-ff7b-bbed83c3745b",
+        "artwork_type": 6
+      },
+      {
+        "id": 168464,
+        "alpha_channel": false,
+        "animated": false,
+        "game": 1942,
+        "height": 7874,
+        "image_id": "ar3lzk",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/ar3lzk.jpg",
+        "width": 10681,
+        "checksum": "1d130c6d-f354-d245-9718-1214e6db4193",
+        "artwork_type": 2
+      },
+      {
+        "id": 168462,
+        "alpha_channel": false,
+        "animated": false,
+        "game": 1942,
+        "height": 675,
+        "image_id": "ar3lzi",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/ar3lzi.jpg",
+        "width": 1200,
+        "checksum": "f03b849a-3631-2c4b-0aaa-3b0fca72aa11",
+        "artwork_type": 4
+      }
+    ],
+    "cover": {
+      "id": 89386,
+      "alpha_channel": false,
+      "animated": false,
+      "game": 1942,
+      "height": 1559,
+      "image_id": "co1wyy",
+      "url": "//images.igdb.com/igdb/image/upload/t_thumb/co1wyy.jpg",
+      "width": 1170,
+      "checksum": "603ae7ce-f061-4f14-7f9c-7b8708fb3268"
+    },
+    "first_release_date": 1431993600,
+    "genres": [
+      {
+        "id": 12,
+        "created_at": 1297639288,
+        "name": "Role-playing (RPG)",
+        "slug": "role-playing-rpg",
+        "updated_at": 1323289215,
+        "url": "https://www.igdb.com/genres/role-playing-rpg",
+        "checksum": "5a7bd431-149a-3083-532d-2176f4daca24"
+      },
+      {
+        "id": 31,
+        "created_at": 1323568041,
+        "name": "Adventure",
+        "slug": "adventure",
+        "updated_at": 1323568041,
+        "url": "https://www.igdb.com/genres/adventure",
+        "checksum": "a93a77df-3927-13fa-1d50-5d443cbb695f"
+      }
+    ],
+    "hypes": 179,
+    "name": "The Witcher 3: Wild Hunt",
+    "platforms": [
+      {
+        "id": 169,
+        "abbreviation": "Series X|S",
+        "alternative_name": "XSX",
+        "category": 1,
+        "created_at": 1565273347,
+        "generation": 9,
+        "name": "Xbox Series X|S",
+        "platform_logo": 561,
+        "platform_family": 2,
+        "slug": "series-x-s",
+        "updated_at": 1718027289,
+        "url": "https://www.igdb.com/platforms/series-x-s",
+        "versions": [
+          489,
+          284
+        ],
+        "websites": [
+          238,
+          105,
+          36
+        ],
+        "checksum": "2dd42937-5017-2d62-688a-0a8237f929ff",
+        "platform_type": 1
+      },
+      {
+        "id": 48,
+        "abbreviation": "PS4",
+        "alternative_name": "PS4",
+        "category": 1,
+        "created_at": 1326544944,
+        "generation": 8,
+        "name": "PlayStation 4",
+        "platform_logo": 231,
+        "platform_family": 1,
+        "slug": "ps4--1",
+        "summary": "The PlayStation 4 system opens the door to an incredible journey through immersive new gaming worlds and a deeply connected gaming community. PS4 puts gamers first with an astounding launch line-up and over 180 games in development. Play amazing top-tier blockbusters and innovative indie hits on PS4. Developer inspired, gamer focused.",
+        "updated_at": 1718027289,
+        "url": "https://www.igdb.com/platforms/ps4--1",
+        "versions": [
+          17,
+          178,
+          179
+        ],
+        "websites": [
+          11
+        ],
+        "checksum": "499977cf-16b6-1abf-3664-be1a369a656e",
+        "platform_type": 1
+      },
+      {
+        "id": 6,
+        "abbreviation": "PC",
+        "alternative_name": "mswin",
+        "category": 4,
+        "created_at": 1297639288,
+        "name": "PC (Microsoft Windows)",
+        "platform_logo": 670,
+        "slug": "win",
+        "updated_at": 1718027289,
+        "url": "https://www.igdb.com/platforms/win",
+        "versions": [
+          14,
+          1,
+          15,
+          13,
+          530,
+          531,
+          534,
+          532,
+          513,
+          529,
+          124,
+          533
+        ],
+        "websites": [
+          2
+        ],
+        "checksum": "50ef0869-39cd-be87-5221-8ef3f082834a",
+        "platform_type": 4
+      },
+      {
+        "id": 167,
+        "abbreviation": "PS5",
+        "alternative_name": "PS5",
+        "category": 1,
+        "created_at": 1543501750,
+        "generation": 9,
+        "name": "PlayStation 5",
+        "platform_logo": 892,
+        "platform_family": 1,
+        "slug": "ps5",
+        "updated_at": 1718027289,
+        "url": "https://www.igdb.com/platforms/ps5",
+        "versions": [
+          273,
+          724
+        ],
+        "websites": [
+          281
+        ],
+        "checksum": "44ef3108-b8ea-2e50-42d0-a070c33b52b8",
+        "platform_type": 1
+      },
+      {
+        "id": 49,
+        "abbreviation": "XONE",
+        "alternative_name": "XONE",
+        "category": 1,
+        "created_at": 1326545022,
+        "generation": 8,
+        "name": "Xbox One",
+        "platform_logo": 329,
+        "platform_family": 2,
+        "slug": "xboxone",
+        "summary": "Welcome to a new generation of games and entertainment. Where games push the boundaries of realism. And television obeys your every command. Where listening to music while playing a game is a snap. And you can jump from TV to movies to music to a game in an instant. Where your experience is custom tailored to you. And the entertainment you love is all in one place. Welcome to the all-in-one, Xbox One",
+        "updated_at": 1718027289,
+        "url": "https://www.igdb.com/platforms/xboxone",
+        "versions": [
+          78,
+          188,
+          185,
+          180
+        ],
+        "websites": [
+          12
+        ],
+        "checksum": "7f035357-e820-732f-cb2e-f2cd9e2c8aad",
+        "platform_type": 1
+      },
+      {
+        "id": 130,
+        "abbreviation": "Switch",
+        "alternative_name": "NX",
+        "category": 1,
+        "created_at": 1465978941,
+        "generation": 8,
+        "name": "Nintendo Switch",
+        "platform_logo": 606,
+        "platform_family": 5,
+        "slug": "switch",
+        "updated_at": 1718027289,
+        "url": "https://www.igdb.com/platforms/switch",
+        "versions": [
+          282,
+          173,
+          503
+        ],
+        "websites": [
+          16
+        ],
+        "checksum": "7012b5cc-0656-299b-5b76-fa97e6b1b54a",
+        "platform_type": 1
+      }
+    ],
+    "rating": 93.98986427968805,
+    "screenshots": [
+      {
+        "id": 21107,
+        "game": 1942,
+        "height": 1080,
+        "image_id": "farvemmmxav0bgt6wx7t",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/farvemmmxav0bgt6wx7t.jpg",
+        "width": 1920,
+        "checksum": "ebfca4a3-f5de-a613-489b-99079e9e1579"
+      },
+      {
+        "id": 9745,
+        "game": 1942,
+        "height": 1080,
+        "image_id": "z5t0yuhyiiui1ickwhgj",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/z5t0yuhyiiui1ickwhgj.jpg",
+        "width": 1920,
+        "checksum": "907ce199-add9-4fd1-7a14-15dd8c86a44d"
+      },
+      {
+        "id": 9743,
+        "game": 1942,
+        "height": 1080,
+        "image_id": "em1y2ugcwy2myuhvb9db",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/em1y2ugcwy2myuhvb9db.jpg",
+        "width": 1920,
+        "checksum": "84329637-6ddc-a3b2-1a01-713fcb2386d4"
+      },
+      {
+        "id": 9744,
+        "game": 1942,
+        "height": 1080,
+        "image_id": "usxccsncekxg0wd1v6ee",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/usxccsncekxg0wd1v6ee.jpg",
+        "width": 1920,
+        "checksum": "a37a6142-4ca0-3018-68bd-17597920de7b"
+      },
+      {
+        "id": 9742,
+        "game": 1942,
+        "height": 1080,
+        "image_id": "mnljdjtrh44x4snmierh",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/mnljdjtrh44x4snmierh.jpg",
+        "width": 1920,
+        "checksum": "c6e6b299-7c54-4b7d-e8b8-03073df845ef"
+      },
+      {
+        "id": 853177,
+        "alpha_channel": false,
+        "animated": false,
+        "game": 1942,
+        "height": 1080,
+        "image_id": "sciabd",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/sciabd.jpg",
+        "width": 1920,
+        "checksum": "70fe43a7-fb81-e37b-5fd9-80f7b8ac5ed7"
+      },
+      {
+        "id": 853178,
+        "alpha_channel": false,
+        "animated": false,
+        "game": 1942,
+        "height": 1080,
+        "image_id": "sciabe",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/sciabe.jpg",
+        "width": 1920,
+        "checksum": "893bce54-9fa4-e4f7-b548-9b5b6d579a7e"
+      },
+      {
+        "id": 853179,
+        "alpha_channel": false,
+        "animated": false,
+        "game": 1942,
+        "height": 1080,
+        "image_id": "sciabf",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/sciabf.jpg",
+        "width": 1920,
+        "checksum": "efa40d19-2912-da97-55ab-9b18e4a70e11"
+      },
+      {
+        "id": 853180,
+        "alpha_channel": false,
+        "animated": false,
+        "game": 1942,
+        "height": 1080,
+        "image_id": "sciabg",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/sciabg.jpg",
+        "width": 1920,
+        "checksum": "f81e8bf1-548e-ccfb-55d9-2bc973eb9556"
+      },
+      {
+        "id": 853181,
+        "alpha_channel": false,
+        "animated": false,
+        "game": 1942,
+        "height": 1080,
+        "image_id": "sciabh",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/sciabh.jpg",
+        "width": 1920,
+        "checksum": "3b221e63-d0a5-eebd-4e65-522f4b2d2cfc"
+      },
+      {
+        "id": 1377965,
+        "alpha_channel": false,
+        "animated": false,
+        "game": 1942,
+        "height": 1440,
+        "image_id": "sctj8t",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/sctj8t.jpg",
+        "width": 2560,
+        "checksum": "ce74eb5b-3bb8-fe69-1b54-8b999c81c806"
+      },
+      {
+        "id": 1377966,
+        "alpha_channel": false,
+        "animated": false,
+        "game": 1942,
+        "height": 1440,
+        "image_id": "sctj8u",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/sctj8u.jpg",
+        "width": 2560,
+        "checksum": "87e1122c-84d7-ef02-a04b-3b8f61913a61"
+      }
+    ],
+    "summary": "The Witcher 3: Wild Hunt is an open-world action role-playing game developed by CD Projekt Red.\n\nSet in a dark fantasy world, the game follows Geralt of Rivia, a monster hunter searching for his adopted daughter, Ciri, while navigating political conflicts and supernatural threats. Gameplay features exploration, combat, character progression, and branching narratives shaped by player choices. Widely acclaimed for its writing, world-building, and depth, it is considered one of the most influential RPGs of its generation.",
+    "total_rating": 92.86031675522864,
+    "total_rating_count": 4745,
+    "videos": [
+      {
+        "id": 9648,
+        "game": 1942,
+        "name": "Developer Diary: Creating the Sound",
+        "video_id": "yowv6_rspoM",
+        "checksum": "d89f46af-09e1-bff5-9b1b-609d225d8fc3"
+      },
+      {
+        "id": 5993,
+        "game": 1942,
+        "name": "TV Spot",
+        "video_id": "xQGam9OHSUo",
+        "checksum": "585bebc2-5560-fcf4-a230-0707b49a0a53"
+      },
+      {
+        "id": 5990,
+        "game": 1942,
+        "name": "Opening Cinematic: The Trail",
+        "video_id": "QrwGXAcE6ZA",
+        "checksum": "c4236ba2-1541-8860-a440-394de94a198a"
+      },
+      {
+        "id": 5992,
+        "game": 1942,
+        "name": "Recap",
+        "video_id": "bcEAsOC_8L0",
+        "checksum": "26b658f7-64ec-de4a-8d6e-70b397453ce9"
+      },
+      {
+        "id": 5987,
+        "game": 1942,
+        "name": "The Begining trailer",
+        "video_id": "5nLipy-Z4yo",
+        "checksum": "fed695ef-ad13-5ad9-e35e-f824f552cf18"
+      },
+      {
+        "id": 5995,
+        "game": 1942,
+        "name": "A Night to Remember Trailer",
+        "video_id": "8ZLfJjlZKvc",
+        "checksum": "cab0bfd1-d77e-eaa2-4aff-ec120636da3e"
+      },
+      {
+        "id": 5994,
+        "game": 1942,
+        "name": "Rage \u0026 Steel Trailer",
+        "video_id": "p14dHAwLOmo",
+        "checksum": "8f4f3565-aa23-a050-9506-8eb128c4c41d"
+      },
+      {
+        "id": 5991,
+        "game": 1942,
+        "name": "Elder Blood Trailer",
+        "video_id": "6f8TbvsZ5Mk",
+        "checksum": "b7fc4bf1-0984-925f-8d18-33f7a3ed7a02"
+      },
+      {
+        "id": 5989,
+        "game": 1942,
+        "name": "Downwarren Gameplay Video",
+        "video_id": "_IBAovRNCuA",
+        "checksum": "31466f70-9d56-eab3-5027-577f5e0f5f66"
+      },
+      {
+        "id": 5988,
+        "game": 1942,
+        "name": "Killing Monsters Cinematic Trailer",
+        "video_id": "FP7no968jVU",
+        "checksum": "6a99efb2-b643-1dc2-c5b1-5aab304a1424"
+      },
+      {
+        "id": 5996,
+        "game": 1942,
+        "name": "Debut Gameplay Trailer",
+        "video_id": "sb81f-ejNSI",
+        "checksum": "ec256dc4-00f2-ffe2-4d05-7c2eef0cd311"
+      },
+      {
+        "id": 150458,
+        "game": 1942,
+        "name": "Trailer",
+        "video_id": "TWOkT7l0yWQ",
+        "checksum": "5b2db3cc-4b93-7087-8a15-66f34c79470f"
+      },
+      {
+        "id": 15748,
+        "game": 1942,
+        "name": "10th Anniversary Video",
+        "video_id": "ZpiczsigQto",
+        "checksum": "de74789b-f4e5-24c2-c083-e351bd3c68ce"
+      },
+      {
+        "id": 120257,
+        "game": 1942,
+        "name": "Gameplay Demo",
+        "video_id": "gRmKKjQu9Tw",
+        "checksum": "8a3273d1-01e8-1c2e-6b8a-bfdb4a9f9747"
+      },
+      {
+        "id": 141704,
+        "game": 1942,
+        "name": "VGX 2013 Trailer",
+        "video_id": "MqQ3LeBgGDM",
+        "checksum": "283f2102-b5ef-6db1-661a-35871345f027"
+      },
+      {
+        "id": 141210,
+        "game": 1942,
+        "name": "Cinematic Trailer",
+        "video_id": "c0i88t0Kacs",
+        "checksum": "e0aec4c4-049d-56ce-66d1-79fac4503db1"
+      },
+      {
+        "id": 141211,
+        "game": 1942,
+        "name": "Launch Trailer",
+        "video_id": "1-l29HlKkXU",
+        "checksum": "87bc43a4-110e-d259-80ad-1774dd33ca83"
+      }
+    ]
+  },
+  {
+    "id": 72,
+    "aggregated_rating": 92.44444444444444,
+    "aggregated_rating_count": 9,
+    "artworks": [
+      {
+        "id": 36972,
+        "alpha_channel": false,
+        "animated": false,
+        "game": 72,
+        "height": 620,
+        "image_id": "arsj0",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/arsj0.jpg",
+        "width": 1920,
+        "checksum": "ccef7f5f-0c3f-1681-6810-5a6669153fed",
+        "artwork_type": 1
+      }
+    ],
+    "cover": {
+      "id": 82660,
+      "alpha_channel": false,
+      "animated": false,
+      "game": 72,
+      "height": 1948,
+      "image_id": "co1rs4",
+      "url": "//images.igdb.com/igdb/image/upload/t_thumb/co1rs4.jpg",
+      "width": 1461,
+      "checksum": "01d5fb19-7bb3-ad32-8f7b-351a05a2fb57"
+    },
+    "first_release_date": 1303084800,
+    "genres": [
+      {
+        "id": 8,
+        "created_at": 1297639288,
+        "name": "Platform",
+        "slug": "platform",
+        "updated_at": 1323289215,
+        "url": "https://www.igdb.com/genres/platform",
+        "checksum": "06c188b9-1058-933f-dfee-4ec658117ad2"
+      },
+      {
+        "id": 9,
+        "created_at": 1297639288,
+        "name": "Puzzle",
+        "slug": "puzzle",
+        "updated_at": 1323289215,
+        "url": "https://www.igdb.com/genres/puzzle",
+        "checksum": "f4afdd14-b8c5-e938-58a6-ff0a56514f8b"
+      },
+      {
+        "id": 31,
+        "created_at": 1323568041,
+        "name": "Adventure",
+        "slug": "adventure",
+        "updated_at": 1323568041,
+        "url": "https://www.igdb.com/genres/adventure",
+        "checksum": "a93a77df-3927-13fa-1d50-5d443cbb695f"
+      }
+    ],
+    "name": "Portal 2",
+    "platforms": [
+      {
+        "id": 9,
+        "abbreviation": "PS3",
+        "alternative_name": "PS3",
+        "category": 1,
+        "created_at": 1297639288,
+        "generation": 7,
+        "name": "PlayStation 3",
+        "platform_logo": 79,
+        "platform_family": 1,
+        "slug": "ps3",
+        "updated_at": 1718027289,
+        "url": "https://www.igdb.com/platforms/ps3",
+        "versions": [
+          5,
+          4,
+          6
+        ],
+        "websites": [
+          3
+        ],
+        "checksum": "7194dbc7-fcb0-7fb8-44a7-609db3aee29e",
+        "platform_type": 1
+      },
+      {
+        "id": 3,
+        "abbreviation": "Linux",
+        "alternative_name": "GNU/Linux",
+        "category": 4,
+        "created_at": 1297639288,
+        "name": "Linux",
+        "platform_logo": 380,
+        "platform_family": 4,
+        "slug": "linux",
+        "summary": "Linux is a free and open-source (FOSS/FLOSS) Operating System. In a more precise and complex definition, Linux is an open-source OS kernel on which a large variety of Operating Systems (known as Linux distributions) are built.",
+        "updated_at": 1718027289,
+        "url": "https://www.igdb.com/platforms/linux",
+        "versions": [
+          44
+        ],
+        "websites": [
+          1
+        ],
+        "checksum": "55b68ef4-2663-6f2e-a57a-d41257173767",
+        "platform_type": 4
+      },
+      {
+        "id": 6,
+        "abbreviation": "PC",
+        "alternative_name": "mswin",
+        "category": 4,
+        "created_at": 1297639288,
+        "name": "PC (Microsoft Windows)",
+        "platform_logo": 670,
+        "slug": "win",
+        "updated_at": 1718027289,
+        "url": "https://www.igdb.com/platforms/win",
+        "versions": [
+          14,
+          1,
+          15,
+          13,
+          530,
+          531,
+          534,
+          532,
+          513,
+          529,
+          124,
+          533
+        ],
+        "websites": [
+          2
+        ],
+        "checksum": "50ef0869-39cd-be87-5221-8ef3f082834a",
+        "platform_type": 4
+      },
+      {
+        "id": 14,
+        "abbreviation": "Mac",
+        "alternative_name": "Mac OS",
+        "category": 4,
+        "created_at": 1297678396,
+        "name": "Mac",
+        "platform_logo": 867,
+        "slug": "mac",
+        "updated_at": 1718027289,
+        "url": "https://www.igdb.com/platforms/mac",
+        "versions": [
+          600,
+          599,
+          144,
+          149,
+          147,
+          142,
+          143,
+          141,
+          150,
+          145,
+          146,
+          148,
+          151,
+          598,
+          45,
+          713
+        ],
+        "websites": [
+          5
+        ],
+        "checksum": "98cd1d18-6a0b-3f3d-1052-651e4b12bd39",
+        "platform_type": 4
+      },
+      {
+        "id": 12,
+        "abbreviation": "X360",
+        "alternative_name": "X360",
+        "category": 1,
+        "created_at": 1297639288,
+        "generation": 7,
+        "name": "Xbox 360",
+        "platform_logo": 622,
+        "platform_family": 2,
+        "slug": "xbox360",
+        "summary": "Xbox 360 brings you a total games and entertainment experience. The largest library of games, including titles that get you right into the thick of it with Kinect. Plus, your whole family can watch HD movies, TV shows, live events, music, sports and more—across all your devices. Xbox 360 is the center of your games and entertainment universe.",
+        "updated_at": 1718027289,
+        "url": "https://www.igdb.com/platforms/xbox360",
+        "versions": [
+          2,
+          3,
+          495,
+          83
+        ],
+        "websites": [
+          4
+        ],
+        "checksum": "34a16af2-775f-f963-b611-406f09935eaa",
+        "platform_type": 1
+      },
+      {
+        "id": 130,
+        "abbreviation": "Switch",
+        "alternative_name": "NX",
+        "category": 1,
+        "created_at": 1465978941,
+        "generation": 8,
+        "name": "Nintendo Switch",
+        "platform_logo": 606,
+        "platform_family": 5,
+        "slug": "switch",
+        "updated_at": 1718027289,
+        "url": "https://www.igdb.com/platforms/switch",
+        "versions": [
+          282,
+          173,
+          503
+        ],
+        "websites": [
+          16
+        ],
+        "checksum": "7012b5cc-0656-299b-5b76-fa97e6b1b54a",
+        "platform_type": 1
+      }
+    ],
+    "rating": 91.55617812385152,
+    "screenshots": [
+      {
+        "id": 725,
+        "game": 72,
+        "height": 1080,
+        "image_id": "i9ys3zdhph1mh3futdit",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/i9ys3zdhph1mh3futdit.jpg",
+        "width": 1920,
+        "checksum": "f26d594c-6308-4cdb-bd15-024ed4889b63"
+      },
+      {
+        "id": 726,
+        "game": 72,
+        "height": 1080,
+        "image_id": "rvrge8js7xnhr4z1vrbk",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/rvrge8js7xnhr4z1vrbk.jpg",
+        "width": 1920,
+        "checksum": "8375399a-2226-e657-ec60-3f6569c33c88"
+      },
+      {
+        "id": 729,
+        "game": 72,
+        "height": 1080,
+        "image_id": "m4hdhjptmmwvrjbojzp0",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/m4hdhjptmmwvrjbojzp0.jpg",
+        "width": 1920,
+        "checksum": "3f7ecd7b-014c-4edd-57af-03459a14e229"
+      },
+      {
+        "id": 727,
+        "game": 72,
+        "height": 1080,
+        "image_id": "cmxaa4r52exlqvzwtxkh",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/cmxaa4r52exlqvzwtxkh.jpg",
+        "width": 1920,
+        "checksum": "aaa17d56-ea48-7092-504c-5d2da782edb5"
+      },
+      {
+        "id": 728,
+        "game": 72,
+        "height": 1080,
+        "image_id": "vghkwbdabx0cri7thb9y",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/vghkwbdabx0cri7thb9y.jpg",
+        "width": 1920,
+        "checksum": "13e9a6dc-1d8e-1fc8-7897-1db75dc8c743"
+      }
+    ],
+    "summary": "Sequel to the acclaimed Portal (2007), Portal 2 pits the protagonist of the original game, Chell, and her new robot friend, Wheatley, against more puzzles conceived by GLaDOS, an A.I. with the sole purpose of testing the Portal Gun\u0027s mechanics and taking revenge on Chell for the events of Portal. As a result of several interactions and revelations, Chell once again pushes to escape Aperture Science Labs.",
+    "total_rating": 92.00031128414798,
+    "total_rating_count": 3985,
+    "videos": [
+      {
+        "id": 432,
+        "game": 72,
+        "name": "Trailer",
+        "video_id": "mC_u9ZwlIUc",
+        "checksum": "ed3676b2-709a-abe7-6457-776fa15cf3ef"
+      },
+      {
+        "id": 16451,
+        "game": 72,
+        "name": "Trailer",
+        "video_id": "9r0rlRqpkOw",
+        "checksum": "4a96a9e6-8f96-4f7f-c6d8-471835c100be"
+      },
+      {
+        "id": 17844,
+        "game": 72,
+        "name": "Trailer",
+        "video_id": "Qgl1otNanh0",
+        "checksum": "bf08de84-b4de-eca5-85ac-3543736c9794"
+      },
+      {
+        "id": 17845,
+        "game": 72,
+        "name": "Trailer",
+        "video_id": "SQb-e7p0KmQ",
+        "checksum": "e2ffd82f-7d44-35bb-2696-68a3488b718a"
+      },
+      {
+        "id": 119521,
+        "game": 72,
+        "name": "Trailer",
+        "video_id": "uxSo1k2Y1Uk",
+        "checksum": "c6d94a06-97a7-19a8-f2de-25440b828780"
+      },
+      {
+        "id": 141675,
+        "game": 72,
+        "name": "VGA 2010 Trailer",
+        "video_id": "SJ5JY-ll2HY",
+        "checksum": "6c5a43e7-75c1-1449-4d28-7cfc59ee3c49"
+      }
+    ]
+  },
+  {
+    "id": 472,
+    "aggregated_rating": 79.91666666666667,
+    "aggregated_rating_count": 10,
+    "artworks": [
+      {
+        "id": 177,
+        "game": 472,
+        "height": 3600,
+        "image_id": "p5nul4inxjpvi05tnn1r",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/p5nul4inxjpvi05tnn1r.jpg",
+        "width": 7992,
+        "checksum": "2ade26ee-a61f-ff7f-5280-267b01f7100c",
+        "artwork_type": 1
+      },
+      {
+        "id": 169,
+        "game": 472,
+        "height": 3900,
+        "image_id": "snmb2kvu6uz2vr7uzgzp",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/snmb2kvu6uz2vr7uzgzp.jpg",
+        "width": 5700,
+        "checksum": "09aec1ac-1b96-c39c-bc62-e3673d2f2dd3",
+        "artwork_type": 1
+      },
+      {
+        "id": 179,
+        "game": 472,
+        "height": 3206,
+        "image_id": "q6d8jv0yflv8hbomthqm",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/q6d8jv0yflv8hbomthqm.jpg",
+        "width": 5700,
+        "checksum": "3f28cbcb-261c-4a61-739e-f2d581511bf5",
+        "artwork_type": 1
+      },
+      {
+        "id": 171,
+        "game": 472,
+        "height": 1200,
+        "image_id": "c7mid4aolyj7fboecnuu",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/c7mid4aolyj7fboecnuu.jpg",
+        "width": 1916,
+        "checksum": "ccc1c2cf-9e1a-f30b-cb3c-30727b0984cf",
+        "artwork_type": 1
+      },
+      {
+        "id": 170,
+        "game": 472,
+        "height": 3300,
+        "image_id": "egrcjzat6ssiuymf0pwb",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/egrcjzat6ssiuymf0pwb.jpg",
+        "width": 2550,
+        "checksum": "485c3ddb-aa47-407d-a266-aee0e50f03f2",
+        "artwork_type": 1
+      },
+      {
+        "id": 178,
+        "game": 472,
+        "height": 1731,
+        "image_id": "dootpbeulmf5yxwqulvx",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/dootpbeulmf5yxwqulvx.jpg",
+        "width": 3158,
+        "checksum": "cfd38afb-8af5-203a-b654-78b7f803c079",
+        "artwork_type": 1
+      },
+      {
+        "id": 172,
+        "game": 472,
+        "height": 4500,
+        "image_id": "tplycmyhelqc4kx8lxzn",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/tplycmyhelqc4kx8lxzn.jpg",
+        "width": 18000,
+        "checksum": "1e21f1f6-5093-a7a5-ab88-e707e630f258",
+        "artwork_type": 1
+      },
+      {
+        "id": 180,
+        "game": 472,
+        "height": 2550,
+        "image_id": "ksgt1c400zmgamznhh9h",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/ksgt1c400zmgamznhh9h.jpg",
+        "width": 3300,
+        "checksum": "17e49a37-bc1b-2c3e-d12e-0d81717c4423",
+        "artwork_type": 1
+      },
+      {
+        "id": 174,
+        "game": 472,
+        "height": 2400,
+        "image_id": "ypfrlwt0ybgkbx6fsprq",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/ypfrlwt0ybgkbx6fsprq.jpg",
+        "width": 3150,
+        "checksum": "c52bd743-02e8-3f04-5491-2bcffcba1dd7",
+        "artwork_type": 1
+      },
+      {
+        "id": 175,
+        "game": 472,
+        "height": 3150,
+        "image_id": "beb3c77tggywfbygohpg",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/beb3c77tggywfbygohpg.jpg",
+        "width": 2289,
+        "checksum": "7e102037-74fd-ad7a-48fe-6608ef5605cd",
+        "artwork_type": 1
+      },
+      {
+        "id": 173,
+        "game": 472,
+        "height": 4215,
+        "image_id": "bblukgqk83m8xqimar6h",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/bblukgqk83m8xqimar6h.jpg",
+        "width": 9793,
+        "checksum": "e67fc988-26ec-b14b-b544-9a9239f57d58",
+        "artwork_type": 1
+      },
+      {
+        "id": 176,
+        "game": 472,
+        "height": 2083,
+        "image_id": "eh5ythnopfxa6hrcmd5v",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/eh5ythnopfxa6hrcmd5v.jpg",
+        "width": 3000,
+        "checksum": "f88bb102-ab03-ddce-02fa-dc7dbd238a68",
+        "artwork_type": 1
+      }
+    ],
+    "cover": {
+      "id": 85100,
+      "alpha_channel": false,
+      "animated": false,
+      "game": 472,
+      "height": 800,
+      "image_id": "co1tnw",
+      "url": "//images.igdb.com/igdb/image/upload/t_thumb/co1tnw.jpg",
+      "width": 600,
+      "checksum": "6d9074d0-5fbd-168d-94ad-d81e188f8da3"
+    },
+    "first_release_date": 1320883200,
+    "genres": [
+      {
+        "id": 12,
+        "created_at": 1297639288,
+        "name": "Role-playing (RPG)",
+        "slug": "role-playing-rpg",
+        "updated_at": 1323289215,
+        "url": "https://www.igdb.com/genres/role-playing-rpg",
+        "checksum": "5a7bd431-149a-3083-532d-2176f4daca24"
+      },
+      {
+        "id": 31,
+        "created_at": 1323568041,
+        "name": "Adventure",
+        "slug": "adventure",
+        "updated_at": 1323568041,
+        "url": "https://www.igdb.com/genres/adventure",
+        "checksum": "a93a77df-3927-13fa-1d50-5d443cbb695f"
+      }
+    ],
+    "name": "The Elder Scrolls V: Skyrim",
+    "platforms": [
+      {
+        "id": 9,
+        "abbreviation": "PS3",
+        "alternative_name": "PS3",
+        "category": 1,
+        "created_at": 1297639288,
+        "generation": 7,
+        "name": "PlayStation 3",
+        "platform_logo": 79,
+        "platform_family": 1,
+        "slug": "ps3",
+        "updated_at": 1718027289,
+        "url": "https://www.igdb.com/platforms/ps3",
+        "versions": [
+          5,
+          4,
+          6
+        ],
+        "websites": [
+          3
+        ],
+        "checksum": "7194dbc7-fcb0-7fb8-44a7-609db3aee29e",
+        "platform_type": 1
+      },
+      {
+        "id": 6,
+        "abbreviation": "PC",
+        "alternative_name": "mswin",
+        "category": 4,
+        "created_at": 1297639288,
+        "name": "PC (Microsoft Windows)",
+        "platform_logo": 670,
+        "slug": "win",
+        "updated_at": 1718027289,
+        "url": "https://www.igdb.com/platforms/win",
+        "versions": [
+          14,
+          1,
+          15,
+          13,
+          530,
+          531,
+          534,
+          532,
+          513,
+          529,
+          124,
+          533
+        ],
+        "websites": [
+          2
+        ],
+        "checksum": "50ef0869-39cd-be87-5221-8ef3f082834a",
+        "platform_type": 4
+      },
+      {
+        "id": 12,
+        "abbreviation": "X360",
+        "alternative_name": "X360",
+        "category": 1,
+        "created_at": 1297639288,
+        "generation": 7,
+        "name": "Xbox 360",
+        "platform_logo": 622,
+        "platform_family": 2,
+        "slug": "xbox360",
+        "summary": "Xbox 360 brings you a total games and entertainment experience. The largest library of games, including titles that get you right into the thick of it with Kinect. Plus, your whole family can watch HD movies, TV shows, live events, music, sports and more—across all your devices. Xbox 360 is the center of your games and entertainment universe.",
+        "updated_at": 1718027289,
+        "url": "https://www.igdb.com/platforms/xbox360",
+        "versions": [
+          2,
+          3,
+          495,
+          83
+        ],
+        "websites": [
+          4
+        ],
+        "checksum": "34a16af2-775f-f963-b611-406f09935eaa",
+        "platform_type": 1
+      }
+    ],
+    "rating": 87.49136786239873,
+    "screenshots": [
+      {
+        "id": 346,
+        "game": 472,
+        "height": 720,
+        "image_id": "xzk2h41fiye7uwbhc6ub",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/xzk2h41fiye7uwbhc6ub.jpg",
+        "width": 1280,
+        "checksum": "75880972-75d9-93b1-8bb6-27fc5e365aae"
+      },
+      {
+        "id": 347,
+        "game": 472,
+        "height": 720,
+        "image_id": "urqw7ltwmhr39gkidsih",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/urqw7ltwmhr39gkidsih.jpg",
+        "width": 1280,
+        "checksum": "d415c03f-546d-5dfb-593b-c18a526baa21"
+      },
+      {
+        "id": 349,
+        "game": 472,
+        "height": 720,
+        "image_id": "x5bbaqvgbpaz4hzlfeqb",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/x5bbaqvgbpaz4hzlfeqb.jpg",
+        "width": 1280,
+        "checksum": "f414cec9-1f99-3b5c-bded-e9473e5d2960"
+      },
+      {
+        "id": 348,
+        "game": 472,
+        "height": 720,
+        "image_id": "t0mus35qrgclafo1ql8k",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/t0mus35qrgclafo1ql8k.jpg",
+        "width": 1280,
+        "checksum": "b2dbc44a-09e4-4d2f-1a79-e81037e690cb"
+      },
+      {
+        "id": 345,
+        "game": 472,
+        "height": 720,
+        "image_id": "muv70yw3rds1cw8ymr5v",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/muv70yw3rds1cw8ymr5v.jpg",
+        "width": 1280,
+        "checksum": "9563992c-06bf-414b-b7d9-70780aafd269"
+      },
+      {
+        "id": 1371100,
+        "alpha_channel": false,
+        "animated": false,
+        "game": 472,
+        "height": 1440,
+        "image_id": "sctdy4",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/sctdy4.jpg",
+        "width": 2560,
+        "checksum": "cae63a49-dbc6-6bae-04ae-6f2625cd2c74"
+      },
+      {
+        "id": 1371101,
+        "alpha_channel": false,
+        "animated": false,
+        "game": 472,
+        "height": 1440,
+        "image_id": "sctdy5",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/sctdy5.jpg",
+        "width": 2560,
+        "checksum": "222a5e85-11d0-5ef1-e221-507e56006994"
+      }
+    ],
+    "summary": "Skyrim reimagines and revolutionizes the open-world fantasy epic, bringing to life a complete virtual world open for you to explore any way you choose. Play any type of character you can imagine, and do whatever you want; the legendary freedom of choice, storytelling, and adventure of The Elder Scrolls is realized like never before.",
+    "total_rating": 83.7040172645327,
+    "total_rating_count": 3855,
+    "videos": [
+      {
+        "id": 17548,
+        "game": 472,
+        "name": "Sounds of Skyrim Trailer",
+        "video_id": "2doLV4hNMIg",
+        "checksum": "12da85bb-0e9a-2410-6596-2fe550fcdfca"
+      },
+      {
+        "id": 17547,
+        "game": 472,
+        "name": "Making of Skyrim Trailer",
+        "video_id": "TvrqsDdy2ok",
+        "checksum": "4ece8610-b6db-0a7e-96cd-6f0e02049bc9"
+      },
+      {
+        "id": 17549,
+        "game": 472,
+        "name": "Teaser Trailer",
+        "video_id": "6IEoZXM8WZY",
+        "checksum": "8dccab31-bbe5-f79c-8605-474917ab8005"
+      },
+      {
+        "id": 17550,
+        "game": 472,
+        "name": "E3 2011: Demo Part 1",
+        "video_id": "482QMfHHgcY",
+        "checksum": "43247a69-2396-3e09-391b-a6e007f9eed5"
+      },
+      {
+        "id": 17551,
+        "game": 472,
+        "name": "E3 2011: Demo Part 2",
+        "video_id": "EIIWmutIT6w",
+        "checksum": "c1c7b8e0-3b4a-e638-4c1b-acc0a90fe9e5"
+      },
+      {
+        "id": 17554,
+        "game": 472,
+        "name": "Concept Art Video",
+        "video_id": "3aJ2jG1gt44",
+        "checksum": "4a5079dc-1437-b92c-8793-200312442bed"
+      },
+      {
+        "id": 17546,
+        "game": 472,
+        "name": "Full Trailer",
+        "video_id": "0mHGygvlKCQ",
+        "checksum": "c25a93f0-b9d6-a263-f698-b2d6fd902001"
+      },
+      {
+        "id": 17552,
+        "game": 472,
+        "name": "E3 2011: Demo Part 3",
+        "video_id": "Ft9MNJxky1Y",
+        "checksum": "9b4d5107-b764-57f8-1c15-67570214dbbc"
+      },
+      {
+        "id": 17553,
+        "game": 472,
+        "name": "World of Skyrim Trailer",
+        "video_id": "skf7Dim1duI",
+        "checksum": "4332e815-5f24-74a8-77c4-d97ea5304f30"
+      }
+    ]
+  },
+  {
+    "id": 71,
+    "aggregated_rating": 80.0,
+    "aggregated_rating_count": 1,
+    "artworks": [
+      {
+        "id": 95184,
+        "alpha_channel": false,
+        "animated": false,
+        "game": 71,
+        "height": 620,
+        "image_id": "ar21g0",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/ar21g0.jpg",
+        "width": 1920,
+        "checksum": "89756dbd-88e6-f442-ba9a-8c88a429f983",
+        "artwork_type": 1
+      }
+    ],
+    "cover": {
+      "id": 89689,
+      "alpha_channel": false,
+      "animated": false,
+      "game": 71,
+      "height": 1200,
+      "image_id": "co1x7d",
+      "url": "//images.igdb.com/igdb/image/upload/t_thumb/co1x7d.jpg",
+      "width": 900,
+      "checksum": "dc8a9342-b152-afad-d277-d3793539ddad"
+    },
+    "first_release_date": 1191974400,
+    "genres": [
+      {
+        "id": 5,
+        "created_at": 1297639288,
+        "name": "Shooter",
+        "slug": "shooter",
+        "updated_at": 1323289215,
+        "url": "https://www.igdb.com/genres/shooter",
+        "checksum": "20c255bc-ec2d-c219-34bd-47995b0a79f1"
+      },
+      {
+        "id": 8,
+        "created_at": 1297639288,
+        "name": "Platform",
+        "slug": "platform",
+        "updated_at": 1323289215,
+        "url": "https://www.igdb.com/genres/platform",
+        "checksum": "06c188b9-1058-933f-dfee-4ec658117ad2"
+      },
+      {
+        "id": 9,
+        "created_at": 1297639288,
+        "name": "Puzzle",
+        "slug": "puzzle",
+        "updated_at": 1323289215,
+        "url": "https://www.igdb.com/genres/puzzle",
+        "checksum": "f4afdd14-b8c5-e938-58a6-ff0a56514f8b"
+      }
+    ],
+    "name": "Portal",
+    "platforms": [
+      {
+        "id": 9,
+        "abbreviation": "PS3",
+        "alternative_name": "PS3",
+        "category": 1,
+        "created_at": 1297639288,
+        "generation": 7,
+        "name": "PlayStation 3",
+        "platform_logo": 79,
+        "platform_family": 1,
+        "slug": "ps3",
+        "updated_at": 1718027289,
+        "url": "https://www.igdb.com/platforms/ps3",
+        "versions": [
+          5,
+          4,
+          6
+        ],
+        "websites": [
+          3
+        ],
+        "checksum": "7194dbc7-fcb0-7fb8-44a7-609db3aee29e",
+        "platform_type": 1
+      },
+      {
+        "id": 3,
+        "abbreviation": "Linux",
+        "alternative_name": "GNU/Linux",
+        "category": 4,
+        "created_at": 1297639288,
+        "name": "Linux",
+        "platform_logo": 380,
+        "platform_family": 4,
+        "slug": "linux",
+        "summary": "Linux is a free and open-source (FOSS/FLOSS) Operating System. In a more precise and complex definition, Linux is an open-source OS kernel on which a large variety of Operating Systems (known as Linux distributions) are built.",
+        "updated_at": 1718027289,
+        "url": "https://www.igdb.com/platforms/linux",
+        "versions": [
+          44
+        ],
+        "websites": [
+          1
+        ],
+        "checksum": "55b68ef4-2663-6f2e-a57a-d41257173767",
+        "platform_type": 4
+      },
+      {
+        "id": 34,
+        "abbreviation": "Android",
+        "alternative_name": "Infocusa3",
+        "category": 4,
+        "created_at": 1302608861,
+        "name": "Android",
+        "platform_logo": 831,
+        "platform_family": 4,
+        "slug": "android",
+        "updated_at": 1718027289,
+        "url": "https://www.igdb.com/platforms/android",
+        "versions": [
+          8,
+          10,
+          9,
+          11,
+          237,
+          12,
+          320,
+          7,
+          238,
+          236,
+          526,
+          527,
+          528,
+          541,
+          542,
+          543,
+          544,
+          545,
+          546,
+          672,
+          239
+        ],
+        "websites": [
+          7
+        ],
+        "checksum": "1519197d-b515-e889-ac2e-d076ce489ddf",
+        "platform_type": 4
+      },
+      {
+        "id": 6,
+        "abbreviation": "PC",
+        "alternative_name": "mswin",
+        "category": 4,
+        "created_at": 1297639288,
+        "name": "PC (Microsoft Windows)",
+        "platform_logo": 670,
+        "slug": "win",
+        "updated_at": 1718027289,
+        "url": "https://www.igdb.com/platforms/win",
+        "versions": [
+          14,
+          1,
+          15,
+          13,
+          530,
+          531,
+          534,
+          532,
+          513,
+          529,
+          124,
+          533
+        ],
+        "websites": [
+          2
+        ],
+        "checksum": "50ef0869-39cd-be87-5221-8ef3f082834a",
+        "platform_type": 4
+      },
+      {
+        "id": 14,
+        "abbreviation": "Mac",
+        "alternative_name": "Mac OS",
+        "category": 4,
+        "created_at": 1297678396,
+        "name": "Mac",
+        "platform_logo": 867,
+        "slug": "mac",
+        "updated_at": 1718027289,
+        "url": "https://www.igdb.com/platforms/mac",
+        "versions": [
+          600,
+          599,
+          144,
+          149,
+          147,
+          142,
+          143,
+          141,
+          150,
+          145,
+          146,
+          148,
+          151,
+          598,
+          45,
+          713
+        ],
+        "websites": [
+          5
+        ],
+        "checksum": "98cd1d18-6a0b-3f3d-1052-651e4b12bd39",
+        "platform_type": 4
+      },
+      {
+        "id": 12,
+        "abbreviation": "X360",
+        "alternative_name": "X360",
+        "category": 1,
+        "created_at": 1297639288,
+        "generation": 7,
+        "name": "Xbox 360",
+        "platform_logo": 622,
+        "platform_family": 2,
+        "slug": "xbox360",
+        "summary": "Xbox 360 brings you a total games and entertainment experience. The largest library of games, including titles that get you right into the thick of it with Kinect. Plus, your whole family can watch HD movies, TV shows, live events, music, sports and more—across all your devices. Xbox 360 is the center of your games and entertainment universe.",
+        "updated_at": 1718027289,
+        "url": "https://www.igdb.com/platforms/xbox360",
+        "versions": [
+          2,
+          3,
+          495,
+          83
+        ],
+        "websites": [
+          4
+        ],
+        "checksum": "34a16af2-775f-f963-b611-406f09935eaa",
+        "platform_type": 1
+      },
+      {
+        "id": 130,
+        "abbreviation": "Switch",
+        "alternative_name": "NX",
+        "category": 1,
+        "created_at": 1465978941,
+        "generation": 8,
+        "name": "Nintendo Switch",
+        "platform_logo": 606,
+        "platform_family": 5,
+        "slug": "switch",
+        "updated_at": 1718027289,
+        "url": "https://www.igdb.com/platforms/switch",
+        "versions": [
+          282,
+          173,
+          503
+        ],
+        "websites": [
+          16
+        ],
+        "checksum": "7012b5cc-0656-299b-5b76-fa97e6b1b54a",
+        "platform_type": 1
+      }
+    ],
+    "rating": 86.44914927558146,
+    "screenshots": [
+      {
+        "id": 46963,
+        "game": 71,
+        "height": 1080,
+        "image_id": "x7pzfljardlljvtqcgv4",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/x7pzfljardlljvtqcgv4.jpg",
+        "width": 1440,
+        "checksum": "c400bc36-e3a7-067c-d1d0-f6c808a59484"
+      },
+      {
+        "id": 46964,
+        "game": 71,
+        "height": 1080,
+        "image_id": "co2mtfe04a5iclqoo11c",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/co2mtfe04a5iclqoo11c.jpg",
+        "width": 1440,
+        "checksum": "e707607b-728f-e0e9-f4c7-aabb198797a2"
+      },
+      {
+        "id": 46966,
+        "game": 71,
+        "height": 1080,
+        "image_id": "hod8sle7imoqjh1zb7nj",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/hod8sle7imoqjh1zb7nj.jpg",
+        "width": 1440,
+        "checksum": "0b39037d-83cf-32a3-40b6-75520d7d7b61"
+      },
+      {
+        "id": 46965,
+        "game": 71,
+        "height": 1080,
+        "image_id": "oycbiasvmiewjxncqlgd",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/oycbiasvmiewjxncqlgd.jpg",
+        "width": 1440,
+        "checksum": "e01ad1cd-e6fc-a476-848e-c88f27b69edf"
+      },
+      {
+        "id": 46967,
+        "game": 71,
+        "height": 360,
+        "image_id": "gdgj7p0vo52jpwoxtm3v",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/gdgj7p0vo52jpwoxtm3v.jpg",
+        "width": 640,
+        "checksum": "0e32a7c0-3f52-174a-90e7-667e9fd10f13"
+      }
+    ],
+    "summary": "Waking up in a seemingly empty laboratory, the player is made to complete various physics-based puzzle challenges through numerous test chambers in order to test out the new Aperture Science Handheld Portal Device, without an explanation as to how, why or by whom.",
+    "total_rating": 83.22457463779074,
+    "total_rating_count": 3591,
+    "videos": [
+      {
+        "id": 460,
+        "game": 71,
+        "name": "Trailer",
+        "video_id": "nA9ChSA6wV4",
+        "checksum": "6fa8274e-d17f-5bcf-6c22-e387f0869859"
+      }
+    ]
+  },
+  {
+    "id": 732,
+    "aggregated_rating": 93.14285714285714,
+    "aggregated_rating_count": 6,
+    "artworks": [
+      {
+        "id": 168661,
+        "alpha_channel": true,
+        "animated": false,
+        "game": 732,
+        "height": 917,
+        "image_id": "ar3m51",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/ar3m51.jpg",
+        "width": 1031,
+        "checksum": "4829554c-6408-842f-94d5-c3bcdd2f73bd",
+        "artwork_type": 7
+      },
+      {
+        "id": 34971,
+        "alpha_channel": false,
+        "animated": false,
+        "game": 732,
+        "height": 620,
+        "image_id": "arqzf",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/arqzf.jpg",
+        "width": 1920,
+        "checksum": "a8f13814-e5d5-844d-3c8e-ab22f55dd1e2",
+        "artwork_type": 1
+      }
+    ],
+    "cover": {
+      "id": 120933,
+      "alpha_channel": false,
+      "animated": false,
+      "game": 732,
+      "height": 1580,
+      "image_id": "co2lb9",
+      "url": "//images.igdb.com/igdb/image/upload/t_thumb/co2lb9.jpg",
+      "width": 1185,
+      "checksum": "72282677-8c28-fec5-b1d4-d4d13f9c245a"
+    },
+    "first_release_date": 1098748800,
+    "genres": [
+      {
+        "id": 5,
+        "created_at": 1297639288,
+        "name": "Shooter",
+        "slug": "shooter",
+        "updated_at": 1323289215,
+        "url": "https://www.igdb.com/genres/shooter",
+        "checksum": "20c255bc-ec2d-c219-34bd-47995b0a79f1"
+      },
+      {
+        "id": 10,
+        "created_at": 1297639288,
+        "name": "Racing",
+        "slug": "racing",
+        "updated_at": 1323289215,
+        "url": "https://www.igdb.com/genres/racing",
+        "checksum": "41227287-0a1a-0f14-90f2-05655314e8b4"
+      },
+      {
+        "id": 31,
+        "created_at": 1323568041,
+        "name": "Adventure",
+        "slug": "adventure",
+        "updated_at": 1323568041,
+        "url": "https://www.igdb.com/genres/adventure",
+        "checksum": "a93a77df-3927-13fa-1d50-5d443cbb695f"
+      }
+    ],
+    "hypes": 2,
+    "name": "Grand Theft Auto: San Andreas",
+    "platforms": [
+      {
+        "id": 11,
+        "abbreviation": "XBOX",
+        "category": 1,
+        "created_at": 1297639288,
+        "generation": 6,
+        "name": "Xbox",
+        "platform_logo": 266,
+        "platform_family": 2,
+        "slug": "xbox",
+        "updated_at": 1718027289,
+        "url": "https://www.igdb.com/platforms/xbox",
+        "versions": [
+          77
+        ],
+        "checksum": "68c89706-a8b9-6c17-31a5-4e4977be0d1d",
+        "platform_type": 1
+      },
+      {
+        "id": 9,
+        "abbreviation": "PS3",
+        "alternative_name": "PS3",
+        "category": 1,
+        "created_at": 1297639288,
+        "generation": 7,
+        "name": "PlayStation 3",
+        "platform_logo": 79,
+        "platform_family": 1,
+        "slug": "ps3",
+        "updated_at": 1718027289,
+        "url": "https://www.igdb.com/platforms/ps3",
+        "versions": [
+          5,
+          4,
+          6
+        ],
+        "websites": [
+          3
+        ],
+        "checksum": "7194dbc7-fcb0-7fb8-44a7-609db3aee29e",
+        "platform_type": 1
+      },
+      {
+        "id": 48,
+        "abbreviation": "PS4",
+        "alternative_name": "PS4",
+        "category": 1,
+        "created_at": 1326544944,
+        "generation": 8,
+        "name": "PlayStation 4",
+        "platform_logo": 231,
+        "platform_family": 1,
+        "slug": "ps4--1",
+        "summary": "The PlayStation 4 system opens the door to an incredible journey through immersive new gaming worlds and a deeply connected gaming community. PS4 puts gamers first with an astounding launch line-up and over 180 games in development. Play amazing top-tier blockbusters and innovative indie hits on PS4. Developer inspired, gamer focused.",
+        "updated_at": 1718027289,
+        "url": "https://www.igdb.com/platforms/ps4--1",
+        "versions": [
+          17,
+          178,
+          179
+        ],
+        "websites": [
+          11
+        ],
+        "checksum": "499977cf-16b6-1abf-3664-be1a369a656e",
+        "platform_type": 1
+      },
+      {
+        "id": 34,
+        "abbreviation": "Android",
+        "alternative_name": "Infocusa3",
+        "category": 4,
+        "created_at": 1302608861,
+        "name": "Android",
+        "platform_logo": 831,
+        "platform_family": 4,
+        "slug": "android",
+        "updated_at": 1718027289,
+        "url": "https://www.igdb.com/platforms/android",
+        "versions": [
+          8,
+          10,
+          9,
+          11,
+          237,
+          12,
+          320,
+          7,
+          238,
+          236,
+          526,
+          527,
+          528,
+          541,
+          542,
+          543,
+          544,
+          545,
+          546,
+          672,
+          239
+        ],
+        "websites": [
+          7
+        ],
+        "checksum": "1519197d-b515-e889-ac2e-d076ce489ddf",
+        "platform_type": 4
+      },
+      {
+        "id": 6,
+        "abbreviation": "PC",
+        "alternative_name": "mswin",
+        "category": 4,
+        "created_at": 1297639288,
+        "name": "PC (Microsoft Windows)",
+        "platform_logo": 670,
+        "slug": "win",
+        "updated_at": 1718027289,
+        "url": "https://www.igdb.com/platforms/win",
+        "versions": [
+          14,
+          1,
+          15,
+          13,
+          530,
+          531,
+          534,
+          532,
+          513,
+          529,
+          124,
+          533
+        ],
+        "websites": [
+          2
+        ],
+        "checksum": "50ef0869-39cd-be87-5221-8ef3f082834a",
+        "platform_type": 4
+      },
+      {
+        "id": 39,
+        "abbreviation": "iOS",
+        "category": 4,
+        "created_at": 1317719747,
+        "name": "iOS",
+        "platform_logo": 248,
+        "slug": "ios",
+        "updated_at": 1718027289,
+        "url": "https://www.igdb.com/platforms/ios",
+        "versions": [
+          43
+        ],
+        "checksum": "5376c91c-0374-90e4-19dd-213780c9eb1d",
+        "platform_type": 4
+      },
+      {
+        "id": 14,
+        "abbreviation": "Mac",
+        "alternative_name": "Mac OS",
+        "category": 4,
+        "created_at": 1297678396,
+        "name": "Mac",
+        "platform_logo": 867,
+        "slug": "mac",
+        "updated_at": 1718027289,
+        "url": "https://www.igdb.com/platforms/mac",
+        "versions": [
+          600,
+          599,
+          144,
+          149,
+          147,
+          142,
+          143,
+          141,
+          150,
+          145,
+          146,
+          148,
+          151,
+          598,
+          45,
+          713
+        ],
+        "websites": [
+          5
+        ],
+        "checksum": "98cd1d18-6a0b-3f3d-1052-651e4b12bd39",
+        "platform_type": 4
+      },
+      {
+        "id": 12,
+        "abbreviation": "X360",
+        "alternative_name": "X360",
+        "category": 1,
+        "created_at": 1297639288,
+        "generation": 7,
+        "name": "Xbox 360",
+        "platform_logo": 622,
+        "platform_family": 2,
+        "slug": "xbox360",
+        "summary": "Xbox 360 brings you a total games and entertainment experience. The largest library of games, including titles that get you right into the thick of it with Kinect. Plus, your whole family can watch HD movies, TV shows, live events, music, sports and more—across all your devices. Xbox 360 is the center of your games and entertainment universe.",
+        "updated_at": 1718027289,
+        "url": "https://www.igdb.com/platforms/xbox360",
+        "versions": [
+          2,
+          3,
+          495,
+          83
+        ],
+        "websites": [
+          4
+        ],
+        "checksum": "34a16af2-775f-f963-b611-406f09935eaa",
+        "platform_type": 1
+      },
+      {
+        "id": 8,
+        "abbreviation": "PS2",
+        "alternative_name": "PS2",
+        "category": 1,
+        "created_at": 1297639288,
+        "generation": 6,
+        "name": "PlayStation 2",
+        "platform_logo": 254,
+        "platform_family": 1,
+        "slug": "ps2",
+        "updated_at": 1718027289,
+        "url": "https://www.igdb.com/platforms/ps2",
+        "versions": [
+          58,
+          114
+        ],
+        "checksum": "4ea5687f-1834-ef04-3d2c-2ddc21910909",
+        "platform_type": 1
+      }
+    ],
+    "rating": 90.2310065977261,
+    "screenshots": [
+      {
+        "id": 189151,
+        "game": 732,
+        "height": 228,
+        "image_id": "eswubyh9h3uereuyumjq",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/eswubyh9h3uereuyumjq.jpg",
+        "width": 406,
+        "checksum": "f7a69ab0-2b6a-4b3e-e845-6fb80de29185"
+      },
+      {
+        "id": 189152,
+        "game": 732,
+        "height": 228,
+        "image_id": "e11zpyhhjc9qdqgrx7v0",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/e11zpyhhjc9qdqgrx7v0.jpg",
+        "width": 406,
+        "checksum": "4c45a5af-c777-df1b-3f10-f6c1b219eaed"
+      },
+      {
+        "id": 189150,
+        "game": 732,
+        "height": 228,
+        "image_id": "hircn6ewsgu70ynlzis5",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/hircn6ewsgu70ynlzis5.jpg",
+        "width": 406,
+        "checksum": "20bc62b1-001f-03bd-91a6-f1dbbd158c54"
+      },
+      {
+        "id": 679,
+        "game": 732,
+        "height": 600,
+        "image_id": "sojdbdt93e06wojplpsj",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/sojdbdt93e06wojplpsj.jpg",
+        "width": 800,
+        "checksum": "dda1ed11-ceeb-51a4-171e-5436f7165227"
+      },
+      {
+        "id": 189153,
+        "game": 732,
+        "height": 228,
+        "image_id": "dbbtmdz0q1536npbpr5o",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/dbbtmdz0q1536npbpr5o.jpg",
+        "width": 406,
+        "checksum": "e7cb4534-0a36-70bc-0ad3-88e1cba674f6"
+      },
+      {
+        "id": 778550,
+        "alpha_channel": false,
+        "animated": false,
+        "game": 732,
+        "height": 1080,
+        "image_id": "scgoqe",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/scgoqe.jpg",
+        "width": 1920,
+        "checksum": "4d411cc8-d7c0-debf-3850-d7fd807abec7"
+      },
+      {
+        "id": 778551,
+        "alpha_channel": false,
+        "animated": false,
+        "game": 732,
+        "height": 768,
+        "image_id": "scgoqf",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/scgoqf.jpg",
+        "width": 1360,
+        "checksum": "ee8c87a3-a946-0172-576d-08a45a1d03bc"
+      },
+      {
+        "id": 778552,
+        "alpha_channel": false,
+        "animated": false,
+        "game": 732,
+        "height": 1080,
+        "image_id": "scgoqg",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/scgoqg.jpg",
+        "width": 1920,
+        "checksum": "787a8ac1-357b-216b-7ae5-bfd514c1bf2a"
+      },
+      {
+        "id": 778553,
+        "alpha_channel": false,
+        "animated": false,
+        "game": 732,
+        "height": 1080,
+        "image_id": "scgoqh",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/scgoqh.jpg",
+        "width": 1920,
+        "checksum": "780d6d39-2106-8093-4239-c12ebca916be"
+      },
+      {
+        "id": 778554,
+        "alpha_channel": false,
+        "animated": false,
+        "game": 732,
+        "height": 1080,
+        "image_id": "scgoqi",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/scgoqi.jpg",
+        "width": 1920,
+        "checksum": "85859f33-3418-8c89-78f6-524917c1422c"
+      },
+      {
+        "id": 778555,
+        "alpha_channel": false,
+        "animated": false,
+        "game": 732,
+        "height": 1080,
+        "image_id": "scgoqj",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/scgoqj.jpg",
+        "width": 1920,
+        "checksum": "4342de02-b222-51b8-164f-636664d3dd54"
+      },
+      {
+        "id": 778556,
+        "alpha_channel": false,
+        "animated": false,
+        "game": 732,
+        "height": 1080,
+        "image_id": "scgoqk",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/scgoqk.jpg",
+        "width": 1920,
+        "checksum": "6ee21eb7-5997-a7bc-b9f2-ba72e29b2090"
+      }
+    ],
+    "summary": "Returning after his mother\u0027s murder to the semi-fictional city of Los Santos (based on Los Angeles), Carl Johnson, a former gang banger, must take back the streets for his family and friends by gaining respect and once again gaining control over the streets. However, a story filled with crime, lies and corruption will lead him to trudge the entire state of San Andreas (based on California and Nevada) to rebuild his life.",
+    "total_rating": 91.68693187029162,
+    "total_rating_count": 3491,
+    "videos": [
+      {
+        "id": 19022,
+        "game": 732,
+        "name": "Trailer 1",
+        "video_id": "vdlpWZpwOq0",
+        "checksum": "ef9c677e-9021-ad5c-0f0c-00aa9541f6bf"
+      },
+      {
+        "id": 19023,
+        "game": 732,
+        "name": "Trailer 2",
+        "video_id": "XuUc08d7hyU",
+        "checksum": "0d5a1788-f172-90ff-91b3-171c0dbab4a1"
+      },
+      {
+        "id": 120116,
+        "game": 732,
+        "name": "Gameplay Video",
+        "video_id": "ZaqpcybxUqs",
+        "checksum": "745e29a6-9d53-f3e7-86a2-ef96b30f53b5"
+      }
+    ]
+  },
+  {
+    "id": 1009,
+    "aggregated_rating": 91.53846153846153,
+    "aggregated_rating_count": 13,
+    "artworks": [
+      {
+        "id": 168633,
+        "alpha_channel": false,
+        "animated": false,
+        "game": 1009,
+        "height": 720,
+        "image_id": "ar3m49",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/ar3m49.jpg",
+        "width": 1200,
+        "checksum": "67676250-11cd-6308-0e89-9829335e1cad",
+        "artwork_type": 4
+      },
+      {
+        "id": 168634,
+        "alpha_channel": false,
+        "animated": false,
+        "game": 1009,
+        "height": 1080,
+        "image_id": "ar3m4a",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/ar3m4a.jpg",
+        "width": 1100,
+        "checksum": "8b4babbc-5374-4b0a-cbaa-83fd5f10c456",
+        "artwork_type": 4
+      },
+      {
+        "id": 168636,
+        "alpha_channel": false,
+        "animated": false,
+        "game": 1009,
+        "height": 760,
+        "image_id": "ar3m4c",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/ar3m4c.jpg",
+        "width": 1260,
+        "checksum": "f807c59e-b082-1730-7b50-6848ac056b99",
+        "artwork_type": 4
+      },
+      {
+        "id": 168637,
+        "alpha_channel": false,
+        "animated": false,
+        "game": 1009,
+        "height": 580,
+        "image_id": "ar3m4d",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/ar3m4d.jpg",
+        "width": 1260,
+        "checksum": "f22f2838-9184-5b64-8bd6-1f5e2e594ebc",
+        "artwork_type": 4
+      },
+      {
+        "id": 168640,
+        "alpha_channel": false,
+        "animated": false,
+        "game": 1009,
+        "height": 720,
+        "image_id": "ar3m4g",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/ar3m4g.jpg",
+        "width": 1200,
+        "checksum": "27382070-c3af-6de6-3aec-f269e5d3527c",
+        "artwork_type": 2
+      },
+      {
+        "id": 168641,
+        "alpha_channel": false,
+        "animated": false,
+        "game": 1009,
+        "height": 600,
+        "image_id": "ar3m4h",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/ar3m4h.jpg",
+        "width": 1440,
+        "checksum": "5afaa159-4427-273f-7bf7-08d60624b07c",
+        "artwork_type": 4
+      },
+      {
+        "id": 168642,
+        "alpha_channel": false,
+        "animated": false,
+        "game": 1009,
+        "height": 600,
+        "image_id": "ar3m4i",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/ar3m4i.jpg",
+        "width": 1130,
+        "checksum": "a8278e3c-2946-90e2-7f6a-cc59fbaadb72",
+        "artwork_type": 4
+      },
+      {
+        "id": 168643,
+        "alpha_channel": true,
+        "animated": false,
+        "game": 1009,
+        "height": 4575,
+        "image_id": "ar3m4j",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/ar3m4j.jpg",
+        "width": 21271,
+        "checksum": "4a6cf20a-af62-3ec3-0f62-efddab6fcb39",
+        "artwork_type": 6
+      },
+      {
+        "id": 168638,
+        "alpha_channel": false,
+        "animated": false,
+        "game": 1009,
+        "height": 745,
+        "image_id": "ar3m4e",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/ar3m4e.jpg",
+        "width": 1260,
+        "checksum": "e805fe5a-bec9-ff3e-1ac4-c7b9f1aea9db",
+        "artwork_type": 4
+      },
+      {
+        "id": 168639,
+        "alpha_channel": false,
+        "animated": false,
+        "game": 1009,
+        "height": 580,
+        "image_id": "ar3m4f",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/ar3m4f.jpg",
+        "width": 1300,
+        "checksum": "a084fbaf-3316-fb20-7492-49113a25ac0a",
+        "artwork_type": 4
+      },
+      {
+        "id": 3445,
+        "game": 1009,
+        "height": 670,
+        "image_id": "hai83efwbwhnx1zzkvho",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/hai83efwbwhnx1zzkvho.jpg",
+        "width": 1100,
+        "checksum": "17b5bdd5-20d2-a8a6-ab94-d1a0e6f16bb0",
+        "artwork_type": 1
+      },
+      {
+        "id": 3441,
+        "game": 1009,
+        "height": 680,
+        "image_id": "gcj6j2ys407ellcdnfiz",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/gcj6j2ys407ellcdnfiz.jpg",
+        "width": 1100,
+        "checksum": "072a8d13-ff4e-0b86-991c-fb50fd2c943f",
+        "artwork_type": 1
+      },
+      {
+        "id": 168635,
+        "alpha_channel": false,
+        "animated": false,
+        "game": 1009,
+        "height": 600,
+        "image_id": "ar3m4b",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/ar3m4b.jpg",
+        "width": 1260,
+        "checksum": "b08bb85d-3dd3-15db-99be-2ddbdc09c799",
+        "artwork_type": 4
+      }
+    ],
+    "cover": {
+      "id": 81915,
+      "alpha_channel": false,
+      "animated": false,
+      "game": 1009,
+      "height": 3857,
+      "image_id": "co1r7f",
+      "url": "//images.igdb.com/igdb/image/upload/t_thumb/co1r7f.jpg",
+      "width": 2893,
+      "checksum": "02297e39-14b0-79cd-4c9d-e57bd4819793"
+    },
+    "first_release_date": 1371168000,
+    "genres": [
+      {
+        "id": 5,
+        "created_at": 1297639288,
+        "name": "Shooter",
+        "slug": "shooter",
+        "updated_at": 1323289215,
+        "url": "https://www.igdb.com/genres/shooter",
+        "checksum": "20c255bc-ec2d-c219-34bd-47995b0a79f1"
+      },
+      {
+        "id": 31,
+        "created_at": 1323568041,
+        "name": "Adventure",
+        "slug": "adventure",
+        "updated_at": 1323568041,
+        "url": "https://www.igdb.com/genres/adventure",
+        "checksum": "a93a77df-3927-13fa-1d50-5d443cbb695f"
+      }
+    ],
+    "name": "The Last of Us",
+    "platforms": [
+      {
+        "id": 9,
+        "abbreviation": "PS3",
+        "alternative_name": "PS3",
+        "category": 1,
+        "created_at": 1297639288,
+        "generation": 7,
+        "name": "PlayStation 3",
+        "platform_logo": 79,
+        "platform_family": 1,
+        "slug": "ps3",
+        "updated_at": 1718027289,
+        "url": "https://www.igdb.com/platforms/ps3",
+        "versions": [
+          5,
+          4,
+          6
+        ],
+        "websites": [
+          3
+        ],
+        "checksum": "7194dbc7-fcb0-7fb8-44a7-609db3aee29e",
+        "platform_type": 1
+      }
+    ],
+    "rating": 93.12664534488539,
+    "screenshots": [
+      {
+        "id": 1570246,
+        "alpha_channel": false,
+        "animated": false,
+        "game": 1009,
+        "height": 675,
+        "image_id": "scxnly",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/scxnly.jpg",
+        "width": 1200,
+        "checksum": "75c18d80-cda1-a1dc-3ba1-5f3d9e76cc75"
+      },
+      {
+        "id": 1570247,
+        "alpha_channel": false,
+        "animated": false,
+        "game": 1009,
+        "height": 675,
+        "image_id": "scxnlz",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/scxnlz.jpg",
+        "width": 1200,
+        "checksum": "b53e8bed-f55c-9ceb-e978-d3e49023ce5c"
+      },
+      {
+        "id": 1570248,
+        "alpha_channel": false,
+        "animated": false,
+        "game": 1009,
+        "height": 675,
+        "image_id": "scxnm0",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/scxnm0.jpg",
+        "width": 1200,
+        "checksum": "7f036cbe-1a81-f4db-53dd-6d8d18ac2608"
+      },
+      {
+        "id": 1570249,
+        "alpha_channel": false,
+        "animated": false,
+        "game": 1009,
+        "height": 675,
+        "image_id": "scxnm1",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/scxnm1.jpg",
+        "width": 1200,
+        "checksum": "57f13c75-aca1-53f0-ae79-bf7675e9aac2"
+      },
+      {
+        "id": 1570250,
+        "alpha_channel": false,
+        "animated": false,
+        "game": 1009,
+        "height": 675,
+        "image_id": "scxnm2",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/scxnm2.jpg",
+        "width": 1200,
+        "checksum": "46a4a2fc-3aab-25cb-9e74-8d007aaa2fef"
+      },
+      {
+        "id": 1570251,
+        "alpha_channel": false,
+        "animated": false,
+        "game": 1009,
+        "height": 675,
+        "image_id": "scxnm3",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/scxnm3.jpg",
+        "width": 1200,
+        "checksum": "6a09a026-86be-ad04-bd49-ac20bb039ba2"
+      },
+      {
+        "id": 1570252,
+        "alpha_channel": false,
+        "animated": false,
+        "game": 1009,
+        "height": 675,
+        "image_id": "scxnm4",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/scxnm4.jpg",
+        "width": 1200,
+        "checksum": "1b78a796-093a-b2a2-c44a-0e06bc59e437"
+      }
+    ],
+    "summary": "The Last of Us is a third-person action-adventure game featuring a mix of exploration, stealth and combat. Players face both infected creatures and hostile human enemies while progressing through varied environments. The game includes a narrative-driven single-player campaign and a competitive online multiplayer mode called Factions. Trophy support is included, and additional downloadable content was made available separately.",
+    "total_rating": 92.33255344167347,
+    "total_rating_count": 3053,
+    "videos": [
+      {
+        "id": 14721,
+        "game": 1009,
+        "name": "Teaser",
+        "video_id": "fxeNaDjU7sw",
+        "checksum": "b7007812-f556-6c80-04ce-a7ef09abca4b"
+      },
+      {
+        "id": 14723,
+        "game": 1009,
+        "name": "Bill Cutscene Trailer",
+        "video_id": "0hUN_2vS8Ic",
+        "checksum": "ceb61518-30c6-6b83-4224-81db0fbf5819"
+      },
+      {
+        "id": 14725,
+        "game": 1009,
+        "name": "GamesCom 2012 Trailer",
+        "video_id": "0a4IRU2h2N8",
+        "checksum": "ebb7730b-dbea-8ef3-7626-0141505d1f51"
+      },
+      {
+        "id": 14724,
+        "game": 1009,
+        "name": "PAX Prime Playthrough Trailer",
+        "video_id": "uaQQJwZpswQ",
+        "checksum": "e493f523-1c0a-819b-effe-d6f656cbdd70"
+      },
+      {
+        "id": 14726,
+        "game": 1009,
+        "name": "Story Trailer",
+        "video_id": "PTTvQf5BRPw",
+        "checksum": "f1c6dbfb-b6d4-9fc0-3f7a-62e484607b63"
+      },
+      {
+        "id": 14722,
+        "game": 1009,
+        "name": "Announcement Trailer",
+        "video_id": "UBshR1qD3oU",
+        "checksum": "e534636f-b0e5-66ad-db5e-e2085ff840f5"
+      },
+      {
+        "id": 14727,
+        "game": 1009,
+        "name": "Hunt City Trailer",
+        "video_id": "M5y03s0-Bbk",
+        "checksum": "ea731f21-7936-d2e9-ab92-fad1a13ea3d5"
+      },
+      {
+        "id": 117978,
+        "game": 1009,
+        "name": "Behind the Scenes - Motion Capture",
+        "video_id": "LH18nGoIUKo",
+        "checksum": "15930aa8-42ad-17c5-4bca-0778898f1a74"
+      },
+      {
+        "id": 120210,
+        "game": 1009,
+        "name": "Launch Trailer",
+        "video_id": "OQpdSVF_k_w",
+        "checksum": "cdfd9677-d3b2-ef0a-4082-60b09a27686e"
+      },
+      {
+        "id": 119986,
+        "game": 1009,
+        "name": "Gameplay Video",
+        "video_id": "8ZYkj0glnqs",
+        "checksum": "f1e9a42f-9df8-c6eb-fc0a-77730c95a220"
+      }
+    ]
+  },
+  {
+    "id": 233,
+    "aggregated_rating": 79.125,
+    "aggregated_rating_count": 7,
+    "artworks": [
+      {
+        "id": 26331,
+        "alpha_channel": false,
+        "animated": false,
+        "game": 233,
+        "height": 620,
+        "image_id": "arkbf",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/arkbf.jpg",
+        "width": 1920,
+        "checksum": "894bd6c2-8891-67f0-7fd1-cd01936493c8",
+        "artwork_type": 1
+      }
+    ],
+    "cover": {
+      "id": 77288,
+      "alpha_channel": false,
+      "animated": false,
+      "game": 233,
+      "height": 1008,
+      "image_id": "co1nmw",
+      "url": "//images.igdb.com/igdb/image/upload/t_thumb/co1nmw.jpg",
+      "width": 756,
+      "checksum": "31724ab3-ac41-fb4a-1b30-4f3d0d690928"
+    },
+    "first_release_date": 1100563200,
+    "genres": [
+      {
+        "id": 5,
+        "created_at": 1297639288,
+        "name": "Shooter",
+        "slug": "shooter",
+        "updated_at": 1323289215,
+        "url": "https://www.igdb.com/genres/shooter",
+        "checksum": "20c255bc-ec2d-c219-34bd-47995b0a79f1"
+      }
+    ],
+    "name": "Half-Life 2",
+    "platforms": [
+      {
+        "id": 11,
+        "abbreviation": "XBOX",
+        "category": 1,
+        "created_at": 1297639288,
+        "generation": 6,
+        "name": "Xbox",
+        "platform_logo": 266,
+        "platform_family": 2,
+        "slug": "xbox",
+        "updated_at": 1718027289,
+        "url": "https://www.igdb.com/platforms/xbox",
+        "versions": [
+          77
+        ],
+        "checksum": "68c89706-a8b9-6c17-31a5-4e4977be0d1d",
+        "platform_type": 1
+      },
+      {
+        "id": 9,
+        "abbreviation": "PS3",
+        "alternative_name": "PS3",
+        "category": 1,
+        "created_at": 1297639288,
+        "generation": 7,
+        "name": "PlayStation 3",
+        "platform_logo": 79,
+        "platform_family": 1,
+        "slug": "ps3",
+        "updated_at": 1718027289,
+        "url": "https://www.igdb.com/platforms/ps3",
+        "versions": [
+          5,
+          4,
+          6
+        ],
+        "websites": [
+          3
+        ],
+        "checksum": "7194dbc7-fcb0-7fb8-44a7-609db3aee29e",
+        "platform_type": 1
+      },
+      {
+        "id": 3,
+        "abbreviation": "Linux",
+        "alternative_name": "GNU/Linux",
+        "category": 4,
+        "created_at": 1297639288,
+        "name": "Linux",
+        "platform_logo": 380,
+        "platform_family": 4,
+        "slug": "linux",
+        "summary": "Linux is a free and open-source (FOSS/FLOSS) Operating System. In a more precise and complex definition, Linux is an open-source OS kernel on which a large variety of Operating Systems (known as Linux distributions) are built.",
+        "updated_at": 1718027289,
+        "url": "https://www.igdb.com/platforms/linux",
+        "versions": [
+          44
+        ],
+        "websites": [
+          1
+        ],
+        "checksum": "55b68ef4-2663-6f2e-a57a-d41257173767",
+        "platform_type": 4
+      },
+      {
+        "id": 34,
+        "abbreviation": "Android",
+        "alternative_name": "Infocusa3",
+        "category": 4,
+        "created_at": 1302608861,
+        "name": "Android",
+        "platform_logo": 831,
+        "platform_family": 4,
+        "slug": "android",
+        "updated_at": 1718027289,
+        "url": "https://www.igdb.com/platforms/android",
+        "versions": [
+          8,
+          10,
+          9,
+          11,
+          237,
+          12,
+          320,
+          7,
+          238,
+          236,
+          526,
+          527,
+          528,
+          541,
+          542,
+          543,
+          544,
+          545,
+          546,
+          672,
+          239
+        ],
+        "websites": [
+          7
+        ],
+        "checksum": "1519197d-b515-e889-ac2e-d076ce489ddf",
+        "platform_type": 4
+      },
+      {
+        "id": 6,
+        "abbreviation": "PC",
+        "alternative_name": "mswin",
+        "category": 4,
+        "created_at": 1297639288,
+        "name": "PC (Microsoft Windows)",
+        "platform_logo": 670,
+        "slug": "win",
+        "updated_at": 1718027289,
+        "url": "https://www.igdb.com/platforms/win",
+        "versions": [
+          14,
+          1,
+          15,
+          13,
+          530,
+          531,
+          534,
+          532,
+          513,
+          529,
+          124,
+          533
+        ],
+        "websites": [
+          2
+        ],
+        "checksum": "50ef0869-39cd-be87-5221-8ef3f082834a",
+        "platform_type": 4
+      },
+      {
+        "id": 14,
+        "abbreviation": "Mac",
+        "alternative_name": "Mac OS",
+        "category": 4,
+        "created_at": 1297678396,
+        "name": "Mac",
+        "platform_logo": 867,
+        "slug": "mac",
+        "updated_at": 1718027289,
+        "url": "https://www.igdb.com/platforms/mac",
+        "versions": [
+          600,
+          599,
+          144,
+          149,
+          147,
+          142,
+          143,
+          141,
+          150,
+          145,
+          146,
+          148,
+          151,
+          598,
+          45,
+          713
+        ],
+        "websites": [
+          5
+        ],
+        "checksum": "98cd1d18-6a0b-3f3d-1052-651e4b12bd39",
+        "platform_type": 4
+      },
+      {
+        "id": 12,
+        "abbreviation": "X360",
+        "alternative_name": "X360",
+        "category": 1,
+        "created_at": 1297639288,
+        "generation": 7,
+        "name": "Xbox 360",
+        "platform_logo": 622,
+        "platform_family": 2,
+        "slug": "xbox360",
+        "summary": "Xbox 360 brings you a total games and entertainment experience. The largest library of games, including titles that get you right into the thick of it with Kinect. Plus, your whole family can watch HD movies, TV shows, live events, music, sports and more—across all your devices. Xbox 360 is the center of your games and entertainment universe.",
+        "updated_at": 1718027289,
+        "url": "https://www.igdb.com/platforms/xbox360",
+        "versions": [
+          2,
+          3,
+          495,
+          83
+        ],
+        "websites": [
+          4
+        ],
+        "checksum": "34a16af2-775f-f963-b611-406f09935eaa",
+        "platform_type": 1
+      }
+    ],
+    "rating": 90.41465132099736,
+    "screenshots": [
+      {
+        "id": 1138,
+        "game": 233,
+        "height": 576,
+        "image_id": "mpphkihhk8yh9m2zaafd",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/mpphkihhk8yh9m2zaafd.jpg",
+        "width": 1024,
+        "checksum": "41eeb74e-d33d-1444-642e-9b8edab7020b"
+      },
+      {
+        "id": 1142,
+        "game": 233,
+        "height": 640,
+        "image_id": "iau5t12jemoelx0xuzna",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/iau5t12jemoelx0xuzna.jpg",
+        "width": 1024,
+        "checksum": "451f1337-2522-f6ea-2ef5-9ca498d61306"
+      },
+      {
+        "id": 1139,
+        "game": 233,
+        "height": 576,
+        "image_id": "muyxb9cljgsy245fcimx",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/muyxb9cljgsy245fcimx.jpg",
+        "width": 1024,
+        "checksum": "ea5beaa7-8f22-9a6b-fa04-50d5fe09170e"
+      },
+      {
+        "id": 1140,
+        "game": 233,
+        "height": 576,
+        "image_id": "nnlfbf8blflrlmuarfej",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/nnlfbf8blflrlmuarfej.jpg",
+        "width": 1024,
+        "checksum": "d4d7cfb3-a7de-fdc4-442a-bd54f33d1f0f"
+      },
+      {
+        "id": 1141,
+        "game": 233,
+        "height": 576,
+        "image_id": "ga0lj5zqeqd7moyzxij9",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/ga0lj5zqeqd7moyzxij9.jpg",
+        "width": 1024,
+        "checksum": "91f1252c-3a23-9dc5-7e3f-e5042b4eb3dd"
+      }
+    ],
+    "summary": "1998. HALF-LIFE sends a shock through the game industry with its combination of pounding action and continuous, immersive storytelling.\n\nNOW. By taking the suspense, challenge and visceral charge of the original, and adding startling new realism and responsiveness, Half-Life 2 opens the door to a world where the player\u0027s presence affects everything around them, from the physical environment to the behaviors even the emotions of both friends and enemies.",
+    "total_rating": 84.76982566049868,
+    "total_rating_count": 3035,
+    "videos": [
+      {
+        "id": 94931,
+        "game": 233,
+        "name": "Launch Trailer",
+        "video_id": "ID1dWN3n7q4",
+        "checksum": "1ebf5a51-6729-4104-cd50-cb5c919bcf2d"
+      },
+      {
+        "id": 94932,
+        "game": 233,
+        "name": "Trailer",
+        "video_id": "2zkLh_QMFdQ",
+        "checksum": "90d2df36-aed6-09cb-b54c-ec5a76561a0e"
+      },
+      {
+        "id": 94933,
+        "game": 233,
+        "name": "Accolades Trailer",
+        "video_id": "GUw33CwqE_I",
+        "checksum": "a24032fe-1ced-7bd7-5b5a-564f34fbdba7"
+      }
+    ]
+  },
+  {
+    "id": 25076,
+    "aggregated_rating": 94.05882352941177,
+    "aggregated_rating_count": 17,
+    "artworks": [
+      {
+        "id": 5336,
+        "game": 25076,
+        "height": 2160,
+        "image_id": "nqtsfctiapng5xcmozyk",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/nqtsfctiapng5xcmozyk.jpg",
+        "width": 3840,
+        "checksum": "45134c9f-a226-ce75-f0af-d9feaba1a185",
+        "artwork_type": 1
+      },
+      {
+        "id": 174484,
+        "alpha_channel": false,
+        "animated": false,
+        "game": 25076,
+        "height": 2160,
+        "image_id": "ar3qms",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/ar3qms.jpg",
+        "width": 3840,
+        "checksum": "43e6cd28-b574-8fd1-68f6-1fad89b3e740",
+        "artwork_type": 3
+      },
+      {
+        "id": 174485,
+        "alpha_channel": true,
+        "animated": false,
+        "game": 25076,
+        "height": 2160,
+        "image_id": "ar3qmt",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/ar3qmt.jpg",
+        "width": 3840,
+        "checksum": "356f60f3-30f9-8aad-9ac6-1c4e477a1246",
+        "artwork_type": 2
+      },
+      {
+        "id": 174486,
+        "alpha_channel": true,
+        "animated": false,
+        "game": 25076,
+        "height": 472,
+        "image_id": "ar3qmu",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/ar3qmu.jpg",
+        "width": 1280,
+        "checksum": "488cccab-7048-b421-179f-bb0f094c9be8",
+        "artwork_type": 7
+      },
+      {
+        "id": 5341,
+        "game": 25076,
+        "height": 2160,
+        "image_id": "swg128b5wtptafv5foo9",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/swg128b5wtptafv5foo9.jpg",
+        "width": 3840,
+        "checksum": "7ac3d42f-49e4-b0fe-6db1-04fd51441c5b",
+        "artwork_type": 1
+      },
+      {
+        "id": 5335,
+        "game": 25076,
+        "height": 2160,
+        "image_id": "kmx67l3q1gqugxhg66zv",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/kmx67l3q1gqugxhg66zv.jpg",
+        "width": 3840,
+        "checksum": "e579f001-98bb-d2bb-e3cd-5e824ca1f598",
+        "artwork_type": 1
+      },
+      {
+        "id": 5334,
+        "game": 25076,
+        "height": 2160,
+        "image_id": "kiwenuikpml3zbmgkf06",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/kiwenuikpml3zbmgkf06.jpg",
+        "width": 3840,
+        "checksum": "2a838923-85ac-60db-47c6-030144dfeb24",
+        "artwork_type": 1
+      },
+      {
+        "id": 5332,
+        "game": 25076,
+        "height": 2160,
+        "image_id": "cuzmozb8widfr9aj8trf",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/cuzmozb8widfr9aj8trf.jpg",
+        "width": 3840,
+        "checksum": "107a5f25-7c36-7a0e-c9e4-fabd55644698",
+        "artwork_type": 1
+      },
+      {
+        "id": 5337,
+        "game": 25076,
+        "height": 2160,
+        "image_id": "l0kjrldascktx2kzqhbi",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/l0kjrldascktx2kzqhbi.jpg",
+        "width": 3840,
+        "checksum": "f4477ede-dff6-81a8-7603-dae482d30a11",
+        "artwork_type": 1
+      },
+      {
+        "id": 5339,
+        "game": 25076,
+        "height": 2160,
+        "image_id": "vev3osrana2gzm9bdj3f",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/vev3osrana2gzm9bdj3f.jpg",
+        "width": 3840,
+        "checksum": "8fb76653-660e-8e99-9c74-c31566a81cde",
+        "artwork_type": 1
+      },
+      {
+        "id": 5338,
+        "game": 25076,
+        "height": 2160,
+        "image_id": "m9ra5j7omj0gn554hkkg",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/m9ra5j7omj0gn554hkkg.jpg",
+        "width": 3840,
+        "checksum": "28e7f6d8-e4cb-5bcf-2612-d319b1b90a84",
+        "artwork_type": 1
+      },
+      {
+        "id": 5333,
+        "game": 25076,
+        "height": 2160,
+        "image_id": "asdntchzmz1kf3k0t79l",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/asdntchzmz1kf3k0t79l.jpg",
+        "width": 3840,
+        "checksum": "876e87f3-dce4-224e-7893-69f5c54e0e75",
+        "artwork_type": 1
+      },
+      {
+        "id": 5340,
+        "game": 25076,
+        "height": 2160,
+        "image_id": "eutpbosgfblccztjkioz",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/eutpbosgfblccztjkioz.jpg",
+        "width": 3840,
+        "checksum": "6f337989-a7d9-f66e-5134-18f5c8db3708",
+        "artwork_type": 1
+      }
+    ],
+    "cover": {
+      "id": 80403,
+      "alpha_channel": false,
+      "animated": false,
+      "game": 25076,
+      "height": 800,
+      "image_id": "co1q1f",
+      "url": "//images.igdb.com/igdb/image/upload/t_thumb/co1q1f.jpg",
+      "width": 600,
+      "checksum": "fbbb9291-4f4f-36f1-ecd0-ae9ac8857df9"
+    },
+    "first_release_date": 1540512000,
+    "genres": [
+      {
+        "id": 5,
+        "created_at": 1297639288,
+        "name": "Shooter",
+        "slug": "shooter",
+        "updated_at": 1323289215,
+        "url": "https://www.igdb.com/genres/shooter",
+        "checksum": "20c255bc-ec2d-c219-34bd-47995b0a79f1"
+      },
+      {
+        "id": 12,
+        "created_at": 1297639288,
+        "name": "Role-playing (RPG)",
+        "slug": "role-playing-rpg",
+        "updated_at": 1323289215,
+        "url": "https://www.igdb.com/genres/role-playing-rpg",
+        "checksum": "5a7bd431-149a-3083-532d-2176f4daca24"
+      },
+      {
+        "id": 31,
+        "created_at": 1323568041,
+        "name": "Adventure",
+        "slug": "adventure",
+        "updated_at": 1323568041,
+        "url": "https://www.igdb.com/genres/adventure",
+        "checksum": "a93a77df-3927-13fa-1d50-5d443cbb695f"
+      }
+    ],
+    "hypes": 257,
+    "name": "Red Dead Redemption 2",
+    "platforms": [
+      {
+        "id": 170,
+        "abbreviation": "Stadia",
+        "alternative_name": "Stadia",
+        "category": 3,
+        "created_at": 1565274018,
+        "name": "Google Stadia",
+        "platform_logo": 328,
+        "platform_family": 4,
+        "slug": "stadia",
+        "updated_at": 1718027354,
+        "url": "https://www.igdb.com/platforms/stadia",
+        "versions": [
+          285
+        ],
+        "websites": [
+          37,
+          280
+        ],
+        "checksum": "cd1f06da-9c30-ec14-4b7c-f9b0c165102e",
+        "platform_type": 3
+      },
+      {
+        "id": 48,
+        "abbreviation": "PS4",
+        "alternative_name": "PS4",
+        "category": 1,
+        "created_at": 1326544944,
+        "generation": 8,
+        "name": "PlayStation 4",
+        "platform_logo": 231,
+        "platform_family": 1,
+        "slug": "ps4--1",
+        "summary": "The PlayStation 4 system opens the door to an incredible journey through immersive new gaming worlds and a deeply connected gaming community. PS4 puts gamers first with an astounding launch line-up and over 180 games in development. Play amazing top-tier blockbusters and innovative indie hits on PS4. Developer inspired, gamer focused.",
+        "updated_at": 1718027289,
+        "url": "https://www.igdb.com/platforms/ps4--1",
+        "versions": [
+          17,
+          178,
+          179
+        ],
+        "websites": [
+          11
+        ],
+        "checksum": "499977cf-16b6-1abf-3664-be1a369a656e",
+        "platform_type": 1
+      },
+      {
+        "id": 6,
+        "abbreviation": "PC",
+        "alternative_name": "mswin",
+        "category": 4,
+        "created_at": 1297639288,
+        "name": "PC (Microsoft Windows)",
+        "platform_logo": 670,
+        "slug": "win",
+        "updated_at": 1718027289,
+        "url": "https://www.igdb.com/platforms/win",
+        "versions": [
+          14,
+          1,
+          15,
+          13,
+          530,
+          531,
+          534,
+          532,
+          513,
+          529,
+          124,
+          533
+        ],
+        "websites": [
+          2
+        ],
+        "checksum": "50ef0869-39cd-be87-5221-8ef3f082834a",
+        "platform_type": 4
+      },
+      {
+        "id": 49,
+        "abbreviation": "XONE",
+        "alternative_name": "XONE",
+        "category": 1,
+        "created_at": 1326545022,
+        "generation": 8,
+        "name": "Xbox One",
+        "platform_logo": 329,
+        "platform_family": 2,
+        "slug": "xboxone",
+        "summary": "Welcome to a new generation of games and entertainment. Where games push the boundaries of realism. And television obeys your every command. Where listening to music while playing a game is a snap. And you can jump from TV to movies to music to a game in an instant. Where your experience is custom tailored to you. And the entertainment you love is all in one place. Welcome to the all-in-one, Xbox One",
+        "updated_at": 1718027289,
+        "url": "https://www.igdb.com/platforms/xboxone",
+        "versions": [
+          78,
+          188,
+          185,
+          180
+        ],
+        "websites": [
+          12
+        ],
+        "checksum": "7f035357-e820-732f-cb2e-f2cd9e2c8aad",
+        "platform_type": 1
+      }
+    ],
+    "rating": 93.27920680209107,
+    "screenshots": [
+      {
+        "id": 43482,
+        "game": 25076,
+        "height": 1080,
+        "image_id": "xegpfnsvlyeld0zkjnrc",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/xegpfnsvlyeld0zkjnrc.jpg",
+        "width": 1920,
+        "checksum": "68f2124c-9a0e-e2f0-54c7-a1a33137e6c2"
+      },
+      {
+        "id": 43485,
+        "game": 25076,
+        "height": 1080,
+        "image_id": "c9xalka7stjkx4mes7kp",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/c9xalka7stjkx4mes7kp.jpg",
+        "width": 1920,
+        "checksum": "79d2c574-a0f7-4d4d-6f01-205976a05bfe"
+      },
+      {
+        "id": 181621,
+        "game": 25076,
+        "height": 1080,
+        "image_id": "dhw6ucx9laj5esv6rngn",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/dhw6ucx9laj5esv6rngn.jpg",
+        "width": 1920,
+        "checksum": "7445eccd-8567-d206-5d77-56c5f2c34b87"
+      },
+      {
+        "id": 181623,
+        "game": 25076,
+        "height": 1080,
+        "image_id": "tdxv4zzkqyjnm9pmwxw0",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/tdxv4zzkqyjnm9pmwxw0.jpg",
+        "width": 1920,
+        "checksum": "32e1aca5-8a06-aa42-f258-e3d0e5ea1723"
+      },
+      {
+        "id": 181619,
+        "game": 25076,
+        "height": 1080,
+        "image_id": "qg7gx276z3hsqlr9xpt6",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/qg7gx276z3hsqlr9xpt6.jpg",
+        "width": 1920,
+        "checksum": "a5229721-5a15-ae2c-6882-9f2af6b09d7a"
+      },
+      {
+        "id": 181622,
+        "game": 25076,
+        "height": 1080,
+        "image_id": "h8f9uojkzvaau8pxsyxi",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/h8f9uojkzvaau8pxsyxi.jpg",
+        "width": 1920,
+        "checksum": "b3425837-b0bf-b5b2-a6ae-aef1f497310a"
+      },
+      {
+        "id": 181620,
+        "game": 25076,
+        "height": 1080,
+        "image_id": "x8xczj2a0y6g9rnhboko",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/x8xczj2a0y6g9rnhboko.jpg",
+        "width": 1920,
+        "checksum": "24fcdfea-e74e-6ccf-b67b-2fca414af17d"
+      },
+      {
+        "id": 211553,
+        "game": 25076,
+        "height": 1080,
+        "image_id": "kcfpf8wa8esalk0qkpo5",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/kcfpf8wa8esalk0qkpo5.jpg",
+        "width": 1920,
+        "checksum": "f06ee5dd-06ee-3fc6-857e-33522229eefb"
+      },
+      {
+        "id": 212061,
+        "game": 25076,
+        "height": 1080,
+        "image_id": "uyaminfh8sugglvt247u",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/uyaminfh8sugglvt247u.jpg",
+        "width": 1920,
+        "checksum": "441eb4e0-ed79-f83b-9254-55589436a3d8"
+      },
+      {
+        "id": 212062,
+        "game": 25076,
+        "height": 1080,
+        "image_id": "banftd8fgfytbsfx6mjz",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/banftd8fgfytbsfx6mjz.jpg",
+        "width": 1920,
+        "checksum": "88c2e63f-5824-ff68-2d5c-032fac9c45b8"
+      },
+      {
+        "id": 212063,
+        "game": 25076,
+        "height": 1080,
+        "image_id": "dorsz0jbcecmkxvzi3t8",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/dorsz0jbcecmkxvzi3t8.jpg",
+        "width": 1920,
+        "checksum": "1df86fde-24c5-ed5d-2648-17e4c7d248bd"
+      },
+      {
+        "id": 212064,
+        "game": 25076,
+        "height": 1080,
+        "image_id": "mptosgjarjlyqxy7lqsm",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/mptosgjarjlyqxy7lqsm.jpg",
+        "width": 1920,
+        "checksum": "501795dc-f242-3384-9f57-dfd6437a1def"
+      },
+      {
+        "id": 1379545,
+        "alpha_channel": false,
+        "animated": false,
+        "game": 25076,
+        "height": 1440,
+        "image_id": "sctkgp",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/sctkgp.jpg",
+        "width": 2560,
+        "checksum": "356ff9de-1f97-e1d0-9bf0-e83d43227696"
+      },
+      {
+        "id": 1379546,
+        "alpha_channel": false,
+        "animated": false,
+        "game": 25076,
+        "height": 1440,
+        "image_id": "sctkgq",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/sctkgq.jpg",
+        "width": 2560,
+        "checksum": "27a28d9a-693c-1f65-25ea-4275f58d41cb"
+      }
+    ],
+    "summary": "Red Dead Redemption 2 is the epic tale of outlaw Arthur Morgan and the infamous Van der Linde gang, on the run across America at the dawn of the modern age.",
+    "total_rating": 93.66901516575142,
+    "total_rating_count": 3000,
+    "videos": [
+      {
+        "id": 22763,
+        "game": 25076,
+        "name": "Announcement Trailer",
+        "video_id": "94B-38sX5fs",
+        "checksum": "7cc79d6d-2828-5bbb-5a12-4e6eb57a5028"
+      },
+      {
+        "id": 22759,
+        "game": 25076,
+        "name": "Launch Trailer",
+        "video_id": "HVRzx17WHVk",
+        "checksum": "3205fb54-dbca-2577-82a1-34f1b3743e68"
+      },
+      {
+        "id": 22760,
+        "game": 25076,
+        "name": "Trailer",
+        "video_id": "Dw_oH5oiUSE",
+        "checksum": "bc783784-8142-4d3f-974d-86161c98621f"
+      },
+      {
+        "id": 28776,
+        "game": 25076,
+        "name": "Trailer",
+        "video_id": "iqaipBpnVRE",
+        "checksum": "a9c287d5-4e78-be43-2a05-03d4cf152333"
+      },
+      {
+        "id": 22761,
+        "game": 25076,
+        "name": "Official Trailer 3",
+        "video_id": "9_GsrTCslQ4",
+        "checksum": "15180371-3623-9dc8-74c3-03d43b34f7c5"
+      },
+      {
+        "id": 22762,
+        "game": 25076,
+        "name": "Official Trailer 2: Ledger",
+        "video_id": "t5AdF4uNGus",
+        "checksum": "55998cc6-66d7-0f33-80ac-956169db6248"
+      },
+      {
+        "id": 30539,
+        "game": 25076,
+        "name": "PC Trailer",
+        "video_id": "SXvQ1nK4oxk",
+        "checksum": "d375f985-04da-469d-09b0-3a32e65dd0c5"
+      }
+    ]
+  },
+  {
+    "id": 19560,
+    "aggregated_rating": 96.23076923076923,
+    "aggregated_rating_count": 26,
+    "artworks": [
+      {
+        "id": 2563,
+        "game": 19560,
+        "height": 710,
+        "image_id": "vmfdwfd36lh9eqiwtbtj",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/vmfdwfd36lh9eqiwtbtj.jpg",
+        "width": 1260,
+        "checksum": "3c612d6d-f1c0-fe91-edc2-207d7324e2fc",
+        "artwork_type": 1
+      },
+      {
+        "id": 2564,
+        "game": 19560,
+        "height": 620,
+        "image_id": "qk1zy9aqzgd3zovlsjmu",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/qk1zy9aqzgd3zovlsjmu.jpg",
+        "width": 1260,
+        "checksum": "91d88cbf-ce91-619c-0434-7352802c1fdc",
+        "artwork_type": 1
+      },
+      {
+        "id": 2568,
+        "game": 19560,
+        "height": 710,
+        "image_id": "thhohfsqjs1x77gyjg7b",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/thhohfsqjs1x77gyjg7b.jpg",
+        "width": 1260,
+        "checksum": "e6422b7a-d973-168e-53f6-ee40c40204fa",
+        "artwork_type": 1
+      },
+      {
+        "id": 2562,
+        "game": 19560,
+        "height": 710,
+        "image_id": "vpr6s4gboxxmnhkdmqdg",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/vpr6s4gboxxmnhkdmqdg.jpg",
+        "width": 1260,
+        "checksum": "67e021cc-e5d1-ceae-614d-a8a363fcad57",
+        "artwork_type": 1
+      },
+      {
+        "id": 2566,
+        "game": 19560,
+        "height": 710,
+        "image_id": "loxt6mwmxy1ax5wby1yc",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/loxt6mwmxy1ax5wby1yc.jpg",
+        "width": 1260,
+        "checksum": "1479dfd7-0216-3278-da67-c6c4efe32a98",
+        "artwork_type": 1
+      },
+      {
+        "id": 2565,
+        "game": 19560,
+        "height": 675,
+        "image_id": "ye6iswk51xxnhkzt9xt7",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/ye6iswk51xxnhkzt9xt7.jpg",
+        "width": 1200,
+        "checksum": "70e3a49e-09be-3162-78e5-2e5913f646dd",
+        "artwork_type": 1
+      },
+      {
+        "id": 2567,
+        "game": 19560,
+        "height": 710,
+        "image_id": "tvl9vif6lw8sckkqyaj7",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/tvl9vif6lw8sckkqyaj7.jpg",
+        "width": 1260,
+        "checksum": "5a9d0149-0a9d-d9c8-a21b-8dac1f57d212",
+        "artwork_type": 1
+      },
+      {
+        "id": 1035,
+        "game": 19560,
+        "height": 4829,
+        "image_id": "mknszfnaifmhssbrmkpl",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/mknszfnaifmhssbrmkpl.jpg",
+        "width": 4759,
+        "checksum": "882b2b3d-b516-5aba-56d9-7a4b23ec11f9",
+        "artwork_type": 1
+      },
+      {
+        "id": 1036,
+        "game": 19560,
+        "height": 4696,
+        "image_id": "hsmqoanieausaehauyk7",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/hsmqoanieausaehauyk7.jpg",
+        "width": 3305,
+        "checksum": "47e22137-93c6-8bff-6c84-a51f0103a7b6",
+        "artwork_type": 1
+      },
+      {
+        "id": 2560,
+        "game": 19560,
+        "height": 660,
+        "image_id": "m8vl75f1aunebleaa0zj",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/m8vl75f1aunebleaa0zj.jpg",
+        "width": 1260,
+        "checksum": "3b476411-3600-6f9d-943f-5bff87bba890",
+        "artwork_type": 1
+      },
+      {
+        "id": 2561,
+        "game": 19560,
+        "height": 710,
+        "image_id": "mzbexcviowvtbsgivzib",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/mzbexcviowvtbsgivzib.jpg",
+        "width": 1260,
+        "checksum": "99f5f8d7-7902-c8ea-79e2-2c713da0dad1",
+        "artwork_type": 1
+      }
+    ],
+    "cover": {
+      "id": 85062,
+      "alpha_channel": false,
+      "animated": false,
+      "game": 19560,
+      "height": 800,
+      "image_id": "co1tmu",
+      "url": "//images.igdb.com/igdb/image/upload/t_thumb/co1tmu.jpg",
+      "width": 600,
+      "checksum": "d74291ca-237b-0893-cefc-23424539f9cc"
+    },
+    "first_release_date": 1524182400,
+    "genres": [
+      {
+        "id": 12,
+        "created_at": 1297639288,
+        "name": "Role-playing (RPG)",
+        "slug": "role-playing-rpg",
+        "updated_at": 1323289215,
+        "url": "https://www.igdb.com/genres/role-playing-rpg",
+        "checksum": "5a7bd431-149a-3083-532d-2176f4daca24"
+      },
+      {
+        "id": 25,
+        "created_at": 1301647919,
+        "name": "Hack and slash/Beat \u0027em up",
+        "slug": "hack-and-slash-beat-em-up",
+        "updated_at": 1323289215,
+        "url": "https://www.igdb.com/genres/hack-and-slash-beat-em-up",
+        "checksum": "6c84d75f-abcb-cf79-dea9-853eb738d178"
+      },
+      {
+        "id": 31,
+        "created_at": 1323568041,
+        "name": "Adventure",
+        "slug": "adventure",
+        "updated_at": 1323568041,
+        "url": "https://www.igdb.com/genres/adventure",
+        "checksum": "a93a77df-3927-13fa-1d50-5d443cbb695f"
+      }
+    ],
+    "hypes": 92,
+    "name": "God of War",
+    "platforms": [
+      {
+        "id": 48,
+        "abbreviation": "PS4",
+        "alternative_name": "PS4",
+        "category": 1,
+        "created_at": 1326544944,
+        "generation": 8,
+        "name": "PlayStation 4",
+        "platform_logo": 231,
+        "platform_family": 1,
+        "slug": "ps4--1",
+        "summary": "The PlayStation 4 system opens the door to an incredible journey through immersive new gaming worlds and a deeply connected gaming community. PS4 puts gamers first with an astounding launch line-up and over 180 games in development. Play amazing top-tier blockbusters and innovative indie hits on PS4. Developer inspired, gamer focused.",
+        "updated_at": 1718027289,
+        "url": "https://www.igdb.com/platforms/ps4--1",
+        "versions": [
+          17,
+          178,
+          179
+        ],
+        "websites": [
+          11
+        ],
+        "checksum": "499977cf-16b6-1abf-3664-be1a369a656e",
+        "platform_type": 1
+      },
+      {
+        "id": 6,
+        "abbreviation": "PC",
+        "alternative_name": "mswin",
+        "category": 4,
+        "created_at": 1297639288,
+        "name": "PC (Microsoft Windows)",
+        "platform_logo": 670,
+        "slug": "win",
+        "updated_at": 1718027289,
+        "url": "https://www.igdb.com/platforms/win",
+        "versions": [
+          14,
+          1,
+          15,
+          13,
+          530,
+          531,
+          534,
+          532,
+          513,
+          529,
+          124,
+          533
+        ],
+        "websites": [
+          2
+        ],
+        "checksum": "50ef0869-39cd-be87-5221-8ef3f082834a",
+        "platform_type": 4
+      }
+    ],
+    "rating": 92.36819800780368,
+    "screenshots": [
+      {
+        "id": 25154,
+        "game": 19560,
+        "height": 1080,
+        "image_id": "rm35ytrytuka9qkylqyk",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/rm35ytrytuka9qkylqyk.jpg",
+        "width": 1920,
+        "checksum": "dc036c6d-d876-a428-cda6-b659de75269c"
+      },
+      {
+        "id": 25155,
+        "game": 19560,
+        "height": 1080,
+        "image_id": "ywrkjcrbeemmb51flsfj",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/ywrkjcrbeemmb51flsfj.jpg",
+        "width": 1920,
+        "checksum": "70b9bb3a-bb4e-61ae-9947-7cc9935824bf"
+      },
+      {
+        "id": 25153,
+        "game": 19560,
+        "height": 1080,
+        "image_id": "qseegzssgetrybgbplrv",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/qseegzssgetrybgbplrv.jpg",
+        "width": 1920,
+        "checksum": "f3967b3d-9be6-0704-bdf9-b4cc7b88f435"
+      },
+      {
+        "id": 44388,
+        "game": 19560,
+        "height": 2160,
+        "image_id": "jvdoaxza3cawklvof1sl",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/jvdoaxza3cawklvof1sl.jpg",
+        "width": 3840,
+        "checksum": "ed01d8be-0577-0fcc-6e8b-391961a9623b"
+      },
+      {
+        "id": 44389,
+        "game": 19560,
+        "height": 2160,
+        "image_id": "gpt3d0gpue5mat4kkso6",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/gpt3d0gpue5mat4kkso6.jpg",
+        "width": 3840,
+        "checksum": "11d8f445-8858-a12d-32c5-6e50803429cc"
+      },
+      {
+        "id": 208198,
+        "game": 19560,
+        "height": 1080,
+        "image_id": "s2zdtxopibrfjbxvpj5h",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/s2zdtxopibrfjbxvpj5h.jpg",
+        "width": 1920,
+        "checksum": "f916f642-e2ed-af40-ecbd-4ea9e1c93074"
+      },
+      {
+        "id": 208200,
+        "game": 19560,
+        "height": 1080,
+        "image_id": "r7hpzsqic1bjwyzn1bnq",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/r7hpzsqic1bjwyzn1bnq.jpg",
+        "width": 1920,
+        "checksum": "b749186d-a515-cab9-1361-9191819cc0a8"
+      },
+      {
+        "id": 208194,
+        "game": 19560,
+        "height": 1080,
+        "image_id": "mzg7f3xx57sf8rt7tja8",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/mzg7f3xx57sf8rt7tja8.jpg",
+        "width": 1920,
+        "checksum": "f20d0030-f80d-56c1-4059-8d0600b4cbc5"
+      },
+      {
+        "id": 208195,
+        "game": 19560,
+        "height": 1080,
+        "image_id": "nee23o7rtpaqbu8g7byx",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/nee23o7rtpaqbu8g7byx.jpg",
+        "width": 1920,
+        "checksum": "78c0f22c-fb5b-6ca8-7599-48d290c4ebce"
+      },
+      {
+        "id": 208196,
+        "game": 19560,
+        "height": 1080,
+        "image_id": "o4mg2wvhlcikaogvvzqe",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/o4mg2wvhlcikaogvvzqe.jpg",
+        "width": 1920,
+        "checksum": "63661e94-d599-7672-518d-29d9b561a3a2"
+      },
+      {
+        "id": 208199,
+        "game": 19560,
+        "height": 1080,
+        "image_id": "wunlbofh23trw0u67gms",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/wunlbofh23trw0u67gms.jpg",
+        "width": 1920,
+        "checksum": "f70b518e-a6d4-b997-0e70-77c79b2cac1f"
+      },
+      {
+        "id": 208197,
+        "game": 19560,
+        "height": 1080,
+        "image_id": "w5eazrrf4wdxjl4idfya",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/w5eazrrf4wdxjl4idfya.jpg",
+        "width": 1920,
+        "checksum": "d79517bc-4d64-0dd1-62ef-8ecf2d0b0964"
+      },
+      {
+        "id": 1399552,
+        "alpha_channel": false,
+        "animated": false,
+        "game": 19560,
+        "height": 1080,
+        "image_id": "sctzwg",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/sctzwg.jpg",
+        "width": 1920,
+        "checksum": "064ca09f-644d-91bf-5226-de8ec3d5a5dd"
+      },
+      {
+        "id": 1399553,
+        "alpha_channel": false,
+        "animated": false,
+        "game": 19560,
+        "height": 1080,
+        "image_id": "sctzwh",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/sctzwh.jpg",
+        "width": 1920,
+        "checksum": "3fbea4aa-f716-d1da-7bfd-fb3a45a759ef"
+      },
+      {
+        "id": 1399554,
+        "alpha_channel": false,
+        "animated": false,
+        "game": 19560,
+        "height": 1080,
+        "image_id": "sctzwi",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/sctzwi.jpg",
+        "width": 1920,
+        "checksum": "edea7066-48e4-7d22-9bcb-e460f6ed2f9f"
+      },
+      {
+        "id": 1399555,
+        "alpha_channel": false,
+        "animated": false,
+        "game": 19560,
+        "height": 1080,
+        "image_id": "sctzwj",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/sctzwj.jpg",
+        "width": 1920,
+        "checksum": "e5409a44-e795-d430-443c-e9709461e834"
+      },
+      {
+        "id": 1399556,
+        "alpha_channel": false,
+        "animated": false,
+        "game": 19560,
+        "height": 1080,
+        "image_id": "sctzwk",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/sctzwk.jpg",
+        "width": 1920,
+        "checksum": "fa845835-43a1-3c0d-c22b-6da0273965c0"
+      },
+      {
+        "id": 1399557,
+        "alpha_channel": false,
+        "animated": false,
+        "game": 19560,
+        "height": 1080,
+        "image_id": "sctzwl",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/sctzwl.jpg",
+        "width": 1920,
+        "checksum": "deca8f18-4bf2-d65f-1409-62f3d630e446"
+      },
+      {
+        "id": 1399558,
+        "alpha_channel": false,
+        "animated": false,
+        "game": 19560,
+        "height": 1080,
+        "image_id": "sctzwm",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/sctzwm.jpg",
+        "width": 1920,
+        "checksum": "7f61ddc1-7934-5460-93ea-1fd16e5707fa"
+      }
+    ],
+    "summary": "God of War is the sequel to God of War III as well as a continuation of the canon God of War chronology. Unlike previous installments, this game focuses on Norse mythology and follows an older and more seasoned Kratos and his son Atreus in the years since the third game. It is in this harsh, unforgiving world that he must fight to survive… and teach his son to do the same.",
+    "total_rating": 94.29948361928646,
+    "total_rating_count": 2991,
+    "videos": [
+      {
+        "id": 16592,
+        "game": 19560,
+        "name": "PGW17 Trailer",
+        "video_id": "Q8-Si4M1b2U",
+        "checksum": "7e009e41-af1a-a4ba-545c-e9b00da3798b"
+      },
+      {
+        "id": 18807,
+        "game": 19560,
+        "name": "TV Commercial",
+        "video_id": "GdJtyZRPsUM",
+        "checksum": "a7439599-143a-2057-6471-7a328d63ef87"
+      },
+      {
+        "id": 17906,
+        "game": 19560,
+        "name": "Story Trailer",
+        "video_id": "rxrbXP546OU",
+        "checksum": "0b11e888-d6f6-36be-c181-98e0a65b4df5"
+      },
+      {
+        "id": 14551,
+        "game": 19560,
+        "name": "E3 2017 Gameplay Trailer",
+        "video_id": "iLr5BeiTha4",
+        "checksum": "11dcd38b-e67f-eb4e-c012-65ce33612778"
+      },
+      {
+        "id": 57183,
+        "game": 19560,
+        "name": "Release Date Trailer",
+        "video_id": "HqQMh_tij0c",
+        "checksum": "9c9106fc-58df-1d16-fe11-4157d1110eb1"
+      },
+      {
+        "id": 120751,
+        "game": 19560,
+        "name": "Gameplay Trailer",
+        "video_id": "CJ_GCPaKywg",
+        "checksum": "f72d16fb-6890-a30b-7fdb-6fd36be28d2c"
+      }
+    ]
+  },
+  {
+    "id": 20,
+    "aggregated_rating": 92.625,
+    "aggregated_rating_count": 8,
+    "artworks": [
+      {
+        "id": 2218,
+        "game": 20,
+        "height": 900,
+        "image_id": "weha2tgvlfsss4zc7qgg",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/weha2tgvlfsss4zc7qgg.jpg",
+        "width": 720,
+        "checksum": "0e36edec-fdf4-59d7-a4bd-68340b68e32b",
+        "artwork_type": 1
+      },
+      {
+        "id": 2210,
+        "game": 20,
+        "height": 465,
+        "image_id": "eviuwu4ipxp1qems0jzn",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/eviuwu4ipxp1qems0jzn.jpg",
+        "width": 980,
+        "checksum": "c21ad185-604d-b969-f58b-92fd4643ab83",
+        "artwork_type": 1
+      },
+      {
+        "id": 2211,
+        "game": 20,
+        "height": 575,
+        "image_id": "hu5tr1rs1vgqvkhbtowx",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/hu5tr1rs1vgqvkhbtowx.jpg",
+        "width": 750,
+        "checksum": "1572f240-7c79-111c-f622-eb9007510412",
+        "artwork_type": 1
+      },
+      {
+        "id": 2212,
+        "game": 20,
+        "height": 620,
+        "image_id": "tow3hrwhljx1xqukesyb",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/tow3hrwhljx1xqukesyb.jpg",
+        "width": 800,
+        "checksum": "ea2d2d87-6f7a-9809-c7bd-31395d42aa95",
+        "artwork_type": 1
+      },
+      {
+        "id": 2214,
+        "game": 20,
+        "height": 630,
+        "image_id": "lhkxdxk2jzebbpsmz87n",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/lhkxdxk2jzebbpsmz87n.jpg",
+        "width": 800,
+        "checksum": "277d0373-6c09-3a66-5aa6-cf6ca8d1e8f0",
+        "artwork_type": 1
+      },
+      {
+        "id": 2217,
+        "game": 20,
+        "height": 490,
+        "image_id": "qntzbiunbthnuvyz9rza",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/qntzbiunbthnuvyz9rza.jpg",
+        "width": 900,
+        "checksum": "dcf99601-4e7f-0986-2191-b4ddac7f42fc",
+        "artwork_type": 1
+      },
+      {
+        "id": 5784,
+        "alpha_channel": false,
+        "animated": false,
+        "game": 20,
+        "height": 1800,
+        "image_id": "ar4go",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/ar4go.jpg",
+        "width": 1273,
+        "checksum": "58aa7894-5274-842b-e73d-cf4b420ef579",
+        "artwork_type": 1
+      },
+      {
+        "id": 2213,
+        "game": 20,
+        "height": 460,
+        "image_id": "cmodzxpmtbqbelh8pdb7",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/cmodzxpmtbqbelh8pdb7.jpg",
+        "width": 980,
+        "checksum": "cdce4f2a-954c-fda9-4225-21919094964f",
+        "artwork_type": 1
+      },
+      {
+        "id": 2219,
+        "game": 20,
+        "height": 800,
+        "image_id": "xxfezygpbjhz4bibpbv8",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/xxfezygpbjhz4bibpbv8.jpg",
+        "width": 645,
+        "checksum": "3c583f4b-23d2-422d-12f8-8999c1e141a6",
+        "artwork_type": 1
+      },
+      {
+        "id": 2215,
+        "game": 20,
+        "height": 550,
+        "image_id": "esqxicobaw7pp9s2iuyp",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/esqxicobaw7pp9s2iuyp.jpg",
+        "width": 855,
+        "checksum": "6038c6da-44d0-46aa-3bdd-47d76869385e",
+        "artwork_type": 1
+      },
+      {
+        "id": 38890,
+        "alpha_channel": false,
+        "animated": false,
+        "game": 20,
+        "height": 1080,
+        "image_id": "aru0a",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/aru0a.jpg",
+        "width": 1920,
+        "checksum": "516f1d11-d085-c6c2-e1fc-c4597923153d",
+        "artwork_type": 1
+      },
+      {
+        "id": 5783,
+        "alpha_channel": false,
+        "animated": false,
+        "game": 20,
+        "height": 1800,
+        "image_id": "ar4gn",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/ar4gn.jpg",
+        "width": 1273,
+        "checksum": "2ea535e5-e71c-fcaa-64fa-9cc2d355bd65",
+        "artwork_type": 1
+      }
+    ],
+    "cover": {
+      "id": 122598,
+      "alpha_channel": false,
+      "animated": false,
+      "game": 20,
+      "height": 1067,
+      "image_id": "co2mli",
+      "url": "//images.igdb.com/igdb/image/upload/t_thumb/co2mli.jpg",
+      "width": 800,
+      "checksum": "75905796-2376-57b8-681f-e546dfb26e06"
+    },
+    "first_release_date": 1187654400,
+    "genres": [
+      {
+        "id": 5,
+        "created_at": 1297639288,
+        "name": "Shooter",
+        "slug": "shooter",
+        "updated_at": 1323289215,
+        "url": "https://www.igdb.com/genres/shooter",
+        "checksum": "20c255bc-ec2d-c219-34bd-47995b0a79f1"
+      },
+      {
+        "id": 9,
+        "created_at": 1297639288,
+        "name": "Puzzle",
+        "slug": "puzzle",
+        "updated_at": 1323289215,
+        "url": "https://www.igdb.com/genres/puzzle",
+        "checksum": "f4afdd14-b8c5-e938-58a6-ff0a56514f8b"
+      },
+      {
+        "id": 12,
+        "created_at": 1297639288,
+        "name": "Role-playing (RPG)",
+        "slug": "role-playing-rpg",
+        "updated_at": 1323289215,
+        "url": "https://www.igdb.com/genres/role-playing-rpg",
+        "checksum": "5a7bd431-149a-3083-532d-2176f4daca24"
+      },
+      {
+        "id": 31,
+        "created_at": 1323568041,
+        "name": "Adventure",
+        "slug": "adventure",
+        "updated_at": 1323568041,
+        "url": "https://www.igdb.com/genres/adventure",
+        "checksum": "a93a77df-3927-13fa-1d50-5d443cbb695f"
+      }
+    ],
+    "hypes": 1,
+    "name": "BioShock",
+    "platforms": [
+      {
+        "id": 6,
+        "abbreviation": "PC",
+        "alternative_name": "mswin",
+        "category": 4,
+        "created_at": 1297639288,
+        "name": "PC (Microsoft Windows)",
+        "platform_logo": 670,
+        "slug": "win",
+        "updated_at": 1718027289,
+        "url": "https://www.igdb.com/platforms/win",
+        "versions": [
+          14,
+          1,
+          15,
+          13,
+          530,
+          531,
+          534,
+          532,
+          513,
+          529,
+          124,
+          533
+        ],
+        "websites": [
+          2
+        ],
+        "checksum": "50ef0869-39cd-be87-5221-8ef3f082834a",
+        "platform_type": 4
+      },
+      {
+        "id": 14,
+        "abbreviation": "Mac",
+        "alternative_name": "Mac OS",
+        "category": 4,
+        "created_at": 1297678396,
+        "name": "Mac",
+        "platform_logo": 867,
+        "slug": "mac",
+        "updated_at": 1718027289,
+        "url": "https://www.igdb.com/platforms/mac",
+        "versions": [
+          600,
+          599,
+          144,
+          149,
+          147,
+          142,
+          143,
+          141,
+          150,
+          145,
+          146,
+          148,
+          151,
+          598,
+          45,
+          713
+        ],
+        "websites": [
+          5
+        ],
+        "checksum": "98cd1d18-6a0b-3f3d-1052-651e4b12bd39",
+        "platform_type": 4
+      },
+      {
+        "id": 12,
+        "abbreviation": "X360",
+        "alternative_name": "X360",
+        "category": 1,
+        "created_at": 1297639288,
+        "generation": 7,
+        "name": "Xbox 360",
+        "platform_logo": 622,
+        "platform_family": 2,
+        "slug": "xbox360",
+        "summary": "Xbox 360 brings you a total games and entertainment experience. The largest library of games, including titles that get you right into the thick of it with Kinect. Plus, your whole family can watch HD movies, TV shows, live events, music, sports and more—across all your devices. Xbox 360 is the center of your games and entertainment universe.",
+        "updated_at": 1718027289,
+        "url": "https://www.igdb.com/platforms/xbox360",
+        "versions": [
+          2,
+          3,
+          495,
+          83
+        ],
+        "websites": [
+          4
+        ],
+        "checksum": "34a16af2-775f-f963-b611-406f09935eaa",
+        "platform_type": 1
+      }
+    ],
+    "rating": 86.70775088123209,
+    "screenshots": [
+      {
+        "id": 5819,
+        "game": 20,
+        "height": 600,
+        "image_id": "kjbwbdqemykovdzgidhu",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/kjbwbdqemykovdzgidhu.jpg",
+        "width": 800,
+        "checksum": "b97b8565-6751-571c-a415-9995bc95ba6e"
+      },
+      {
+        "id": 5817,
+        "game": 20,
+        "height": 600,
+        "image_id": "unvhwxrfzpjys4txfv4a",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/unvhwxrfzpjys4txfv4a.jpg",
+        "width": 800,
+        "checksum": "bcb318c4-77ce-1f3a-4d34-2b2364270b6e"
+      },
+      {
+        "id": 5820,
+        "game": 20,
+        "height": 600,
+        "image_id": "yg3j0yco50gq3wfcxujb",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/yg3j0yco50gq3wfcxujb.jpg",
+        "width": 800,
+        "checksum": "2a5917d9-776f-e965-7492-4b5f057d73ad"
+      },
+      {
+        "id": 5818,
+        "game": 20,
+        "height": 600,
+        "image_id": "wworjqefsfzc9ouvrpxd",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/wworjqefsfzc9ouvrpxd.jpg",
+        "width": 800,
+        "checksum": "a0f51fae-9874-d9d2-5361-ce6c2922b1a2"
+      },
+      {
+        "id": 5821,
+        "game": 20,
+        "height": 600,
+        "image_id": "usn4aw2k54ym8jcjbkmg",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/usn4aw2k54ym8jcjbkmg.jpg",
+        "width": 800,
+        "checksum": "043e8069-ce1a-5fb2-f544-deabc19aede2"
+      }
+    ],
+    "summary": "BioShock is a horror-themed first-person shooter set in a steampunk underwater dystopia. The player is urged to turn everything into a weapon: biologically modifying their own body with Plasmids, hacking devices and systems, upgrading their weapons, crafting new ammo variants, and experimenting with different battle techniques are all possible. The game is described by the developers as a spiritual successor to their previous PC title System Shock 2. BioShock received high praise in critical reviews for its atmospheric audio and visual quality, absorbing and original plot and its unique gaming experience.",
+    "total_rating": 89.66637544061604,
+    "total_rating_count": 2879,
+    "videos": [
+      {
+        "id": 3353,
+        "game": 20,
+        "name": "Trailer",
+        "video_id": "CoYorK3E4aM",
+        "checksum": "6db3a03b-617b-bf34-df25-b3f12768f55e"
+      },
+      {
+        "id": 141939,
+        "game": 20,
+        "name": "VGA 2006 Trailer",
+        "video_id": "lekKQEE2lZM",
+        "checksum": "ccc277dd-aa0a-7168-d72a-719a069a0294"
+      }
+    ]
+  },
+  {
+    "id": 127,
+    "aggregated_rating": 90.25,
+    "aggregated_rating_count": 8,
+    "artworks": [
+      {
+        "id": 602,
+        "game": 127,
+        "height": 700,
+        "image_id": "pqj8yesbilonefmtd6rj",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/pqj8yesbilonefmtd6rj.jpg",
+        "width": 1000,
+        "checksum": "ad99e102-d9c3-996d-2cf2-909d90a76249",
+        "artwork_type": 1
+      },
+      {
+        "id": 608,
+        "game": 127,
+        "height": 520,
+        "image_id": "hazdmjmvhhpki9fxfyfx",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/hazdmjmvhhpki9fxfyfx.jpg",
+        "width": 1000,
+        "checksum": "72a7934c-d605-2800-b1c7-e7d4ed091387",
+        "artwork_type": 1
+      },
+      {
+        "id": 604,
+        "game": 127,
+        "height": 520,
+        "image_id": "kagcbgwqgewpeufogvvv",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/kagcbgwqgewpeufogvvv.jpg",
+        "width": 1000,
+        "checksum": "e77f4efd-8989-41fd-160f-a1b671b8640e",
+        "artwork_type": 1
+      },
+      {
+        "id": 609,
+        "game": 127,
+        "height": 520,
+        "image_id": "potsazr5ojxonjwpvjkn",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/potsazr5ojxonjwpvjkn.jpg",
+        "width": 1000,
+        "checksum": "81dd6f08-7da1-1569-65a0-9852ac7d0ccf",
+        "artwork_type": 1
+      },
+      {
+        "id": 610,
+        "game": 127,
+        "height": 520,
+        "image_id": "jujznrk9upob1l0bqlem",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/jujznrk9upob1l0bqlem.jpg",
+        "width": 1000,
+        "checksum": "43765f48-5a19-37b2-2cac-fd7f695bc1d9",
+        "artwork_type": 1
+      },
+      {
+        "id": 606,
+        "game": 127,
+        "height": 520,
+        "image_id": "olnrcm5zwyfnbaosrakt",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/olnrcm5zwyfnbaosrakt.jpg",
+        "width": 1000,
+        "checksum": "5169acf5-aeca-d307-7ffe-97c87f626788",
+        "artwork_type": 1
+      },
+      {
+        "id": 603,
+        "game": 127,
+        "height": 520,
+        "image_id": "c3otxzps8o9bcxsqpcqf",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/c3otxzps8o9bcxsqpcqf.jpg",
+        "width": 1000,
+        "checksum": "b9c8f55e-e1ad-0689-e25c-55038655b5c1",
+        "artwork_type": 1
+      },
+      {
+        "id": 605,
+        "game": 127,
+        "height": 520,
+        "image_id": "islic38nl9ampp3qhvsi",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/islic38nl9ampp3qhvsi.jpg",
+        "width": 1000,
+        "checksum": "570d02cf-220b-73f5-2239-0fcbbcefdcfa",
+        "artwork_type": 1
+      },
+      {
+        "id": 10156,
+        "alpha_channel": false,
+        "animated": false,
+        "game": 127,
+        "height": 1080,
+        "image_id": "ar7u4",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/ar7u4.jpg",
+        "width": 1920,
+        "checksum": "a14f569c-de3f-fc92-bd70-d31ce969680f",
+        "artwork_type": 1
+      },
+      {
+        "id": 10404,
+        "alpha_channel": true,
+        "animated": false,
+        "game": 127,
+        "height": 1080,
+        "image_id": "ar810",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/ar810.jpg",
+        "width": 1920,
+        "checksum": "99c3774e-690a-111b-3da0-c638681b086a",
+        "artwork_type": 1
+      },
+      {
+        "id": 607,
+        "game": 127,
+        "height": 520,
+        "image_id": "w3018zvidbv79pblf7w4",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/w3018zvidbv79pblf7w4.jpg",
+        "width": 1000,
+        "checksum": "e44b47d5-4985-fa02-a8f0-ff583ec2b29c",
+        "artwork_type": 1
+      },
+      {
+        "id": 601,
+        "game": 127,
+        "height": 700,
+        "image_id": "twt8iqrsmp8zhvelwy1f",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/twt8iqrsmp8zhvelwy1f.jpg",
+        "width": 1000,
+        "checksum": "6415accc-817e-d12b-7a98-e84e7df04391",
+        "artwork_type": 1
+      }
+    ],
+    "cover": {
+      "id": 82095,
+      "alpha_channel": false,
+      "animated": false,
+      "game": 127,
+      "height": 1415,
+      "image_id": "co1rcf",
+      "url": "//images.igdb.com/igdb/image/upload/t_thumb/co1rcf.jpg",
+      "width": 1061,
+      "checksum": "bfa3bdfe-dc1d-bb0b-d287-addcb0ae4a4b"
+    },
+    "first_release_date": 1258416000,
+    "genres": [
+      {
+        "id": 8,
+        "created_at": 1297639288,
+        "name": "Platform",
+        "slug": "platform",
+        "updated_at": 1323289215,
+        "url": "https://www.igdb.com/genres/platform",
+        "checksum": "06c188b9-1058-933f-dfee-4ec658117ad2"
+      },
+      {
+        "id": 31,
+        "created_at": 1323568041,
+        "name": "Adventure",
+        "slug": "adventure",
+        "updated_at": 1323568041,
+        "url": "https://www.igdb.com/genres/adventure",
+        "checksum": "a93a77df-3927-13fa-1d50-5d443cbb695f"
+      }
+    ],
+    "name": "Assassin\u0027s Creed II",
+    "platforms": [
+      {
+        "id": 9,
+        "abbreviation": "PS3",
+        "alternative_name": "PS3",
+        "category": 1,
+        "created_at": 1297639288,
+        "generation": 7,
+        "name": "PlayStation 3",
+        "platform_logo": 79,
+        "platform_family": 1,
+        "slug": "ps3",
+        "updated_at": 1718027289,
+        "url": "https://www.igdb.com/platforms/ps3",
+        "versions": [
+          5,
+          4,
+          6
+        ],
+        "websites": [
+          3
+        ],
+        "checksum": "7194dbc7-fcb0-7fb8-44a7-609db3aee29e",
+        "platform_type": 1
+      },
+      {
+        "id": 6,
+        "abbreviation": "PC",
+        "alternative_name": "mswin",
+        "category": 4,
+        "created_at": 1297639288,
+        "name": "PC (Microsoft Windows)",
+        "platform_logo": 670,
+        "slug": "win",
+        "updated_at": 1718027289,
+        "url": "https://www.igdb.com/platforms/win",
+        "versions": [
+          14,
+          1,
+          15,
+          13,
+          530,
+          531,
+          534,
+          532,
+          513,
+          529,
+          124,
+          533
+        ],
+        "websites": [
+          2
+        ],
+        "checksum": "50ef0869-39cd-be87-5221-8ef3f082834a",
+        "platform_type": 4
+      },
+      {
+        "id": 39,
+        "abbreviation": "iOS",
+        "category": 4,
+        "created_at": 1317719747,
+        "name": "iOS",
+        "platform_logo": 248,
+        "slug": "ios",
+        "updated_at": 1718027289,
+        "url": "https://www.igdb.com/platforms/ios",
+        "versions": [
+          43
+        ],
+        "checksum": "5376c91c-0374-90e4-19dd-213780c9eb1d",
+        "platform_type": 4
+      },
+      {
+        "id": 14,
+        "abbreviation": "Mac",
+        "alternative_name": "Mac OS",
+        "category": 4,
+        "created_at": 1297678396,
+        "name": "Mac",
+        "platform_logo": 867,
+        "slug": "mac",
+        "updated_at": 1718027289,
+        "url": "https://www.igdb.com/platforms/mac",
+        "versions": [
+          600,
+          599,
+          144,
+          149,
+          147,
+          142,
+          143,
+          141,
+          150,
+          145,
+          146,
+          148,
+          151,
+          598,
+          45,
+          713
+        ],
+        "websites": [
+          5
+        ],
+        "checksum": "98cd1d18-6a0b-3f3d-1052-651e4b12bd39",
+        "platform_type": 4
+      },
+      {
+        "id": 12,
+        "abbreviation": "X360",
+        "alternative_name": "X360",
+        "category": 1,
+        "created_at": 1297639288,
+        "generation": 7,
+        "name": "Xbox 360",
+        "platform_logo": 622,
+        "platform_family": 2,
+        "slug": "xbox360",
+        "summary": "Xbox 360 brings you a total games and entertainment experience. The largest library of games, including titles that get you right into the thick of it with Kinect. Plus, your whole family can watch HD movies, TV shows, live events, music, sports and more—across all your devices. Xbox 360 is the center of your games and entertainment universe.",
+        "updated_at": 1718027289,
+        "url": "https://www.igdb.com/platforms/xbox360",
+        "versions": [
+          2,
+          3,
+          495,
+          83
+        ],
+        "websites": [
+          4
+        ],
+        "checksum": "34a16af2-775f-f963-b611-406f09935eaa",
+        "platform_type": 1
+      }
+    ],
+    "rating": 86.61988102129695,
+    "screenshots": [
+      {
+        "id": 8214,
+        "game": 127,
+        "height": 1080,
+        "image_id": "jbeteinfgsoxkoxv08i0",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/jbeteinfgsoxkoxv08i0.jpg",
+        "width": 1920,
+        "checksum": "15eaa6a2-887c-c4e5-cd6d-c524adf71a2d"
+      },
+      {
+        "id": 8213,
+        "game": 127,
+        "height": 1080,
+        "image_id": "wkagtolikjqalonaaixb",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/wkagtolikjqalonaaixb.jpg",
+        "width": 1920,
+        "checksum": "b2f147d3-7ba6-6b7d-c975-b2b62b222017"
+      },
+      {
+        "id": 8217,
+        "game": 127,
+        "height": 1080,
+        "image_id": "apxgvdkwwsb1v0fgbn8w",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/apxgvdkwwsb1v0fgbn8w.jpg",
+        "width": 1920,
+        "checksum": "609455f3-673b-79e3-b50c-521e55be412a"
+      },
+      {
+        "id": 8216,
+        "game": 127,
+        "height": 1080,
+        "image_id": "dxb4yiwyhvwehvsisy7a",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/dxb4yiwyhvwehvsisy7a.jpg",
+        "width": 1920,
+        "checksum": "ec7c6bab-5f16-0702-c335-820a189cccbe"
+      },
+      {
+        "id": 8215,
+        "game": 127,
+        "height": 1080,
+        "image_id": "zvhehvzfakxb7aob8j7m",
+        "url": "//images.igdb.com/igdb/image/upload/t_thumb/zvhehvzfakxb7aob8j7m.jpg",
+        "width": 1920,
+        "checksum": "2dbdfc16-ab64-69be-c66b-cfcd60471ed4"
+      }
+    ],
+    "summary": "Discover an intriguing and epic story of power, revenge and conspiracy set during a pivotal moment in history: the Italian Renaissance.\nExperience the freedom and immersion of an all new open world and mission structure with settings such as the rooftops and canals of beautiful Venice. Your options in combat, assassination and escape are vast, with many new weapons, settings and gameplay elements.",
+    "total_rating": 88.43494051064847,
+    "total_rating_count": 2875,
+    "videos": [
+      {
+        "id": 3352,
+        "game": 127,
+        "name": "Trailer",
+        "video_id": "R20-MOOZPpY",
+        "checksum": "a92a6a7f-4d18-185c-5212-bcb2bc85a8fc"
+      },
+      {
+        "id": 41,
+        "game": 127,
+        "name": "Trailer",
+        "video_id": "TcuEqTzRXl4",
+        "checksum": "f650d839-e5c6-b3a8-ed15-3dea6353e067"
+      },
+      {
+        "id": 119457,
+        "game": 127,
+        "name": "Trailer",
+        "video_id": "_xkCPNECud8",
+        "checksum": "467d3920-8098-689b-17d4-8771b7f9442e"
+      }
+    ]
+  }
+]
+ POST /api/igdb-proxy 200 in 1964ms
+ ✓ Compiled in 245ms (1215 modules)
+ ✓ Compiled in 626ms (1232 modules)
+ ⨯ ./services/igdb.ts
+Error: 
+  [31mx[0m Expected a semicolon
+     ,-[[36;1;4m/Users/jassinalsafe/Developer/NextJs/gamerfie/services/igdb.ts[0m:754:1]
+ [2m754[0m |       `;
+ [2m755[0m |       
+ [2m756[0m |       const response = await this.makeIGDBRequest('achievements', query);
+ [2m757[0m |       });
+     : [31;1m       ^[0m
+ [2m758[0m | 
+ [2m759[0m |       if (!response.ok) {
+ [2m760[0m |         const errorText = await response.text();
+     `----
+
+  [31mx[0m Expression expected
+     ,-[[36;1;4m/Users/jassinalsafe/Developer/NextJs/gamerfie/services/igdb.ts[0m:754:1]
+ [2m754[0m |       `;
+ [2m755[0m |       
+ [2m756[0m |       const response = await this.makeIGDBRequest('achievements', query);
+ [2m757[0m |       });
+     : [31;1m       ^[0m
+ [2m758[0m | 
+ [2m759[0m |       if (!response.ok) {
+ [2m760[0m |         const errorText = await response.text();
+     `----
+
+Caused by:
+    Syntax Error
+
+Import trace for requested module:
+./services/igdb.ts
+./services/gameValidationService.ts
+./services/enhancedBulkGameService.ts
+./hooks/useUnifiedGameDetails.ts
+./hooks/Reviews/use-all-reviews.ts
+./app/reviews/ReviewsPageClient.tsx
+ ✓ Compiled in 325ms (1215 modules)
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, lstat '/Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/app/api'
+<w> [webpack.cache.PackFileCacheStrategy/webpack.FileSystemInfo] Resolving '../../../../.next/server/app/api/igdb-proxy/route' in /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server for build dependencies doesn't lead to expected result '/Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/app/api/igdb-proxy/route.js', but to 'Error: Can't resolve '../../../../.next/server/app/api/igdb-proxy/route' in '/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server'' instead. Resolving dependencies are ignored for this path.
+<w>  at resolve commonjs file ../../../../.next/server/app/api/igdb-proxy/route (expected /Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/app/api/igdb-proxy/route.js)
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/require.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/require.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/load-components.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/load-components.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/utils.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/utils.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w>  at resolve commonjs /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w> [webpack.cache.PackFileCacheStrategy/webpack.FileSystemInfo] Resolving '../../../../.next/server/app/reviews/page' in /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server for build dependencies doesn't lead to expected result '/Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/app/reviews/page.js', but to 'Error: Can't resolve '../../../../.next/server/app/reviews/page' in '/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server'' instead. Resolving dependencies are ignored for this path.
+<w>  at resolve commonjs file ../../../../.next/server/app/reviews/page (expected /Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/app/reviews/page.js)
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/require.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/require.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/load-components.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/load-components.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/utils.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/utils.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w>  at resolve commonjs /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w> [webpack.cache.PackFileCacheStrategy/webpack.FileSystemInfo] Resolving '../../../../.next/server/app/.well-known/appspecific/com.chrome.devtools.json/route' in /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server for build dependencies doesn't lead to expected result '/Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/app/.well-known/appspecific/com.chrome.devtools.json/route.js', but to 'Error: Can't resolve '../../../../.next/server/app/.well-known/appspecific/com.chrome.devtools.json/route' in '/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server'' instead. Resolving dependencies are ignored for this path.
+<w>  at resolve commonjs file ../../../../.next/server/app/.well-known/appspecific/com.chrome.devtools.json/route (expected /Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/app/.well-known/appspecific/com.chrome.devtools.json/route.js)
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/require.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/require.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/load-components.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/load-components.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/utils.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/utils.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w>  at resolve commonjs /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+ POST /api/igdb-proxy 404 in 79ms
+ POST /api/igdb-proxy 404 in 78ms
+ POST /api/igdb-proxy 404 in 77ms
+ ✓ Compiled in 129ms (1215 modules)
+ ✓ Compiled in 262ms (1213 modules)
