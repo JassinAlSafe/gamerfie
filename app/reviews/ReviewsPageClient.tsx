@@ -197,7 +197,7 @@ export function ReviewsPageClient({ initialReviews }: ReviewsPageClientProps) {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-gray-950 via-purple-950/10 to-gray-950 pt-20 px-4">
+      <div className="min-h-screen bg-gradient-to-b from-gray-950 via-purple-950/10 to-gray-950 px-4 pt-8">
         <div className="max-w-7xl mx-auto">
           <div className="space-y-8">
             {/* Enhanced Header skeleton */}
@@ -333,7 +333,7 @@ export function ReviewsPageClient({ initialReviews }: ReviewsPageClientProps) {
         />
       )}
 
-      <div className="min-h-screen bg-gradient-to-b from-gray-950 via-purple-950/10 to-gray-950 pt-20 px-4">
+      <div className="min-h-screen bg-gradient-to-b from-gray-950 via-purple-950/10 to-gray-950 px-4 pt-8">
         <div className="max-w-7xl mx-auto">
           {/* Enhanced Header */}
           <motion.div

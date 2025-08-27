@@ -62,7 +62,7 @@ async function getCategoryData(categoryId: string) {
 function CategoryLoading() {
   return (
     <div className="min-h-screen bg-gray-900">
-      <div className="container mx-auto px-4 pt-20 pb-8">
+      <div className="container mx-auto px-4 py-8">
         <div className="animate-pulse">
           <div className="h-12 bg-gray-800 rounded w-1/3 mb-4"></div>
           <div className="h-4 bg-gray-800 rounded w-1/2 mb-8"></div>

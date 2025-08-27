@@ -82,7 +82,7 @@ async function getThreadData(threadId: string) {
 function ThreadLoading() {
   return (
     <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 pt-20 pb-8">
+      <div className="container mx-auto px-4 py-8">
         <div className="animate-pulse">
           {/* Back button skeleton */}
           <div className="h-8 w-16 bg-muted rounded mb-6"></div>

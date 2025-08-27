@@ -301,12 +301,36 @@ html {
     transition: top 0.3s cubic-bezier(0.25, 0.1, 0.25, 1);
   }
   
-  .main-content-with-header {
-    /* Simplified: Only one calculation needed */
+  /* ===== UNIVERSAL HEADER SPACING SYSTEM ===== */
+  /* Nuclear option: Apply to ALL main elements unless explicitly excluded */
+  
+  main {
+    /* Apply header spacing to ALL main elements by default */
     padding-top: calc(var(--header-height) + var(--header-offset-top));
-    transition: padding-top 0.3s cubic-bezier(0.25, 0.1, 0.25, 1);
-    /* Prevent content from touching viewport edges */
     min-height: calc(100vh - var(--header-height) - var(--header-offset-top));
+    transition: padding-top 0.3s cubic-bezier(0.25, 0.1, 0.25, 1);
+    position: relative;
+  }
+  
+  /* Exclude auth pages and other special cases */
+  main.no-header-spacing,
+  .auth-page main {
+    padding-top: 0;
+    min-height: 100vh;
+  }
+  
+  /* Legacy support for the original class */
+  .main-content-with-header {
+    /* This now just ensures the spacing is applied */
+    padding-top: calc(var(--header-height) + var(--header-offset-top));
+    min-height: calc(100vh - var(--header-height) - var(--header-offset-top));
+    transition: padding-top 0.3s cubic-bezier(0.25, 0.1, 0.25, 1);
+    position: relative;
+  }
+  
+  /* Reset conflicting margins */
+  main > * {
+    margin-top: 0;
   }
   
   /* Modern scroll margin for anchor elements */

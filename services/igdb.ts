@@ -72,9 +72,28 @@ export class IGDBService {
   private static getProxyUrl(): string {
     const isServer = typeof window === 'undefined';
     if (isServer) {
-      // Use the current server port from process.env or default to 3001
-      const port = process.env.PORT || '3001';
-      return `http://localhost:${port}/api/igdb-proxy`;
+      // For local development, use localhost with correct port
+      if (process.env.NODE_ENV === 'development') {
+        const port = process.env.PORT || '3000';
+        return `http://localhost:${port}/api/igdb-proxy`;
+      }
+      
+      // In production, use the public API base URL
+      let baseUrl = process.env.NEXT_PUBLIC_API_BASE;
+      
+      // Fallback to VERCEL_URL if available (format: https://...)
+      if (!baseUrl && process.env.VERCEL_URL) {
+        baseUrl = process.env.VERCEL_URL.startsWith('http') 
+          ? process.env.VERCEL_URL 
+          : `https://${process.env.VERCEL_URL}`;
+      }
+      
+      // Final fallback for local development
+      if (!baseUrl) {
+        baseUrl = 'http://localhost:3000';
+      }
+      
+      return `${baseUrl}/api/igdb-proxy`;
     }
     return '/api/igdb-proxy';
   }
@@ -148,6 +167,31 @@ export class IGDBService {
       };
     } catch (error) {
       console.error('Error getting IGDB headers:', error);
+      throw error;
+    }
+  }
+
+  private static async makeIGDBRequest(endpoint: string, query: string): Promise<any> {
+    try {
+      const response = await fetch(this.getProxyUrl(), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          endpoint,
+          query
+        })
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`IGDB request failed: ${response.status} - ${errorText}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error(`Error making IGDB request to ${endpoint}:`, error);
       throw error;
     }
   }
@@ -708,26 +752,14 @@ export class IGDBService {
 
   static async fetchGameAchievements(gameId: string) {
     try {
-      const headers = await this.getHeaders();
+      const query = `
+        fields name, description, category, points, rank, game;
+        where game = ${gameId};
+        sort rank asc;
+        limit 50;
+      `;
       
-      const response = await fetch('https://api.igdb.com/v4/achievements', {
-        method: 'POST',
-        headers,
-        body: `
-          fields name, description, category, points, rank, game;
-          where game = ${gameId};
-          sort rank asc;
-          limit 50;
-        `,
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('IGDB achievements error:', errorText);
-        throw new Error('Failed to fetch achievements');
-      }
-
-      const achievements = await response.json();
+      const achievements = await this.makeIGDBRequest('achievements', query);
       return achievements;
     } catch (error) {
       console.error('Error fetching achievements:', error);
