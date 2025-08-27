@@ -112,7 +112,7 @@ export default function GamesPage() {
       </div>
 
       {/* Profile Navigation */}
-      <div className="sticky top-16 z-40 bg-gray-950/90 backdrop-blur-md border-b border-white/10">
+      <div className="bg-gray-950/90 backdrop-blur-md border-b border-white/10">
         <ProfileNav />
       </div>
 

@@ -180,7 +180,7 @@ export default function SettingsPage() {
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* Sidebar Navigation */}
           <div className="lg:col-span-1">
-            <div className="sticky top-4 space-y-2">
+            <div className="space-y-2">
               {sections.map((section) => {
                 const isActive = activeSection === section.id;
                 return (

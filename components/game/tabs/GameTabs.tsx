@@ -402,7 +402,7 @@ export const GameTabs = memo(function GameTabs({
 
                 <TabsContent value="media" className="focus-visible:outline-none">
                   <Suspense fallback={<TabLoadingFallback tabId="media" />}>
-                    <MediaTab game={game} />
+                    <MediaTab game={game as any} />
                   </Suspense>
                 </TabsContent>
 

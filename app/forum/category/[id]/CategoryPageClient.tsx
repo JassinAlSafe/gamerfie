@@ -101,7 +101,7 @@ export function CategoryPageClient({ category, initialThreads }: CategoryPageCli
         Skip to main content
       </a>
       
-      <div className="container mx-auto px-4 py-6 max-w-6xl">
+      <div className="container mx-auto px-4 pt-20 pb-6 max-w-6xl">
         <main id="main-content" role="main">
           {/* Enhanced Navigation */}
           <div className="mb-8">

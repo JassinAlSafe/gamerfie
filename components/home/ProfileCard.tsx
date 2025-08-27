@@ -4,7 +4,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { memo } from "react";
-import { cn } from "@/lib/utils";
 import Link from "next/link";
 
 interface ProfileStats {

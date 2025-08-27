@@ -1256,7 +1256,7 @@ export class UnifiedGameService {
       );
 
       return {
-        games: result.games as Game[],
+        games: result.games as unknown as Game[],
         total: result.totalCount,
         page: result.currentPage,
         pageSize: result.games.length,

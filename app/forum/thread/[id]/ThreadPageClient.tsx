@@ -141,7 +141,7 @@ export function ThreadPageClient({ thread, initialPosts }: ThreadPageClientProps
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 text-foreground">
-      <div className="container mx-auto px-4 py-6 max-w-6xl">
+      <div className="container mx-auto px-4 pt-20 pb-6 max-w-6xl">
         {/* Navigation Bar */}
         <div className="mb-8">
           <Button

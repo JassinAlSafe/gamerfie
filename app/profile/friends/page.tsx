@@ -242,7 +242,7 @@ export default function ProfileFriendsPage() {
         </div>
 
         {/* Sticky Navigation */}
-        <div className="sticky top-16 z-40 bg-gray-950/80 backdrop-blur-md border-b border-white/5 mt-8">
+        <div className="bg-gray-950/80 backdrop-blur-md border-b border-white/5 mt-8">
           <div className="max-w-7xl mx-auto px-4">
             <ProfileNav />
           </div>

@@ -1,0 +1,44 @@
+version: 2
+updates:
+  # Enable version updates for npm
+  - package-ecosystem: "npm"
+    directory: "/" # Location of package.json
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "America/New_York"
+    # Configure commit message preferences
+    commit-message:
+      prefix: "deps"
+      include: "scope"
+    # Limit the number of open pull requests for version updates
+    open-pull-requests-limit: 5
+    # Set reviewers for security updates
+    reviewers:
+      - "jassinalsafe"
+    # Group updates by dependency type
+    groups:
+      react-ecosystem:
+        patterns:
+          - "react*"
+          - "@types/react*"
+      next-ecosystem:
+        patterns:
+          - "next*"
+          - "@next/*"
+      supabase-ecosystem:
+        patterns:
+          - "@supabase/*"
+      ui-libraries:
+        patterns:
+          - "@radix-ui/*"
+          - "lucide-react"
+          - "@tabler/icons-react"
+      dev-dependencies:
+        dependency-type: "development"
+    # Allow both patch and minor updates
+    ignore:
+      # Ignore major version updates that might break compatibility
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]

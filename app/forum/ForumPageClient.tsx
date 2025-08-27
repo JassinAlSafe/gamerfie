@@ -79,7 +79,7 @@ export function ForumPageClient({ initialCategories, initialStats }: ForumPageCl
         Skip to main content
       </a>
       
-      <div className="container mx-auto px-4 py-8 max-w-7xl">
+      <div className="container mx-auto px-4 pt-20 pb-8 max-w-7xl">
         <main id="main-content" role="main">
           {/* Enhanced Header */}
           <ForumHeader

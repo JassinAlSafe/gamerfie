@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { getHighQualityImageUrl, getYouTubeEmbedUrl, getYouTubeThumbnail } from '@/utils/image-utils'
+import { getHighQualityImageUrl, getYouTubeThumbnail } from '@/utils/image-utils'
 import type { 
   MediaStoreState, 
   ProcessedMedia, 
