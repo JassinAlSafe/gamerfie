@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Copy, RefreshCw } from "lucide-react";
 import { useAuthState } from "@/hooks/useAuthOptimized";
+import { AuthFlowDebug } from "@/components/auth/AuthFlowDebug";
 
 export default function DebugAuthPage() {
   const [currentUrl, setCurrentUrl] = useState<string>("");
@@ -56,6 +57,9 @@ export default function DebugAuthPage() {
     <div className="container mx-auto p-6 space-y-6">
       <div className="max-w-4xl mx-auto">
         <h1 className="text-3xl font-bold mb-6">Auth Debug Page</h1>
+        
+        {/* Auth Flow Detection */}
+        <AuthFlowDebug title="Auth Flow Detection" />
         
         {/* Current URL */}
         <Card>

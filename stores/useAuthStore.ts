@@ -302,6 +302,7 @@ export const useAuthStore = create<AuthState>()(
             // Use auth callback URL for proper token handling
             const redirectUrl = `${window.location.origin}/auth/callback`;
             console.log('Auth store: Reset password redirect URL:', redirectUrl);
+            console.log('Auth store: Current origin:', window.location.origin);
             
             const { error } = await supabase.auth.resetPasswordForEmail(_email, {
               redirectTo: redirectUrl

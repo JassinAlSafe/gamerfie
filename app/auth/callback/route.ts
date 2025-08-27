@@ -17,21 +17,23 @@ export async function GET(request: Request) {
     return NextResponse.redirect(new URL('/signin?error=oauth_failed', requestUrl.origin));
   }
 
-  // Handle password recovery flow - check for various patterns
+  // Handle password recovery flow - check for specific patterns
   const hasTokenHash = requestUrl.searchParams.has('token_hash');
+  const hasState = requestUrl.searchParams.has('state'); // OAuth has state param
   const hasAccessToken = requestUrl.searchParams.has('access_token');
   const hasRefreshToken = requestUrl.searchParams.has('refresh_token');
   const hasExpiresIn = requestUrl.searchParams.has('expires_in');
   
-  // Pattern matching for password recovery (Supabase sends different params for password reset)
-  const isPasswordRecovery = type === 'recovery' || 
-                            next?.includes('reset-password') || 
-                            next?.includes('type=recovery') ||
-                            requestUrl.searchParams.toString().includes('recovery') ||
-                            (hasTokenHash && hasAccessToken && hasRefreshToken) ||
-                            (hasAccessToken && hasExpiresIn && !requestUrl.searchParams.has('state'));
+  // More specific pattern matching for password recovery
+  // OAuth flows have 'state' parameter, password recovery does not
+  const isPasswordRecovery = (type === 'recovery') || 
+                            (next?.includes('reset-password')) || 
+                            (next?.includes('type=recovery')) ||
+                            (hasTokenHash && type === 'recovery') ||
+                            // Only consider token-based recovery if NO state (not OAuth)
+                            (hasTokenHash && !hasState && !code);
 
-  console.log('Auth callback: Recovery detection - type:', type, 'hasTokenHash:', hasTokenHash, 'hasAccessToken:', hasAccessToken, 'isPasswordRecovery:', isPasswordRecovery);
+  console.log('Auth callback: Recovery detection - type:', type, 'hasTokenHash:', hasTokenHash, 'hasState:', hasState, 'hasAccessToken:', hasAccessToken, 'isPasswordRecovery:', isPasswordRecovery);
 
   if (isPasswordRecovery && (code || hasTokenHash || hasAccessToken)) {
     console.log('Auth callback: Handling password recovery for origin:', requestUrl.origin);
@@ -95,15 +97,8 @@ export async function GET(request: Request) {
         return NextResponse.redirect(new URL('/signin?error=no_session', requestUrl.origin));
       }
 
-      // Check if this might be a password recovery session by examining metadata
-      const isLikelyPasswordRecovery = session.access_token && 
-                                       !isPasswordRecovery && 
-                                       (requestUrl.searchParams.has('code') && !requestUrl.searchParams.has('state'));
-      
-      if (isLikelyPasswordRecovery) {
-        console.log('Auth callback: Detected potential password recovery session, redirecting to reset form');
-        return NextResponse.redirect(new URL('/reset-password?recovery=true', requestUrl.origin));
-      }
+      // OAuth flows should continue to normal profile/redirect logic
+      // Only redirect to password recovery if explicitly detected above
 
       // Check if profile exists
       const { data: existingProfile } = await supabase

@@ -92,7 +92,7 @@ export default function ProfilePage(): JSX.Element {
       </div>
 
       {/* Profile Navigation - Clean, Apple-inspired design */}
-      <div className="bg-gray-950/95 border-b border-gray-800/50">
+      <div className="bg-gray-950/20 backdrop-blur-sm">
         <ProfileNav />
       </div>
 
