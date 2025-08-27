@@ -275,7 +275,6 @@ export function AuthForm({ mode, onSuccess }: AuthFormProps) {
       setSubmitPhase('authenticating');
       
       if (mode === "signin") {
-        console.log("Attempting signin with:", formData.email);
         const response = await signIn(formData.email, formData.password);
 
         if (response.error) {
@@ -300,14 +299,20 @@ export function AuthForm({ mode, onSuccess }: AuthFormProps) {
           setSubmitPhase('redirecting');
           setSuccessMessage('Welcome back!');
           
+          // Wait a small delay to ensure auth store state is updated
+          await new Promise(resolve => setTimeout(resolve, 200));
+          
           // Force auth state refresh to update header immediately
           await checkUser();
+          
+          // Additional delay to ensure UI state propagation
+          await new Promise(resolve => setTimeout(resolve, 300));
           
           // Force router refresh to ensure header updates
           router.refresh();
           
           // Show success state briefly before redirect
-          await new Promise(resolve => setTimeout(resolve, 800));
+          await new Promise(resolve => setTimeout(resolve, 500));
           
           toast({
             title: "Welcome back! 👋",
@@ -326,11 +331,6 @@ export function AuthForm({ mode, onSuccess }: AuthFormProps) {
           }
         }
       } else if (mode === "signup") {
-        console.log(
-          "Attempting signup with:",
-          formData.email,
-          formData.username
-        );
         const response = await signUp(
           formData.email,
           formData.password,
@@ -447,10 +447,8 @@ export function AuthForm({ mode, onSuccess }: AuthFormProps) {
       setSuccessMessage('Connecting to Google...');
       await new Promise(resolve => setTimeout(resolve, 300));
       
-      console.log("Starting Google OAuth flow...");
       const result = await signInWithGoogle();
 
-      console.log("Google OAuth result:", result);
 
       if (result.error) {
         console.error("Google OAuth error:", result.error);
@@ -460,7 +458,6 @@ export function AuthForm({ mode, onSuccess }: AuthFormProps) {
       if (result.data?.url) {
         setSubmitPhase('redirecting');
         setSuccessMessage('Redirecting to Google...');
-        console.log("Redirecting to Google OAuth URL:", result.data.url);
         // OAuth will handle its own redirects
         // Don't reset loading state here since we're redirecting
       }
