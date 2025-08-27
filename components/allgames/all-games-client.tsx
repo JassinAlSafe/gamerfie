@@ -69,7 +69,7 @@ export default function AllGamesClient() {
 
       {/* Main content - Direct content without wrapper */}
       <div className="bg-gradient-to-b from-gray-900/50 via-gray-950 to-gray-950 min-h-screen">
-        <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6">
+        <div className="container mx-auto max-w-7xl px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6">
 
           {/* Games Grid */}
           <GamesGrid isLoading={isLoading} games={allGames} />

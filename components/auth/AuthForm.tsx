@@ -13,11 +13,19 @@ import { FloatingPasswordInput } from "@/components/ui/floating-password-input";
 import { Loader2, Check, UserCheck } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { useAuthActions } from "@/hooks/useAuthOptimized";
+import { useAuthStore } from "@/stores/useAuthStore";
+import { useFormValidation } from "@/hooks/useFormValidation";
+import { useUsernameCheck } from "@/hooks/useUsernameCheck";
 import { cn } from "@/lib/utils";
 import {
   detectExistingUser,
-  type UserDetectionResult,
 } from "@/lib/auth-optimization";
+import {
+  type UserDetectionResult,
+  type FormData,
+  type ValidationErrors,
+  type TouchedFields,
+} from "@/types/auth-form.types";
 import { ProgressiveAuthLoader } from "./ProgressiveAuthLoader";
 
 const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
@@ -34,20 +42,6 @@ interface AuthFormProps {
   onSuccess?: () => void;
 }
 
-interface FormData {
-  email: string;
-  password: string;
-  username?: string;
-  displayName?: string;
-  rememberMe?: boolean;
-}
-
-interface ValidationErrors {
-  email?: string;
-  password?: string;
-  username?: string;
-  displayName?: string;
-}
 
 export function AuthForm({ mode, onSuccess }: AuthFormProps) {
   const [isLoading, setIsLoading] = useState(false);
@@ -60,13 +54,19 @@ export function AuthForm({ mode, onSuccess }: AuthFormProps) {
     rememberMe: false,
   });
   const [errors, setErrors] = useState<ValidationErrors>({});
-  const [touched, setTouched] = useState<Record<string, boolean>>({});
+  const [touched, setTouched] = useState<TouchedFields>({
+    email: false,
+    password: false,
+    username: false,
+    displayName: false,
+  });
   const [userDetection, setUserDetection] =
     useState<UserDetectionResult | null>(null);
   const [isDetecting, setIsDetecting] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string>('');
   const [usernameAvailable, setUsernameAvailable] = useState<boolean | null>(null);
   const [checkingUsername, setCheckingUsername] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
 
   // Debounce form data for validation
   const debouncedFormData = useDebounce(formData, 300);
@@ -76,6 +76,9 @@ export function AuthForm({ mode, onSuccess }: AuthFormProps) {
   const router = useRouter();
   const { toast } = useToast();
   const { signIn, signUp, signInWithGoogle } = useAuthActions();
+  const checkUser = useAuthStore((state) => state.checkUser);
+  const { validateField, validateForm } = useFormValidation({ mode });
+  const { checkUsername, cleanup } = useUsernameCheck();
 
   // Check for auth errors in URL parameters
   useEffect(() => {
@@ -155,69 +158,47 @@ export function AuthForm({ mode, onSuccess }: AuthFormProps) {
   useEffect(() => {
     if (mode === "signup" && debouncedUsername && debouncedUsername.length >= 3 && !errors.username) {
       setCheckingUsername(true);
-      // Simulate username check - in real app, call your API
-      setTimeout(() => {
-        // Mock check - you'd replace this with actual API call
-        const isAvailable = !['admin', 'user', 'test', 'demo'].includes(debouncedUsername.toLowerCase());
-        setUsernameAvailable(isAvailable);
-        setCheckingUsername(false);
-      }, 500);
+      
+      checkUsername(debouncedUsername)
+        .then((result) => {
+          setUsernameAvailable(result.available);
+          if (!result.available && result.reason) {
+            setErrors(prev => ({ ...prev, username: result.reason }));
+          }
+        })
+        .catch((error) => {
+          console.error('Username check failed:', error);
+          // Don't block the user if API fails, just show warning
+          if (error.message !== 'Request aborted') {
+            setUsernameAvailable(null);
+            toast({
+              title: "Username check failed",
+              description: "Could not verify username availability",
+              variant: "destructive",
+            });
+          }
+        })
+        .finally(() => {
+          setCheckingUsername(false);
+        });
     } else {
       setUsernameAvailable(null);
       setCheckingUsername(false);
     }
-  }, [debouncedUsername, mode, errors.username]);
+    
+    // Cleanup on unmount
+    return () => {
+      cleanup();
+    };
+  }, [debouncedUsername, mode, errors.username, checkUsername, cleanup, toast]);
 
-  const validateEmail = useCallback((email: string) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!email) return "Email is required";
-    if (!emailRegex.test(email)) return "Please enter a valid email address";
-    return "";
-  }, []);
-
-  const validatePassword = useCallback(
-    (password: string) => {
-      if (!password) return "Password is required";
-      if (mode === "signup" && password.length < 8)
-        return "Password must be at least 8 characters";
-      return "";
-    },
-    [mode]
-  );
-
-  const validateUsername = useCallback(
-    (username: string) => {
-      if (mode === "signup" && !username) return "Username is required";
-      if (mode === "signup" && username.length < 3)
-        return "Username must be at least 3 characters";
-      return "";
-    },
-    [mode]
-  );
-
-  const validateField = useCallback(
-    (name: string, value: string) => {
-      switch (name) {
-        case "email":
-          return validateEmail(value);
-        case "password":
-          return validatePassword(value);
-        case "username":
-          return validateUsername(value);
-        case "displayName":
-          return mode === "signup" && !value ? "Display name is required" : "";
-        default:
-          return "";
-      }
-    },
-    [mode, validateEmail, validatePassword, validateUsername]
-  );
 
   // Auto-validate with debounced values
   useEffect(() => {
-    Object.keys(touched).forEach((fieldName) => {
+    const fields = Object.keys(touched) as (keyof TouchedFields)[];
+    fields.forEach((fieldName) => {
       if (touched[fieldName]) {
-        const value = debouncedFormData[fieldName as keyof FormData] as string;
+        const value = debouncedFormData[fieldName];
         const error = validateField(fieldName, value);
         setErrors((prev) => ({ ...prev, [fieldName]: error }));
       }
@@ -229,51 +210,61 @@ export function AuthForm({ mode, onSuccess }: AuthFormProps) {
       const { name, value, type, checked } = e.target;
       const fieldValue = type === "checkbox" ? checked : value;
 
-      setFormData((prev) => ({ ...prev, [name]: fieldValue }));
+      // Clear authentication error when user starts typing
+      if (authError && (name === "email" || name === "password")) {
+        setAuthError(null);
+      }
+
+      // Type-safe form data update
+      if (name in formData && typeof fieldValue === 'string') {
+        setFormData((prev) => ({ 
+          ...prev, 
+          [name as keyof FormData]: fieldValue 
+        }));
+      } else if (name === 'rememberMe' && typeof fieldValue === 'boolean') {
+        // Handle checkbox separately since it's not in FormData interface
+        setFormData((prev) => ({ 
+          ...prev, 
+          rememberMe: fieldValue 
+        }));
+      }
     },
-    []
+    [authError]
   );
 
   const handleBlur = useCallback(
     (e: React.FocusEvent<HTMLInputElement>) => {
       const { name, value } = e.target;
-      setTouched((prev) => ({ ...prev, [name]: true }));
-
-      const error = validateField(name, value);
-      setErrors((prev) => ({ ...prev, [name]: error }));
+      
+      // Type-safe field name validation
+      if (name in formData) {
+        setTouched((prev) => ({ ...prev, [name as keyof TouchedFields]: true }));
+        
+        const error = validateField(name, value);
+        setErrors((prev) => ({ ...prev, [name as keyof ValidationErrors]: error }));
+      }
     },
-    [validateField]
+    [validateField, formData]
   );
 
-  const validateForm = useCallback(() => {
-    const fields =
-      mode === "signup"
-        ? ["email", "password", "username", "displayName"]
-        : ["email", "password"];
-
-    const newErrors: ValidationErrors = {};
-    let isValid = true;
-
-    fields.forEach((field) => {
-      const error = validateField(
-        field,
-        formData[field as keyof FormData] as string
-      );
-      if (error) {
-        newErrors[field as keyof ValidationErrors] = error;
-        isValid = false;
-      }
-    });
-
-    setErrors(newErrors);
-    return isValid;
-  }, [mode, formData, validateField]);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
 
-    if (!validateForm()) return;
+    // Validate form using custom hook - convert FormData to Record<string, string>
+    const formDataForValidation = {
+      email: formData.email,
+      password: formData.password,
+      username: formData.username,
+      displayName: formData.displayName,
+    };
+    const errors = validateForm(formDataForValidation);
+    setErrors(errors);
+    
+    if (Object.keys(errors).length > 0) return;
 
+    // Clear any previous auth errors
+    setAuthError(null);
     setIsLoading(true);
     setSubmitPhase('validating');
 
@@ -284,7 +275,6 @@ export function AuthForm({ mode, onSuccess }: AuthFormProps) {
       setSubmitPhase('authenticating');
       
       if (mode === "signin") {
-        console.log("Attempting signin with:", formData.email);
         const response = await signIn(formData.email, formData.password);
 
         if (response.error) {
@@ -309,8 +299,20 @@ export function AuthForm({ mode, onSuccess }: AuthFormProps) {
           setSubmitPhase('redirecting');
           setSuccessMessage('Welcome back!');
           
+          // Wait a small delay to ensure auth store state is updated
+          await new Promise(resolve => setTimeout(resolve, 200));
+          
+          // Force auth state refresh to update header immediately
+          await checkUser();
+          
+          // Additional delay to ensure UI state propagation
+          await new Promise(resolve => setTimeout(resolve, 300));
+          
+          // Force router refresh to ensure header updates
+          router.refresh();
+          
           // Show success state briefly before redirect
-          await new Promise(resolve => setTimeout(resolve, 800));
+          await new Promise(resolve => setTimeout(resolve, 500));
           
           toast({
             title: "Welcome back! 👋",
@@ -329,11 +331,6 @@ export function AuthForm({ mode, onSuccess }: AuthFormProps) {
           }
         }
       } else if (mode === "signup") {
-        console.log(
-          "Attempting signup with:",
-          formData.email,
-          formData.username
-        );
         const response = await signUp(
           formData.email,
           formData.password,
@@ -379,27 +376,52 @@ export function AuthForm({ mode, onSuccess }: AuthFormProps) {
     } catch (error) {
       console.error("Auth error:", error);
       
-      // Better error messages based on error type
-      let errorTitle = "Something went wrong";
-      let errorDescription = `Failed to ${mode === "signin" ? "sign in" : "create account"}`;
+      // Enhanced error messages for better user experience
+      let errorTitle = "Authentication failed";
+      let errorDescription = `Unable to ${mode === "signin" ? "sign you in" : "create your account"}`;
       
       if (error instanceof Error) {
         const message = error.message.toLowerCase();
         
+        // Handle specific authentication errors
         if (message.includes("invalid credentials") || message.includes("invalid login credentials")) {
-          errorTitle = "Invalid credentials";
-          errorDescription = "Please check your email and password and try again.";
+          errorTitle = mode === "signin" ? "Login failed" : "Authentication failed";
+          errorDescription = mode === "signin" 
+            ? "The email or password you entered is incorrect. Please check your credentials and try again."
+            : "Please check your email and password and try again.";
+          // Set auth error to highlight the problematic fields
+          setAuthError("Invalid email or password");
+        } else if (message.includes("email not found") || message.includes("user not found")) {
+          errorTitle = "Account not found";
+          errorDescription = "No account found with this email address. Please check your email or sign up for a new account.";
+          setAuthError("Email not found");
+        } else if (message.includes("invalid email") || message.includes("email") && message.includes("invalid")) {
+          errorTitle = "Invalid email";
+          errorDescription = "Please enter a valid email address.";
+        } else if (message.includes("weak password") || (message.includes("password") && message.includes("weak"))) {
+          errorTitle = "Weak password";
+          errorDescription = "Your password is too weak. Please choose a stronger password with at least 8 characters.";
+        } else if (message.includes("password") && message.includes("short")) {
+          errorTitle = "Password too short";
+          errorDescription = "Your password must be at least 8 characters long.";
+        } else if (message.includes("too many requests") || message.includes("rate limit")) {
+          errorTitle = "Too many attempts";
+          errorDescription = "Too many login attempts. Please wait a few minutes before trying again.";
         } else if (message.includes("email") && message.includes("already") && message.includes("registered")) {
           errorTitle = "Email already registered";
           errorDescription = "An account with this email already exists. Try signing in instead.";
-        } else if (message.includes("weak password") || message.includes("password")) {
-          errorTitle = "Password issue";
-          errorDescription = "Please ensure your password meets the requirements.";
-        } else if (message.includes("network") || message.includes("fetch")) {
-          errorTitle = "Connection issue";
-          errorDescription = "Please check your internet connection and try again.";
+        } else if (message.includes("network") || message.includes("fetch") || message.includes("connection")) {
+          errorTitle = "Connection problem";
+          errorDescription = "Unable to connect to our servers. Please check your internet connection and try again.";
+        } else if (message.includes("email not confirmed") || message.includes("confirmation")) {
+          errorTitle = "Email not verified";
+          errorDescription = "Please check your email and click the verification link before signing in.";
         } else {
-          errorDescription = error.message;
+          // For any other error, show a more user-friendly message
+          errorTitle = "Something went wrong";
+          errorDescription = mode === "signin" 
+            ? "We couldn't sign you in right now. Please try again in a few moments."
+            : "We couldn't create your account right now. Please try again in a few moments.";
         }
       }
       
@@ -425,10 +447,8 @@ export function AuthForm({ mode, onSuccess }: AuthFormProps) {
       setSuccessMessage('Connecting to Google...');
       await new Promise(resolve => setTimeout(resolve, 300));
       
-      console.log("Starting Google OAuth flow...");
       const result = await signInWithGoogle();
 
-      console.log("Google OAuth result:", result);
 
       if (result.error) {
         console.error("Google OAuth error:", result.error);
@@ -438,7 +458,6 @@ export function AuthForm({ mode, onSuccess }: AuthFormProps) {
       if (result.data?.url) {
         setSubmitPhase('redirecting');
         setSuccessMessage('Redirecting to Google...');
-        console.log("Redirecting to Google OAuth URL:", result.data.url);
         // OAuth will handle its own redirects
         // Don't reset loading state here since we're redirecting
       }
@@ -509,6 +528,15 @@ export function AuthForm({ mode, onSuccess }: AuthFormProps) {
         </div>
       )}
 
+      {/* Authentication error banner */}
+      {authError && (
+        <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 text-center animate-in fade-in-50 duration-300">
+          <p className="text-sm text-red-700 dark:text-red-300 font-medium">
+            {authError}
+          </p>
+        </div>
+      )}
+
       <div className="grid gap-2">
         <Button
           variant="outline"
@@ -570,9 +598,9 @@ export function AuthForm({ mode, onSuccess }: AuthFormProps) {
               value={formData.email}
               onChange={handleInputChange}
               onBlur={handleBlur}
-              error={errors.email}
+              error={errors.email || (authError && mode === "signin" ? "Check your email" : "")}
               touched={touched.email}
-              className="input-custom"
+              className={cn("input-custom", authError && mode === "signin" && "border-red-500 focus:border-red-500")}
               required
             />
             {/* Smart user detection indicators */}
@@ -750,9 +778,9 @@ export function AuthForm({ mode, onSuccess }: AuthFormProps) {
             value={formData.password}
             onChange={handleInputChange}
             onBlur={handleBlur}
-            error={errors.password}
+            error={errors.password || (authError && mode === "signin" ? "Check your password" : "")}
             touched={touched.password}
-            className="input-custom"
+            className={cn("input-custom", authError && mode === "signin" && "border-red-500 focus:border-red-500")}
             required
           />
           {errors.password && touched.password && (
@@ -817,6 +845,9 @@ export function AuthForm({ mode, onSuccess }: AuthFormProps) {
         <Button 
           className={cn(
             "auth-button w-full mt-2 h-12 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]",
+            "bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700",
+            "text-white font-semibold shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40",
+            "border-0 hover:border-0 focus:ring-2 focus:ring-purple-500/50",
             submitPhase === 'redirecting' && "success-pulse"
           )} 
           type="submit" 

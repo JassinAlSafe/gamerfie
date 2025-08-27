@@ -47,7 +47,7 @@ const GamesGrid = memo(({ games, isLoading }: GamesGridProps) => {
         className={cn(
           "w-full",
           viewMode === "grid"
-            ? "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4 md:gap-6"
+            ? "grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-2 sm:gap-4 md:gap-6"
             : "flex flex-col gap-3"
         )}
         role="status"
@@ -98,7 +98,7 @@ const GamesGrid = memo(({ games, isLoading }: GamesGridProps) => {
       className={cn(
         "w-full",
         viewMode === "grid"
-          ? "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4 md:gap-6"
+          ? "grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-2 sm:gap-4 md:gap-6"
           : "flex flex-col gap-3"
       )}
       role="region"

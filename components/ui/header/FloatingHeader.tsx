@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import AdminShortcuts from "@/components/admin/AdminShortcuts";
 import { navigationItems } from "@/config/navigation";
 import { HeaderSkeleton } from "./header-skeleton";
+import { Icons } from "@/components/ui/icons";
 
 export default function FloatingHeader() {
   const { isInitialized, checkUser, user } = useAuthStore();
@@ -91,10 +92,11 @@ export default function FloatingHeader() {
           <div className="relative flex items-center justify-between" style={{height: 'var(--header-height)'}}>
             <Link
               href="/"
-              className="font-bold text-xl sm:text-xl md:text-2xl text-white/90 hover:text-white transition-colors duration-200 shrink-0"
+              className="flex items-center gap-2 text-white/90 hover:text-white transition-colors duration-200 shrink-0"
             >
-              <span className="hidden xs:inline">GAME VAULT</span>
-              <span className="inline xs:hidden">GV</span>
+              <Icons.logo className="h-8 w-8 sm:h-9 sm:w-9" />
+              <span className="hidden xs:inline font-bold text-xl sm:text-xl md:text-2xl">GAME VAULT</span>
+              <span className="inline xs:hidden font-bold text-xl">GV</span>
             </Link>
 
             {/* Desktop Layout */}

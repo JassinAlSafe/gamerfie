@@ -26,7 +26,6 @@ const nextConfig = {
   // Performance optimizations
   experimental: {
     optimizePackageImports: ["lodash", "@chakra-ui/react", "react-icons"],
-    optimizeCss: true,
   },
 
   // Bundle size optimizations

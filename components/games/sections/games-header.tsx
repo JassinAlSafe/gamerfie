@@ -133,41 +133,43 @@ export function GamesHeader({ games = [] }: GamesHeaderProps = {}) {
   };
 
   return (
-    <div className="relative px-2 sm:px-4 md:px-6 lg:px-8 py-2 sm:py-4">
+    <div className="relative px-3 sm:px-4 md:px-6 lg:px-8 py-3 sm:py-4">
       <div className="container mx-auto max-w-[2000px]">
         {/* Top Bar with gradient background */}
-        <div className="relative rounded-lg sm:rounded-xl bg-gradient-to-r from-gray-900/90 via-gray-900/95 to-gray-900/90 shadow-lg border border-gray-800/50 p-3 sm:p-4 mb-3 sm:mb-4">
+        <div className="relative rounded-lg sm:rounded-xl bg-gradient-to-r from-gray-900/90 via-gray-900/95 to-gray-900/90 shadow-lg border border-gray-800/50 p-3 sm:p-4 mb-4">
           <div
             className="absolute inset-0 bg-grid-white/[0.02] bg-[size:20px_20px] rounded-xl"
             aria-hidden="true"
           />
-          <div className="relative flex flex-col sm:flex-row items-start sm:items-center gap-4 justify-between">
-            <div className="flex items-center gap-3">
-              <Link href="/explore">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="rounded-full hover:bg-gray-800/70 text-gray-400 hover:text-white"
-                  aria-label="Back to Explore"
-                >
-                  <ArrowLeft className="h-5 w-5" />
-                </Button>
-              </Link>
-              <div className="flex flex-col">
-                <div className="flex items-center gap-2">
-                  <Gamepad2
-                    className="h-5 w-5 text-purple-400"
-                    aria-hidden="true"
-                  />
-                  <h1 className="text-xl sm:text-2xl font-bold text-white">
-                    Browse Games
-                  </h1>
+          <div className="relative flex flex-col gap-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Link href="/explore">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="rounded-full hover:bg-gray-800/70 text-gray-400 hover:text-white"
+                    aria-label="Back to Explore"
+                  >
+                    <ArrowLeft className="h-5 w-5" />
+                  </Button>
+                </Link>
+                <div className="flex flex-col">
+                  <div className="flex items-center gap-2">
+                    <Gamepad2
+                      className="h-5 w-5 text-purple-400"
+                      aria-hidden="true"
+                    />
+                    <h1 className="text-xl sm:text-2xl font-bold text-white">
+                      Browse Games
+                    </h1>
+                  </div>
+                  {totalGames > 0 && (
+                    <span className="text-sm text-gray-300">
+                      {totalGames.toLocaleString()} titles available
+                    </span>
+                  )}
                 </div>
-                {totalGames > 0 && (
-                  <span className="text-sm text-gray-300">
-                    {totalGames.toLocaleString()} titles available
-                  </span>
-                )}
               </div>
             </div>
 
@@ -176,17 +178,17 @@ export function GamesHeader({ games = [] }: GamesHeaderProps = {}) {
               value={searchQuery}
               onChange={handleSearchChange}
               games={games}
-              className="w-full sm:w-auto sm:min-w-[280px] md:min-w-[300px] lg:min-w-[400px]"
+              className="w-full"
               placeholder="Search games, genres, developers..."
             />
           </div>
         </div>
 
         {/* Enhanced Filters Bar with Quick Filters */}
-        <div className="bg-gray-900/30 rounded-lg border border-gray-800/30 p-4">
+        <div className="bg-gray-900/30 rounded-lg border border-gray-800/30 p-3 sm:p-4">
           {/* Top Controls Row */}
-          <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between mb-3">
-            <div className="flex flex-wrap gap-3 items-center flex-1 min-w-0">
+          <div className="flex flex-col gap-3 mb-3">
+            <div className="flex flex-wrap gap-2 items-center justify-between">
               {/* View Mode Toggle */}
               <div className="flex bg-gray-800/70 border border-gray-700/50 rounded-full p-0.5">
                 <Button
@@ -222,13 +224,14 @@ export function GamesHeader({ games = [] }: GamesHeaderProps = {}) {
               </div>
 
               {/* Sort Dropdown */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className="min-w-[140px] justify-between bg-gray-800/70 border-gray-700/50 hover:bg-gray-700/70 rounded-full"
-                    aria-label="Sort games"
-                  >
+              <div className="flex items-center gap-2">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="min-w-[120px] sm:min-w-[140px] justify-between bg-gray-800/70 border-gray-700/50 hover:bg-gray-700/70 rounded-full text-xs sm:text-sm"
+                      aria-label="Sort games"
+                    >
                     <span className="truncate flex items-center gap-2">
                       <Filter
                         className="w-4 h-4 text-purple-400"
@@ -273,40 +276,41 @@ export function GamesHeader({ games = [] }: GamesHeaderProps = {}) {
                 </DropdownMenuContent>
               </DropdownMenu>
 
-              {/* Advanced Filters Dropdown */}
-              <GamesFilterDropdown
-                platforms={platforms}
-                genres={genres}
-                selectedPlatform={selectedPlatform}
-                selectedGenre={selectedGenre}
-                selectedYear={selectedYear}
-                selectedTimeRange={timeRange}
-                selectedGameMode={selectedGameMode}
-                selectedTheme={selectedTheme}
-                minRating={minRating}
-                maxRating={maxRating}
-                hasMultiplayer={hasMultiplayer}
-                onPlatformChange={setSelectedPlatform}
-                onGenreChange={setSelectedGenre}
-                onYearChange={setSelectedYear}
-                onTimeRangeChange={setTimeRange}
-                onGameModeChange={setSelectedGameMode}
-                onThemeChange={setSelectedTheme}
-                onRatingRangeChange={setRatingRange}
-                onMultiplayerChange={setHasMultiplayer}
-              />
+                {/* Advanced Filters Dropdown */}
+                <GamesFilterDropdown
+                  platforms={platforms}
+                  genres={genres}
+                  selectedPlatform={selectedPlatform}
+                  selectedGenre={selectedGenre}
+                  selectedYear={selectedYear}
+                  selectedTimeRange={timeRange}
+                  selectedGameMode={selectedGameMode}
+                  selectedTheme={selectedTheme}
+                  minRating={minRating}
+                  maxRating={maxRating}
+                  hasMultiplayer={hasMultiplayer}
+                  onPlatformChange={setSelectedPlatform}
+                  onGenreChange={setSelectedGenre}
+                  onYearChange={setSelectedYear}
+                  onTimeRangeChange={setTimeRange}
+                  onGameModeChange={setSelectedGameMode}
+                  onThemeChange={setSelectedTheme}
+                  onRatingRangeChange={setRatingRange}
+                  onMultiplayerChange={setHasMultiplayer}
+                />
+              </div>
             </div>
 
             {/* Quick Filters Toggle & Clear */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               {activeQuickFiltersCount > 0 && (
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={clearQuickFilters}
-                  className="text-xs text-gray-400 hover:text-white h-8 px-3"
+                  className="text-xs text-gray-400 hover:text-white h-8 px-2 sm:px-3"
                 >
-                  Clear Quick ({activeQuickFiltersCount})
+                  Clear ({activeQuickFiltersCount})
                 </Button>
               )}
               
@@ -318,12 +322,14 @@ export function GamesHeader({ games = [] }: GamesHeaderProps = {}) {
                 {isQuickFiltersExpanded ? (
                   <>
                     <ChevronUp className="w-4 h-4" />
-                    <span>Hide Quick Filters</span>
+                    <span className="hidden sm:inline">Hide Quick Filters</span>
+                    <span className="sm:hidden">Hide</span>
                   </>
                 ) : (
                   <>
                     <ChevronDown className="w-4 h-4" />
-                    <span>Quick Filters</span>
+                    <span className="hidden sm:inline">Quick Filters</span>
+                    <span className="sm:hidden">Quick</span>
                   </>
                 )}
               </button>
@@ -468,18 +474,18 @@ export function GamesHeader({ games = [] }: GamesHeaderProps = {}) {
 
         {/* Active Filter Pills - Only for advanced filters */}
         {hasActiveFilters && (
-          <div className="flex flex-wrap gap-2 overflow-x-auto scrollbar-hide mt-3">
+          <div className="flex flex-wrap gap-1 sm:gap-2 overflow-x-auto scrollbar-hide mt-3">
             {getPlatformName() && (
               <Badge
                 variant="outline"
-                className="bg-gray-800/70 hover:bg-gray-700 text-white border-purple-500/30 pl-2 pr-1 py-1 flex items-center gap-1 rounded-full"
+                className="bg-gray-800/70 hover:bg-gray-700 text-white border-purple-500/30 pl-2 pr-1 py-1 flex items-center gap-1 rounded-full text-xs"
               >
                 {getPlatformName()}
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => setSelectedPlatform("all")}
-                  className="h-5 w-5 p-0 rounded-full hover:bg-gray-700 ml-1"
+                  className="h-4 w-4 p-0 rounded-full hover:bg-gray-700 ml-1"
                   aria-label={`Remove ${getPlatformName()} filter`}
                 >
                   <X className="h-3 w-3" />
@@ -490,14 +496,14 @@ export function GamesHeader({ games = [] }: GamesHeaderProps = {}) {
             {getGenreName() && (
               <Badge
                 variant="outline"
-                className="bg-gray-800/70 hover:bg-gray-700 text-white border-purple-500/30 pl-2 pr-1 py-1 flex items-center gap-1 rounded-full"
+                className="bg-gray-800/70 hover:bg-gray-700 text-white border-purple-500/30 pl-2 pr-1 py-1 flex items-center gap-1 rounded-full text-xs"
               >
                 {getGenreName()}
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => setSelectedGenre("all")}
-                  className="h-5 w-5 p-0 rounded-full hover:bg-gray-700 ml-1"
+                  className="h-4 w-4 p-0 rounded-full hover:bg-gray-700 ml-1"
                   aria-label={`Remove ${getGenreName()} filter`}
                 >
                   <X className="h-3 w-3" />
@@ -508,14 +514,14 @@ export function GamesHeader({ games = [] }: GamesHeaderProps = {}) {
             {selectedYear !== "all" && (
               <Badge
                 variant="outline"
-                className="bg-gray-800/70 hover:bg-gray-700 text-white border-purple-500/30 pl-2 pr-1 py-1 flex items-center gap-1 rounded-full"
+                className="bg-gray-800/70 hover:bg-gray-700 text-white border-purple-500/30 pl-2 pr-1 py-1 flex items-center gap-1 rounded-full text-xs"
               >
                 {selectedYear}
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => setSelectedYear("all")}
-                  className="h-5 w-5 p-0 rounded-full hover:bg-gray-700 ml-1"
+                  className="h-4 w-4 p-0 rounded-full hover:bg-gray-700 ml-1"
                   aria-label={`Remove ${selectedYear} filter`}
                 >
                   <X className="h-3 w-3" />

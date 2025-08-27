@@ -1,7 +1,6 @@
 "use client";
 
 import { memo, useEffect, useState, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import { Trophy, Target, Zap, Clock, TrendingUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -129,7 +128,7 @@ export const GameProgressRing = memo(function GameProgressRing({
           />
           
           {/* Completion ring (main) */}
-          <motion.circle
+          <circle
             cx={center}
             cy={center}
             r={radius}
@@ -140,8 +139,9 @@ export const GameProgressRing = memo(function GameProgressRing({
             strokeDashoffset={strokeDashoffset}
             strokeLinecap="round"
             className="transition-all duration-1000 ease-out filter drop-shadow-sm"
-            initial={{ strokeDashoffset: circumference }}
-            animate={{ strokeDashoffset }}
+            style={{
+              strokeDashoffset: strokeDashoffset,
+            }}
           />
           
           {/* Gradient definition */}
@@ -156,12 +156,7 @@ export const GameProgressRing = memo(function GameProgressRing({
 
         {/* Center Content */}
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <motion.div
-            initial={{ scale: 0.8, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ delay: 0.5, duration: 0.5 }}
-            className="text-center"
-          >
+          <div className="text-center">
             <div className="flex items-center gap-1 mb-1">
               <Trophy className="h-3 w-3 text-yellow-500" />
               <span className="text-xl font-bold bg-gradient-to-r from-purple-500 to-blue-500 bg-clip-text text-transparent">
@@ -169,22 +164,15 @@ export const GameProgressRing = memo(function GameProgressRing({
               </span>
             </div>
             <p className="text-xs text-muted-foreground font-medium">Complete</p>
-          </motion.div>
+          </div>
         </div>
 
         {/* Floating indicators */}
-        <AnimatePresence>
-          {completionRate > 75 && (
-            <motion.div
-              initial={{ scale: 0, rotate: -180 }}
-              animate={{ scale: 1, rotate: 0 }}
-              exit={{ scale: 0, rotate: 180 }}
-              className="absolute -top-2 -right-2 h-6 w-6 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center shadow-lg"
-            >
-              <Zap className="h-3 w-3 text-white" />
-            </motion.div>
-          )}
-        </AnimatePresence>
+        {completionRate > 75 && (
+          <div className="absolute -top-2 -right-2 h-6 w-6 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center shadow-lg">
+            <Zap className="h-3 w-3 text-white" />
+          </div>
+        )}
       </div>
 
       {/* Stats Grid */}
@@ -259,11 +247,9 @@ const StatItem = memo(function StatItem({
       <p className="text-xs text-muted-foreground leading-tight">{subValue}</p>
       {progress !== undefined && (
         <div className="mt-1 h-1 bg-muted/30 rounded-full overflow-hidden">
-          <motion.div
-            initial={{ width: 0 }}
-            animate={{ width: `${progress}%` }}
-            transition={{ delay: 0.8, duration: 0.8, ease: "easeOut" }}
-            className="h-full bg-gradient-to-r from-emerald-400 to-emerald-600 rounded-full"
+          <div
+            className="h-full bg-gradient-to-r from-emerald-400 to-emerald-600 rounded-full transition-all duration-800 ease-out"
+            style={{ width: `${progress}%` }}
           />
         </div>
       )}

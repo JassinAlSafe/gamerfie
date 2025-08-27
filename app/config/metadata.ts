@@ -79,7 +79,7 @@ export const organizationStructuredData = {
   "@type": "Organization",
   "name": "Game Vault",
   "url": "https://gamersvaultapp.com",
-  "logo": "https://gamersvaultapp.com/logo.png",
+  "logo": "https://gamersvaultapp.com/logo.svg",
   "description": "Ultimate video game tracker and gaming community platform",
   "foundingDate": "2024",
   "contactPoint": {

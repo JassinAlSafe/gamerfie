@@ -12,6 +12,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { useAuthDialog } from "@/components/auth/AuthDialog";
+import { useCsrfProtectedFetch } from "@/hooks/use-csrf-token";
 import { cn } from "@/lib/utils";
 
 // API response post structure (flat fields)
@@ -43,6 +44,7 @@ export function ThreadPageClient({ thread, initialPosts }: ThreadPageClientProps
   const router = useRouter();
   const { user, isInitialized } = useAuthStore();
   const { openDialog, Dialog } = useAuthDialog();
+  const { fetchWithCsrf, isReady } = useCsrfProtectedFetch();
   const [posts, setPosts] = useState(initialPosts);
   const [newPostContent, setNewPostContent] = useState("");
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
@@ -55,14 +57,16 @@ export function ThreadPageClient({ thread, initialPosts }: ThreadPageClientProps
       return;
     }
 
+    if (!isReady) {
+      console.error("CSRF token not ready. Please try again.");
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
-      const response = await fetch("/api/forum/posts", {
+      const response = await fetchWithCsrf("/api/forum/posts", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
         body: JSON.stringify({
           thread_id: thread.id,
           content: newPostContent,
@@ -79,7 +83,8 @@ export function ThreadPageClient({ thread, initialPosts }: ThreadPageClientProps
         // Refresh the page to get updated data
         router.refresh();
       } else {
-        console.error("Failed to create post");
+        const errorData = await response.json().catch(() => ({}));
+        console.error("Failed to create post:", errorData.error || "Unknown error");
       }
     } catch (error) {
       console.error("Error creating post:", error);
@@ -97,12 +102,14 @@ export function ThreadPageClient({ thread, initialPosts }: ThreadPageClientProps
       return;
     }
 
+    if (!isReady) {
+      console.error("CSRF token not ready. Please try again.");
+      return;
+    }
+
     try {
-      const response = await fetch("/api/forum/likes", {
+      const response = await fetchWithCsrf("/api/forum/likes", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
         body: JSON.stringify({
           type,
           id,
@@ -112,6 +119,9 @@ export function ThreadPageClient({ thread, initialPosts }: ThreadPageClientProps
       if (response.ok) {
         // Refresh to get updated like counts
         router.refresh();
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        console.error("Error liking:", errorData.error || "Unknown error");
       }
     } catch (error) {
       console.error("Error liking:", error);

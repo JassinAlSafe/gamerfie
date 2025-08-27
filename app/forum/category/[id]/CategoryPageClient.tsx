@@ -12,6 +12,7 @@ import { useAuthDialog } from "@/components/auth/AuthDialog";
 import { ForumSearchBar } from "@/components/forum/ForumSearchBar";
 import { ForumThreadCard } from "@/components/forum/ForumThreadCard";
 import { CreateThreadDialog } from "@/components/forum/CreateThreadDialog";
+import { useCsrfProtectedFetch } from "@/hooks/use-csrf-token";
 import { cn } from "@/lib/utils";
 
 interface CategoryPageClientProps {
@@ -23,6 +24,7 @@ export function CategoryPageClient({ category, initialThreads }: CategoryPageCli
   const router = useRouter();
   const { user, isInitialized } = useAuthStore();
   const { openDialog, Dialog: AuthDialog } = useAuthDialog();
+  const { fetchWithCsrf } = useCsrfProtectedFetch();
   const [threads] = useState(initialThreads);
   const [searchQuery, setSearchQuery] = useState("");
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -50,7 +52,7 @@ export function CategoryPageClient({ category, initialThreads }: CategoryPageCli
     setIsCreatingThread(true);
     
     try {
-      const response = await fetch("/api/forum/threads", {
+      const response = await fetchWithCsrf("/api/forum/threads", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

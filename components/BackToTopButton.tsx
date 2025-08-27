@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { ArrowUp } from "lucide-react";
 
@@ -22,18 +21,19 @@ export default function BackToTopButton() {
   if (!isVisible) return null;
 
   return (
-    <motion.div
-      className="fixed bottom-8 right-8 z-50"
-      initial={{ opacity: 0, scale: 0 }}
-      animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 0 }}
+    <div
+      className="fixed bottom-8 right-8 z-50 transition-all duration-300 ease-in-out transform"
+      style={{
+        opacity: isVisible ? 1 : 0,
+        transform: `scale(${isVisible ? 1 : 0})`,
+      }}
     >
       <Button
         onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-        className="bg-purple-500 hover:bg-purple-600 text-white rounded-full p-4 shadow-lg"
+        className="bg-purple-500 hover:bg-purple-600 text-white rounded-full p-4 shadow-lg hover:scale-105 transition-transform duration-200"
       >
         <ArrowUp className="w-6 h-6" />
       </Button>
-    </motion.div>
+    </div>
   );
 }

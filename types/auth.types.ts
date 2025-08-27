@@ -28,6 +28,46 @@ export interface AuthState {
   isInitialized: boolean
 }
 
+// Password reset form state
+export interface PasswordResetState {
+  email: string
+  isLoading: boolean
+  emailSent: boolean
+  error: string | null
+  isValidEmail: boolean
+}
+
+// Password update form state
+export interface PasswordUpdateState {
+  password: string
+  confirmPassword: string
+  isLoading: boolean
+  success: boolean
+  error: string | null
+  strength: number
+  isValid: boolean
+  passwordsMatch: boolean
+}
+
+// Auth event handler types
+export interface AuthEventHandler {
+  event: 'PASSWORD_RECOVERY' | 'SIGNED_IN' | 'SIGNED_OUT' | 'TOKEN_REFRESHED'
+  session: Session | null
+}
+
+// Form validation state
+export interface PasswordResetFormData {
+  email: string
+}
+
+export interface PasswordUpdateFormData {
+  password: string
+  confirmPassword: string
+}
+
+// Password reset flow types
+export type PasswordResetStep = 'email' | 'email_sent' | 'reset_form' | 'success' | 'error'
+
 // User metadata for profile creation
 export interface UserMetadata {
   username?: string

@@ -17,19 +17,15 @@ export const TracingBeam = ({
   className?: string;
 }) => {
   const ref = useRef<HTMLDivElement>(null);
+  const [mounted, setMounted] = useState(false);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const [svgHeight, setSvgHeight] = useState(0);
+
+  // All hooks must be called unconditionally
   const { scrollYProgress } = useScroll({
     target: ref,
     offset: ["start start", "end end"],
   });
-
-  const contentRef = useRef<HTMLDivElement>(null);
-  const [svgHeight, setSvgHeight] = useState(0);
-
-  useEffect(() => {
-    if (contentRef.current) {
-      setSvgHeight(contentRef.current.offsetHeight);
-    }
-  }, []);
 
   const y1 = useSpring(
     useTransform(scrollYProgress, [0, 0.8], [50, svgHeight - 50]),
@@ -45,6 +41,22 @@ export const TracingBeam = ({
       damping: 90,
     }
   );
+
+  useEffect(() => {
+    setMounted(true);
+    if (contentRef.current) {
+      setSvgHeight(contentRef.current.offsetHeight);
+    }
+  }, []);
+
+  // Render without motion components on server/initial load
+  if (!mounted) {
+    return (
+      <div className={cn("relative w-full max-w-7xl mx-auto", className)}>
+        <div ref={contentRef}>{children}</div>
+      </div>
+    );
+  }
 
   return (
     <motion.div

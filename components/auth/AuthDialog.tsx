@@ -82,23 +82,23 @@ export function AuthDialog({
           </TabsContent>
         </Tabs>
 
-        <div className="text-xs text-muted-foreground text-center">
+        <div className="text-sm text-center p-4 bg-gradient-to-r from-slate-50/80 to-slate-100/80 dark:from-slate-800/50 dark:to-slate-700/50 rounded-lg border border-slate-200/50 dark:border-slate-600/30">
           {activeTab === "signin" ? (
-            <span>
+            <span className="text-slate-700 dark:text-slate-300">
               Don't have an account?{" "}
               <button
                 onClick={() => setActiveTab("signup")}
-                className="text-primary hover:underline"
+                className="text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 font-semibold underline underline-offset-2 hover:underline-offset-4 transition-all duration-200"
               >
                 Sign up here
               </button>
             </span>
           ) : (
-            <span>
+            <span className="text-slate-700 dark:text-slate-300">
               Already have an account?{" "}
               <button
                 onClick={() => setActiveTab("signin")}
-                className="text-primary hover:underline"
+                className="text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 font-semibold underline underline-offset-2 hover:underline-offset-4 transition-all duration-200"
               >
                 Sign in here
               </button>

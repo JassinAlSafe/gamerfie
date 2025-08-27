@@ -9,6 +9,7 @@ export const useAuthActions = () => {
   const updatePassword = useAuthStore((state) => state.updatePassword);
   const updateProfile = useAuthStore((state) => state.updateProfile);
   const uploadAvatar = useAuthStore((state) => state.uploadAvatar);
+  const onAuthStateChange = useAuthStore((state) => state.onAuthStateChange);
 
   return {
     signIn,
@@ -19,6 +20,7 @@ export const useAuthActions = () => {
     updatePassword,
     updateProfile,
     uploadAvatar,
+    onAuthStateChange,
   };
 };
 

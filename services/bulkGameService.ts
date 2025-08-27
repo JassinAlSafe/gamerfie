@@ -82,11 +82,9 @@ export class BulkGameService {
       
       console.log(`🔍 IGDB Query: ${query.trim()}`);
 
-      // Use the same proxy URL logic as IGDBService
-      const isServer = typeof window === 'undefined';
-      const proxyUrl = isServer 
-        ? 'http://localhost:3000/api/igdb-proxy'
-        : '/api/igdb-proxy';
+      // Always use relative URL for client-side requests
+      // This ensures it works regardless of which port the dev server is running on
+      const proxyUrl = '/api/igdb-proxy';
 
       const response = await fetch(proxyUrl, {
         method: 'POST',
