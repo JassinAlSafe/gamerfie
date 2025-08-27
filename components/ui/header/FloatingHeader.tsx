@@ -16,8 +16,7 @@ import { HeaderSkeleton } from "./header-skeleton";
 
 export default function FloatingHeader() {
   const { isInitialized, checkUser, user } = useAuthStore();
-  const { isMobileMenuOpen, toggleMobileMenu, isBetaBannerVisible } =
-    useUIStore();
+  const { isMobileMenuOpen, toggleMobileMenu } = useUIStore();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   // Use isInitialized from store directly - AuthInitializer handles initialization
@@ -85,13 +84,11 @@ export default function FloatingHeader() {
 
   return (
     <header
-      className={`fixed left-0 right-0 header-fixed transition-all duration-300 ${
-        isBetaBannerVisible ? "top-[44px] sm:top-[48px]" : "top-0"
-      }`}
+      className="header-positioned"
     >
       <div className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 header-backdrop">
         <div className="container mx-auto max-w-[1920px] header-container px-4 sm:px-6 md:px-6 lg:px-8">
-          <div className="relative flex header-height h-16 items-center justify-between">
+          <div className="relative flex items-center justify-between" style={{height: 'var(--header-height)'}}>
             <Link
               href="/"
               className="font-bold text-xl sm:text-xl md:text-2xl text-white/90 hover:text-white transition-colors duration-200 shrink-0"

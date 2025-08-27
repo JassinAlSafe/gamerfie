@@ -1,4 +1,4 @@
-@keyframes glow {
+@keyframes shadow-glow-pulse {
   0%, 100% {
     box-shadow: 0 0 5px currentColor, 0 0 10px currentColor;
   }
@@ -8,5 +8,5 @@
 }
 
 .shadow-glow {
-  animation: glow 2s ease-in-out infinite;
+  animation: shadow-glow-pulse 2s ease-in-out infinite;
 } 

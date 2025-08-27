@@ -1228,4 +1228,45 @@ export class UnifiedGameService {
       throw new Error(`Failed to fetch game details for ID: ${gameId}`);
     }
   }
+
+  /**
+   * Get filtered games using IGDB's advanced filtering capabilities
+   */
+  static async getFilteredGames(filters: any): Promise<SearchResult> {
+    try {
+      // Use IGDB's getGames method which has comprehensive filtering support
+      const result = await IGDBService.getGames(
+        filters.page || 1,
+        filters.limit || 24,
+        {
+          page: filters.page || 1,
+          limit: filters.limit || 24,
+          search: filters.search || '',
+          sortBy: filters.sortBy || 'popularity',
+          platformId: filters.platformId,
+          genreId: filters.genreId,
+          gameMode: filters.gameMode,
+          theme: filters.theme,
+          minRating: filters.minRating,
+          maxRating: filters.maxRating,
+          hasMultiplayer: filters.hasMultiplayer,
+          releaseYear: filters.releaseYear,
+          timeRange: filters.timeRange
+        }
+      );
+
+      return {
+        games: result.games as Game[],
+        total: result.totalCount,
+        page: result.currentPage,
+        pageSize: result.games.length,
+        hasNextPage: result.hasNextPage,
+        hasPreviousPage: result.hasPreviousPage,
+        sources: ['igdb']
+      };
+    } catch (error) {
+      console.error('Filtered games request failed:', error);
+      throw error;
+    }
+  }
 } 

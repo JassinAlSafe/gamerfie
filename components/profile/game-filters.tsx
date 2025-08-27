@@ -93,25 +93,31 @@ export function GameFilters({ onFilterChange }: GameFiltersProps) {
 
   const handleFilterChange = useCallback(
     (key: keyof GameFilters, value: string) => {
-      const newFilters = { ...filters, [key]: value };
-      setFilters(newFilters);
-      onFilterChange(newFilters);
+      setFilters(prevFilters => {
+        const newFilters = { ...prevFilters, [key]: value };
+        onFilterChange(newFilters);
+        return newFilters;
+      });
     },
-    [filters, onFilterChange]
+    [onFilterChange]
   );
 
   const handleSearchSubmit = useCallback(() => {
-    const newFilters = { ...filters, search: searchQuery };
-    setFilters(newFilters);
-    onFilterChange(newFilters);
-  }, [filters, searchQuery, onFilterChange]);
+    setFilters(prevFilters => {
+      const newFilters = { ...prevFilters, search: searchQuery };
+      onFilterChange(newFilters);
+      return newFilters;
+    });
+  }, [searchQuery, onFilterChange]);
 
   const handleSearchClear = useCallback(() => {
     setSearchQuery("");
-    const newFilters = { ...filters, search: "" };
-    setFilters(newFilters);
-    onFilterChange(newFilters);
-  }, [filters, onFilterChange]);
+    setFilters(prevFilters => {
+      const newFilters = { ...prevFilters, search: "" };
+      onFilterChange(newFilters);
+      return newFilters;
+    });
+  }, [onFilterChange]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -400,25 +406,19 @@ export function GameFilters({ onFilterChange }: GameFiltersProps) {
                 variant="link"
                 size="sm"
                 className="text-gray-400 hover:text-white"
-                onClick={() => {
-                  setFilters({
+                onClick={useCallback(() => {
+                  const resetFilters: GameFilters = {
                     status: "all",
                     sortBy: "recent",
                     sortOrder: "desc",
                     search: "",
                     platform: "all",
                     genre: "all",
-                  });
+                  };
+                  setFilters(resetFilters);
                   setSearchQuery("");
-                  onFilterChange({
-                    status: "all",
-                    sortBy: "recent",
-                    sortOrder: "desc",
-                    search: "",
-                    platform: "all",
-                    genre: "all",
-                  });
-                }}
+                  onFilterChange(resetFilters);
+                }, [onFilterChange])}
               >
                 Clear All
               </Button>

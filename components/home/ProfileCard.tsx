@@ -1,5 +1,5 @@
 import type { User } from "@supabase/supabase-js";
-import { Calendar, TrendingUp } from "lucide-react";
+import { TrendingUp } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -87,46 +87,45 @@ export const ProfileCard = memo(function ProfileCard({
                   </h2>
                   <Link 
                     href="/profile" 
-                    className="opacity-60 hover:opacity-100 transition-opacity p-1.5 rounded-md hover:bg-muted/50"
+                    className="opacity-0 group-hover:opacity-60 hover:!opacity-100 transition-all duration-200 p-1.5 rounded-md hover:bg-muted/50"
                     title="View Profile"
                   >
                     <TrendingUp className="h-4 w-4" />
                   </Link>
                 </div>
-                <p className="text-sm text-muted-foreground flex items-center gap-2">
-                  <Calendar className="h-3.5 w-3.5" />
+                <p className="text-sm text-muted-foreground">
                   Member since {formatMemberDate(user.created_at || "")}
                 </p>
               </div>
             </div>
             
             {/* Key Stats - Simplified */}
-            <div className="flex gap-8 flex-shrink-0">
-              <div className="text-right">
-                <div className="text-xl font-semibold text-foreground">{safeStats.totalGames}</div>
-                <div className="text-sm text-muted-foreground">Games</div>
+            <div className="flex gap-10 flex-shrink-0">
+              <div className="text-center">
+                <div className="text-2xl font-semibold text-foreground tabular-nums">{safeStats.totalGames}</div>
+                <div className="text-xs text-muted-foreground mt-0.5 uppercase tracking-wider">Games</div>
               </div>
-              <div className="text-right">
-                <div className="text-xl font-semibold text-foreground">{safeStats.completedGames}</div>
-                <div className="text-sm text-muted-foreground">Completed</div>
+              <div className="text-center">
+                <div className="text-2xl font-semibold text-foreground tabular-nums">{safeStats.completedGames}</div>
+                <div className="text-xs text-muted-foreground mt-0.5 uppercase tracking-wider">Completed</div>
               </div>
-              <div className="text-right">
-                <div className="text-xl font-semibold text-foreground">{friendsCount}</div>
-                <div className="text-sm text-muted-foreground">Friends</div>
+              <div className="text-center">
+                <div className="text-2xl font-semibold text-foreground tabular-nums">{friendsCount}</div>
+                <div className="text-xs text-muted-foreground mt-0.5 uppercase tracking-wider">Friends</div>
               </div>
             </div>
           </div>
           
           {/* Simplified Progress */}
           {safeStats.totalGames > 0 && (
-            <div className="mt-6 pt-4 border-t border-border/20">
-              <div className="flex items-center justify-between text-sm text-muted-foreground mb-2">
-                <span>Completion Progress</span>
-                <span>{Math.round((safeStats.completedGames / safeStats.totalGames) * 100)}%</span>
+            <div className="mt-6 pt-4 border-t border-border/10">
+              <div className="flex items-center justify-between text-sm mb-2">
+                <span className="text-muted-foreground">Completion Progress</span>
+                <span className="font-medium text-foreground tabular-nums">{Math.round((safeStats.completedGames / safeStats.totalGames) * 100)}%</span>
               </div>
-              <div className="h-1.5 bg-muted/30 rounded-full overflow-hidden">
+              <div className="h-1 bg-muted/20 rounded-full overflow-hidden">
                 <div 
-                  className="h-full bg-foreground/60 rounded-full transition-all duration-700 ease-out"
+                  className="h-full bg-foreground/70 rounded-full transition-all duration-700 ease-out"
                   style={{ 
                     width: `${Math.min((safeStats.completedGames / Math.max(safeStats.totalGames, 1)) * 100, 100)}%` 
                   }}

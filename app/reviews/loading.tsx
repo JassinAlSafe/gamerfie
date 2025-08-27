@@ -1,7 +1,8 @@
 "use client";
 
-import { ReviewSkeletons } from "@/components/reviews/ReviewCard/ReviewCardSkeleton";
+import React from "react";
 import { BookOpen } from "lucide-react";
+import { ReviewSkeletons } from "@/components/reviews/ReviewCard/ReviewCardSkeleton";
 
 export default function ReviewsLoading() {
   return (

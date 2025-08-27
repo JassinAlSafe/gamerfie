@@ -19,6 +19,10 @@ export interface UserSettings {
     sortOrder: 'asc' | 'desc';
     showPlaytime?: boolean;
     showRatings?: boolean;
+    autoTrackTime?: boolean;
+    showCovers?: boolean;
+    gamesPerPage?: number;
+    defaultFilter?: 'all' | 'playing' | 'completed' | 'want_to_play';
   };
   privacy?: {
     profileVisibility?: 'public' | 'friends' | 'private';
@@ -51,7 +55,11 @@ export const defaultSettings: UserSettings = {
     sortBy: 'recent',
     sortOrder: 'desc',
     showPlaytime: true,
-    showRatings: true
+    showRatings: true,
+    autoTrackTime: true,
+    showCovers: true,
+    gamesPerPage: 20,
+    defaultFilter: 'all'
   },
   privacy: {
     profileVisibility: 'public',

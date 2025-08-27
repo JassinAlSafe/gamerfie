@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, Suspense, lazy } from "react";
+import { useState, useCallback, Suspense, lazy } from "react";
 import { useProfile } from "@/hooks/Profile/use-profile";
 import { Button } from "@/components/ui/button";
 import { ProfileHeader } from "@/components/profile/profile-header";
@@ -11,12 +11,9 @@ import {
 } from "@/components/profile/game-filters";
 import { LoadingState } from "@/components/ui/loading-state";
 import { ErrorState } from "@/components/ui/error-state";
+import { GameLibraryErrorBoundary } from "@/components/profile/GameLibraryErrorBoundary";
 import { LayoutGrid, List } from "lucide-react";
 import { useSettingsStore } from "@/stores/useSettingsStore";
-// Commented out unused imports
-// import { getCoverImageUrl } from "@/utils/image-utils";
-// import { GameCoverImage } from "@/components/ui/game-cover-image";
-// import type { ProcessedGame } from "@/types";
 import type { GameStats } from "@/types/user";
 
 // Lazy load the GamesTab component
@@ -71,12 +68,10 @@ export default function GamesPage() {
     sortOrder: "desc",
   });
 
-  // Memoize filter change handler
-  const handleFilterChange = useMemo(() => {
-    return (newFilters: GameFiltersType) => {
-      setFilters(newFilters);
-    };
-  }, []);
+  // Properly memoize filter change handler with useCallback
+  const handleFilterChange = useCallback((newFilters: GameFiltersType) => {
+    setFilters(newFilters);
+  }, []); // setFilters is stable from useState
 
   // Safely access gameStats properties
   const totalGames =
@@ -157,9 +152,11 @@ export default function GamesPage() {
           {/* Filters and Content */}
           <div className="space-y-8">
             <GameFilters onFilterChange={handleFilterChange} />
-            <Suspense fallback={<GamesTabSkeleton />}>
-              <GamesTab filters={filters} />
-            </Suspense>
+            <GameLibraryErrorBoundary>
+              <Suspense fallback={<GamesTabSkeleton />}>
+                <GamesTab filters={filters} />
+              </Suspense>
+            </GameLibraryErrorBoundary>
           </div>
         </div>
       </div>

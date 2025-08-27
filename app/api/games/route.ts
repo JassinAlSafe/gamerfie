@@ -10,76 +10,114 @@ export const revalidate = 0;
 export type GameCategory = 'all' | 'popular' | 'trending' | 'upcoming' | 'recent' | 'classic';
 export type GameSortOption = 'popularity' | 'rating' | 'name' | 'release';
 
-// Platform mapping helper (currently unused)
-// function getPlatformId(platform: string): number | undefined {
-//   const platformMap: Record<string, number> = {
-//     'pc': 6,          // PC (Microsoft Windows)
-//     'ps4': 48,        // PlayStation 4
-//     'ps5': 167,       // PlayStation 5
-//     'xbox-one': 49,   // Xbox One
-//     'xbox-series': 169, // Xbox Series X|S
-//     'switch': 130,    // Nintendo Switch
-//     'ios': 131,       // iOS
-//     'android': 137,   // Android
-//   };
-//   
-//   return platformMap[platform];
-// }
+// Platform mapping helper
+function getPlatformId(platform: string): number | undefined {
+  const platformMap: Record<string, number> = {
+    'pc': 6,          // PC (Microsoft Windows)
+    'ps4': 48,        // PlayStation 4
+    'ps5': 167,       // PlayStation 5
+    'xbox-one': 49,   // Xbox One
+    'xbox-series': 169, // Xbox Series X|S
+    'switch': 130,    // Nintendo Switch
+    'ios': 131,       // iOS
+    'android': 137,   // Android
+  };
+  
+  return platformMap[platform];
+}
 
-// Genre mapping helper (currently unused)
-// function getGenreId(genre: string): number | undefined {
-//   const genreMap: Record<string, number> = {
-//     'action': 31,      // Action
-//     'adventure': 32,   // Adventure
-//     'rpg': 12,         // Role-playing (RPG)
-//     'shooter': 5,      // Shooter
-//     'strategy': 15,    // Strategy
-//     'simulation': 13,  // Simulator
-//     'sports': 14,      // Sport
-//     'racing': 10,      // Racing
-//     'fighting': 4,     // Fighting
-//     'puzzle': 9,       // Puzzle
-//     'platform': 8,     // Platform
-//     'indie': 32,       // Indie (using Adventure as fallback)
-//   };
-//   
-//   return genreMap[genre];
-// }
+// Genre mapping helper (updated with correct IGDB IDs)
+function getGenreId(genre: string): number | undefined {
+  const genreMap: Record<string, number> = {
+    'adventure': 31,   // Adventure
+    'fighting': 4,     // Fighting
+    'rpg': 12,         // Role-playing (RPG)
+    'shooter': 5,      // Shooter
+    'strategy': 15,    // Strategy
+    'simulation': 13,  // Simulator
+    'sports': 14,      // Sport
+    'racing': 10,      // Racing
+    'puzzle': 9,       // Puzzle
+    'platform': 8,     // Platform
+    'hack-slash': 25,  // Hack and slash/Beat 'em up
+    'indie': 32,       // Indie
+  };
+  
+  return genreMap[genre];
+}
 
-// Game mode mapping helper (currently unused)
-// function getGameModeId(mode: string): number | undefined {
-//   const gameModeMap: Record<string, number> = {
-//     'single-player': 1,    // Single player
-//     'multiplayer': 2,      // Multiplayer
-//     'co-op': 3,           // Co-operative
-//     'split-screen': 4,     // Split screen
-//     'mmo': 5,             // Massively Multiplayer Online (MMO)    
-//     'battle-royale': 6,   // Battle Royale
-//   };
-//   
-//   return gameModeMap[mode];
-// }
+// Game mode mapping helper
+function getGameModeId(mode: string): number | undefined {
+  const gameModeMap: Record<string, number> = {
+    'single-player': 1,    // Single player
+    'multiplayer': 2,      // Multiplayer
+    'co-op': 3,           // Co-operative
+    'split-screen': 4,     // Split screen
+    'mmo': 5,             // Massively Multiplayer Online (MMO)    
+    'battle-royale': 6,   // Battle Royale
+  };
+  
+  return gameModeMap[mode];
+}
 
-// Theme mapping helper (currently unused)
-// function getThemeId(theme: string): number | undefined {
-//   const themeMap: Record<string, number> = {
-//     'action': 1,          // Action
-//     'fantasy': 17,        // Fantasy
-//     'sci-fi': 18,         // Science fiction
-//     'horror': 19,         // Horror
-//     'thriller': 20,       // Thriller
-//     'survival': 21,       // Survival
-//     'historical': 22,     // Historical
-//     'stealth': 23,        // Stealth
-//     'comedy': 27,         // Comedy
-//     'mystery': 28,        // Mystery
-//     'romance': 33,        // Romance
-//     'war': 35,           // Warfare
-//     'kids': 43,          // Kids
-//   };
-//   
-//   return themeMap[theme];
-// }
+// Theme mapping helper
+function getThemeId(theme: string): number | undefined {
+  const themeMap: Record<string, number> = {
+    'action': 1,          // Action
+    'fantasy': 17,        // Fantasy
+    'sci-fi': 18,         // Science fiction
+    'horror': 19,         // Horror
+    'thriller': 20,       // Thriller
+    'survival': 21,       // Survival
+    'historical': 22,     // Historical
+    'stealth': 23,        // Stealth
+    'comedy': 27,         // Comedy
+    'mystery': 28,        // Mystery
+    'romance': 33,        // Romance
+    'war': 35,           // Warfare
+    'kids': 43,          // Kids
+  };
+  
+  return themeMap[theme];
+}
+
+// Year range helper
+function getYearRange(year: string): { start: number; end: number } {
+  const now = Math.floor(Date.now() / 1000);
+  
+  switch (year) {
+    case '2024':
+      return {
+        start: Math.floor(new Date(2024, 0, 1).getTime() / 1000),
+        end: Math.floor(new Date(2024, 11, 31, 23, 59, 59).getTime() / 1000)
+      };
+    case '2023':
+      return {
+        start: Math.floor(new Date(2023, 0, 1).getTime() / 1000),
+        end: Math.floor(new Date(2023, 11, 31, 23, 59, 59).getTime() / 1000)
+      };
+    case '2020s':
+      return {
+        start: Math.floor(new Date(2020, 0, 1).getTime() / 1000),
+        end: Math.floor(new Date(2029, 11, 31, 23, 59, 59).getTime() / 1000)
+      };
+    default:
+      // Try to parse as a single year
+      if (!isNaN(parseInt(year))) {
+        const yearNum = parseInt(year);
+        return {
+          start: Math.floor(new Date(yearNum, 0, 1).getTime() / 1000),
+          end: Math.floor(new Date(yearNum, 11, 31, 23, 59, 59).getTime() / 1000)
+        };
+      }
+      // Fallback to current year
+      const currentYear = new Date().getFullYear();
+      return {
+        start: Math.floor(new Date(currentYear, 0, 1).getTime() / 1000),
+        end: Math.floor(new Date(currentYear, 11, 31, 23, 59, 59).getTime() / 1000)
+      };
+  }
+}
 
 interface GameResponse {
   games: Game[];
@@ -108,21 +146,22 @@ export async function GET(request: NextRequest) {
   const genre = searchParams.get('genre') || 'all';
   const category = searchParams.get('category') || 'all';
   const year = searchParams.get('year') || 'all';
-  // const sortBy = searchParams.get('sort') || 'popularity';
+  const sortBy = searchParams.get('sort') || 'popularity';
   const search = searchParams.get('search') || '';
   const timeRange = searchParams.get('timeRange') || 'all';
   const source = searchParams.get('source') || 'auto';
   
-  // Enhanced filter parameters (currently unused)
-  // const gameMode = searchParams.get('gameMode') || 'all';
-  // const theme = searchParams.get('theme') || 'all';
-  // const minRating = searchParams.get('minRating');
-  // const maxRating = searchParams.get('maxRating');
-  // const hasMultiplayer = searchParams.get('multiplayer') === 'true';
+  // Enhanced filter parameters
+  const gameMode = searchParams.get('gameMode') || 'all';
+  const theme = searchParams.get('theme') || 'all';
+  const minRating = searchParams.get('minRating');
+  const maxRating = searchParams.get('maxRating');
+  const hasMultiplayer = searchParams.get('multiplayer') === 'true';
 
   // IGDB cache duration - mobile gets longer cache to reduce network usage
   const isPopularGamesRequest = !search && platform === 'all' && genre === 'all' && 
-                                category === 'all' && year === 'all' && timeRange === 'all';
+                                category === 'all' && year === 'all' && timeRange === 'all' &&
+                                gameMode === 'all' && theme === 'all' && !minRating && !maxRating && !hasMultiplayer;
   
   // Longer cache for mobile devices to reduce network requests
   let cacheDuration = isPopularGamesRequest ? 900 : 300; // 15min for popular, 5min for searches
@@ -132,27 +171,31 @@ export async function GET(request: NextRequest) {
 
 
   try {
-    // Build filters for IGDB using the correct interface structure (currently unused)
-    // const filters = {
-    //   page,
-    //   limit,
-    //   search: search.trim(),
-    //   sortBy: sortBy as 'popularity' | 'rating' | 'name' | 'release',
-    //   ...(platform !== 'all' && { platformId: getPlatformId(platform) }),
-    //   ...(genre !== 'all' && { genreId: getGenreId(genre) }),
-    //   ...(gameMode !== 'all' && { gameMode: getGameModeId(gameMode) }),
-    //   ...(theme !== 'all' && { theme: getThemeId(theme) }),
-    //   ...(minRating && { minRating: parseFloat(minRating) }),
-    //   ...(maxRating && { maxRating: parseFloat(maxRating) }),
-    //   ...(hasMultiplayer && { hasMultiplayer: true }),
-    //   ...(year !== 'all' && {
-    //     releaseYear: {
-    //       start: Math.floor(new Date(parseInt(year), 0, 1).getTime() / 1000),
-    //       end: Math.floor(new Date(parseInt(year), 11, 31, 23, 59, 59).getTime() / 1000)
-    //     }
-    //   }),
-    //   ...(timeRange !== 'all' && { timeRange: timeRange as 'new_releases' | 'upcoming' | 'classic' })
-    // };
+    // Build filters for IGDB using the correct interface structure
+    const filters = {
+      page,
+      limit,
+      search: search.trim(),
+      sortBy: sortBy as 'popularity' | 'rating' | 'name' | 'release',
+      // Use platform/genre IDs directly from UI (they are already IGDB IDs)
+      ...(platform !== 'all' && !isNaN(parseInt(platform)) && { platformId: parseInt(platform) }),
+      ...(genre !== 'all' && !isNaN(parseInt(genre)) && { genreId: parseInt(genre) }),
+      ...(gameMode !== 'all' && { gameMode: getGameModeId(gameMode) }),
+      ...(theme !== 'all' && { theme: getThemeId(theme) }),
+      ...(minRating && { minRating: parseFloat(minRating) }),
+      ...(maxRating && { maxRating: parseFloat(maxRating) }),
+      ...(hasMultiplayer && { hasMultiplayer: true }),
+      // Only add year filter if explicitly set by user, not auto-added by time range
+      ...(year !== 'all' && year !== '2023' && {
+        releaseYear: getYearRange(year)
+      }),
+      ...(timeRange !== 'all' && { timeRange: timeRange as 'new_releases' | 'upcoming' | 'classic' | 'recent' | 'this-year' | 'last-year' })
+    };
+
+    // Check if we have any filters (excluding just search and category)
+    const hasFilters = platform !== 'all' || genre !== 'all' || year !== 'all' || 
+                       timeRange !== 'all' || gameMode !== 'all' || theme !== 'all' ||
+                       minRating || maxRating || hasMultiplayer;
 
     // Handle category-based requests using UnifiedGameService for smart source selection
     let games: Game[] = [];
@@ -163,14 +206,9 @@ export async function GET(request: NextRequest) {
     let hasPreviousPage = false;
     let actualSource = 'igdb';
     
-    if (search.trim()) {
-      // Use UnifiedGameService for search-based requests (has search term)
-      const searchResult = await UnifiedGameService.searchGames(
-        search.trim(), 
-        page, 
-        limit,
-        { source: source as any }
-      );
+    if (hasFilters || search.trim()) {
+      // Use filtered games approach when we have any filters or search
+      const searchResult = await UnifiedGameService.getFilteredGames(filters);
       
       games = searchResult.games;
       totalCount = searchResult.total;
@@ -178,7 +216,7 @@ export async function GET(request: NextRequest) {
       hasNextPage = searchResult.hasNextPage;
       hasPreviousPage = searchResult.hasPreviousPage;
       totalPages = Math.ceil(totalCount / limit);
-      actualSource = source === 'hybrid' ? 'hybrid' : (searchResult.sources[0] || 'igdb');
+      actualSource = searchResult.sources[0] || 'igdb';
       
     } else if (category !== 'all') {
       // Use UnifiedGameService for specific category requests

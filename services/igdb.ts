@@ -15,7 +15,7 @@ interface GameFilters {
     start: number;
     end: number;
   };
-  timeRange?: 'new_releases' | 'upcoming' | 'classic';
+  timeRange?: 'new_releases' | 'upcoming' | 'classic' | 'recent' | 'this-year' | 'last-year';
   // Enhanced filtering options based on IGDB API
   minRating?: number;
   maxRating?: number;
@@ -216,30 +216,24 @@ export class IGDBService {
       // Check if we have specific filters
       const hasSpecificFilters = filters?.search || filters?.platformId || filters?.genreId || filters?.releaseYear;
       
+      // For all filtering, use minimal restrictive conditions to avoid empty results
+      conditions.push('cover != null');              // Always require cover
       
-      // For trending/rating-first approach, we need games with rating data
+      // Only add restrictive conditions when NOT filtering (for popular games browsing)
       if (!hasSpecificFilters) {
-        // Add minimal quality conditions to get engaging, trending games
-        conditions.push('total_rating_count > 3');    // Games with some community engagement
-        conditions.push('cover != null');              // Ensure games have cover images
-      } else {
-        // Add basic quality filters when searching/filtering
-        if (!filters?.search) {
-          // Only add restrictive filters when NOT searching
-          conditions.push('version_parent = null');    // No duplicate editions
-          conditions.push('status = 0');               // Released games only
-        }
-        conditions.push('cover != null');              // Always require cover
+        conditions.push('total_rating_count > 3');    // Games with some community engagement for trending
       }
       
       // Add platform filter - use proper IGDB syntax for array membership
       if (filters?.platformId) {
-        conditions.push(`platforms = (${filters.platformId})`);
+        const platformCondition = `platforms = (${filters.platformId})`;
+        conditions.push(platformCondition);
       }
 
       // Add genre filter - use proper IGDB syntax for array membership
       if (filters?.genreId) {
-        conditions.push(`genres = (${filters.genreId})`);
+        const genreCondition = `genres = (${filters.genreId})`;
+        conditions.push(genreCondition);
       }
 
       // Add rating filters
@@ -282,15 +276,29 @@ export class IGDBService {
       if (filters?.timeRange) {
         const now = Math.floor(Date.now() / 1000);
         const sixMonthsAgo = now - (180 * 24 * 60 * 60);
+        const oneYearAgo = now - (365 * 24 * 60 * 60);
+        const thisYearStart = Math.floor(new Date(new Date().getFullYear(), 0, 1).getTime() / 1000);
+        const lastYearStart = Math.floor(new Date(new Date().getFullYear() - 1, 0, 1).getTime() / 1000);
+        const lastYearEnd = Math.floor(new Date(new Date().getFullYear() - 1, 11, 31, 23, 59, 59).getTime() / 1000);
         const threeMonthsAhead = now + (90 * 24 * 60 * 60);
         const fiveYearsAgo = now - (5 * 365 * 24 * 60 * 60);
 
         switch (filters.timeRange) {
+          case 'recent':
           case 'new_releases':
+            // Recent: games released in the last 6 months, but not future releases
             conditions.push(`first_release_date >= ${sixMonthsAgo} & first_release_date <= ${now}`);
             break;
           case 'upcoming':
             conditions.push(`first_release_date > ${now} & first_release_date <= ${threeMonthsAhead}`);
+            break;
+          case 'this-year':
+            // This year: all games released in current year (2025), up to today
+            const thisYearEnd = Math.floor(new Date(new Date().getFullYear(), 11, 31, 23, 59, 59).getTime() / 1000);
+            conditions.push(`first_release_date >= ${thisYearStart} & first_release_date <= ${Math.min(now, thisYearEnd)}`);
+            break;
+          case 'last-year':
+            conditions.push(`first_release_date >= ${lastYearStart} & first_release_date <= ${lastYearEnd}`);
             break;
           case 'classic':
             conditions.push(`first_release_date < ${fiveYearsAgo}`);
@@ -315,9 +323,14 @@ export class IGDBService {
           sortBy = 'first_release_date desc';
           break;
         default:
-          // Default: Show most engaging games first (high community engagement = trending)
-          // This naturally surfaces popular/trending games
-          sortBy = 'total_rating_count desc';
+          // When rating filters are applied, sort by rating to show best-rated games in that range first
+          if (filters?.minRating || filters?.maxRating) {
+            sortBy = 'total_rating desc';
+          } else {
+            // Default: Show most engaging games first (high community engagement = trending)
+            // This naturally surfaces popular/trending games
+            sortBy = 'total_rating_count desc';
+          }
       }
 
       // For general browsing without specific filters, use a conservative estimate
@@ -842,11 +855,12 @@ export class IGDBService {
 
   static async getPlatforms() {
     try {
+      // Fetch specific popular gaming platforms by their known IDs
       const query = `
         fields name, slug;
-        where category = (1,2,3,4,5,6);
+        where id = (6,130,167,169,48,49,37,38,39,46,41,7,8,9,11,12,21,23,24,131,34,137,14,18,19,20,5,4,3);
         sort name asc;
-        limit 50;
+        limit 40;
       `;
 
       const response = await fetch(this.getProxyUrl(), {
@@ -879,6 +893,7 @@ export class IGDBService {
 
   static async getGenres() {
     try {
+      // Fetch all available genres to find the correct IDs
       const query = `
         fields name, slug;
         sort name asc;

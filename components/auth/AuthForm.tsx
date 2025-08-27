@@ -6,10 +6,11 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Loader2, Eye, EyeOff, Check, UserCheck } from "lucide-react";
+import { FloatingInput } from "@/components/ui/floating-input";
+import { FloatingPasswordInput } from "@/components/ui/floating-password-input";
+import { Loader2, Check, UserCheck } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { useAuthActions } from "@/hooks/useAuthOptimized";
 import { cn } from "@/lib/utils";
@@ -51,7 +52,6 @@ interface ValidationErrors {
 export function AuthForm({ mode, onSuccess }: AuthFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [submitPhase, setSubmitPhase] = useState<'idle' | 'validating' | 'authenticating' | 'redirecting'>('idle');
-  const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState<FormData>({
     email: "",
     password: "",
@@ -557,11 +557,11 @@ export function AuthForm({ mode, onSuccess }: AuthFormProps) {
 
       <form onSubmit={handleSubmit} className="grid gap-4 auth-form-slide-in">
         <div className="grid gap-2">
-          <div className="floating-input-group">
-            <Input
+          <div className="relative">
+            <FloatingInput
               id="email"
               name="email"
-              placeholder={formData.email ? "" : "name@example.com"}
+              label="Email address"
               type="email"
               autoCapitalize="none"
               autoComplete="email"
@@ -570,21 +570,11 @@ export function AuthForm({ mode, onSuccess }: AuthFormProps) {
               value={formData.email}
               onChange={handleInputChange}
               onBlur={handleBlur}
-              className={cn(
-                "input-custom floating-input h-12",
-                formData.email && "pt-2",
-                errors.email &&
-                  touched.email &&
-                  "border-destructive focus:border-destructive"
-              )}
+              error={errors.email}
+              touched={touched.email}
+              className="input-custom"
               required
             />
-            <Label htmlFor="email" className={cn(
-              "floating-label text-sm font-medium text-muted-foreground",
-              (formData.email || touched.email) && "floating-label-up"
-            )}>
-              Email address
-            </Label>
             {/* Smart user detection indicators */}
             {isDetecting && (
               <Loader2 className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 animate-spin text-blue-500" />
@@ -656,11 +646,11 @@ export function AuthForm({ mode, onSuccess }: AuthFormProps) {
         {mode === "signup" && (
           <>
             <div className="grid gap-2">
-              <div className="floating-input-group">
-                <Input
+              <div className="relative">
+                <FloatingInput
                   id="username"
                   name="username"
-                  placeholder={formData.username ? "" : "Choose a unique username"}
+                  label="Username"
                   type="text"
                   autoCapitalize="none"
                   autoComplete="username"
@@ -669,21 +659,11 @@ export function AuthForm({ mode, onSuccess }: AuthFormProps) {
                   value={formData.username}
                   onChange={handleInputChange}
                   onBlur={handleBlur}
-                  className={cn(
-                    "input-custom floating-input h-12",
-                    formData.username && "pt-2",
-                    errors.username &&
-                      touched.username &&
-                      "border-destructive focus:border-destructive"
-                  )}
+                  error={errors.username}
+                  touched={touched.username}
+                  className="input-custom"
                   required
                 />
-                <Label htmlFor="username" className={cn(
-                  "floating-label text-sm font-medium text-muted-foreground",
-                  (formData.username || touched.username) && "floating-label-up"
-                )}>
-                  Username
-                </Label>
                 {/* Username availability indicator */}
                 {checkingUsername && (
                   <Loader2 className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 animate-spin text-blue-500" />
@@ -716,11 +696,11 @@ export function AuthForm({ mode, onSuccess }: AuthFormProps) {
             </div>
 
             <div className="grid gap-2">
-              <div className="floating-input-group">
-                <Input
+              <div className="relative">
+                <FloatingInput
                   id="displayName"
                   name="displayName"
-                  placeholder={formData.displayName ? "" : "Enter your display name"}
+                  label="Display Name"
                   type="text"
                   autoCapitalize="words"
                   autoComplete="name"
@@ -728,21 +708,11 @@ export function AuthForm({ mode, onSuccess }: AuthFormProps) {
                   value={formData.displayName}
                   onChange={handleInputChange}
                   onBlur={handleBlur}
-                  className={cn(
-                    "input-custom floating-input h-12",
-                    formData.displayName && "pt-2",
-                    errors.displayName &&
-                      touched.displayName &&
-                      "border-destructive focus:border-destructive"
-                  )}
+                  error={errors.displayName}
+                  touched={touched.displayName}
+                  className="input-custom"
                   required
                 />
-                <Label htmlFor="displayName" className={cn(
-                  "floating-label text-sm font-medium text-muted-foreground",
-                  (formData.displayName || touched.displayName) && "floating-label-up"
-                )}>
-                  Display Name
-                </Label>
                 {!errors.displayName &&
                   touched.displayName &&
                   formData.displayName && (
@@ -769,52 +739,22 @@ export function AuthForm({ mode, onSuccess }: AuthFormProps) {
               </Link>
             </div>
           )}
-          <div className="floating-input-group">
-            <Input
-              id="password"
-              name="password"
-              type={showPassword ? "text" : "password"}
-              placeholder={
-                formData.password ? "" : mode === "signin"
-                  ? "Enter your password"
-                  : "Create a secure password"
-              }
-              autoCapitalize="none"
-              autoComplete={
-                mode === "signin" ? "current-password" : "new-password"
-              }
-              autoCorrect="off"
-              disabled={isLoading}
-              value={formData.password}
-              onChange={handleInputChange}
-              onBlur={handleBlur}
-              className={cn(
-                "input-custom floating-input h-12 pr-12",
-                formData.password && "pt-2",
-                errors.password &&
-                  touched.password &&
-                  "border-destructive focus:border-destructive"
-              )}
-              required
-            />
-            <Label htmlFor="password" className={cn(
-              "floating-label text-sm font-medium text-muted-foreground",
-              (formData.password || touched.password) && "floating-label-up"
-            )}>
-              Password
-            </Label>
-            <button
-              type="button"
-              className="absolute right-3 top-1/2 transform -translate-y-1/2 p-1 hover:bg-muted/50 rounded-md transition-colors duration-200"
-              onClick={() => setShowPassword(!showPassword)}
-            >
-              {showPassword ? (
-                <EyeOff className="h-4 w-4 text-muted-foreground hover:text-foreground transition-colors duration-200" />
-              ) : (
-                <Eye className="h-4 w-4 text-muted-foreground hover:text-foreground transition-colors duration-200" />
-              )}
-            </button>
-          </div>
+          <FloatingPasswordInput
+            id="password"
+            name="password"
+            label="Password"
+            autoCapitalize="none"
+            autoComplete={mode === "signin" ? "current-password" : "new-password"}
+            autoCorrect="off"
+            disabled={isLoading}
+            value={formData.password}
+            onChange={handleInputChange}
+            onBlur={handleBlur}
+            error={errors.password}
+            touched={touched.password}
+            className="input-custom"
+            required
+          />
           {errors.password && touched.password && (
             <p className="text-xs text-destructive">{errors.password}</p>
           )}

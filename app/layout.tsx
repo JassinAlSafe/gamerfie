@@ -76,9 +76,7 @@ export default function RootLayout({
   }, [initTheme]);
 
   const mainPaddingClass = !isAuthPage
-    ? `flex-1 transition-all duration-300 ${
-        isBetaBannerVisible ? "pt-[120px] sm:pt-[116px]" : "pt-16"
-      }`
+    ? `flex-1 main-content-with-header`
     : "flex-1";
 
   return (
@@ -183,7 +181,7 @@ export default function RootLayout({
         />
       </head>
       <body
-        className={`${inter.className} ${geistSans.variable} ${geistMono.variable}`}
+        className={`${inter.className} ${geistSans.variable} ${geistMono.variable} ${isBetaBannerVisible ? 'beta-banner-visible' : ''}`}
       >
         <QueryClientProvider client={queryClient}>
           <SupabaseProvider initialSession={null}>
