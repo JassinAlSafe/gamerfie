@@ -56,14 +56,16 @@ export const metadata: Metadata = {
 
 export default async function AllGamesPage() {
   return (
-    <Suspense
-      fallback={
-        <div className="flex items-center justify-center min-h-[400px]">
-          <Loader2 className="h-8 w-8 animate-spin text-purple-500" />
-        </div>
-      }
-    >
-      <AllGamesClient />
-    </Suspense>
+    <div className="pt-16">
+      <Suspense
+        fallback={
+          <div className="flex items-center justify-center min-h-[400px]">
+            <Loader2 className="h-8 w-8 animate-spin text-purple-500" />
+          </div>
+        }
+      >
+        <AllGamesClient />
+      </Suspense>
+    </div>
   );
 }

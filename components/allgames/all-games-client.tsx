@@ -61,14 +61,18 @@ export default function AllGamesClient() {
 
 
   return (
-    <>
-      {/* Header - Semi-sticky with better UX */}
-      <header className="sticky top-0 z-50 bg-gray-900/95 backdrop-blur-lg border-b border-gray-800/50">
+    <div className="w-full pt-0">
+      {/* Since main element padding isn't working, add explicit spacing */}
+      {/* This accounts for the 4rem (64px) header height */}
+      <div className="h-0" aria-hidden="true" />
+      
+      {/* Games Header */}
+      <div className="bg-gray-900/95 backdrop-blur-lg border-b border-gray-800/50">
         <GamesHeader games={allGames} />
-      </header>
+      </div>
 
-      {/* Main content - Natural scroll */}
-      <main className="min-h-screen bg-gradient-to-b from-gray-900/50 via-gray-950 to-gray-950">
+      {/* Main content - Direct content without wrapper */}
+      <div className="bg-gradient-to-b from-gray-900/50 via-gray-950 to-gray-950 min-h-screen">
         <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6">
 
           {/* Games Grid */}
@@ -118,7 +122,7 @@ export default function AllGamesClient() {
             )}
           </div>
         </div>
-      </main>
-    </>
+      </div>
+    </div>
   );
 }

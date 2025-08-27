@@ -1,5 +1,9 @@
 import { AuthForm } from "@/components/auth/AuthForm";
 
-export function SignInForm() {
-  return <AuthForm mode="signin" />;
+interface SignInFormProps {
+  onSuccess?: () => void;
+}
+
+export function SignInForm({ onSuccess }: SignInFormProps) {
+  return <AuthForm mode="signin" onSuccess={onSuccess} />;
 }

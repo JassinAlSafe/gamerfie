@@ -1,9 +1,13 @@
+/* Define CSS layers for proper cascade management */
+@layer accessibility-overrides, reduced-motion-overrides, mobile-optimizations, base, components, utilities;
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @import "../styles/responsive.css";
 @import "./mobile-touch-optimizations.css";
+@import "../styles/apple-animations.css";
 
 /* Custom responsive breakpoint for extra small screens */
 @media (min-width: 475px) {
@@ -16,9 +20,39 @@
 }
 
 :root {
+  /* ===== UNIFIED HSL COLOR SYSTEM ===== */
+  
+  /* Core brand colors */
+  --brand-purple-h: 262;
+  --brand-purple-s: 83%;
+  --brand-purple-l: 58%;
+  --brand-blue-h: 218;
+  --brand-blue-s: 87%;
+  --brand-blue-l: 61%;
+  
+  /* Semantic color aliases using HSL */
+  --primary: hsl(var(--brand-purple-h) var(--brand-purple-s) var(--brand-purple-l));
+  --primary-hover: hsl(var(--brand-purple-h) var(--brand-purple-s) calc(var(--brand-purple-l) - 8%));
+  --accent-blue: hsl(var(--brand-blue-h) var(--brand-blue-s) var(--brand-blue-l));
+  
+  /* Background system */
+  --bg-primary-hsl: 218 23% 8%;      /* #111827 equivalent */
+  --bg-secondary-hsl: 217 19% 7%;    /* #0B0F19 equivalent */
+  --foreground-hsl: 0 0% 100%;       /* White equivalent */
+  
+  /* Legacy RGB variables - DEPRECATED - use HSL equivalents above */
   --foreground-rgb: 255, 255, 255;
   --background-start-rgb: 17, 24, 39;
   --background-end-rgb: 11, 15, 25;
+  
+  /* Header architecture variables */
+  --header-height: 4rem;
+  --beta-banner-height: 44px;
+  --beta-banner-height-sm: 48px;
+  
+  /* Dynamic header positioning */
+  --header-offset-top: 0px;
+  --main-content-padding: var(--header-height);
 }
 
 /* Force dark mode by default */
@@ -30,21 +64,21 @@ body {
   min-height: 100vh;
   margin: 0;
   padding: 0;
-  color: rgb(var(--foreground-rgb));
+  color: hsl(var(--foreground-hsl));
   background: linear-gradient(
       to bottom,
       transparent,
-      rgb(var(--background-end-rgb))
+      hsl(var(--bg-secondary-hsl))
     )
-    rgb(var(--background-start-rgb));
+    hsl(var(--bg-primary-hsl));
 }
 
 .shadow-text {
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
 }
 
-/* Animation for sparkles */
-@keyframes glow {
+/* Animation for sparkle effects */
+@keyframes sparkle {
   0% {
     opacity: 0;
     transform: scale(0);
@@ -59,13 +93,13 @@ body {
   }
 }
 
-.animate-glow {
-  animation: glow 1s ease-in-out infinite;
-}
+/* Animation utility moved to @layer utilities section */
 
-/* Smooth scrolling for the entire page */
+/* Modern scroll behavior with header offset support */
 html {
   scroll-behavior: smooth;
+  /* Modern CSS property for fixed header scroll offset */
+  scroll-padding-top: calc(var(--header-height) + var(--header-offset-top));
 }
 
 /* Enhanced auth form animations */
@@ -77,47 +111,7 @@ html {
   @apply ring-2 ring-purple-500/20 border-purple-500 transform scale-[1.02];
 }
 
-/* Floating label styles */
-.floating-input-group {
-  @apply relative;
-}
-
-.floating-input {
-  @apply placeholder-transparent;
-}
-
-.floating-input:not(:placeholder-shown) {
-  @apply placeholder-transparent;
-}
-
-.floating-label {
-  @apply absolute left-3 transition-all duration-200 ease-in-out pointer-events-none text-sm font-medium text-muted-foreground;
-  top: 50%;
-  transform: translateY(-50%);
-  z-index: 1;
-}
-
-/* Labels float up when input is focused OR has value */
-.floating-input:focus ~ .floating-label,
-.floating-label-up {
-  @apply text-xs text-purple-600 dark:text-purple-400;
-  top: -10px !important;
-  left: 12px !important;
-  padding: 0 6px !important;
-  transform: translateY(0) !important;
-  z-index: 2 !important;
-  background: hsl(var(--background)) !important;
-  border-radius: 2px !important;
-}
-
-/* Force hide placeholder when input has value */
-.floating-input[value]:not([value=""]) {
-  color: hsl(var(--foreground));
-}
-
-.floating-input[value]:not([value=""])::placeholder {
-  opacity: 0;
-}
+/* Simplified floating label system */
 
 /* Enhanced button hover effects */
 .auth-button {
@@ -133,9 +127,7 @@ html {
   @apply opacity-10;
 }
 
-.auth-form-slide-in {
-  animation: slideInAuth 0.4s ease-out;
-}
+/* Use .animate-auth-slide instead */
 
 @keyframes slideInAuth {
   from {
@@ -148,9 +140,7 @@ html {
   }
 }
 
-.success-pulse {
-  animation: successPulse 0.6s ease-out;
-}
+/* Use .animate-success-pulse instead */
 
 @keyframes successPulse {
   0% {
@@ -258,7 +248,13 @@ html {
 
 @layer components {
   .btn-primary {
-    @apply bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded transition duration-200;
+    background-color: var(--primary);
+    color: hsl(var(--foreground-hsl));
+    @apply font-bold py-2 px-4 rounded transition duration-200;
+  }
+  
+  .btn-primary:hover {
+    background-color: var(--primary-hover);
   }
 }
 
@@ -269,6 +265,74 @@ html {
 
   .black-gradient {
     @apply bg-gradient-to-b from-background to-transparent;
+  }
+  
+  /* ===== HSL COLOR UTILITIES ===== */
+  .bg-brand-primary {
+    background-color: var(--primary);
+  }
+  
+  .bg-brand-primary-hover:hover {
+    background-color: var(--primary-hover);
+  }
+  
+  .text-brand-primary {
+    color: var(--primary);
+  }
+  
+  .border-brand-primary {
+    border-color: var(--primary);
+  }
+  
+  .bg-gaming-gradient-hsl {
+    background: linear-gradient(135deg, var(--accent-blue) 0%, var(--primary) 100%);
+  }
+  
+  /* ===== MODERN HEADER POSITIONING SYSTEM ===== */
+  /* Future-proof fixed header with scroll offset support */
+  
+  .header-positioned {
+    position: fixed;
+    left: 0;
+    right: 0;
+    top: var(--header-offset-top);
+    height: var(--header-height);
+    z-index: 9999;
+    transition: top 0.3s cubic-bezier(0.25, 0.1, 0.25, 1);
+  }
+  
+  .main-content-with-header {
+    /* Simplified: Only one calculation needed */
+    padding-top: calc(var(--header-height) + var(--header-offset-top));
+    transition: padding-top 0.3s cubic-bezier(0.25, 0.1, 0.25, 1);
+    /* Prevent content from touching viewport edges */
+    min-height: calc(100vh - var(--header-height) - var(--header-offset-top));
+  }
+  
+  /* Modern scroll margin for anchor elements */
+  :target {
+    scroll-margin-top: 1rem;
+  }
+  
+  /* Beta banner state management */
+  body.beta-banner-visible {
+    --header-offset-top: var(--beta-banner-height);
+  }
+  
+  @media (min-width: 640px) {
+    body.beta-banner-visible {
+      --header-offset-top: var(--beta-banner-height-sm);
+    }
+  }
+  
+  /* Force recalculation when beta banner is visible */
+  body.beta-banner-visible .main-content-with-header {
+    padding-top: calc(var(--header-height) + var(--header-offset-top));
+  }
+  
+  /* Layout stability for content sections */
+  .content-section {
+    contain: layout style;
   }
 
   .custom-scrollbar {
@@ -289,6 +353,120 @@ html {
     border-radius: 20px;
     border: transparent;
   }
+  
+  /* ===== ANIMATION UTILITIES ===== */
+  /* Centralized animations to prevent duplication */
+  
+  .animate-sparkle {
+    animation: sparkle 1s ease-in-out infinite;
+  }
+  
+  .animate-float {
+    animation: float 3s ease-in-out infinite;
+  }
+  
+  .animate-auth-slide {
+    animation: slideInAuth 0.4s ease-out;
+  }
+  
+  .animate-success-pulse {
+    animation: successPulse 0.6s ease-out;
+  }
+  
+  /* ===== PERFORMANCE OPTIMIZATIONS ===== */
+  /* GPU acceleration for better mobile performance */
+  
+  .gpu-accelerated {
+    transform: translateZ(0);
+    will-change: transform;
+    backface-visibility: hidden;
+  }
+  
+  .animate-optimized {
+    transform: translateZ(0);
+    will-change: transform, opacity;
+    backface-visibility: hidden;
+  }
+  
+  /* Prevent layout thrashing */
+  .layout-stable {
+    contain: layout style;
+  }
+  
+  /* Critical path animations */
+  .critical-animation {
+    animation-fill-mode: both;
+    animation-play-state: running;
+  }
+  
+  /* ===== ADVANCED LAYOUT UTILITIES ===== */
+  /* Future-proof layout patterns for different page types */
+  
+  /* Full viewport minus header */
+  .full-height-content {
+    min-height: calc(100vh - var(--header-height) - var(--header-offset-top));
+    min-height: calc(100dvh - var(--header-height) - var(--header-offset-top));
+  }
+  
+  /* Sticky content that respects header */
+  .sticky-below-header {
+    position: sticky;
+    top: calc(var(--header-height) + var(--header-offset-top));
+  }
+  
+  /* Safe area for mobile devices */
+  .safe-area-top {
+    padding-top: max(var(--header-height) + var(--header-offset-top), env(safe-area-inset-top));
+  }
+  
+  /* Grid layouts with header offset */
+  .grid-with-header {
+    grid-template-rows: calc(var(--header-height) + var(--header-offset-top)) 1fr;
+  }
+  
+  /* Flexbox layouts with header offset */
+  .flex-with-header {
+    padding-top: calc(var(--header-height) + var(--header-offset-top));
+  }
+  
+  /* Prevent layout shift during header state changes */
+  .layout-shift-prevention {
+    contain: layout;
+    content-visibility: auto;
+  }
+  
+  /* ===== PAGE CONTENT UTILITIES ===== */
+  /* For pages that need proper spacing without sticky elements */
+  
+  .page-container {
+    /* Already handled by main-content-with-header, but ensures no overlap */
+    position: relative;
+    width: 100%;
+  }
+  
+  .page-header {
+    /* Non-sticky page headers that don't overlap */
+    position: relative;
+    z-index: 10;
+  }
+  
+  .content-safe-area {
+    /* Ensures content never goes under fixed header */
+    position: relative;
+    isolation: isolate;
+  }
+  
+  /* Remove any accidental top positioning */
+  .no-header-overlap {
+    top: auto !important;
+    position: relative !important;
+  }
+  
+  /* Explicit fix for all-games page and similar pages */
+  main > div:first-child {
+    /* Ensure first child respects header space */
+    margin-top: 0;
+  }
 }
 
 @keyframes float {
@@ -303,32 +481,13 @@ html {
   }
 }
 
-.animate-float {
-  animation: float 3s ease-in-out infinite;
-}
+/* Animation utility moved to @layer utilities section */
 
-@keyframes glow {
-  0% {
-    transform: scale(0);
-    opacity: 0;
-  }
-  50% {
-    transform: scale(1);
-    opacity: 1;
-  }
-  100% {
-    transform: scale(0);
-    opacity: 0;
-  }
-}
-
-.animate-glow {
-  animation: glow 2s ease-in-out infinite;
-}
+/* Duplicate glow animation removed - use .animate-sparkle instead */
 
 /* Custom input styles */
 .input-custom {
-  @apply bg-muted/50 border-muted-foreground/20 !important;
+  @apply bg-muted/50 border-muted-foreground/20;
 }
 
 /* Grid pattern background */

@@ -1,46 +1,59 @@
-/* Responsive utilities for header */
+/* Modern responsive header system */
+/* Using CSS custom properties for consistent height management */
+
 @media (max-width: 374px) {
   /* Extra small devices */
+  :root {
+    --header-height: 4rem;
+  }
+  
   .header-container {
     padding-left: 1rem;
     padding-right: 1rem;
-  }
-  
-  .header-height {
-    height: 4rem; /* 64px */
   }
 }
 
 @media (min-width: 375px) and (max-width: 474px) {
   /* Small mobile devices */
+  :root {
+    --header-height: 4rem;
+  }
+  
   .header-container {
     padding-left: 1rem;
     padding-right: 1rem;
-  }
-  
-  .header-height {
-    height: 4rem; /* 64px */
   }
 }
 
 @media (min-width: 475px) and (max-width: 639px) {
   /* Large mobile devices (xs breakpoint) */
-  .header-height {
-    height: 4rem; /* 64px */
+  :root {
+    --header-height: 4rem;
   }
 }
 
 @media (min-width: 640px) and (max-width: 767px) {
   /* Small tablets */
-  .header-height {
-    height: 4rem; /* 64px */
+  :root {
+    --header-height: 4rem;
   }
 }
 
 @media (min-width: 768px) and (max-width: 1023px) {
   /* Medium tablets */
+  :root {
+    --header-height: 4rem;
+  }
+  
   .header-nav-hidden {
     display: none;
+  }
+}
+
+@media (min-width: 1024px) {
+  /* Desktop and up - can have slightly taller header */
+  :root {
+    --header-height: 4rem;
   }
 }
 

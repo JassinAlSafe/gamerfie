@@ -92,13 +92,17 @@ const processGameData = (game: GameData): Game => {
       id: s.id || `screenshot-${index}`,
       url: s.url
     })),
-    // Fix videos compatibility
+    // Keep videos as they come from the API with minimal transformation for type compatibility
     videos: game.videos?.map((v, index) => ({
-      id: v.id || `video-${index}`,
-      name: v.name || `Video ${index + 1}`,
-      url: v.external || '',
-      provider: 'youtube'
-    })),
+      id: String(v.id || `video-${index}`), // Ensure id is always a string
+      name: v.name || `Video ${index + 1}`, // Ensure name is always a string
+      video_id: v.video_id, // IMPORTANT: Preserve video_id
+      url: v.url || `https://www.youtube.com/watch?v=${v.video_id || ''}`, // Ensure url is always a string
+      thumbnail_url: v.thumbnail_url,
+      provider: (v.provider === 'youtube' || v.provider === 'vimeo' || v.provider === 'twitch') 
+        ? v.provider as 'youtube' | 'vimeo' | 'twitch'
+        : 'youtube' as const
+    })) || [],
     first_release_date: game.first_release_date || undefined
   }
 }
@@ -378,11 +382,41 @@ export const useGameDetailsStore = create<GameDetailsState>()(
   )
 )
 
-// Auto-cleanup stale cache every 5 minutes
+// Auto-cleanup stale cache every 5 minutes with proper cleanup
+let cleanupInterval: NodeJS.Timeout | null = null;
+
 if (typeof window !== 'undefined') {
-  setInterval(() => {
-    useGameDetailsStore.getState().clearStaleCache()
-  }, 5 * 60 * 1000)
+  // Function to start cleanup interval
+  const startCleanupInterval = () => {
+    if (!cleanupInterval) {
+      cleanupInterval = setInterval(() => {
+        useGameDetailsStore.getState().clearStaleCache();
+      }, 5 * 60 * 1000);
+    }
+  };
+
+  // Function to stop cleanup interval
+  const stopCleanupInterval = () => {
+    if (cleanupInterval) {
+      clearInterval(cleanupInterval);
+      cleanupInterval = null;
+    }
+  };
+
+  // Start cleanup on initialization
+  startCleanupInterval();
+
+  // Clean up on page unload
+  window.addEventListener('beforeunload', stopCleanupInterval);
+
+  // Clean up on visibility change (optional - pause when tab is hidden)
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      stopCleanupInterval();
+    } else {
+      startCleanupInterval();
+    }
+  });
 }
 
 // Export selectors for better performance

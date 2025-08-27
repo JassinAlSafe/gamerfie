@@ -43,7 +43,7 @@ const GameCardContent = memo(({
 
   // Unified cover URL logic
   const coverUrl = (() => {
-    if (imageError) return "/placeholder.png";
+    if (imageError) return "/images/placeholders/game-cover.jpg";
     
     // Handle different cover URL formats
     const rawUrl = 
@@ -51,7 +51,7 @@ const GameCardContent = memo(({
       game.cover_url ||
       (game.cover && typeof game.cover === "object" ? game.cover.url : undefined);
     
-    if (!rawUrl) return "/placeholder.png";
+    if (!rawUrl) return "/images/placeholders/game-cover.jpg";
     if (rawUrl.startsWith("https://")) return rawUrl;
     
     return getCoverImageUrl(rawUrl);

@@ -148,8 +148,11 @@ function GameContent({ game }: { game: Game }) {
     }
   }, [progressError, activitiesError, addError]);
 
-  // Process the game data
-  const gameData = ensureGameType(game);
+  // Process the game data with memoization
+  const gameData = React.useMemo(
+    () => ensureGameType(game),
+    [game]
+  );
 
   return (
     <motion.div

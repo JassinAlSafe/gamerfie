@@ -10,8 +10,17 @@ import React, {
 } from "react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
-import { Game } from "@/types";
 import { useMediaStore } from "@/stores/useMediaStore";
+import type { 
+  MediaTabProps,
+  ProcessedScreenshot,
+  ViewMode,
+  SortOption,
+  ScreenshotCardProps,
+  VideoCardProps
+} from "@/types/media.types";
+import SafeVideoEmbed from "@/components/media/SafeVideoEmbed";
+import MediaErrorBoundary from "@/components/media/MediaErrorBoundary";
 // Import the ScreenshotModal component lazily
 const ScreenshotModal = lazy(() =>
   import("@/components/screenshot-modal").then((mod) => ({
@@ -46,13 +55,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 
-interface MediaTabProps {
-  game: Game;
-}
-
-type ViewMode = 'grid' | 'masonry' | 'compact';
-type SortOption = 'default' | 'name' | 'size';
-
 // Loading skeleton component (available for future use)
 // const MediaSkeleton = ({ count = 6, aspectRatio = "aspect-video" }: { count?: number, aspectRatio?: string }) => (
 //   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-5">
@@ -69,18 +71,15 @@ type SortOption = 'default' | 'name' | 'size';
 // );
 
 // Enhanced screenshot component with preview
-const ScreenshotCard = memo(({ 
+const ScreenshotCard = memo<ScreenshotCardProps & {
+  onPreview?: (screenshot: ProcessedScreenshot) => void;
+}>(({ 
   screenshot, 
   index, 
   viewMode,
+  totalCount,
   onScreenshotClick,
   onPreview 
-}: {
-  screenshot: any;
-  index: number;
-  viewMode: ViewMode;
-  onScreenshotClick: (index: number) => void;
-  onPreview?: (screenshot: any) => void;
 }) => {
   const [isHovered, setIsHovered] = useState(false);
   
@@ -112,10 +111,19 @@ const ScreenshotCard = memo(({
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       onClick={() => onScreenshotClick(index)}
+      role="button"
+      tabIndex={0}
+      aria-label={`View screenshot ${index + 1} of ${totalCount}: ${screenshot.metadata?.alt || `Screenshot ${index + 1}`}`}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onScreenshotClick(index);
+        }
+      }}
     >
       <Image
         src={screenshot.highQualityUrl}
-        alt={`Screenshot ${index + 1}`}
+        alt={screenshot.metadata?.alt || `Screenshot ${index + 1}`}
         fill
         sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
         className="object-cover transition-transform duration-500 group-hover:scale-110"
@@ -174,14 +182,11 @@ const ScreenshotCard = memo(({
 ScreenshotCard.displayName = 'ScreenshotCard';
 
 // Enhanced video component
-const VideoCard = memo(({ 
+const VideoCard = memo<VideoCardProps>(({ 
   video, 
   index,
+  totalCount,
   onVideoClick 
-}: {
-  video: any;
-  index: number;
-  onVideoClick: (videoId: string) => void;
 }) => {
   return (
     <motion.div
@@ -195,6 +200,15 @@ const VideoCard = memo(({
       whileHover={{ scale: 1.02, y: -8 }}
       className="relative aspect-video rounded-xl overflow-hidden cursor-pointer group shadow-lg hover:shadow-2xl transition-all duration-300"
       onClick={() => onVideoClick(video.videoId)}
+      role="button"
+      tabIndex={0}
+      aria-label={`Play video: ${video.name} (${index + 1} of ${totalCount})`}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onVideoClick(video.videoId);
+        }
+      }}
     >
       {/* Video Thumbnail */}
       <div className="absolute inset-0 bg-gray-800">
@@ -308,8 +322,13 @@ function MediaTabComponent({ game }: MediaTabProps) {
 
   const handleVideoClick = useCallback((videoId: string) => {
     const video = processedMedia.videos.find(v => v.videoId === videoId);
-    if (video && video.embedUrl) {
+    console.log('handleVideoClick:', { videoId, video, allVideos: processedMedia.videos });
+    
+    if (video && video.embedUrl && video.embedUrl !== null) {
+      console.log('Opening video modal with URL:', video.embedUrl);
       openVideoModal(game.id, video.embedUrl);
+    } else {
+      console.warn('No valid embed URL for video:', videoId, video);
     }
   }, [game.id, processedMedia.videos, openVideoModal]);
 
@@ -323,7 +342,7 @@ function MediaTabComponent({ game }: MediaTabProps) {
     }
   }, [closeVideoModal]);
 
-  const handlePreview = useCallback((screenshot: any) => {
+  const handlePreview = useCallback((screenshot: ProcessedScreenshot) => {
     setPreviewImage(screenshot.highQualityUrl);
   }, []);
 
@@ -364,7 +383,12 @@ function MediaTabComponent({ game }: MediaTabProps) {
   }
 
   return (
-    <>
+    <MediaErrorBoundary
+      onError={(error, errorInfo) => {
+        console.error('Media tab error:', error);
+        console.error('Error info:', errorInfo);
+      }}
+    >
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -478,6 +502,7 @@ function MediaTabComponent({ game }: MediaTabProps) {
                         screenshot={screenshot}
                         index={index}
                         viewMode={viewMode}
+                        totalCount={sortedScreenshots.length}
                         onScreenshotClick={handleScreenshotClick}
                         onPreview={handlePreview}
                       />
@@ -504,6 +529,7 @@ function MediaTabComponent({ game }: MediaTabProps) {
                         key={`video-${video.id}-${index}`}
                         video={video}
                         index={index}
+                        totalCount={processedMedia.videos.length}
                         onVideoClick={handleVideoClick}
                       />
                     ))}
@@ -546,13 +572,27 @@ function MediaTabComponent({ game }: MediaTabProps) {
           </DialogDescription>
           <div className="aspect-video w-full overflow-hidden rounded-lg shadow-xl">
             {videoModalState.currentVideoUrl ? (
-              <iframe
-                src={videoModalState.currentVideoUrl}
-                className="w-full h-full"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
+              <SafeVideoEmbed
+                url={videoModalState.currentVideoUrl}
                 title={`${game.name} video`}
-                loading="lazy"
+                className="w-full h-full"
+                onError={(error) => {
+                  console.error('Video embed error:', error);
+                }}
+                onLoad={() => {
+                  console.log('Video loaded successfully');
+                }}
+                fallbackContent={
+                  <div className="w-full h-full flex flex-col items-center justify-center bg-gray-800 text-center p-6">
+                    <div className="w-16 h-16 rounded-full bg-yellow-500/20 flex items-center justify-center mb-4">
+                      <PlayCircle className="w-8 h-8 text-yellow-400" />
+                    </div>
+                    <h4 className="text-lg font-semibold text-white mb-2">Video Unavailable</h4>
+                    <p className="text-gray-400 text-sm max-w-sm">
+                      This video cannot be displayed. It may be restricted, removed, or temporarily unavailable.
+                    </p>
+                  </div>
+                }
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center bg-gray-800">
@@ -576,6 +616,7 @@ function MediaTabComponent({ game }: MediaTabProps) {
                 src={previewImage}
                 alt="Preview"
                 fill
+                sizes="100vw"
                 className="object-contain"
                 quality={95}
               />
@@ -583,7 +624,7 @@ function MediaTabComponent({ game }: MediaTabProps) {
           )}
         </DialogContent>
       </Dialog>
-    </>
+    </MediaErrorBoundary>
   );
 }
 

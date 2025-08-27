@@ -39,7 +39,7 @@ export function ensureHttps(url: string): string {
  * Converts a thumbnail URL to a high-quality image URL
  */
 export function getHighQualityImageUrl(url: string): string {
-  if (!url) return "/placeholder.png";
+  if (!url) return "/images/placeholders/game-cover.jpg";
   
   // First ensure HTTPS protocol
   url = ensureHttps(url);
@@ -85,7 +85,7 @@ export function getOptimizedImageUrl(
   url: string, 
   context: 'hero' | 'card' | 'thumbnail' | 'background' = 'card'
 ): string {
-  if (!url) return "/placeholder.png";
+  if (!url) return "/images/placeholders/game-cover.jpg";
   
   url = ensureHttps(url);
   
@@ -229,7 +229,7 @@ export function getBackgroundImageUrl(game: {
  * Gets a YouTube video thumbnail from a video URL or ID
  */
 export function getYouTubeThumbnail(videoUrl: string | undefined, quality: 'default' | 'hq' | 'mq' | 'sd' | 'maxres' = 'maxres'): string {
-  if (!videoUrl) return "/placeholder.png";
+  if (!videoUrl) return "/images/placeholders/game-cover.jpg";
   
   // Extract video ID from URL
   const youtubeRegex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
@@ -245,7 +245,7 @@ export function getYouTubeThumbnail(videoUrl: string | undefined, quality: 'defa
     return `https://img.youtube.com/vi/${videoUrl}/${quality}default.jpg`;
   }
   
-  return "/placeholder.png";
+  return "/images/placeholders/game-cover.jpg";
 }
 
 /**

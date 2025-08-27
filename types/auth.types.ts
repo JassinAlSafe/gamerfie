@@ -117,6 +117,9 @@ export interface VideoData {
   id?: string
   video_id?: string
   name?: string
+  url?: string
+  thumbnail_url?: string
+  provider?: string
   preview?: string
   data?: {
     480?: string

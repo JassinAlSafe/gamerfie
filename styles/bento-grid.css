@@ -25,7 +25,10 @@
   z-index: 3;
   box-shadow: 0 10px 25px -5px rgba(147, 51, 234, 0.3);
   opacity: 0.8;
-  cursor: grabbing !important;
+}
+
+.react-grid-item.react-draggable-dragging * {
+  cursor: grabbing;
 }
 
 .react-grid-item.react-grid-item.resizing {
@@ -46,10 +49,13 @@
   border-radius: 0.75rem;
 }
 
-.react-draggable-handle {
-  cursor: grab !important;
+/* Use high specificity instead of !important */
+.react-grid-layout .react-draggable-handle,
+.react-grid-item .react-draggable-handle {
+  cursor: grab;
 }
 
-.react-draggable-handle:active {
-  cursor: grabbing !important;
+.react-grid-layout .react-draggable-handle:active,
+.react-grid-item .react-draggable-handle:active {
+  cursor: grabbing;
 }

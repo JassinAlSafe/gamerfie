@@ -4,7 +4,6 @@ import { useUserStats } from "@/hooks/useUserStats";
 import { useFriendsStore } from "@/stores/useFriendsStore";
 import { useJournalStore } from "@/stores/useJournalStore";
 import { isValidGameStats } from "@/utils/profile-validation";
-import type { GameStats } from "@/types/user";
 import type { FriendActivity } from "@/types/activity";
 import type { JournalEntry } from "@/types/journal";
 import type { Friend } from "@/types/friend";
@@ -58,9 +57,25 @@ export const useProfileData = () => {
 
   // Memoized calculations with proper error handling
   const totalGames = useMemo<number>(
-    () => (isValidGameStats(gameStats) ? gameStats.total_played : 0),
-    [gameStats]
+    () => optimizedStats?.total_games ?? 0,
+    [optimizedStats]
   );
+
+  const gameStatsBreakdown = useMemo(() => {
+    if (!gameStats || !optimizedStats) {
+      return {
+        playing: 0,
+        completed: 0,
+        backlog: 0
+      };
+    }
+    
+    return {
+      playing: Math.max(0, gameStats.total_played - optimizedStats.completed_games),
+      completed: optimizedStats.completed_games,
+      backlog: gameStats.backlog
+    };
+  }, [gameStats, optimizedStats]);
 
   const acceptedFriends = useMemo<Friend[]>(
     () => friends.filter((friend) => friend.status === "accepted"),
@@ -108,12 +123,25 @@ export const useProfileData = () => {
     [isLoading, friendsLoading, activitiesLoading, journalLoading]
   );
 
+  // Create specific retry functions for each section
+  const retryFriends = useCallback(() => {
+    fetchFriends();
+  }, [fetchFriends]);
+
+  const retryActivities = useCallback(() => {
+    fetchActivities();
+  }, [fetchActivities]);
+
+  const retryJournal = useCallback(() => {
+    fetchEntries();
+  }, [fetchEntries]);
+
   return {
     // Profile data
     profile,
     isLoading,
     error,
-    gameStats: gameStats as GameStats,
+    gameStats: isValidGameStats(gameStats) ? gameStats : null,
     updateProfile,
     
     // Stats data
@@ -127,8 +155,14 @@ export const useProfileData = () => {
     journalLoading,
     isDataLoading,
     
+    // Retry functions
+    retryFriends,
+    retryActivities,
+    retryJournal,
+    
     // Calculated data
     totalGames,
+    gameStatsBreakdown,
     acceptedFriends,
     recentReviews,
     recentActivities,

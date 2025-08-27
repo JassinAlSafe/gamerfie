@@ -142,9 +142,8 @@ const BentoGridComponent = memo(function BentoGrid({
     return (
       <div
         className={cn(
-          "w-full rounded-2xl border border-border/30",
-          "bg-gradient-to-br from-card/50 to-card/80 backdrop-blur-sm",
-          "shadow-sm p-4",
+          "w-full rounded-xl border border-border/20",
+          "bg-card/30 p-6",
           className
         )}
       >
@@ -152,7 +151,7 @@ const BentoGridComponent = memo(function BentoGrid({
           {Array.from({ length: 6 }).map((_, i) => (
             <div
               key={i}
-              className="h-44 w-full rounded-xl bg-muted/50 animate-pulse"
+              className="h-44 w-full rounded-lg bg-muted/30 animate-pulse"
             />
           ))}
         </div>
@@ -166,32 +165,25 @@ const BentoGridComponent = memo(function BentoGrid({
         <div
           ref={containerRef}
           className={cn(
-            "relative w-full rounded-2xl border border-border/30",
-            "bg-gradient-to-br from-card/50 to-card/80 backdrop-blur-sm",
-            "shadow-sm hover:shadow-md transition-all duration-300",
+            "relative w-full rounded-xl border border-border/20",
+            "bg-card/30",
             isDragging && "cursor-grabbing",
             isResizing && "cursor-se-resize",
-            isEditing && "ring-2 ring-purple-500/20",
+            isEditing && "ring-1 ring-border/40",
             className
           )}
         >
-          {/* Subtle pattern overlay */}
-          <div className="absolute inset-0 pointer-events-none bg-grid-pattern opacity-[0.02]" />
-
-          {/* Minimal glow effects */}
-          <div className="absolute -top-20 -left-20 w-40 h-40 bg-gradient-to-br from-purple-500/5 to-blue-500/5 rounded-full blur-3xl pointer-events-none" />
-          <div className="absolute -bottom-20 -right-20 w-40 h-40 bg-gradient-to-br from-indigo-500/5 to-purple-500/5 rounded-full blur-3xl pointer-events-none" />
 
           {/* Content container */}
-          <div className="relative z-10 w-full p-4">
+          <div className="relative w-full p-6">
             <ResponsiveGridLayout
               className="layout"
               layouts={layouts}
               breakpoints={GRID_CONFIG.breakpoints}
               cols={GRID_CONFIG.cols}
               rowHeight={GRID_CONFIG.rowHeight}
-              margin={GRID_CONFIG.margin}
-              containerPadding={GRID_CONFIG.containerPadding}
+              margin={[16, 16]}
+              containerPadding={[0, 0]}
               onLayoutChange={handleLayoutChange}
               onBreakpointChange={handleBreakpointChange}
               isDraggable={isEditing}

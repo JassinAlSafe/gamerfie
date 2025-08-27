@@ -1,0 +1,217 @@
+/* Apple-inspired animations and micro-interactions */
+
+/* Smooth, natural easing curves inspired by Apple's motion design */
+:root {
+  --apple-ease-in-out: cubic-bezier(0.25, 0.1, 0.25, 1);
+  --apple-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --apple-ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --apple-spring: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* Enhanced Navigation animations with Apple HIG compliance */
+.profile-nav-item {
+  transition: all 0.2s var(--apple-ease-out);
+  transform-origin: center;
+  /* Ensure minimum touch target size (Apple HIG: 44pt) */
+  min-height: 44px;
+}
+
+.profile-nav-item:hover {
+  transform: translateY(-1px);
+  /* Subtle background lift for better feedback */
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.profile-nav-item:active {
+  transform: translateY(0) scale(0.96);
+  transition: all 0.1s var(--apple-ease-in);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+/* Enhanced focus styles for accessibility */
+.profile-nav-item:focus-visible {
+  outline: 2px solid rgba(59, 130, 246, 0.8);
+  outline-offset: 2px;
+  border-radius: 12px;
+  background: rgba(59, 130, 246, 0.1);
+}
+
+/* Active indicator animations with smoother feel */
+@keyframes gentle-pulse {
+  0%, 100% { 
+    opacity: 0.8; 
+    transform: scale(1);
+  }
+  50% { 
+    opacity: 0.4; 
+    transform: scale(1.1);
+  }
+}
+
+.active-indicator {
+  animation: gentle-pulse 3s var(--apple-ease-in-out) infinite;
+  will-change: opacity, transform;
+}
+
+/* Improved glass effect with better depth */
+.glass-effect {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.06) 100%);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    0 2px 8px rgba(0, 0, 0, 0.1),
+    0 4px 16px rgba(0, 0, 0, 0.05);
+}
+
+/* Icon animations for delight */
+.nav-icon {
+  transition: all 0.25s var(--apple-ease-out);
+}
+
+.nav-icon.active {
+  animation: gentle-bounce 0.4s var(--apple-spring);
+}
+
+@keyframes gentle-bounce {
+  0% { transform: scale(1); }
+  30% { transform: scale(1.15); }
+  50% { transform: scale(0.95); }
+  100% { transform: scale(1.1); }
+}
+
+/* Text animations */
+.nav-label {
+  transition: all 0.2s var(--apple-ease-out);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em; /* Apple's typography spacing */
+}
+
+/* Scroll indicator animations */
+@keyframes fade-slide {
+  0% { opacity: 0; transform: translateX(-10px); }
+  100% { opacity: 1; transform: translateX(0); }
+}
+
+.scroll-indicator {
+  animation: fade-slide 0.3s var(--apple-ease-out);
+}
+
+/* Micro-interactions for premium feel */
+.touch-feedback {
+  position: relative;
+  overflow: hidden;
+}
+
+.touch-feedback::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  transform: translate(-50%, -50%);
+  transition: width 0.3s, height 0.3s;
+}
+
+.touch-feedback:active::after {
+  width: 200px;
+  height: 200px;
+}
+
+/* Staggered entrance animations for content sections */
+@keyframes fade-in-up {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.6s var(--apple-ease-out) forwards;
+  opacity: 0;
+}
+
+/* Card hover effects */
+@keyframes card-lift {
+  0% { transform: translateY(0) scale(1); }
+  100% { transform: translateY(-2px) scale(1.01); }
+}
+
+.card-hover:hover {
+  animation: card-lift 0.2s var(--apple-ease-out) forwards;
+}
+
+/* Reduced motion preferences (accessibility) */
+@media (prefers-reduced-motion: reduce) {
+  @layer reduced-motion-overrides {
+    .profile-nav-item,
+    .nav-icon,
+    .nav-label,
+    .active-indicator,
+    .animate-fade-in-up {
+      animation: none;
+      transition: none;
+    }
+  }
+  
+  .animate-fade-in-up {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Enhanced scroll indicators with better visibility */
+.scroll-indicator {
+  animation: fade-slide 0.3s var(--apple-ease-out);
+  background: linear-gradient(90deg, rgba(17, 24, 39, 0.9) 0%, transparent 100%);
+}
+
+/* Responsive animations that respect user preferences */
+@media (max-width: 768px) {
+  .profile-nav-item {
+    min-height: 48px; /* Larger touch targets on mobile */
+  }
+  
+  .profile-nav-item:active {
+    transform: scale(0.94); /* More pronounced feedback on touch */
+  }
+}
+
+/* Dynamic island-inspired container */
+.nav-container {
+  background: rgba(17, 24, 39, 0.8);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Performance optimizations for smoother animations */
+.nav-icon, .nav-label, .active-indicator {
+  will-change: transform, opacity;
+}
+
+/* Prevent layout shifts during animations */
+.profile-nav-item {
+  contain: layout style;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .glass-effect {
+    background: rgba(0, 0, 0, 0.8);
+    border: 2px solid rgba(255, 255, 255, 0.8);
+  }
+  
+  .profile-nav-item:focus-visible {
+    outline: 3px solid currentColor;
+    outline-offset: 2px;
+  }
+}

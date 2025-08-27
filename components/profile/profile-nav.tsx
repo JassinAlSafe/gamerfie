@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { memo } from "react";
 import { cn } from "@/lib/utils";
 import {
   User,
@@ -11,50 +12,53 @@ import {
   Star,
   ListOrdered,
   Users,
-  Heart,
   Medal,
   Target,
 } from "lucide-react";
 
+// Simplified, focused navigation items following Apple's clarity principle
 const navItems = [
-  { label: "Profile", href: "/profile", icon: User },
+  { label: "Overview", href: "/profile", icon: User },
   { label: "Games", href: "/profile/games", icon: Gamepad2 },
-  { label: "Challenges", href: "/profile/challenges", icon: Target },
-  { label: "Journal", href: "/profile/journal", icon: BookText },
   { label: "Activity", href: "/profile/activity", icon: Activity },
+  { label: "Friends", href: "/profile/friends", icon: Users },
+  { label: "Challenges", href: "/profile/challenges", icon: Target },
   { label: "Reviews", href: "/profile/reviews", icon: Star },
   { label: "Lists", href: "/profile/list", icon: ListOrdered },
-  { label: "Friends", href: "/profile/friends", icon: Users },
-  { label: "Likes", href: "/profile/likes", icon: Heart },
+  { label: "Journal", href: "/profile/journal", icon: BookText },
   { label: "Badges", href: "/profile/badges", icon: Medal },
 ];
 
-export function ProfileNav() {
+export const ProfileNav = memo(function ProfileNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="flex justify-center w-full">
-      <div className="flex items-center gap-1 px-4 py-3 max-w-7xl mx-auto overflow-x-auto no-scrollbar">
-        {navItems.map(({ label, href, icon: Icon }) => {
-          const isActive = pathname === href;
-
-          return (
-            <Link
-              key={href}
-              href={href}
-              className={cn(
-                "flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 whitespace-nowrap",
-                isActive
-                  ? "bg-purple-500/20 text-purple-400 shadow-lg shadow-purple-500/10"
-                  : "text-gray-400 hover:text-white hover:bg-white/5"
-              )}
-            >
-              <Icon className="w-4 h-4 mr-2.5" />
-              {label}
-            </Link>
-          );
-        })}
+    <nav className="w-full border-b border-border/10" role="navigation">
+      <div className="max-w-6xl mx-auto px-4">
+        <div className="flex items-center justify-center overflow-x-auto scrollbar-hide">
+          {navItems.map(({ label, href, icon: Icon }) => {
+            const isActive = pathname === href;
+            
+            return (
+              <Link
+                key={href}
+                href={href}
+                className={cn(
+                  "flex flex-col items-center justify-center flex-1 max-w-[120px] px-3 py-4 text-center transition-colors",
+                  isActive 
+                    ? "text-foreground border-b-2 border-foreground" 
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                <Icon className="h-5 w-5 mb-1" />
+                <span className="text-xs font-medium">{label}</span>
+              </Link>
+            );
+          })}
+        </div>
       </div>
     </nav>
   );
-}
+});
+
+ProfileNav.displayName = 'ProfileNav';

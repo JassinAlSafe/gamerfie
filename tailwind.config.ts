@@ -106,6 +106,12 @@ const config: Config = {
       zIndex: {
         'modal': '1000',
       },
+      spacing: {
+        'safe': 'env(safe-area-inset-top)',
+        'safe-bottom': 'env(safe-area-inset-bottom)',
+        'safe-left': 'env(safe-area-inset-left)',
+        'safe-right': 'env(safe-area-inset-right)',
+      },
   	}
   },
   plugins: [
@@ -133,7 +139,37 @@ const config: Config = {
       );
     },
     require("tailwindcss-animate"),
-    require("tailwind-scrollbar")
+    require("tailwind-scrollbar"),
+    // Safe area plugin
+    function ({ addUtilities }: any) {
+      const safeAreaUtilities = {
+        '.pt-safe': {
+          paddingTop: 'env(safe-area-inset-top)',
+        },
+        '.pb-safe': {
+          paddingBottom: 'env(safe-area-inset-bottom)',
+        },
+        '.pl-safe': {
+          paddingLeft: 'env(safe-area-inset-left)',
+        },
+        '.pr-safe': {
+          paddingRight: 'env(safe-area-inset-right)',
+        },
+        '.mt-safe': {
+          marginTop: 'env(safe-area-inset-top)',
+        },
+        '.mb-safe': {
+          marginBottom: 'env(safe-area-inset-bottom)',
+        },
+        '.ml-safe': {
+          marginLeft: 'env(safe-area-inset-left)',
+        },
+        '.mr-safe': {
+          marginRight: 'env(safe-area-inset-right)',
+        },
+      };
+      addUtilities(safeAreaUtilities);
+    }
   ],
 };
 

@@ -10,7 +10,6 @@ import { useStableLoadingState } from "@/hooks/useStableLoadingState";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/components/ui/use-toast";
 import { ProfileCard } from "./ProfileCard";
-import { WelcomeHeader } from "./WelcomeHeader";
 import { BentoGrid } from "@/components/BuilderBlocks/BentoGrid/index";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ErrorBoundary } from "@/components/error-boundary";
@@ -117,9 +116,6 @@ const AuthenticatedHomeComponent = memo(function AuthenticatedHome({
 
   const onboardedStatus = getUserOnboardingStatus(user);
   const isExplicitlyNotOnboarded = onboardedStatus === false;
-  
-  // Only show welcome for users who are explicitly not onboarded AND have the welcome param
-  const isNewUser = isExplicitlyNotOnboarded && isWelcomeParam;
 
   // Handle welcome messages and URL cleanup
   useEffect(() => {
@@ -193,7 +189,7 @@ const AuthenticatedHomeComponent = memo(function AuthenticatedHome({
   // Show skeleton only during initial load or if no data has been loaded yet
   if (isInitialLoad && !hasDataLoaded) {
     return (
-      <Shell maxWidth="2xl" padding="md">
+      <Shell maxWidth="6xl" padding="lg">
         <div className="space-y-8">
           <HomePageSkeleton />
         </div>
@@ -201,55 +197,36 @@ const AuthenticatedHomeComponent = memo(function AuthenticatedHome({
     );
   }
 
-
   return (
-    <Shell maxWidth="7xl" padding="md">
-      <div className="space-y-6">
-        {/* Welcome Header */}
-        <section className="relative">
-          <WelcomeHeader
-            user={user}
-            totalGames={profileStats.totalGames}
-            weeklyPlaytime={0}
-            currentStreak={0}
-            isNewUser={isNewUser}
-          />
-        </section>
+    <Shell maxWidth="6xl" padding="lg">
+      <div className="space-y-8">
+        {/* Profile Card */}
+        <ProfileCard
+          user={user}
+          stats={profileStats}
+          friends={friends.length}
+          isLoading={statsLoading}
+        />
 
-        {/* Main Dashboard - BentoGrid Only */}
-        <section className="relative">
-          <div className="space-y-4 md:space-y-6">
-            {/* Profile Card */}
-            <ProfileCard
+        {/* Dashboard Header */}
+        <div className="mb-6">
+          <h2 className="text-xl font-semibold text-foreground tracking-tight">
+            Dashboard
+          </h2>
+          <p className="text-muted-foreground mt-1">
+            Your gaming activity and progress
+          </p>
+        </div>
+
+        <ErrorBoundary fallback={<BentoGridFallback />}>
+          <Suspense fallback={<BentoGridSkeleton />}>
+            <BentoGridStable
               user={user}
-              stats={profileStats}
-              friends={friends.length}
-              isLoading={statsLoading}
+              friends={recentFriends}
+              activities={typedActivities}
             />
-
-            {/* Main Dashboard */}
-            <div className="mb-4">
-              <h2 className="text-lg font-semibold text-foreground/90 flex items-center gap-2">
-                <div className="h-5 w-1 bg-gradient-to-b from-purple-500 to-blue-500 rounded-full" />
-                Your Gaming Dashboard
-              </h2>
-              <p className="text-sm text-muted-foreground mt-1">
-                Track your progress, connect with friends, and discover new games
-              </p>
-            </div>
-
-            <ErrorBoundary fallback={<BentoGridFallback />}>
-              <Suspense fallback={<BentoGridSkeleton />}>
-                <BentoGridStable
-                  user={user}
-                  friends={recentFriends}
-                  activities={typedActivities}
-                />
-              </Suspense>
-            </ErrorBoundary>
-          </div>
-        </section>
-
+          </Suspense>
+        </ErrorBoundary>
       </div>
     </Shell>
   );
@@ -282,42 +259,53 @@ const BentoGridStable = memo(function BentoGridStable({
 const HomePageSkeleton = memo(function HomePageSkeleton() {
   return (
     <div className="space-y-8">
+      {/* Welcome Header Skeleton */}
+      <div className="border border-border/20 rounded-xl bg-card/30 px-8 py-6">
+        <div className="flex items-center justify-between">
+          <div className="space-y-1">
+            <Skeleton className="h-7 w-48" />
+            <Skeleton className="h-4 w-32" />
+          </div>
+          <div className="text-right">
+            <Skeleton className="w-12 h-7 mb-1" />
+            <Skeleton className="w-12 h-4" />
+          </div>
+        </div>
+      </div>
+
       {/* Profile Section Skeleton */}
-      <div className="border border-border/40 rounded-2xl p-6 bg-gradient-to-br from-card/80 to-card backdrop-blur-sm">
-        <div className="flex items-start gap-4">
-          <div className="flex items-center gap-4 flex-1">
-            <Skeleton className="h-14 w-14 rounded-full" />
+      <div className="border border-border/20 rounded-xl bg-card/50 px-8 py-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-6 flex-1">
+            <Skeleton className="h-16 w-16 rounded-full" />
             <div className="flex-1 space-y-2">
               <Skeleton className="h-6 w-48" />
               <Skeleton className="h-4 w-32" />
             </div>
           </div>
-          <div className="flex gap-4">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="flex flex-col items-center">
-                <Skeleton className="h-8 w-8 rounded-lg" />
-                <div className="mt-1.5 space-y-1">
-                  <Skeleton className="h-3 w-6" />
-                  <Skeleton className="h-2 w-8" />
-                </div>
+          <div className="flex gap-8">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="text-right space-y-1">
+                <Skeleton className="h-6 w-8" />
+                <Skeleton className="h-4 w-12" />
               </div>
             ))}
           </div>
         </div>
-        <div className="mt-4 pt-4 border-t border-border/40 space-y-2">
+        <div className="mt-6 pt-4 border-t border-border/20 space-y-2">
           <div className="flex justify-between">
-            <Skeleton className="h-3 w-20" />
-            <Skeleton className="h-3 w-16" />
+            <Skeleton className="h-4 w-32" />
+            <Skeleton className="h-4 w-8" />
           </div>
-          <Skeleton className="h-2 w-full rounded-full" />
+          <Skeleton className="h-1.5 w-full rounded-full" />
         </div>
       </div>
 
       {/* Dashboard Section Skeleton */}
-      <div className="space-y-4">
-        <div className="space-y-2">
-          <Skeleton className="h-6 w-48" />
-          <Skeleton className="h-4 w-80" />
+      <div className="space-y-6">
+        <div className="space-y-1">
+          <Skeleton className="h-6 w-32" />
+          <Skeleton className="h-4 w-48" />
         </div>
         <BentoGridSkeleton />
       </div>
@@ -328,10 +316,10 @@ const HomePageSkeleton = memo(function HomePageSkeleton() {
 // BentoGrid skeleton component
 const BentoGridSkeleton = memo(function BentoGridSkeleton() {
   return (
-    <div className="w-full rounded-2xl border border-border/30 bg-gradient-to-br from-card/50 to-card/80 backdrop-blur-sm shadow-sm p-4">
+    <div className="w-full rounded-xl border border-border/20 bg-card/30 p-6">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {Array.from({ length: 6 }).map((_, i) => (
-          <Skeleton key={i} className="h-44 w-full rounded-xl" />
+          <Skeleton key={i} className="h-44 w-full rounded-lg" />
         ))}
       </div>
     </div>

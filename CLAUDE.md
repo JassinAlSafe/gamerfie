@@ -224,3 +224,120 @@ const eighteenMonthsAhead = now + (18 * 30 * 24 * 60 * 60);
 - `services/unifiedGameService.ts`: Updated optimal source selection to prefer IGDB
 - `services/igdb.ts`: Enhanced `getRecentGames()` and `getUpcomingGames()` with proper date logic and sorting
 - `app/api/explore/route.ts`: Added cache refresh mechanism for development testing
+
+### Video Gallery & Media Tab Fixes (Completed - Aug 2024)
+#### Issues Fixed:
+- ✅ **Fixed Video Display**: Media tab videos were not displaying due to missing `video_id` field in processed video data
+- ✅ **Fixed Watch Trailer Button**: GameHero "Watch Trailer" button was not working due to incorrect video URL processing
+- ✅ **Resolved Data Transformation**: Video data was being incorrectly transformed, losing the crucial `video_id` field from IGDB
+
+#### Root Cause Analysis:
+- **Data Loss in Transformation**: The `useGameDetailsStore` was over-processing video data from the IGDB service, inadvertently removing the `video_id` field
+- **IGDB Service Correctness**: The IGDB service (`services/igdb.ts`) was correctly creating video objects with all required fields including `video_id`
+- **Pipeline Issue**: Video data was being transformed multiple times, with the game details store transformation removing crucial fields
+
+#### Technical Implementation:
+- **Preserved Original Video Structure**: Modified `useGameDetailsStore.processGameData()` to preserve the `video_id` field from API responses
+- **Fixed Media Store Processing**: Updated `useMediaStore.processGameMedia()` to correctly extract YouTube video IDs from the preserved `video_id` field
+- **Enhanced GameHero Integration**: Updated GameHero component to properly construct YouTube URLs from video data with `video_id`
+
+#### Data Flow After Fix:
+```typescript
+IGDB API Response → Game Details Store (preserve video_id) → Media Store (process video_id) → Components (working videos)
+```
+
+#### Key Technical Details:
+- **IGDB Service**: Correctly creates video objects with `video_id`, `url`, `thumbnail_url`, and `provider` fields
+- **Game Details Store**: Now preserves all original video fields while ensuring type compatibility
+- **Media Store**: Processes videos using the preserved `video_id` to generate proper YouTube embed URLs
+- **Components**: Both MediaTab and GameHero now receive properly structured video data
+
+#### Files Modified:
+- `stores/useGameDetailsStore.ts`: Fixed video data processing to preserve `video_id` field
+- `stores/useMediaStore.ts`: Enhanced video processing logic to use `video_id` directly
+- `components/game/hero/GameHero.tsx`: Improved trailer URL construction logic
+- `components/game/tabs/MediaTab.tsx`: Already correctly structured for video display
+
+#### Key Lesson Learned:
+- **Data Preservation**: When transforming API data through multiple layers (API → Store → Component), it's crucial to preserve all necessary fields
+- **Debugging Strategy**: Console logging at each transformation step helps identify where data loss occurs
+- **Type Safety vs Functionality**: Ensure type compatibility transformations don't remove essential functional data
+
+### All-Games Filtering System Overhaul (Completed - Aug 2025)
+#### Issues Fixed:
+- ✅ **Fixed Filter Parameter Handling**: API route was completely ignoring filter parameters - filters were set up in UI but not working (selecting genre/platform showed same results)
+- ✅ **Enhanced Service Layer**: Added comprehensive `getFilteredGames()` method to UnifiedGameService with full IGDB filtering support
+- ✅ **Improved Year & Time Range Filtering**: Fixed mismatched UI options vs backend implementation, added support for all time range options
+- ✅ **Fixed Rating Filter Scale Issue**: Quick Filter rating buttons were using 1-10 scale but IGDB expects 0-100 scale
+- ✅ **Enhanced Rating Filter UX**: Modified sorting logic to show highest-rated games first when rating filters are applied
+
+#### Root Cause Analysis:
+- **API Route Issue**: Lines 117-121 in `/app/api/games/route.ts` had commented out filter parameters, causing all filters to be ignored
+- **Scale Mismatch**: Quick Filter UI sent rating values on 1-10 scale (9, 8, 7, 6) but IGDB service expected 0-100 scale
+- **Sorting Problem**: Even with rating filters applied, results were sorted by popularity (rating count) instead of quality (rating value)
+- **Time Range Mismatch**: UI options ("recent", "this-year", "last-year") didn't match backend implementation ("new_releases", "upcoming", "classic")
+
+#### Technical Implementation:
+- **Filter Parameter Activation**: Uncommented and implemented all filter parameters in API route (platform, genre, year, gameMode, theme, rating, multiplayer)
+- **Service Layer Enhancement**: Created `UnifiedGameService.getFilteredGames()` method with comprehensive IGDB filtering capabilities
+- **Rating Scale Conversion**: Added logic to convert UI rating (1-10) to IGDB rating (0-100) by multiplying by 10
+- **Intelligent Sorting**: Modified sorting to use `total_rating desc` when rating filters are active, `total_rating_count desc` otherwise
+- **Time Range Expansion**: Added support for all UI time range options with proper date calculations
+
+#### Filter Architecture:
+```
+UI Components → Zustand Store → React Query → API Route → IGDB Service → Filtered Results
+     ↓              ↓              ↓            ↓             ↓
+GamesHeader → useGamesStore → useGames → /api/games → getFilteredGames
+```
+
+#### Key Components Fixed:
+- **API Route** (`/app/api/games/route.ts`): Now processes all filter parameters correctly
+- **IGDB Service** (`/services/igdb.ts`): Enhanced with comprehensive filtering logic and intelligent sorting
+- **UI Components** (`/components/games/sections/games-header.tsx`): Fixed rating scale conversion and active state display
+- **Service Layer** (`/services/unifiedGameService.ts`): Added filtered games method with proper metadata handling
+
+#### Filtering Capabilities:
+- **Platform Filtering**: PC, PlayStation, Xbox, Nintendo, Mobile platforms ✅
+- **Genre Filtering**: All IGDB genres (Action, RPG, Strategy, etc.) ✅
+- **Rating Filtering**: 6+, 7+, 8+, 9+ ratings with intuitive sorting ✅
+- **Year Filtering**: 2024, 2023, 2020s, and custom years ✅
+- **Time Range Filtering**: Recent, This Year, Last Year, Upcoming ✅
+- **Advanced Filters**: Game modes, themes, multiplayer support ✅
+- **Search Functionality**: Full-text search across game names ✅
+
+#### Performance & UX Improvements:
+- **Intelligent Sorting**: Rating filters now show highest-rated games first in that range
+- **Mobile Optimization**: Extended cache times for mobile devices (30min/10min)
+- **Error Handling**: Proper fallbacks for overly restrictive filter combinations
+- **Filter State Management**: URL sync, active filter pills, clear functionality
+- **Infinite Scroll**: Seamless integration with filtering system
+
+#### Filter Behavior Examples:
+- **No Filters**: Shows most popular games (sorted by rating count)
+- **6+ Rating**: Shows games 60+ sorted by rating desc (best first)
+- **Fighting Genre**: Shows fighting games meeting quality criteria
+- **Platform + Genre**: Shows games matching both criteria
+- **Multiple Filters**: Properly restrictive, shows "No Games Found" when appropriate
+
+#### Testing Results:
+- **Genre Filtering**: Fighting games properly filtered ✅
+- **Platform Filtering**: PC/console filtering working ✅
+- **Rating Filtering**: 6+→9+ ranges show appropriate quality games ✅
+- **Year Filtering**: 2024, 2023, 2020s showing correct time periods ✅
+- **Search**: "Mario", "Zelda" returning relevant results ✅
+- **Multi-Filter**: Complex combinations working appropriately ✅
+
+#### Files Modified:
+- `app/api/games/route.ts`: Activated all filter parameters, added type definitions
+- `services/igdb.ts`: Enhanced filtering logic, improved sorting, expanded time range support
+- `services/unifiedGameService.ts`: Added getFilteredGames method
+- `components/games/sections/games-header.tsx`: Fixed rating scale conversion and UI state
+- `components/games/filters/games-filter-dropdown.tsx`: Verified comprehensive filter options
+
+#### Key Architectural Lessons:
+- **End-to-End Testing**: Always test complete filter chains from UI to API to service
+- **Scale Consistency**: Ensure UI and backend use consistent measurement scales
+- **User Experience**: Sorting should match user expectations for different filter types
+- **Quality Criteria**: IGDB filtering requires balancing inclusivity vs quality (cover images, rating counts)
+- **Error States**: Overly restrictive filters should show helpful "No Games Found" messages

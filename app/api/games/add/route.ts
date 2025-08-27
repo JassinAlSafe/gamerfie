@@ -1,12 +1,41 @@
 import { NextResponse } from 'next/server';
 import { createClient } from "@/utils/supabase/server";
 import { getIGDBToken } from '../../lib-exports';
+import { z } from 'zod';
+
+// Request validation schema
+const addGameSchema = z.object({
+  gameId: z.string().min(1, 'Game ID is required'),
+  userId: z.string().uuid('User ID must be a valid UUID'),
+});
 
 export async function POST(request: Request) {
   try {
-    const { gameId, userId } = await request.json();
+    const body = await request.json();
+    
+    // Validate request body
+    const validation = addGameSchema.safeParse(body);
+    if (!validation.success) {
+      return NextResponse.json(
+        { error: 'Invalid request data', details: validation.error.errors },
+        { status: 400 }
+      );
+    }
+    
+    const { gameId, userId } = validation.data;
     
     const supabase = await createClient();
+
+    // Verify user authentication
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Verify the userId matches the authenticated user
+    if (user.id !== userId) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
 
     // First check if game exists in our games table
     const { data: existingGame } = await supabase

@@ -13,7 +13,8 @@ import {
   ChevronDown,
   ExternalLink,
   BarChart3,
-  Newspaper
+  Newspaper,
+  MessageSquare
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -58,6 +59,13 @@ const adminRoutes: AdminRoute[] = [
     href: "/admin/playlists",
     icon: FileText,
     description: "Create and manage game playlists",
+    category: 'content'
+  },
+  {
+    name: "Forum Management",
+    href: "/admin/forum",
+    icon: MessageSquare,
+    description: "Manage forum categories, threads, and moderation",
     category: 'content'
   },
   

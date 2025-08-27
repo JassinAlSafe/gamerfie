@@ -438,3 +438,36 @@ export interface GameList {
   created_at: string;
   updated_at: string;
 }
+
+// Related Games - Type-safe interfaces that eliminate 'any' usage
+export interface RelatedGameData {
+  id: string;
+  name: string;
+  cover?: GameCover | string;
+  cover_url?: string | null;
+  rating?: number;
+  total_rating?: number;
+  first_release_date?: number;
+  genres?: Genre[];
+}
+
+// Union type for different API response formats - inevitable pattern
+export type GameApiResponse = Game | RelatedGameData | {
+  id: string;
+  name: string;
+  cover_url?: string | null;
+  total_rating?: number;
+  rating?: number;
+  first_release_date?: number;
+  genres?: Genre[];
+};
+
+// Type for safe access to game properties
+export interface SafeGameAccess {
+  id: string;
+  name: string;
+  coverUrl: string | null;
+  rating: number | null;
+  releaseYear: number | null;
+  genres: Genre[];
+}

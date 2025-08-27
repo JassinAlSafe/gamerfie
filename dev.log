@@ -1,0 +1,1435 @@
+
+> gamerfie@0.1.0 dev
+> next dev
+
+  ▲ Next.js 14.2.30
+  - Local:        http://localhost:3000
+  - Environments: .env.local
+  - Experiments (use with caution):
+    · optimizeCss
+
+ ✓ Starting...
+ ✓ Ready in 1026ms
+ ○ Compiling /_not-found ...
+ ✓ Compiled /_not-found in 3.9s (1949 modules)
+ GET /sw.js 404 in 4023ms
+ ✓ Compiled in 256ms (938 modules)
+ ✓ Compiled /middleware in 230ms (188 modules)
+ ○ Compiling /reviews ...
+ ⚠ ./node_modules/@supabase/realtime-js/dist/main/RealtimeClient.js
+Critical dependency: the request of a dependency is an expression
+
+Import trace for requested module:
+./node_modules/@supabase/realtime-js/dist/main/RealtimeClient.js
+./node_modules/@supabase/realtime-js/dist/main/index.js
+./node_modules/@supabase/supabase-js/dist/module/index.js
+./node_modules/@supabase/ssr/dist/module/createServerClient.js
+./node_modules/@supabase/ssr/dist/module/index.js
+./utils/supabase/server.ts
+./app/reviews/page.tsx
+ HEAD /reviews 200 in 1028ms
+<w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (100kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
+ ⚠ ./node_modules/@supabase/realtime-js/dist/main/RealtimeClient.js
+Critical dependency: the request of a dependency is an expression
+
+Import trace for requested module:
+./node_modules/@supabase/realtime-js/dist/main/RealtimeClient.js
+./node_modules/@supabase/realtime-js/dist/main/index.js
+./node_modules/@supabase/supabase-js/dist/module/index.js
+./node_modules/@supabase/ssr/dist/module/createServerClient.js
+./node_modules/@supabase/ssr/dist/module/index.js
+./utils/supabase/server.ts
+./app/reviews/page.tsx
+ ⚠ ./node_modules/@supabase/realtime-js/dist/main/RealtimeClient.js
+Critical dependency: the request of a dependency is an expression
+
+Import trace for requested module:
+./node_modules/@supabase/realtime-js/dist/main/RealtimeClient.js
+./node_modules/@supabase/realtime-js/dist/main/index.js
+./node_modules/@supabase/supabase-js/dist/module/index.js
+./node_modules/@supabase/ssr/dist/module/createBrowserClient.js
+./node_modules/@supabase/ssr/dist/module/index.js
+./utils/supabase/server.ts
+./app/reviews/page.tsx
+Could not find files for /_error in .next/build-manifest.json
+Could not find files for /_error in .next/build-manifest.json
+Time 2.067875
+ GET /reviews 404 in 1203ms
+ ⚠ ./node_modules/@supabase/realtime-js/dist/main/RealtimeClient.js
+Critical dependency: the request of a dependency is an expression
+
+Import trace for requested module:
+./node_modules/@supabase/realtime-js/dist/main/RealtimeClient.js
+./node_modules/@supabase/realtime-js/dist/main/index.js
+./node_modules/@supabase/supabase-js/dist/module/index.js
+./node_modules/@supabase/ssr/dist/module/createBrowserClient.js
+./node_modules/@supabase/ssr/dist/module/index.js
+./utils/supabase/server.ts
+./app/reviews/page.tsx
+ ⚠ ./node_modules/@supabase/realtime-js/dist/main/RealtimeClient.js
+Critical dependency: the request of a dependency is an expression
+
+Import trace for requested module:
+./node_modules/@supabase/realtime-js/dist/main/RealtimeClient.js
+./node_modules/@supabase/realtime-js/dist/main/index.js
+./node_modules/@supabase/supabase-js/dist/module/index.js
+./node_modules/@supabase/ssr/dist/module/createBrowserClient.js
+./node_modules/@supabase/ssr/dist/module/index.js
+./utils/supabase/server.ts
+./app/reviews/page.tsx
+ GET /.well-known/appspecific/com.chrome.devtools.json 200 in 179ms
+ ⨯ Error: Invariant: missing bootstrap script. This is a bug in Next.js
+    at rR (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:39:2277)
+    at /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:39:25591
+    at /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/lib/trace/tracer.js:191:62
+    at /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/lib/trace/tracer.js:140:36
+    at NoopContextManager.with (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/@opentelemetry/api/build/src/context/NoopContextManager.js:25:19)
+    at ContextAPI.with (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/@opentelemetry/api/build/src/api/context.js:60:46)
+    at NoopTracer.startActiveSpan (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/@opentelemetry/api/build/src/trace/NoopTracer.js:65:31)
+    at ProxyTracer.startActiveSpan (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/@opentelemetry/api/build/src/trace/ProxyTracer.js:36:24)
+    at /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/lib/trace/tracer.js:122:103
+    at NoopContextManager.with (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/@opentelemetry/api/build/src/context/NoopContextManager.js:25:19)
+    at ContextAPI.with (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/@opentelemetry/api/build/src/api/context.js:60:46)
+    at NextTracerImpl.trace (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/lib/trace/tracer.js:122:28)
+    at /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/lib/trace/tracer.js:191:31
+    at r3 (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:41:1678)
+    at async doRender (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/base-server.js:1427:30)
+    at async cacheEntry.responseCache.get.routeKind (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/base-server.js:1588:28)
+Time 0.429125
+ GET /sw.js 500 in 358ms
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, lstat '/Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/vendor-chunks/get-nonce.js'
+<w> [webpack.cache.PackFileCacheStrategy/webpack.FileSystemInfo] Resolving './vendor-chunks/get-nonce' in /Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server for build dependencies doesn't lead to expected result '/Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/vendor-chunks/get-nonce.js', but to 'Error: Can't resolve './vendor-chunks/get-nonce' in '/Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server'' instead. Resolving dependencies are ignored for this path.
+<w>  at resolve commonjs file ./vendor-chunks/get-nonce (expected /Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/vendor-chunks/get-nonce.js)
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/webpack-runtime.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/webpack-runtime.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/app/.well-known/appspecific/com.chrome.devtools.json/route.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/app/.well-known/appspecific/com.chrome.devtools.json/route.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/require.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/require.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/load-components.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/load-components.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/utils.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/utils.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/loader-runner/LoaderRunner.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/loader-runner/LoaderRunner.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/webpack/bundle5.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/webpack/bundle5.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/webpack/webpack.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/webpack/webpack.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/plugins/define-env-plugin.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/plugins/define-env-plugin.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/swc/index.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/swc/index.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+<w>  at resolve commonjs /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+<w> [webpack.cache.PackFileCacheStrategy/webpack.FileSystemInfo] Resolving './vendor-chunks/clsx' in /Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server for build dependencies doesn't lead to expected result '/Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/vendor-chunks/clsx.js', but to 'Error: Can't resolve './vendor-chunks/clsx' in '/Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server'' instead. Resolving dependencies are ignored for this path.
+<w>  at resolve commonjs file ./vendor-chunks/clsx (expected /Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/vendor-chunks/clsx.js)
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/webpack-runtime.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/webpack-runtime.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/app/.well-known/appspecific/com.chrome.devtools.json/route.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/app/.well-known/appspecific/com.chrome.devtools.json/route.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/require.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/require.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/load-components.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/load-components.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/utils.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/utils.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/loader-runner/LoaderRunner.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/loader-runner/LoaderRunner.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/webpack/bundle5.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/webpack/bundle5.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/webpack/webpack.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/webpack/webpack.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/plugins/define-env-plugin.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/plugins/define-env-plugin.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/swc/index.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/swc/index.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+<w>  at resolve commonjs /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+<w> [webpack.cache.PackFileCacheStrategy/webpack.FileSystemInfo] Resolving './vendor-chunks/motion-utils' in /Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server for build dependencies doesn't lead to expected result '/Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/vendor-chunks/motion-utils.js', but to 'Error: Can't resolve './vendor-chunks/motion-utils' in '/Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server'' instead. Resolving dependencies are ignored for this path.
+<w>  at resolve commonjs file ./vendor-chunks/motion-utils (expected /Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/vendor-chunks/motion-utils.js)
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/webpack-runtime.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/webpack-runtime.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/app/.well-known/appspecific/com.chrome.devtools.json/route.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/app/.well-known/appspecific/com.chrome.devtools.json/route.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/require.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/require.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/load-components.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/load-components.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/utils.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/utils.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/loader-runner/LoaderRunner.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/loader-runner/LoaderRunner.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/webpack/bundle5.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/webpack/bundle5.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/webpack/webpack.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/webpack/webpack.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/plugins/define-env-plugin.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/plugins/define-env-plugin.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/swc/index.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/swc/index.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+<w>  at resolve commonjs /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+<w> [webpack.cache.PackFileCacheStrategy/webpack.FileSystemInfo] Resolving './vendor-chunks/react-style-singleton' in /Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server for build dependencies doesn't lead to expected result '/Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/vendor-chunks/react-style-singleton.js', but to 'Error: Can't resolve './vendor-chunks/react-style-singleton' in '/Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server'' instead. Resolving dependencies are ignored for this path.
+<w>  at resolve commonjs file ./vendor-chunks/react-style-singleton (expected /Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/vendor-chunks/react-style-singleton.js)
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/webpack-runtime.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/webpack-runtime.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/app/.well-known/appspecific/com.chrome.devtools.json/route.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/app/.well-known/appspecific/com.chrome.devtools.json/route.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/require.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/require.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/load-components.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/load-components.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/utils.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/utils.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/loader-runner/LoaderRunner.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/loader-runner/LoaderRunner.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/webpack/bundle5.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/webpack/bundle5.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/webpack/webpack.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/webpack/webpack.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/plugins/define-env-plugin.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/plugins/define-env-plugin.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/swc/index.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/swc/index.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+<w>  at resolve commonjs /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+<w> [webpack.cache.PackFileCacheStrategy/webpack.FileSystemInfo] Resolving './vendor-chunks/class-variance-authority' in /Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server for build dependencies doesn't lead to expected result '/Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/vendor-chunks/class-variance-authority.js', but to 'Error: Can't resolve './vendor-chunks/class-variance-authority' in '/Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server'' instead. Resolving dependencies are ignored for this path.
+<w>  at resolve commonjs file ./vendor-chunks/class-variance-authority (expected /Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/vendor-chunks/class-variance-authority.js)
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/webpack-runtime.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/webpack-runtime.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/app/.well-known/appspecific/com.chrome.devtools.json/route.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/app/.well-known/appspecific/com.chrome.devtools.json/route.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/require.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/require.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/load-components.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/load-components.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/utils.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/utils.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/loader-runner/LoaderRunner.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/loader-runner/LoaderRunner.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/webpack/bundle5.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/webpack/bundle5.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/webpack/webpack.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/webpack/webpack.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/plugins/define-env-plugin.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/plugins/define-env-plugin.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/swc/index.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/swc/index.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+<w>  at resolve commonjs /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+ ⨯ Error: Invariant: missing bootstrap script. This is a bug in Next.js
+    at rR (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:39:2277)
+    at /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:39:25591
+    at /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/lib/trace/tracer.js:191:62
+    at /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/lib/trace/tracer.js:140:36
+    at NoopContextManager.with (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/@opentelemetry/api/build/src/context/NoopContextManager.js:25:19)
+    at ContextAPI.with (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/@opentelemetry/api/build/src/api/context.js:60:46)
+    at NoopTracer.startActiveSpan (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/@opentelemetry/api/build/src/trace/NoopTracer.js:65:31)
+    at ProxyTracer.startActiveSpan (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/@opentelemetry/api/build/src/trace/ProxyTracer.js:36:24)
+    at /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/lib/trace/tracer.js:122:103
+    at NoopContextManager.with (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/@opentelemetry/api/build/src/context/NoopContextManager.js:25:19)
+    at ContextAPI.with (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/@opentelemetry/api/build/src/api/context.js:60:46)
+    at NextTracerImpl.trace (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/lib/trace/tracer.js:122:28)
+    at /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/lib/trace/tracer.js:191:31
+    at r3 (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:41:1678)
+    at async doRender (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/base-server.js:1427:30)
+    at async cacheEntry.responseCache.get.routeKind (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/base-server.js:1588:28) {
+  page: '/reviews'
+}
+Could not find files for /_error in .next/build-manifest.json
+Could not find files for /_error in .next/build-manifest.json
+Time 0.47675
+ GET /reviews 500 in 42ms
+ GET /.well-known/appspecific/com.chrome.devtools.json 200 in 6ms
+ ⨯ Error: Invariant: missing bootstrap script. This is a bug in Next.js
+    at rR (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:39:2277)
+    at /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:39:25591
+    at /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/lib/trace/tracer.js:191:62
+    at /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/lib/trace/tracer.js:140:36
+    at NoopContextManager.with (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/@opentelemetry/api/build/src/context/NoopContextManager.js:25:19)
+    at ContextAPI.with (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/@opentelemetry/api/build/src/api/context.js:60:46)
+    at NoopTracer.startActiveSpan (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/@opentelemetry/api/build/src/trace/NoopTracer.js:65:31)
+    at ProxyTracer.startActiveSpan (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/@opentelemetry/api/build/src/trace/ProxyTracer.js:36:24)
+    at /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/lib/trace/tracer.js:122:103
+    at NoopContextManager.with (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/@opentelemetry/api/build/src/context/NoopContextManager.js:25:19)
+    at ContextAPI.with (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/@opentelemetry/api/build/src/api/context.js:60:46)
+    at NextTracerImpl.trace (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/lib/trace/tracer.js:122:28)
+    at /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/lib/trace/tracer.js:191:31
+    at r3 (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:41:1678)
+    at async doRender (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/base-server.js:1427:30)
+    at async cacheEntry.responseCache.get.routeKind (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/base-server.js:1588:28)
+Time 0.503208
+ GET /sw.js 500 in 11ms
+ ⨯ Error: Invariant: missing bootstrap script. This is a bug in Next.js
+    at rR (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:39:2277)
+    at /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:39:25591
+    at /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/lib/trace/tracer.js:191:62
+    at /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/lib/trace/tracer.js:140:36
+    at NoopContextManager.with (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/@opentelemetry/api/build/src/context/NoopContextManager.js:25:19)
+    at ContextAPI.with (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/@opentelemetry/api/build/src/api/context.js:60:46)
+    at NoopTracer.startActiveSpan (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/@opentelemetry/api/build/src/trace/NoopTracer.js:65:31)
+    at ProxyTracer.startActiveSpan (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/@opentelemetry/api/build/src/trace/ProxyTracer.js:36:24)
+    at /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/lib/trace/tracer.js:122:103
+    at NoopContextManager.with (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/@opentelemetry/api/build/src/context/NoopContextManager.js:25:19)
+    at ContextAPI.with (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/@opentelemetry/api/build/src/api/context.js:60:46)
+    at NextTracerImpl.trace (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/lib/trace/tracer.js:122:28)
+    at /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/lib/trace/tracer.js:191:31
+    at r3 (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:41:1678)
+    at async doRender (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/base-server.js:1427:30)
+    at async cacheEntry.responseCache.get.routeKind (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/base-server.js:1588:28) {
+  page: '/reviews'
+}
+Could not find files for /_error in .next/build-manifest.json
+Could not find files for /_error in .next/build-manifest.json
+Time 0.319125
+ GET /reviews 500 in 18ms
+ GET /.well-known/appspecific/com.chrome.devtools.json 200 in 6ms
+ ⨯ Error: Invariant: missing bootstrap script. This is a bug in Next.js
+    at rR (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:39:2277)
+    at /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:39:25591
+    at /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/lib/trace/tracer.js:191:62
+    at /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/lib/trace/tracer.js:140:36
+    at NoopContextManager.with (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/@opentelemetry/api/build/src/context/NoopContextManager.js:25:19)
+    at ContextAPI.with (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/@opentelemetry/api/build/src/api/context.js:60:46)
+    at NoopTracer.startActiveSpan (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/@opentelemetry/api/build/src/trace/NoopTracer.js:65:31)
+    at ProxyTracer.startActiveSpan (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/@opentelemetry/api/build/src/trace/ProxyTracer.js:36:24)
+    at /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/lib/trace/tracer.js:122:103
+    at NoopContextManager.with (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/@opentelemetry/api/build/src/context/NoopContextManager.js:25:19)
+    at ContextAPI.with (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/@opentelemetry/api/build/src/api/context.js:60:46)
+    at NextTracerImpl.trace (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/lib/trace/tracer.js:122:28)
+    at /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/lib/trace/tracer.js:191:31
+    at r3 (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:41:1678)
+    at async doRender (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/base-server.js:1427:30)
+    at async cacheEntry.responseCache.get.routeKind (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/base-server.js:1588:28)
+Time 0.331083
+ GET /sw.js 500 in 9ms
+ ⨯ Error: Invariant: missing bootstrap script. This is a bug in Next.js
+    at rR (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:39:2277)
+    at /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:39:25591
+    at /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/lib/trace/tracer.js:191:62
+    at /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/lib/trace/tracer.js:140:36
+    at NoopContextManager.with (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/@opentelemetry/api/build/src/context/NoopContextManager.js:25:19)
+    at ContextAPI.with (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/@opentelemetry/api/build/src/api/context.js:60:46)
+    at NoopTracer.startActiveSpan (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/@opentelemetry/api/build/src/trace/NoopTracer.js:65:31)
+    at ProxyTracer.startActiveSpan (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/@opentelemetry/api/build/src/trace/ProxyTracer.js:36:24)
+    at /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/lib/trace/tracer.js:122:103
+    at NoopContextManager.with (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/@opentelemetry/api/build/src/context/NoopContextManager.js:25:19)
+    at ContextAPI.with (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/@opentelemetry/api/build/src/api/context.js:60:46)
+    at NextTracerImpl.trace (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/lib/trace/tracer.js:122:28)
+    at /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/lib/trace/tracer.js:191:31
+    at r3 (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:41:1678)
+    at async doRender (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/base-server.js:1427:30)
+    at async cacheEntry.responseCache.get.routeKind (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/base-server.js:1588:28) {
+  page: '/reviews'
+}
+ GET /reviews 500 in 10ms
+ GET /.well-known/appspecific/com.chrome.devtools.json 404 in 21ms
+ ⨯ Error: Invariant: missing bootstrap script. This is a bug in Next.js
+    at rR (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:39:2277)
+    at /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:39:25591
+    at /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/lib/trace/tracer.js:191:62
+    at /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/lib/trace/tracer.js:140:36
+    at NoopContextManager.with (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/@opentelemetry/api/build/src/context/NoopContextManager.js:25:19)
+    at ContextAPI.with (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/@opentelemetry/api/build/src/api/context.js:60:46)
+    at NoopTracer.startActiveSpan (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/@opentelemetry/api/build/src/trace/NoopTracer.js:65:31)
+    at ProxyTracer.startActiveSpan (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/@opentelemetry/api/build/src/trace/ProxyTracer.js:36:24)
+    at /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/lib/trace/tracer.js:122:103
+    at NoopContextManager.with (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/@opentelemetry/api/build/src/context/NoopContextManager.js:25:19)
+    at ContextAPI.with (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/@opentelemetry/api/build/src/api/context.js:60:46)
+    at NextTracerImpl.trace (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/lib/trace/tracer.js:122:28)
+    at /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/lib/trace/tracer.js:191:31
+    at r3 (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:41:1678)
+    at async doRender (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/base-server.js:1427:30)
+    at async cacheEntry.responseCache.get.routeKind (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/base-server.js:1588:28) {
+  page: '/reviews'
+}
+ GET /reviews 500 in 12ms
+ ⨯ Error: Invariant: missing bootstrap script. This is a bug in Next.js
+    at rR (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:39:2277)
+    at /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:39:25591
+    at /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/lib/trace/tracer.js:191:62
+    at /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/lib/trace/tracer.js:140:36
+    at NoopContextManager.with (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/@opentelemetry/api/build/src/context/NoopContextManager.js:25:19)
+    at ContextAPI.with (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/@opentelemetry/api/build/src/api/context.js:60:46)
+    at NoopTracer.startActiveSpan (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/@opentelemetry/api/build/src/trace/NoopTracer.js:65:31)
+    at ProxyTracer.startActiveSpan (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/@opentelemetry/api/build/src/trace/ProxyTracer.js:36:24)
+    at /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/lib/trace/tracer.js:122:103
+    at NoopContextManager.with (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/@opentelemetry/api/build/src/context/NoopContextManager.js:25:19)
+    at ContextAPI.with (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/@opentelemetry/api/build/src/api/context.js:60:46)
+    at NextTracerImpl.trace (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/lib/trace/tracer.js:122:28)
+    at /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/lib/trace/tracer.js:191:31
+    at r3 (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:41:1678)
+    at async doRender (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/base-server.js:1427:30)
+    at async cacheEntry.responseCache.get.routeKind (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/base-server.js:1588:28) {
+  page: '/reviews'
+}
+ GET /reviews 500 in 8ms
+ ⨯ Error: Invariant: missing bootstrap script. This is a bug in Next.js
+    at rR (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:39:2277)
+    at /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:39:25591
+    at /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/lib/trace/tracer.js:191:62
+    at /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/lib/trace/tracer.js:140:36
+    at NoopContextManager.with (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/@opentelemetry/api/build/src/context/NoopContextManager.js:25:19)
+    at ContextAPI.with (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/@opentelemetry/api/build/src/api/context.js:60:46)
+    at NoopTracer.startActiveSpan (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/@opentelemetry/api/build/src/trace/NoopTracer.js:65:31)
+    at ProxyTracer.startActiveSpan (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/@opentelemetry/api/build/src/trace/ProxyTracer.js:36:24)
+    at /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/lib/trace/tracer.js:122:103
+    at NoopContextManager.with (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/@opentelemetry/api/build/src/context/NoopContextManager.js:25:19)
+    at ContextAPI.with (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/@opentelemetry/api/build/src/api/context.js:60:46)
+    at NextTracerImpl.trace (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/lib/trace/tracer.js:122:28)
+    at /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/lib/trace/tracer.js:191:31
+    at r3 (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:41:1678)
+    at async doRender (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/base-server.js:1427:30)
+    at async cacheEntry.responseCache.get.routeKind (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/base-server.js:1588:28) {
+  page: '/reviews'
+}
+ GET /reviews 500 in 8ms
+ ⨯ Error: Invariant: missing bootstrap script. This is a bug in Next.js
+    at rR (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:39:2277)
+    at /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:39:25591
+    at /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/lib/trace/tracer.js:191:62
+    at /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/lib/trace/tracer.js:140:36
+    at NoopContextManager.with (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/@opentelemetry/api/build/src/context/NoopContextManager.js:25:19)
+    at ContextAPI.with (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/@opentelemetry/api/build/src/api/context.js:60:46)
+    at NoopTracer.startActiveSpan (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/@opentelemetry/api/build/src/trace/NoopTracer.js:65:31)
+    at ProxyTracer.startActiveSpan (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/@opentelemetry/api/build/src/trace/ProxyTracer.js:36:24)
+    at /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/lib/trace/tracer.js:122:103
+    at NoopContextManager.with (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/@opentelemetry/api/build/src/context/NoopContextManager.js:25:19)
+    at ContextAPI.with (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/@opentelemetry/api/build/src/api/context.js:60:46)
+    at NextTracerImpl.trace (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/lib/trace/tracer.js:122:28)
+    at /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/lib/trace/tracer.js:191:31
+    at r3 (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:41:1678)
+    at async doRender (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/base-server.js:1427:30)
+    at async cacheEntry.responseCache.get.routeKind (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/base-server.js:1588:28) {
+  page: '/reviews'
+}
+ GET /reviews 500 in 17ms
+ ⚠ ./node_modules/@supabase/realtime-js/dist/main/RealtimeClient.js
+Critical dependency: the request of a dependency is an expression
+
+Import trace for requested module:
+./node_modules/@supabase/realtime-js/dist/main/RealtimeClient.js
+./node_modules/@supabase/realtime-js/dist/main/index.js
+./node_modules/@supabase/supabase-js/dist/module/index.js
+./node_modules/@supabase/ssr/dist/module/createBrowserClient.js
+./node_modules/@supabase/ssr/dist/module/index.js
+./utils/supabase/server.ts
+./app/reviews/page.tsx
+ ⚠ ./node_modules/@supabase/realtime-js/dist/main/RealtimeClient.js
+Critical dependency: the request of a dependency is an expression
+
+Import trace for requested module:
+./node_modules/@supabase/realtime-js/dist/main/RealtimeClient.js
+./node_modules/@supabase/realtime-js/dist/main/index.js
+./node_modules/@supabase/supabase-js/dist/module/index.js
+./node_modules/@supabase/ssr/dist/module/createBrowserClient.js
+./node_modules/@supabase/ssr/dist/module/index.js
+./utils/supabase/server.ts
+./app/reviews/page.tsx
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, lstat '/Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/pages'
+<w> [webpack.cache.PackFileCacheStrategy/webpack.FileSystemInfo] Resolving '../../../../.next/server/pages/_error' in /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server for build dependencies doesn't lead to expected result '/Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/pages/_error.js', but to 'Error: Can't resolve '../../../../.next/server/pages/_error' in '/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server'' instead. Resolving dependencies are ignored for this path.
+<w>  at resolve commonjs file ../../../../.next/server/pages/_error (expected /Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/pages/_error.js)
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/require.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/require.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/load-components.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/load-components.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/utils.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/utils.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/handle-externals.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/handle-externals.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+<w>  at resolve commonjs /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+<w> [webpack.cache.PackFileCacheStrategy/webpack.FileSystemInfo] Resolving '../../../../.next/server/pages/_app' in /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server for build dependencies doesn't lead to expected result '/Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/pages/_app.js', but to 'Error: Can't resolve '../../../../.next/server/pages/_app' in '/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server'' instead. Resolving dependencies are ignored for this path.
+<w>  at resolve commonjs file ../../../../.next/server/pages/_app (expected /Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/pages/_app.js)
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/require.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/require.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/load-components.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/load-components.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/utils.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/utils.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/handle-externals.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/handle-externals.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+<w>  at resolve commonjs /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+ ⚠ ./node_modules/@supabase/realtime-js/dist/main/RealtimeClient.js
+Critical dependency: the request of a dependency is an expression
+
+Import trace for requested module:
+./node_modules/@supabase/realtime-js/dist/main/RealtimeClient.js
+./node_modules/@supabase/realtime-js/dist/main/index.js
+./node_modules/@supabase/supabase-js/dist/module/index.js
+./node_modules/@supabase/ssr/dist/module/createBrowserClient.js
+./node_modules/@supabase/ssr/dist/module/index.js
+./utils/supabase/server.ts
+./app/reviews/page.tsx
+ ⚠ ./node_modules/@supabase/realtime-js/dist/main/RealtimeClient.js
+Critical dependency: the request of a dependency is an expression
+
+Import trace for requested module:
+./node_modules/@supabase/realtime-js/dist/main/RealtimeClient.js
+./node_modules/@supabase/realtime-js/dist/main/index.js
+./node_modules/@supabase/supabase-js/dist/module/index.js
+./node_modules/@supabase/ssr/dist/module/createBrowserClient.js
+./node_modules/@supabase/ssr/dist/module/index.js
+./utils/supabase/server.ts
+./app/reviews/page.tsx
+ ⚠ ./node_modules/@supabase/realtime-js/dist/main/RealtimeClient.js
+Critical dependency: the request of a dependency is an expression
+
+Import trace for requested module:
+./node_modules/@supabase/realtime-js/dist/main/RealtimeClient.js
+./node_modules/@supabase/realtime-js/dist/main/index.js
+./node_modules/@supabase/supabase-js/dist/module/index.js
+./node_modules/@supabase/ssr/dist/module/createBrowserClient.js
+./node_modules/@supabase/ssr/dist/module/index.js
+./utils/supabase/server.ts
+./app/reviews/page.tsx
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, lstat '/Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/pages'
+<w> [webpack.cache.PackFileCacheStrategy/webpack.FileSystemInfo] Resolving '../../../../.next/server/pages/_error' in /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server for build dependencies doesn't lead to expected result '/Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/pages/_error.js', but to 'Error: Can't resolve '../../../../.next/server/pages/_error' in '/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server'' instead. Resolving dependencies are ignored for this path.
+<w>  at resolve commonjs file ../../../../.next/server/pages/_error (expected /Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/pages/_error.js)
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/require.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/require.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/load-components.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/load-components.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/utils.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/utils.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/loader-runner/LoaderRunner.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/loader-runner/LoaderRunner.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/webpack/bundle5.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/webpack/bundle5.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/webpack/webpack.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/webpack/webpack.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/plugins/define-env-plugin.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/plugins/define-env-plugin.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/swc/index.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/swc/index.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-barrel-loader.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-barrel-loader.js
+<w>  at resolve commonjs /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-barrel-loader.js
+<w> [webpack.cache.PackFileCacheStrategy/webpack.FileSystemInfo] Resolving '../../../../.next/server/pages/_app' in /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server for build dependencies doesn't lead to expected result '/Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/pages/_app.js', but to 'Error: Can't resolve '../../../../.next/server/pages/_app' in '/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server'' instead. Resolving dependencies are ignored for this path.
+<w>  at resolve commonjs file ../../../../.next/server/pages/_app (expected /Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/pages/_app.js)
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/require.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/require.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/load-components.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/load-components.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/utils.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/utils.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/loader-runner/LoaderRunner.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/loader-runner/LoaderRunner.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/webpack/bundle5.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/webpack/bundle5.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/webpack/webpack.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/webpack/webpack.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/plugins/define-env-plugin.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/plugins/define-env-plugin.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/swc/index.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/swc/index.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-barrel-loader.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-barrel-loader.js
+<w>  at resolve commonjs /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-barrel-loader.js
+<w> [webpack.cache.PackFileCacheStrategy/webpack.FileSystemInfo] Resolving '../../../../.next/server/pages/_document' in /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server for build dependencies doesn't lead to expected result '/Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/pages/_document.js', but to 'Error: Can't resolve '../../../../.next/server/pages/_document' in '/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server'' instead. Resolving dependencies are ignored for this path.
+<w>  at resolve commonjs file ../../../../.next/server/pages/_document (expected /Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/pages/_document.js)
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/require.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/require.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/load-components.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/load-components.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/utils.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/utils.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/loader-runner/LoaderRunner.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/loader-runner/LoaderRunner.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/webpack/bundle5.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/webpack/bundle5.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/webpack/webpack.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/webpack/webpack.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/plugins/define-env-plugin.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/plugins/define-env-plugin.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/swc/index.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/swc/index.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-barrel-loader.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-barrel-loader.js
+<w>  at resolve commonjs /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-barrel-loader.js
+ ⚠ ./node_modules/@supabase/realtime-js/dist/main/RealtimeClient.js
+Critical dependency: the request of a dependency is an expression
+
+Import trace for requested module:
+./node_modules/@supabase/realtime-js/dist/main/RealtimeClient.js
+./node_modules/@supabase/realtime-js/dist/main/index.js
+./node_modules/@supabase/supabase-js/dist/module/index.js
+./node_modules/@supabase/ssr/dist/module/createBrowserClient.js
+./node_modules/@supabase/ssr/dist/module/index.js
+./utils/supabase/server.ts
+./app/reviews/page.tsx
+ ⚠ ./node_modules/@supabase/realtime-js/dist/main/RealtimeClient.js
+Critical dependency: the request of a dependency is an expression
+
+Import trace for requested module:
+./node_modules/@supabase/realtime-js/dist/main/RealtimeClient.js
+./node_modules/@supabase/realtime-js/dist/main/index.js
+./node_modules/@supabase/supabase-js/dist/module/index.js
+./node_modules/@supabase/ssr/dist/module/createBrowserClient.js
+./node_modules/@supabase/ssr/dist/module/index.js
+./utils/supabase/server.ts
+./app/reviews/page.tsx
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, lstat '/Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/pages'
+<w> [webpack.cache.PackFileCacheStrategy/webpack.FileSystemInfo] Resolving '../../../../.next/server/pages/_error' in /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server for build dependencies doesn't lead to expected result '/Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/pages/_error.js', but to 'Error: Can't resolve '../../../../.next/server/pages/_error' in '/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server'' instead. Resolving dependencies are ignored for this path.
+<w>  at resolve commonjs file ../../../../.next/server/pages/_error (expected /Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/pages/_error.js)
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/require.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/require.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/load-components.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/load-components.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/utils.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/utils.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/handle-externals.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/handle-externals.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+<w>  at resolve commonjs /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+<w> [webpack.cache.PackFileCacheStrategy/webpack.FileSystemInfo] Resolving '../../../../.next/server/pages/_app' in /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server for build dependencies doesn't lead to expected result '/Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/pages/_app.js', but to 'Error: Can't resolve '../../../../.next/server/pages/_app' in '/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server'' instead. Resolving dependencies are ignored for this path.
+<w>  at resolve commonjs file ../../../../.next/server/pages/_app (expected /Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/pages/_app.js)
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/require.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/require.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/load-components.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/load-components.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/utils.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/utils.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/handle-externals.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/handle-externals.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+<w>  at resolve commonjs /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+<w> [webpack.cache.PackFileCacheStrategy/webpack.FileSystemInfo] Resolving '../../../../.next/server/pages/_document' in /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server for build dependencies doesn't lead to expected result '/Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/pages/_document.js', but to 'Error: Can't resolve '../../../../.next/server/pages/_document' in '/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server'' instead. Resolving dependencies are ignored for this path.
+<w>  at resolve commonjs file ../../../../.next/server/pages/_document (expected /Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/pages/_document.js)
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/require.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/require.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/load-components.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/load-components.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/utils.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/utils.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/handle-externals.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/handle-externals.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+<w>  at resolve commonjs /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+ ⚠ ./node_modules/@supabase/realtime-js/dist/main/RealtimeClient.js
+Critical dependency: the request of a dependency is an expression
+
+Import trace for requested module:
+./node_modules/@supabase/realtime-js/dist/main/RealtimeClient.js
+./node_modules/@supabase/realtime-js/dist/main/index.js
+./node_modules/@supabase/supabase-js/dist/module/index.js
+./node_modules/@supabase/ssr/dist/module/createBrowserClient.js
+./node_modules/@supabase/ssr/dist/module/index.js
+./utils/supabase/server.ts
+./app/reviews/page.tsx
+ ⚠ ./node_modules/@supabase/realtime-js/dist/main/RealtimeClient.js
+Critical dependency: the request of a dependency is an expression
+
+Import trace for requested module:
+./node_modules/@supabase/realtime-js/dist/main/RealtimeClient.js
+./node_modules/@supabase/realtime-js/dist/main/index.js
+./node_modules/@supabase/supabase-js/dist/module/index.js
+./node_modules/@supabase/ssr/dist/module/createBrowserClient.js
+./node_modules/@supabase/ssr/dist/module/index.js
+./utils/supabase/server.ts
+./app/reviews/page.tsx
+ ⚠ ./node_modules/@supabase/realtime-js/dist/main/RealtimeClient.js
+Critical dependency: the request of a dependency is an expression
+
+Import trace for requested module:
+./node_modules/@supabase/realtime-js/dist/main/RealtimeClient.js
+./node_modules/@supabase/realtime-js/dist/main/index.js
+./node_modules/@supabase/supabase-js/dist/module/index.js
+./node_modules/@supabase/ssr/dist/module/createBrowserClient.js
+./node_modules/@supabase/ssr/dist/module/index.js
+./utils/supabase/server.ts
+./app/reviews/page.tsx
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, lstat '/Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/pages'
+<w> [webpack.cache.PackFileCacheStrategy/webpack.FileSystemInfo] Resolving '../../../../.next/server/pages/_error' in /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server for build dependencies doesn't lead to expected result '/Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/pages/_error.js', but to 'Error: Can't resolve '../../../../.next/server/pages/_error' in '/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server'' instead. Resolving dependencies are ignored for this path.
+<w>  at resolve commonjs file ../../../../.next/server/pages/_error (expected /Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/pages/_error.js)
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/require.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/require.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/load-components.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/load-components.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/utils.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/utils.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/loader-runner/LoaderRunner.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/loader-runner/LoaderRunner.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/webpack/bundle5.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/webpack/bundle5.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/webpack/webpack.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/webpack/webpack.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/plugins/define-env-plugin.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/plugins/define-env-plugin.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/swc/index.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/swc/index.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-barrel-loader.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-barrel-loader.js
+<w>  at resolve commonjs /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-barrel-loader.js
+<w> [webpack.cache.PackFileCacheStrategy/webpack.FileSystemInfo] Resolving '../../../../.next/server/pages/_app' in /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server for build dependencies doesn't lead to expected result '/Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/pages/_app.js', but to 'Error: Can't resolve '../../../../.next/server/pages/_app' in '/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server'' instead. Resolving dependencies are ignored for this path.
+<w>  at resolve commonjs file ../../../../.next/server/pages/_app (expected /Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/pages/_app.js)
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/require.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/require.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/load-components.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/load-components.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/utils.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/utils.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/loader-runner/LoaderRunner.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/loader-runner/LoaderRunner.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/webpack/bundle5.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/webpack/bundle5.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/webpack/webpack.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/webpack/webpack.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/plugins/define-env-plugin.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/plugins/define-env-plugin.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/swc/index.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/swc/index.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-barrel-loader.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-barrel-loader.js
+<w>  at resolve commonjs /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-barrel-loader.js
+<w> [webpack.cache.PackFileCacheStrategy/webpack.FileSystemInfo] Resolving '../../../../.next/server/pages/_document' in /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server for build dependencies doesn't lead to expected result '/Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/pages/_document.js', but to 'Error: Can't resolve '../../../../.next/server/pages/_document' in '/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server'' instead. Resolving dependencies are ignored for this path.
+<w>  at resolve commonjs file ../../../../.next/server/pages/_document (expected /Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/pages/_document.js)
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/require.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/require.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/load-components.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/load-components.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/utils.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/utils.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/loader-runner/LoaderRunner.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/loader-runner/LoaderRunner.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/webpack/bundle5.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/webpack/bundle5.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/webpack/webpack.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/webpack/webpack.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/plugins/define-env-plugin.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/plugins/define-env-plugin.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/swc/index.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/swc/index.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-barrel-loader.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-barrel-loader.js
+<w>  at resolve commonjs /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-barrel-loader.js
+ ⚠ ./node_modules/@supabase/realtime-js/dist/main/RealtimeClient.js
+Critical dependency: the request of a dependency is an expression
+
+Import trace for requested module:
+./node_modules/@supabase/realtime-js/dist/main/RealtimeClient.js
+./node_modules/@supabase/realtime-js/dist/main/index.js
+./node_modules/@supabase/supabase-js/dist/module/index.js
+./node_modules/@supabase/ssr/dist/module/createBrowserClient.js
+./node_modules/@supabase/ssr/dist/module/index.js
+./utils/supabase/server.ts
+./app/reviews/page.tsx
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, lstat '/Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/pages'
+<w> [webpack.cache.PackFileCacheStrategy/webpack.FileSystemInfo] Resolving '../../../../.next/server/pages/_error' in /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server for build dependencies doesn't lead to expected result '/Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/pages/_error.js', but to 'Error: Can't resolve '../../../../.next/server/pages/_error' in '/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server'' instead. Resolving dependencies are ignored for this path.
+<w>  at resolve commonjs file ../../../../.next/server/pages/_error (expected /Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/pages/_error.js)
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/require.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/require.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/load-components.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/load-components.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/utils.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/utils.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/handle-externals.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/handle-externals.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+<w>  at resolve commonjs /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+<w> [webpack.cache.PackFileCacheStrategy/webpack.FileSystemInfo] Resolving '../../../../.next/server/pages/_app' in /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server for build dependencies doesn't lead to expected result '/Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/pages/_app.js', but to 'Error: Can't resolve '../../../../.next/server/pages/_app' in '/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server'' instead. Resolving dependencies are ignored for this path.
+<w>  at resolve commonjs file ../../../../.next/server/pages/_app (expected /Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/pages/_app.js)
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/require.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/require.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/load-components.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/load-components.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/utils.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/utils.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/handle-externals.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/handle-externals.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+<w>  at resolve commonjs /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+<w> [webpack.cache.PackFileCacheStrategy/webpack.FileSystemInfo] Resolving '../../../../.next/server/pages/_document' in /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server for build dependencies doesn't lead to expected result '/Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/pages/_document.js', but to 'Error: Can't resolve '../../../../.next/server/pages/_document' in '/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server'' instead. Resolving dependencies are ignored for this path.
+<w>  at resolve commonjs file ../../../../.next/server/pages/_document (expected /Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/pages/_document.js)
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/require.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/require.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/load-components.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/load-components.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/utils.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/utils.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/handle-externals.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/handle-externals.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+<w>  at resolve commonjs /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+ ⚠ ./node_modules/@supabase/realtime-js/dist/main/RealtimeClient.js
+Critical dependency: the request of a dependency is an expression
+
+Import trace for requested module:
+./node_modules/@supabase/realtime-js/dist/main/RealtimeClient.js
+./node_modules/@supabase/realtime-js/dist/main/index.js
+./node_modules/@supabase/supabase-js/dist/module/index.js
+./node_modules/@supabase/ssr/dist/module/createBrowserClient.js
+./node_modules/@supabase/ssr/dist/module/index.js
+./utils/supabase/server.ts
+./app/reviews/page.tsx
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, lstat '/Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/pages'
+<w> [webpack.cache.PackFileCacheStrategy/webpack.FileSystemInfo] Resolving '../../../../.next/server/pages/_error' in /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server for build dependencies doesn't lead to expected result '/Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/pages/_error.js', but to 'Error: Can't resolve '../../../../.next/server/pages/_error' in '/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server'' instead. Resolving dependencies are ignored for this path.
+<w>  at resolve commonjs file ../../../../.next/server/pages/_error (expected /Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/pages/_error.js)
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/require.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/require.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/load-components.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/load-components.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/utils.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/utils.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/handle-externals.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/handle-externals.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+<w>  at resolve commonjs /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+<w> [webpack.cache.PackFileCacheStrategy/webpack.FileSystemInfo] Resolving '../../../../.next/server/pages/_app' in /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server for build dependencies doesn't lead to expected result '/Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/pages/_app.js', but to 'Error: Can't resolve '../../../../.next/server/pages/_app' in '/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server'' instead. Resolving dependencies are ignored for this path.
+<w>  at resolve commonjs file ../../../../.next/server/pages/_app (expected /Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/pages/_app.js)
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/require.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/require.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/load-components.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/load-components.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/utils.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/utils.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/handle-externals.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/handle-externals.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+<w>  at resolve commonjs /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+<w> [webpack.cache.PackFileCacheStrategy/webpack.FileSystemInfo] Resolving '../../../../.next/server/pages/_document' in /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server for build dependencies doesn't lead to expected result '/Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/pages/_document.js', but to 'Error: Can't resolve '../../../../.next/server/pages/_document' in '/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server'' instead. Resolving dependencies are ignored for this path.
+<w>  at resolve commonjs file ../../../../.next/server/pages/_document (expected /Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/pages/_document.js)
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/require.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/require.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/load-components.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/load-components.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/utils.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/utils.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/handle-externals.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/handle-externals.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+<w>  at resolve commonjs /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+ ⚠ ./node_modules/@supabase/realtime-js/dist/main/RealtimeClient.js
+Critical dependency: the request of a dependency is an expression
+
+Import trace for requested module:
+./node_modules/@supabase/realtime-js/dist/main/RealtimeClient.js
+./node_modules/@supabase/realtime-js/dist/main/index.js
+./node_modules/@supabase/supabase-js/dist/module/index.js
+./node_modules/@supabase/ssr/dist/module/createBrowserClient.js
+./node_modules/@supabase/ssr/dist/module/index.js
+./utils/supabase/server.ts
+./app/reviews/page.tsx
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, lstat '/Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/pages'
+<w> [webpack.cache.PackFileCacheStrategy/webpack.FileSystemInfo] Resolving '../../../../.next/server/pages/_error' in /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server for build dependencies doesn't lead to expected result '/Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/pages/_error.js', but to 'Error: Can't resolve '../../../../.next/server/pages/_error' in '/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server'' instead. Resolving dependencies are ignored for this path.
+<w>  at resolve commonjs file ../../../../.next/server/pages/_error (expected /Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/pages/_error.js)
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/require.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/require.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/load-components.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/load-components.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/utils.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/utils.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/handle-externals.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/handle-externals.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+<w>  at resolve commonjs /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+<w> [webpack.cache.PackFileCacheStrategy/webpack.FileSystemInfo] Resolving '../../../../.next/server/pages/_app' in /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server for build dependencies doesn't lead to expected result '/Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/pages/_app.js', but to 'Error: Can't resolve '../../../../.next/server/pages/_app' in '/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server'' instead. Resolving dependencies are ignored for this path.
+<w>  at resolve commonjs file ../../../../.next/server/pages/_app (expected /Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/pages/_app.js)
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/require.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/require.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/load-components.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/load-components.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/utils.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/utils.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/handle-externals.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/handle-externals.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+<w>  at resolve commonjs /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+<w> [webpack.cache.PackFileCacheStrategy/webpack.FileSystemInfo] Resolving '../../../../.next/server/pages/_document' in /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server for build dependencies doesn't lead to expected result '/Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/pages/_document.js', but to 'Error: Can't resolve '../../../../.next/server/pages/_document' in '/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server'' instead. Resolving dependencies are ignored for this path.
+<w>  at resolve commonjs file ../../../../.next/server/pages/_document (expected /Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/pages/_document.js)
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/require.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/require.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/load-components.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/load-components.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/utils.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/utils.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/handle-externals.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/handle-externals.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+<w>  at resolve commonjs /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+ ⚠ ./node_modules/@supabase/realtime-js/dist/main/RealtimeClient.js
+Critical dependency: the request of a dependency is an expression
+
+Import trace for requested module:
+./node_modules/@supabase/realtime-js/dist/main/RealtimeClient.js
+./node_modules/@supabase/realtime-js/dist/main/index.js
+./node_modules/@supabase/supabase-js/dist/module/index.js
+./node_modules/@supabase/ssr/dist/module/createBrowserClient.js
+./node_modules/@supabase/ssr/dist/module/index.js
+./utils/supabase/server.ts
+./app/reviews/page.tsx
+ ⚠ ./node_modules/@supabase/realtime-js/dist/main/RealtimeClient.js
+Critical dependency: the request of a dependency is an expression
+
+Import trace for requested module:
+./node_modules/@supabase/realtime-js/dist/main/RealtimeClient.js
+./node_modules/@supabase/realtime-js/dist/main/index.js
+./node_modules/@supabase/supabase-js/dist/module/index.js
+./node_modules/@supabase/ssr/dist/module/createBrowserClient.js
+./node_modules/@supabase/ssr/dist/module/index.js
+./utils/supabase/server.ts
+./app/reviews/page.tsx
+ ⚠ ./node_modules/@supabase/realtime-js/dist/main/RealtimeClient.js
+Critical dependency: the request of a dependency is an expression
+
+Import trace for requested module:
+./node_modules/@supabase/realtime-js/dist/main/RealtimeClient.js
+./node_modules/@supabase/realtime-js/dist/main/index.js
+./node_modules/@supabase/supabase-js/dist/module/index.js
+./node_modules/@supabase/ssr/dist/module/createBrowserClient.js
+./node_modules/@supabase/ssr/dist/module/index.js
+./utils/supabase/server.ts
+./app/reviews/page.tsx
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, lstat '/Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/pages'
+<w> [webpack.cache.PackFileCacheStrategy/webpack.FileSystemInfo] Resolving '../../../../.next/server/pages/_error' in /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server for build dependencies doesn't lead to expected result '/Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/pages/_error.js', but to 'Error: Can't resolve '../../../../.next/server/pages/_error' in '/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server'' instead. Resolving dependencies are ignored for this path.
+<w>  at resolve commonjs file ../../../../.next/server/pages/_error (expected /Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/pages/_error.js)
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/require.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/require.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/load-components.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/load-components.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/utils.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/utils.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/handle-externals.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/handle-externals.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+<w>  at resolve commonjs /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+<w> [webpack.cache.PackFileCacheStrategy/webpack.FileSystemInfo] Resolving '../../../../.next/server/pages/_app' in /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server for build dependencies doesn't lead to expected result '/Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/pages/_app.js', but to 'Error: Can't resolve '../../../../.next/server/pages/_app' in '/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server'' instead. Resolving dependencies are ignored for this path.
+<w>  at resolve commonjs file ../../../../.next/server/pages/_app (expected /Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/pages/_app.js)
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/require.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/require.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/load-components.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/load-components.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/utils.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/utils.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/handle-externals.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/handle-externals.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+<w>  at resolve commonjs /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+<w> [webpack.cache.PackFileCacheStrategy/webpack.FileSystemInfo] Resolving '../../../../.next/server/pages/_document' in /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server for build dependencies doesn't lead to expected result '/Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/pages/_document.js', but to 'Error: Can't resolve '../../../../.next/server/pages/_document' in '/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server'' instead. Resolving dependencies are ignored for this path.
+<w>  at resolve commonjs file ../../../../.next/server/pages/_document (expected /Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/pages/_document.js)
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/require.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/require.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/load-components.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/load-components.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/utils.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/utils.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/handle-externals.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/handle-externals.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+<w>  at resolve commonjs /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+ ⚠ ./node_modules/@supabase/realtime-js/dist/main/RealtimeClient.js
+Critical dependency: the request of a dependency is an expression
+
+Import trace for requested module:
+./node_modules/@supabase/realtime-js/dist/main/RealtimeClient.js
+./node_modules/@supabase/realtime-js/dist/main/index.js
+./node_modules/@supabase/supabase-js/dist/module/index.js
+./node_modules/@supabase/ssr/dist/module/createBrowserClient.js
+./node_modules/@supabase/ssr/dist/module/index.js
+./utils/supabase/server.ts
+./app/reviews/page.tsx
+ ⚠ ./node_modules/@supabase/realtime-js/dist/main/RealtimeClient.js
+Critical dependency: the request of a dependency is an expression
+
+Import trace for requested module:
+./node_modules/@supabase/realtime-js/dist/main/RealtimeClient.js
+./node_modules/@supabase/realtime-js/dist/main/index.js
+./node_modules/@supabase/supabase-js/dist/module/index.js
+./node_modules/@supabase/ssr/dist/module/createBrowserClient.js
+./node_modules/@supabase/ssr/dist/module/index.js
+./utils/supabase/server.ts
+./app/reviews/page.tsx
+ ⚠ ./node_modules/@supabase/realtime-js/dist/main/RealtimeClient.js
+Critical dependency: the request of a dependency is an expression
+
+Import trace for requested module:
+./node_modules/@supabase/realtime-js/dist/main/RealtimeClient.js
+./node_modules/@supabase/realtime-js/dist/main/index.js
+./node_modules/@supabase/supabase-js/dist/module/index.js
+./node_modules/@supabase/ssr/dist/module/createBrowserClient.js
+./node_modules/@supabase/ssr/dist/module/index.js
+./utils/supabase/server.ts
+./app/reviews/page.tsx
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, lstat '/Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/pages'
+<w> [webpack.cache.PackFileCacheStrategy/webpack.FileSystemInfo] Resolving '../../../../.next/server/pages/_error' in /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server for build dependencies doesn't lead to expected result '/Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/pages/_error.js', but to 'Error: Can't resolve '../../../../.next/server/pages/_error' in '/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server'' instead. Resolving dependencies are ignored for this path.
+<w>  at resolve commonjs file ../../../../.next/server/pages/_error (expected /Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/pages/_error.js)
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/require.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/require.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/load-components.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/load-components.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/utils.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/utils.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/handle-externals.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/handle-externals.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+<w>  at resolve commonjs /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+<w> [webpack.cache.PackFileCacheStrategy/webpack.FileSystemInfo] Resolving '../../../../.next/server/pages/_app' in /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server for build dependencies doesn't lead to expected result '/Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/pages/_app.js', but to 'Error: Can't resolve '../../../../.next/server/pages/_app' in '/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server'' instead. Resolving dependencies are ignored for this path.
+<w>  at resolve commonjs file ../../../../.next/server/pages/_app (expected /Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/pages/_app.js)
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/require.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/require.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/load-components.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/load-components.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/utils.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/utils.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/handle-externals.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/handle-externals.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+<w>  at resolve commonjs /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+<w> [webpack.cache.PackFileCacheStrategy/webpack.FileSystemInfo] Resolving '../../../../.next/server/pages/_document' in /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server for build dependencies doesn't lead to expected result '/Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/pages/_document.js', but to 'Error: Can't resolve '../../../../.next/server/pages/_document' in '/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server'' instead. Resolving dependencies are ignored for this path.
+<w>  at resolve commonjs file ../../../../.next/server/pages/_document (expected /Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/pages/_document.js)
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/require.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/require.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/load-components.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/load-components.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/utils.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/utils.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/handle-externals.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/handle-externals.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+<w>  at resolve commonjs /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+ ✓ Compiled /.well-known/appspecific/com.chrome.devtools.json in 2.4s (1278 modules)
+ ✓ Compiled in 1391ms (1230 modules)
+ ✓ Compiled in 479ms (1230 modules)
+ ✓ Compiled in 916ms (1230 modules)
+ ✓ Compiled in 596ms (1230 modules)
+ ✓ Compiled in 426ms (1213 modules)
+ ✓ Compiled in 576ms (1230 modules)
+ ✓ Compiled in 728ms (1230 modules)
+ ✓ Compiled in 689ms (1230 modules)
+ ✓ Compiled in 444ms (1230 modules)
+ ✓ Compiled in 389ms (1230 modules)
+ ✓ Compiled in 262ms (1230 modules)
+ ✓ Compiled in 354ms (1230 modules)
+ ✓ Compiled in 1493ms (1230 modules)
+ ✓ Compiled in 1845ms (1230 modules)
+ ✓ Compiled in 498ms (1230 modules)
+ ✓ Compiled in 491ms (1230 modules)
+ ✓ Compiled in 1622ms (1230 modules)
+ ✓ Compiled in 779ms (1230 modules)
+ ✓ Compiled in 894ms (1230 modules)
+ ✓ Compiled in 345ms (1230 modules)
+ ✓ Compiled in 262ms (1230 modules)
+ ✓ Compiled in 268ms (1230 modules)
+ ✓ Compiled in 267ms (1230 modules)
+ ✓ Compiled in 307ms (1230 modules)
+ ✓ Compiled in 287ms (1230 modules)
+ ✓ Compiled in 265ms (1230 modules)
+ ✓ Compiled in 211ms (1230 modules)
+ ✓ Compiled in 323ms (1230 modules)
+ ✓ Compiled in 291ms (1230 modules)
+ ✓ Compiled in 981ms (1230 modules)
+ ✓ Compiled in 1005ms (1230 modules)
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, lstat '/Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/app/reviews/page.js'
+<w> [webpack.cache.PackFileCacheStrategy/webpack.FileSystemInfo] Resolving '../../../../.next/server/app/reviews/page' in /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server for build dependencies doesn't lead to expected result '/Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/app/reviews/page.js', but to 'Error: Can't resolve '../../../../.next/server/app/reviews/page' in '/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server'' instead. Resolving dependencies are ignored for this path.
+<w>  at resolve commonjs file ../../../../.next/server/app/reviews/page (expected /Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/app/reviews/page.js)
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/require.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/require.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/load-components.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/load-components.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/utils.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/utils.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/handle-externals.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/handle-externals.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+<w>  at resolve commonjs /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+<w> [webpack.cache.PackFileCacheStrategy/webpack.FileSystemInfo] Resolving '../../../../.next/server/app/_not-found/page' in /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server for build dependencies doesn't lead to expected result '/Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/app/_not-found/page.js', but to 'Error: Can't resolve '../../../../.next/server/app/_not-found/page' in '/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server'' instead. Resolving dependencies are ignored for this path.
+<w>  at resolve commonjs file ../../../../.next/server/app/_not-found/page (expected /Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/app/_not-found/page.js)
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/require.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/require.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/load-components.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/load-components.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/utils.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/utils.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/handle-externals.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/handle-externals.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+<w>  at resolve commonjs /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+<w> [webpack.cache.PackFileCacheStrategy/webpack.FileSystemInfo] Resolving '../../../../.next/server/app/.well-known/appspecific/com.chrome.devtools.json/route' in /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server for build dependencies doesn't lead to expected result '/Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/app/.well-known/appspecific/com.chrome.devtools.json/route.js', but to 'Error: Can't resolve '../../../../.next/server/app/.well-known/appspecific/com.chrome.devtools.json/route' in '/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server'' instead. Resolving dependencies are ignored for this path.
+<w>  at resolve commonjs file ../../../../.next/server/app/.well-known/appspecific/com.chrome.devtools.json/route (expected /Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/app/.well-known/appspecific/com.chrome.devtools.json/route.js)
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/require.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/require.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/load-components.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/load-components.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/utils.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/utils.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/handle-externals.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/handle-externals.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+<w>  at resolve commonjs /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+ ✓ Compiled in 1323ms (1230 modules)
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, lstat '/Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/app/reviews/page.js'
+<w> [webpack.cache.PackFileCacheStrategy/webpack.FileSystemInfo] Resolving '../../../../.next/server/app/reviews/page' in /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server for build dependencies doesn't lead to expected result '/Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/app/reviews/page.js', but to 'Error: Can't resolve '../../../../.next/server/app/reviews/page' in '/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server'' instead. Resolving dependencies are ignored for this path.
+<w>  at resolve commonjs file ../../../../.next/server/app/reviews/page (expected /Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/app/reviews/page.js)
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/require.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/require.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/load-components.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/load-components.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/utils.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/utils.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/handle-externals.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/handle-externals.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+<w>  at resolve commonjs /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+<w> [webpack.cache.PackFileCacheStrategy/webpack.FileSystemInfo] Resolving '../../../../.next/server/app/.well-known/appspecific/com.chrome.devtools.json/route' in /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server for build dependencies doesn't lead to expected result '/Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/app/.well-known/appspecific/com.chrome.devtools.json/route.js', but to 'Error: Can't resolve '../../../../.next/server/app/.well-known/appspecific/com.chrome.devtools.json/route' in '/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server'' instead. Resolving dependencies are ignored for this path.
+<w>  at resolve commonjs file ../../../../.next/server/app/.well-known/appspecific/com.chrome.devtools.json/route (expected /Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/app/.well-known/appspecific/com.chrome.devtools.json/route.js)
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/require.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/require.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/load-components.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/load-components.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/utils.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/utils.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/handle-externals.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/handle-externals.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+<w>  at resolve commonjs /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+ ✓ Compiled in 791ms (1230 modules)
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, lstat '/Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/app/reviews/page.js'
+<w> [webpack.cache.PackFileCacheStrategy/webpack.FileSystemInfo] Resolving '../../../../.next/server/app/reviews/page' in /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server for build dependencies doesn't lead to expected result '/Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/app/reviews/page.js', but to 'Error: Can't resolve '../../../../.next/server/app/reviews/page' in '/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server'' instead. Resolving dependencies are ignored for this path.
+<w>  at resolve commonjs file ../../../../.next/server/app/reviews/page (expected /Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/app/reviews/page.js)
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/require.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/require.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/load-components.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/load-components.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/utils.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/utils.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/loader-runner/LoaderRunner.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/loader-runner/LoaderRunner.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/webpack/bundle5.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/webpack/bundle5.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/webpack/webpack.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/webpack/webpack.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/plugins/define-env-plugin.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/plugins/define-env-plugin.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/swc/index.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/swc/index.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-barrel-loader.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-barrel-loader.js
+<w>  at resolve commonjs /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-barrel-loader.js
+ ✓ Compiled in 744ms (1230 modules)
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, lstat '/Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/app/reviews/page.js'
+<w> [webpack.cache.PackFileCacheStrategy/webpack.FileSystemInfo] Resolving '../../../../.next/server/app/reviews/page' in /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server for build dependencies doesn't lead to expected result '/Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/app/reviews/page.js', but to 'Error: Can't resolve '../../../../.next/server/app/reviews/page' in '/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server'' instead. Resolving dependencies are ignored for this path.
+<w>  at resolve commonjs file ../../../../.next/server/app/reviews/page (expected /Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/app/reviews/page.js)
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/require.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/require.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/load-components.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/load-components.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/utils.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/utils.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/handle-externals.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/handle-externals.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+<w>  at resolve commonjs /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+ ✓ Compiled in 586ms (1230 modules)
+ ✓ Compiled in 266ms (1230 modules)
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, lstat '/Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/app/reviews/page.js'
+<w> [webpack.cache.PackFileCacheStrategy/webpack.FileSystemInfo] Resolving '../../../../.next/server/app/reviews/page' in /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server for build dependencies doesn't lead to expected result '/Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/app/reviews/page.js', but to 'Error: Can't resolve '../../../../.next/server/app/reviews/page' in '/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server'' instead. Resolving dependencies are ignored for this path.
+<w>  at resolve commonjs file ../../../../.next/server/app/reviews/page (expected /Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/app/reviews/page.js)
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/require.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/require.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/load-components.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/load-components.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/utils.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/utils.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/handle-externals.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/handle-externals.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+<w>  at resolve commonjs /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+ ✓ Compiled in 661ms (1230 modules)
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, lstat '/Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/app/reviews/page.js'
+<w> [webpack.cache.PackFileCacheStrategy/webpack.FileSystemInfo] Resolving '../../../../.next/server/app/reviews/page' in /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server for build dependencies doesn't lead to expected result '/Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/app/reviews/page.js', but to 'Error: Can't resolve '../../../../.next/server/app/reviews/page' in '/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server'' instead. Resolving dependencies are ignored for this path.
+<w>  at resolve commonjs file ../../../../.next/server/app/reviews/page (expected /Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/app/reviews/page.js)
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/require.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/require.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/load-components.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/load-components.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/utils.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/utils.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/handle-externals.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/handle-externals.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+<w>  at resolve commonjs /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+ ✓ Compiled in 641ms (1230 modules)
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, lstat '/Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/app/reviews/page.js'
+<w> [webpack.cache.PackFileCacheStrategy/webpack.FileSystemInfo] Resolving '../../../../.next/server/app/reviews/page' in /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server for build dependencies doesn't lead to expected result '/Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/app/reviews/page.js', but to 'Error: Can't resolve '../../../../.next/server/app/reviews/page' in '/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server'' instead. Resolving dependencies are ignored for this path.
+<w>  at resolve commonjs file ../../../../.next/server/app/reviews/page (expected /Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/app/reviews/page.js)
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/require.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/require.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/load-components.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/load-components.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/utils.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/utils.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/handle-externals.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/handle-externals.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+<w>  at resolve commonjs /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+ ✓ Compiled in 1170ms (1230 modules)
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, lstat '/Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/app/reviews/page.js'
+<w> [webpack.cache.PackFileCacheStrategy/webpack.FileSystemInfo] Resolving '../../../../.next/server/app/reviews/page' in /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server for build dependencies doesn't lead to expected result '/Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/app/reviews/page.js', but to 'Error: Can't resolve '../../../../.next/server/app/reviews/page' in '/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server'' instead. Resolving dependencies are ignored for this path.
+<w>  at resolve commonjs file ../../../../.next/server/app/reviews/page (expected /Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/app/reviews/page.js)
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/require.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/require.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/load-components.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/load-components.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/utils.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/utils.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/loader-runner/LoaderRunner.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/loader-runner/LoaderRunner.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/webpack/bundle5.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/webpack/bundle5.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/webpack/webpack.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/webpack/webpack.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/plugins/define-env-plugin.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/plugins/define-env-plugin.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/swc/index.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/swc/index.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-barrel-loader.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-barrel-loader.js
+<w>  at resolve commonjs /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-barrel-loader.js
+ ✓ Compiled in 1090ms (1230 modules)
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, lstat '/Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/app/reviews/page.js'
+<w> [webpack.cache.PackFileCacheStrategy/webpack.FileSystemInfo] Resolving '../../../../.next/server/app/reviews/page' in /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server for build dependencies doesn't lead to expected result '/Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/app/reviews/page.js', but to 'Error: Can't resolve '../../../../.next/server/app/reviews/page' in '/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server'' instead. Resolving dependencies are ignored for this path.
+<w>  at resolve commonjs file ../../../../.next/server/app/reviews/page (expected /Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/app/reviews/page.js)
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/require.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/require.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/load-components.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/load-components.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/utils.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/utils.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/loader-runner/LoaderRunner.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/loader-runner/LoaderRunner.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/webpack/bundle5.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/webpack/bundle5.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/webpack/webpack.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/webpack/webpack.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/plugins/define-env-plugin.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/plugins/define-env-plugin.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack-config.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack-config.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+<w>  at resolve commonjs /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+ ✓ Compiled in 1200ms (1230 modules)
+ ✓ Compiled in 213ms (1230 modules)
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, lstat '/Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/app/reviews/page.js'
+<w> [webpack.cache.PackFileCacheStrategy/webpack.FileSystemInfo] Resolving '../../../../.next/server/app/reviews/page' in /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server for build dependencies doesn't lead to expected result '/Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/app/reviews/page.js', but to 'Error: Can't resolve '../../../../.next/server/app/reviews/page' in '/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server'' instead. Resolving dependencies are ignored for this path.
+<w>  at resolve commonjs file ../../../../.next/server/app/reviews/page (expected /Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/app/reviews/page.js)
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/require.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/require.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/load-components.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/load-components.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/utils.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/utils.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/handle-externals.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/handle-externals.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+<w>  at resolve commonjs /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+ ✓ Compiled in 1276ms (1230 modules)
+ ✓ Compiled in 979ms (1230 modules)
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, lstat '/Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/app/reviews/page.js'
+<w> [webpack.cache.PackFileCacheStrategy/webpack.FileSystemInfo] Resolving '../../../../.next/server/app/reviews/page' in /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server for build dependencies doesn't lead to expected result '/Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/app/reviews/page.js', but to 'Error: Can't resolve '../../../../.next/server/app/reviews/page' in '/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server'' instead. Resolving dependencies are ignored for this path.
+<w>  at resolve commonjs file ../../../../.next/server/app/reviews/page (expected /Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/app/reviews/page.js)
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/require.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/require.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/load-components.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/load-components.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/utils.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/utils.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/handle-externals.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/handle-externals.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+<w>  at resolve commonjs /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+ ✓ Compiled in 536ms (1230 modules)
+ ✓ Compiled in 833ms (1230 modules)
+ ✓ Compiled in 912ms (1230 modules)
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, lstat '/Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/app/reviews/page.js'
+<w> [webpack.cache.PackFileCacheStrategy/webpack.FileSystemInfo] Resolving '../../../../.next/server/app/reviews/page' in /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server for build dependencies doesn't lead to expected result '/Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/app/reviews/page.js', but to 'Error: Can't resolve '../../../../.next/server/app/reviews/page' in '/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server'' instead. Resolving dependencies are ignored for this path.
+<w>  at resolve commonjs file ../../../../.next/server/app/reviews/page (expected /Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/app/reviews/page.js)
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/require.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/require.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/load-components.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/load-components.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/utils.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/utils.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/handle-externals.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/handle-externals.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+<w>  at resolve commonjs /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+ ✓ Compiled in 1002ms (1230 modules)
+ ✓ Compiled in 876ms (1230 modules)
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, lstat '/Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/app/reviews/page.js'
+<w> [webpack.cache.PackFileCacheStrategy/webpack.FileSystemInfo] Resolving '../../../../.next/server/app/reviews/page' in /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server for build dependencies doesn't lead to expected result '/Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/app/reviews/page.js', but to 'Error: Can't resolve '../../../../.next/server/app/reviews/page' in '/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server'' instead. Resolving dependencies are ignored for this path.
+<w>  at resolve commonjs file ../../../../.next/server/app/reviews/page (expected /Users/jassinalsafe/Developer/NextJs/gamerfie/.next/server/app/reviews/page.js)
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/require.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/require.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/load-components.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/load-components.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/utils.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/utils.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/loader-runner/LoaderRunner.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/loader-runner/LoaderRunner.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/webpack/bundle5.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/webpack/bundle5.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/webpack/webpack.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/webpack/webpack.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/plugins/define-env-plugin.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/plugins/define-env-plugin.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/swc/index.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/swc/index.js
+<w>  at file dependencies /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-barrel-loader.js
+<w>  at file /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-barrel-loader.js
+<w>  at resolve commonjs /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/build/webpack/loaders/next-barrel-loader.js
+ ✓ Compiled in 816ms (1230 modules)
+ ✓ Compiled in 224ms (1230 modules)
+ ✓ Compiled in 864ms (1230 modules)
+ ✓ Compiled in 885ms (1230 modules)
+ ✓ Compiled in 471ms (1230 modules)
+ ✓ Compiled in 332ms (1230 modules)
+ ✓ Compiled in 985ms (1230 modules)
+ ✓ Compiled in 415ms (1230 modules)
+ ✓ Compiled in 815ms (1230 modules)
+ ✓ Compiled in 202ms (1230 modules)
+ ✓ Compiled in 361ms (1230 modules)
+ ✓ Compiled in 224ms (1230 modules)
+ ✓ Compiled in 837ms (1230 modules)
+ ✓ Compiled in 860ms (1230 modules)
+ ✓ Compiled in 993ms (1230 modules)
+ ✓ Compiled in 1010ms (1230 modules)
+ ✓ Compiled in 1151ms (1230 modules)
+ ✓ Compiled in 354ms (1230 modules)
+ ✓ Compiled in 346ms (1230 modules)
+ ✓ Compiled in 434ms (1230 modules)
+ ✓ Compiled in 573ms (1230 modules)
+ ✓ Compiled in 659ms (1230 modules)
+ ✓ Compiled in 273ms (1230 modules)
+ ✓ Compiled in 1160ms (1230 modules)
+ ✓ Compiled in 346ms (1230 modules)
+ ✓ Compiled in 540ms (1230 modules)
+ ✓ Compiled in 253ms (1230 modules)
+ ✓ Compiled in 368ms (1230 modules)
+ ✓ Compiled in 300ms (1230 modules)
+ ✓ Compiled in 282ms (1230 modules)
+ ✓ Compiled in 1114ms (1230 modules)
+ ✓ Compiled in 545ms (1230 modules)
+ ✓ Compiled in 266ms (1230 modules)
+ ✓ Compiled in 455ms (1230 modules)
+ ✓ Compiled in 1026ms (1230 modules)
+ ✓ Compiled in 336ms (1230 modules)
+ ✓ Compiled in 513ms (1230 modules)
+ ✓ Compiled in 367ms (1230 modules)
+ ✓ Compiled in 619ms (1230 modules)
+ ✓ Compiled in 254ms (1230 modules)
+ ✓ Compiled in 357ms (1230 modules)
+ ✓ Compiled in 405ms (1230 modules)
+ ✓ Compiled in 547ms (1230 modules)
+ ✓ Compiled in 565ms (1230 modules)
+ ✓ Compiled in 326ms (1230 modules)
+ ✓ Compiled in 275ms (1230 modules)
+ ✓ Compiled in 412ms (1230 modules)
+ ✓ Compiled in 247ms (1230 modules)
+ ✓ Compiled in 785ms (1230 modules)
+ ✓ Compiled /api/igdb-proxy in 498ms (143 modules)
+Error in IGDB proxy: SyntaxError: Unexpected end of JSON input
+    at JSON.parse (<anonymous>)
+    at parseJSONFromBytes (node:internal/deps/undici/undici:5738:19)
+    at successSteps (node:internal/deps/undici/undici:5719:27)
+    at consumeBody (node:internal/deps/undici/undici:5725:9)
+    at NextRequest.json (node:internal/deps/undici/undici:5665:18)
+    at POST (webpack-internal:///(rsc)/./app/api/igdb-proxy/route.ts:12:51)
+    at /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:57234
+    at /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/lib/trace/tracer.js:140:36
+    at NoopContextManager.with (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/@opentelemetry/api/build/src/context/NoopContextManager.js:25:19)
+    at ContextAPI.with (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/@opentelemetry/api/build/src/api/context.js:60:46)
+    at NoopTracer.startActiveSpan (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/@opentelemetry/api/build/src/trace/NoopTracer.js:65:31)
+    at ProxyTracer.startActiveSpan (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/@opentelemetry/api/build/src/trace/ProxyTracer.js:36:24)
+    at /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/lib/trace/tracer.js:122:103
+    at NoopContextManager.with (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/@opentelemetry/api/build/src/context/NoopContextManager.js:25:19)
+    at ContextAPI.with (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/@opentelemetry/api/build/src/api/context.js:60:46)
+    at NextTracerImpl.trace (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/lib/trace/tracer.js:122:28)
+    at /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:48896
+    at AsyncLocalStorage.run (node:internal/async_local_storage/async_hooks:91:14)
+    at Object.wrap (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:40958)
+    at /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:47472
+    at AsyncLocalStorage.run (node:internal/async_local_storage/async_hooks:91:14)
+    at Object.wrap (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:38293)
+    at /Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:47434
+    at AsyncLocalStorage.run (node:internal/async_local_storage/async_hooks:91:14)
+    at eT.execute (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:46881)
+    at eT.handle (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:58771)
+    at doRender (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/base-server.js:1366:60)
+    at cacheEntry.responseCache.get.routeKind (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/base-server.js:1588:34)
+    at ResponseCache.get (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/response-cache/index.js:49:26)
+    at DevServer.renderToResponseWithComponentsImpl (/Users/jassinalsafe/Developer/NextJs/gamerfie/node_modules/next/dist/server/base-server.js:1496:53)
+ ✓ Compiled in 612ms (1230 modules)
+ ✓ Compiled in 313ms (1230 modules)
+ ✓ Compiled in 303ms (1230 modules)
+ ✓ Compiled in 308ms (1230 modules)
+ ✓ Compiled in 404ms (1230 modules)

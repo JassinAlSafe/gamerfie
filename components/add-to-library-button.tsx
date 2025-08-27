@@ -109,9 +109,9 @@ export function AddToLibraryButton({
       if (!user) return;
       try {
         const result = await checkGameInLibrary(gameId, user.id);
-        if (result) {
+        if (result && 'status' in result && typeof result.status === 'string') {
           setIsInLibrary(true);
-          setGameStatus((result as any).status as GameStatus);
+          setGameStatus(result.status as GameStatus);
         }
       } catch (error) {
         console.error("Error checking library:", error);
@@ -310,12 +310,12 @@ export function AddToLibraryButton({
         ) {
           setIsInLibrary(true);
           const result = await checkGameInLibrary(gameId, user.id);
-          if (result) {
-            setGameStatus((result as any).status as GameStatus);
+          if (result && 'status' in result && typeof result.status === 'string') {
+            setGameStatus(result.status as GameStatus);
           }
           toast.info("Game is already in your library", {
             description: `Current status: ${
-              result ? (result as any).status : "unknown"
+              result && 'status' in result ? result.status : "unknown"
             }`,
           });
         } else {

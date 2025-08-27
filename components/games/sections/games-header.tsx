@@ -101,10 +101,12 @@ export function GamesHeader({ games = [] }: GamesHeaderProps = {}) {
 
   // Quick filter handlers
   const handleRatingClick = (rating: number) => {
-    if (minRating === rating) {
+    // Convert UI rating (1-10 scale) to IGDB rating (0-100 scale)
+    const igdbRating = rating * 10;
+    if (minRating === igdbRating) {
       setRatingRange(null, null);
     } else {
-      setRatingRange(rating, null);
+      setRatingRange(igdbRating, null);
     }
   };
 
@@ -350,7 +352,7 @@ export function GamesHeader({ games = [] }: GamesHeaderProps = {}) {
                         key={rating}
                         onClick={() => handleRatingClick(rating)}
                         className={`flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium transition-all ${
-                          minRating === rating
+                          minRating === rating * 10
                             ? "bg-yellow-500/20 text-yellow-300 border border-yellow-500/30"
                             : "bg-gray-800/50 text-gray-400 hover:bg-gray-700/50 hover:text-yellow-300 border border-gray-700/30"
                         }`}

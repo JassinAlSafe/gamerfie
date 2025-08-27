@@ -12,7 +12,7 @@ export default function ProfileLayout({
 }) {
   return (
     <div className="min-h-screen bg-gray-950">
-      <main>{children}</main>
+      <main className="pt-safe pb-safe">{children}</main>
     </div>
   );
 }
