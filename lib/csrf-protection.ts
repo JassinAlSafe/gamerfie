@@ -22,7 +22,7 @@ export function generateCsrfToken(): CsrfTokenPair {
   const secret = randomBytes(CSRF_SECRET_LENGTH).toString('hex');
   const token = createHash('sha256')
     .update(secret)
-    .update(process.env.NEXTAUTH_SECRET || 'fallback-secret')
+    .update(process.env.NEXTAUTH_SECRET || process.env.SUPABASE_JWT_SECRET || 'gamerfie-csrf-fallback-secret')
     .digest('hex');
     
   return { token, secret };
@@ -39,7 +39,7 @@ export function verifyCsrfToken(token: string, secret: string): boolean {
   try {
     const expectedToken = createHash('sha256')
       .update(secret)
-      .update(process.env.NEXTAUTH_SECRET || 'fallback-secret')
+      .update(process.env.NEXTAUTH_SECRET || process.env.SUPABASE_JWT_SECRET || 'gamerfie-csrf-fallback-secret')
       .digest('hex');
       
     return token === expectedToken;

@@ -122,7 +122,7 @@ export const AchievementShowcase = memo(function AchievementShowcase({
               fill="transparent"
               className="text-muted/20"
             />
-            <motion.circle
+            <circle
               cx="24"
               cy="24"
               r="20"
@@ -132,9 +132,9 @@ export const AchievementShowcase = memo(function AchievementShowcase({
               strokeDasharray={125.6}
               strokeDashoffset={125.6 - (completionRate / 100) * 125.6}
               strokeLinecap="round"
-              initial={{ strokeDashoffset: 125.6 }}
-              animate={{ strokeDashoffset: 125.6 - (completionRate / 100) * 125.6 }}
-              transition={{ duration: 1, ease: "easeOut" }}
+              style={{
+                transition: mounted ? 'stroke-dashoffset 1s ease-out' : 'none'
+              }}
             />
             <defs>
               <linearGradient id="achievementGradient" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -182,14 +182,12 @@ export const AchievementShowcase = memo(function AchievementShowcase({
       </div>
 
       {/* View All Button */}
-      <motion.button
-        whileHover={{ scale: 1.02 }}
-        whileTap={{ scale: 0.98 }}
-        className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors text-sm font-medium text-muted-foreground hover:text-foreground flex-shrink-0"
+      <button
+        className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] text-sm font-medium text-muted-foreground hover:text-foreground flex-shrink-0"
       >
         View All Achievements
         <ChevronRight className="h-4 w-4" />
-      </motion.button>
+      </button>
 
       {/* Achievement Detail Modal */}
       <AnimatePresence>
@@ -229,7 +227,55 @@ const AchievementItem = memo(function AchievementItem({
   onClick: () => void;
   isCompact?: boolean;
 }) {
+  const [isMounted, setIsMounted] = useState(false);
+  
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+  
   const RarityIcon = getRarityIcon(achievement.rarity);
+  
+  // Render without animation on server/initial load
+  if (!isMounted) {
+    return (
+      <div
+        onClick={onClick}
+        className={cn(
+          "flex items-center gap-3 rounded-lg bg-muted/20 hover:bg-muted/40 transition-all duration-200 cursor-pointer group border border-transparent hover:border-border/50",
+          isCompact ? "p-2" : "p-3"
+        )}
+      >
+        <div className={cn(
+          "rounded-lg bg-gradient-to-br",
+          getRarityColor(achievement.rarity),
+          isCompact ? "p-1.5" : "p-2"
+        )}>
+          <RarityIcon className={cn("text-white", isCompact ? "h-3 w-3" : "h-4 w-4")} />
+        </div>
+        
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <p className={cn("font-medium text-foreground truncate", isCompact ? "text-xs" : "text-sm")}>
+              {achievement.name}
+            </p>
+            {achievement.isNew && (
+              <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-gradient-to-r from-yellow-400 to-orange-500 text-xs font-medium text-white">
+                <Sparkles className="h-3 w-3" />
+                NEW
+              </div>
+            )}
+          </div>
+          {!isCompact && (
+            <p className="text-xs text-muted-foreground truncate">
+              {achievement.description}
+            </p>
+          )}
+        </div>
+        
+        <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors" />
+      </div>
+    );
+  }
   
   return (
     <motion.div
@@ -256,14 +302,10 @@ const AchievementItem = memo(function AchievementItem({
             {achievement.name}
           </p>
           {achievement.isNew && (
-            <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-gradient-to-r from-yellow-400 to-orange-500 text-xs font-medium text-white"
-            >
+            <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-gradient-to-r from-yellow-400 to-orange-500 text-xs font-medium text-white">
               <Sparkles className="h-3 w-3" />
               NEW
-            </motion.div>
+            </div>
           )}
         </div>
         {!isCompact && (

@@ -13,6 +13,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuthStore } from "@/stores/useAuthStore";
+import { useCsrfProtectedFetch } from "@/hooks/use-csrf-token";
 import { DeleteButton } from "./delete-button";
 import type { ForumThread } from "@/types/forum";
 
@@ -39,6 +40,7 @@ export function ThreadModeration({
   const [isUpdating, setIsUpdating] = useState(false);
   const { user, profile } = useAuthStore();
   const { toast } = useToast();
+  const { fetchWithCsrf } = useCsrfProtectedFetch();
 
   const isAuthor = user?.id === thread.author_id;
   const isModerator = profile?.role === 'moderator' || profile?.role === 'admin';
@@ -52,7 +54,7 @@ export function ThreadModeration({
     setIsUpdating(true);
     
     try {
-      const response = await fetch(`/api/forum/threads/${thread.id}`, {
+      const response = await fetchWithCsrf(`/api/forum/threads/${thread.id}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -94,7 +96,7 @@ export function ThreadModeration({
     setIsUpdating(true);
     
     try {
-      const response = await fetch(`/api/forum/threads/${thread.id}`, {
+      const response = await fetchWithCsrf(`/api/forum/threads/${thread.id}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',

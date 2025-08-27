@@ -5,6 +5,7 @@ import { ForumCategory, ForumStats } from "@/types/forum";
 import { MessageSquare, Users, TrendingUp, Activity } from "lucide-react";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { useAuthDialog } from "@/components/auth/AuthDialog";
+import { useCsrfProtectedFetch } from "@/hooks/use-csrf-token";
 import { ForumHeader } from "@/components/forum/ForumHeader";
 import { ForumStatsCard } from "@/components/forum/ForumStatsCard";
 import { ForumSearchBar } from "@/components/forum/ForumSearchBar";
@@ -19,6 +20,7 @@ interface ForumPageClientProps {
 export function ForumPageClient({ initialCategories, initialStats }: ForumPageClientProps) {
   const { user, isInitialized } = useAuthStore();
   const { openDialog, Dialog: AuthDialog } = useAuthDialog();
+  const { fetchWithCsrf, isReady } = useCsrfProtectedFetch();
   const [categories] = useState(initialCategories);
   const [stats] = useState(initialStats);
   const [searchQuery, setSearchQuery] = useState("");
@@ -44,14 +46,15 @@ export function ForumPageClient({ initialCategories, initialStats }: ForumPageCl
   };
 
   const handleCreateThread = async (data: { title: string; content: string; categoryId: string }) => {
+    if (!isReady) {
+      throw new Error("CSRF token not ready. Please try again.");
+    }
+
     setIsCreatingThread(true);
     
     try {
-      const response = await fetch("/api/forum/threads", {
+      const response = await fetchWithCsrf("/api/forum/threads", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
         body: JSON.stringify({
           category_id: data.categoryId,
           title: data.title,
@@ -60,7 +63,8 @@ export function ForumPageClient({ initialCategories, initialStats }: ForumPageCl
       });
 
       if (!response.ok) {
-        throw new Error("Failed to create thread");
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || "Failed to create thread");
       }
 
       // Refresh the page to show the new thread

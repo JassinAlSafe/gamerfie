@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/stores/useAuthStore';
+import { useCsrfProtectedFetch } from '@/hooks/use-csrf-token';
 import type {
   ForumCategory,
   ForumThread,
@@ -20,7 +21,7 @@ import type {
 
 // API client functions with proper typing
 class ForumApiClient {
-  private static async handleResponse<T>(response: Response): Promise<T> {
+  static async handleResponse<T>(response: Response): Promise<T> {
     const data = await response.json();
     
     if (!response.ok) {
@@ -135,9 +136,17 @@ export function useCategories() {
 
 export function useCreateCategory() {
   const queryClient = useQueryClient();
+  const { fetchWithCsrf } = useCsrfProtectedFetch();
   
   return useMutation({
-    mutationFn: ForumApiClient.createCategory,
+    mutationFn: async (data: CategoryFormData) => {
+      const response = await fetchWithCsrf('/api/forum/categories', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      return ForumApiClient.handleResponse<{ category: ForumCategory }>(response);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: forumQueryKeys.categories() });
     },
@@ -155,9 +164,17 @@ export function useThreads(params: Partial<ThreadQueryParams> = {}) {
 
 export function useCreateThread() {
   const queryClient = useQueryClient();
+  const { fetchWithCsrf } = useCsrfProtectedFetch();
   
   return useMutation({
-    mutationFn: ForumApiClient.createThread,
+    mutationFn: async (data: ThreadFormData) => {
+      const response = await fetchWithCsrf('/api/forum/threads', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      return ForumApiClient.handleResponse<{ thread: ForumThread }>(response);
+    },
     onSuccess: (_data, variables) => {
       // Invalidate threads queries
       queryClient.invalidateQueries({ queryKey: forumQueryKeys.threads() });
@@ -183,9 +200,17 @@ export function usePosts(params: PostQueryParams) {
 
 export function useCreatePost() {
   const queryClient = useQueryClient();
+  const { fetchWithCsrf } = useCsrfProtectedFetch();
   
   return useMutation({
-    mutationFn: ForumApiClient.createPost,
+    mutationFn: async (data: PostFormData) => {
+      const response = await fetchWithCsrf('/api/forum/posts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      return ForumApiClient.handleResponse<{ post: ForumPost }>(response);
+    },
     onSuccess: (_data, variables) => {
       // Invalidate posts for this thread
       queryClient.invalidateQueries({ 
@@ -211,10 +236,17 @@ export function useSearchContent(params: Partial<SearchParams>) {
 export function useToggleLike() {
   const queryClient = useQueryClient();
   const user = useAuthStore(state => state.user);
+  const { fetchWithCsrf } = useCsrfProtectedFetch();
   
   return useMutation({
-    mutationFn: ({ targetId, targetType }: { targetId: string; targetType: 'thread' | 'post' }) =>
-      ForumApiClient.toggleLike(targetId, targetType),
+    mutationFn: async ({ targetId, targetType }: { targetId: string; targetType: 'thread' | 'post' }) => {
+      const response = await fetchWithCsrf('/api/forum/likes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ target_id: targetId, target_type: targetType }),
+      });
+      return ForumApiClient.handleResponse<{ liked: boolean; likes_count: number }>(response);
+    },
     onSuccess: (_data, variables) => {
       // Update all relevant queries
       if (variables.targetType === 'thread') {

@@ -67,6 +67,7 @@ export function AuthForm({ mode, onSuccess }: AuthFormProps) {
   const [successMessage, setSuccessMessage] = useState<string>('');
   const [usernameAvailable, setUsernameAvailable] = useState<boolean | null>(null);
   const [checkingUsername, setCheckingUsername] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
 
   // Debounce form data for validation
   const debouncedFormData = useDebounce(formData, 300);
@@ -229,9 +230,14 @@ export function AuthForm({ mode, onSuccess }: AuthFormProps) {
       const { name, value, type, checked } = e.target;
       const fieldValue = type === "checkbox" ? checked : value;
 
+      // Clear authentication error when user starts typing
+      if (authError && (name === "email" || name === "password")) {
+        setAuthError(null);
+      }
+
       setFormData((prev) => ({ ...prev, [name]: fieldValue }));
     },
-    []
+    [authError]
   );
 
   const handleBlur = useCallback(
@@ -274,6 +280,8 @@ export function AuthForm({ mode, onSuccess }: AuthFormProps) {
 
     if (!validateForm()) return;
 
+    // Clear any previous auth errors
+    setAuthError(null);
     setIsLoading(true);
     setSubmitPhase('validating');
 
@@ -379,27 +387,52 @@ export function AuthForm({ mode, onSuccess }: AuthFormProps) {
     } catch (error) {
       console.error("Auth error:", error);
       
-      // Better error messages based on error type
-      let errorTitle = "Something went wrong";
-      let errorDescription = `Failed to ${mode === "signin" ? "sign in" : "create account"}`;
+      // Enhanced error messages for better user experience
+      let errorTitle = "Authentication failed";
+      let errorDescription = `Unable to ${mode === "signin" ? "sign you in" : "create your account"}`;
       
       if (error instanceof Error) {
         const message = error.message.toLowerCase();
         
+        // Handle specific authentication errors
         if (message.includes("invalid credentials") || message.includes("invalid login credentials")) {
-          errorTitle = "Invalid credentials";
-          errorDescription = "Please check your email and password and try again.";
+          errorTitle = mode === "signin" ? "Login failed" : "Authentication failed";
+          errorDescription = mode === "signin" 
+            ? "The email or password you entered is incorrect. Please check your credentials and try again."
+            : "Please check your email and password and try again.";
+          // Set auth error to highlight the problematic fields
+          setAuthError("Invalid email or password");
+        } else if (message.includes("email not found") || message.includes("user not found")) {
+          errorTitle = "Account not found";
+          errorDescription = "No account found with this email address. Please check your email or sign up for a new account.";
+          setAuthError("Email not found");
+        } else if (message.includes("invalid email") || message.includes("email") && message.includes("invalid")) {
+          errorTitle = "Invalid email";
+          errorDescription = "Please enter a valid email address.";
+        } else if (message.includes("weak password") || (message.includes("password") && message.includes("weak"))) {
+          errorTitle = "Weak password";
+          errorDescription = "Your password is too weak. Please choose a stronger password with at least 8 characters.";
+        } else if (message.includes("password") && message.includes("short")) {
+          errorTitle = "Password too short";
+          errorDescription = "Your password must be at least 8 characters long.";
+        } else if (message.includes("too many requests") || message.includes("rate limit")) {
+          errorTitle = "Too many attempts";
+          errorDescription = "Too many login attempts. Please wait a few minutes before trying again.";
         } else if (message.includes("email") && message.includes("already") && message.includes("registered")) {
           errorTitle = "Email already registered";
           errorDescription = "An account with this email already exists. Try signing in instead.";
-        } else if (message.includes("weak password") || message.includes("password")) {
-          errorTitle = "Password issue";
-          errorDescription = "Please ensure your password meets the requirements.";
-        } else if (message.includes("network") || message.includes("fetch")) {
-          errorTitle = "Connection issue";
-          errorDescription = "Please check your internet connection and try again.";
+        } else if (message.includes("network") || message.includes("fetch") || message.includes("connection")) {
+          errorTitle = "Connection problem";
+          errorDescription = "Unable to connect to our servers. Please check your internet connection and try again.";
+        } else if (message.includes("email not confirmed") || message.includes("confirmation")) {
+          errorTitle = "Email not verified";
+          errorDescription = "Please check your email and click the verification link before signing in.";
         } else {
-          errorDescription = error.message;
+          // For any other error, show a more user-friendly message
+          errorTitle = "Something went wrong";
+          errorDescription = mode === "signin" 
+            ? "We couldn't sign you in right now. Please try again in a few moments."
+            : "We couldn't create your account right now. Please try again in a few moments.";
         }
       }
       
@@ -509,6 +542,15 @@ export function AuthForm({ mode, onSuccess }: AuthFormProps) {
         </div>
       )}
 
+      {/* Authentication error banner */}
+      {authError && (
+        <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 text-center animate-in fade-in-50 duration-300">
+          <p className="text-sm text-red-700 dark:text-red-300 font-medium">
+            {authError}
+          </p>
+        </div>
+      )}
+
       <div className="grid gap-2">
         <Button
           variant="outline"
@@ -570,9 +612,9 @@ export function AuthForm({ mode, onSuccess }: AuthFormProps) {
               value={formData.email}
               onChange={handleInputChange}
               onBlur={handleBlur}
-              error={errors.email}
+              error={errors.email || (authError && mode === "signin" ? "Check your email" : "")}
               touched={touched.email}
-              className="input-custom"
+              className={cn("input-custom", authError && mode === "signin" && "border-red-500 focus:border-red-500")}
               required
             />
             {/* Smart user detection indicators */}
@@ -750,9 +792,9 @@ export function AuthForm({ mode, onSuccess }: AuthFormProps) {
             value={formData.password}
             onChange={handleInputChange}
             onBlur={handleBlur}
-            error={errors.password}
+            error={errors.password || (authError && mode === "signin" ? "Check your password" : "")}
             touched={touched.password}
-            className="input-custom"
+            className={cn("input-custom", authError && mode === "signin" && "border-red-500 focus:border-red-500")}
             required
           />
           {errors.password && touched.password && (
@@ -817,6 +859,9 @@ export function AuthForm({ mode, onSuccess }: AuthFormProps) {
         <Button 
           className={cn(
             "auth-button w-full mt-2 h-12 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]",
+            "bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700",
+            "text-white font-semibold shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40",
+            "border-0 hover:border-0 focus:ring-2 focus:ring-purple-500/50",
             submitPhase === 'redirecting' && "success-pulse"
           )} 
           type="submit" 

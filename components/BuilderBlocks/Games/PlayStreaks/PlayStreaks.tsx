@@ -1,7 +1,6 @@
 "use client";
 
 import { memo, useEffect, useState, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import { Flame, Zap, Calendar, Target, TrendingUp, Award } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -25,14 +24,11 @@ export const PlayStreaks = memo(function PlayStreaks({
   className
 }: PlayStreaksProps) {
   const [mounted, setMounted] = useState(false);
-  const [showStreak, setShowStreak] = useState(false);
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setMounted(true);
-    const timer = setTimeout(() => setShowStreak(true), 500);
-    return () => clearTimeout(timer);
   }, []);
 
   useEffect(() => {
@@ -73,13 +69,11 @@ export const PlayStreaks = memo(function PlayStreaks({
       {/* Header */}
       <div className="flex items-center justify-between mb-4 flex-shrink-0">
         <div className="flex items-center gap-3">
-          <motion.div
-            animate={isHotStreak ? { scale: [1, 1.1, 1] } : {}}
-            transition={{ duration: 2, repeat: Infinity }}
+          <div
             className={cn(
-              "p-2 rounded-lg",
+              "p-2 rounded-lg transition-all duration-200",
               isHotStreak 
-                ? "bg-gradient-to-br from-orange-400/20 to-red-500/20" 
+                ? "bg-gradient-to-br from-orange-400/20 to-red-500/20 animate-pulse" 
                 : "bg-gradient-to-br from-orange-400/10 to-red-500/10"
             )}
           >
@@ -87,7 +81,7 @@ export const PlayStreaks = memo(function PlayStreaks({
               "h-5 w-5",
               isHotStreak ? "text-orange-500" : "text-orange-400"
             )} />
-          </motion.div>
+          </div>
           <div>
             <h3 className="font-semibold text-foreground">Play Streaks</h3>
             <p className="text-sm text-muted-foreground">
@@ -97,41 +91,30 @@ export const PlayStreaks = memo(function PlayStreaks({
         </div>
 
         {/* Streak Badge */}
-        <AnimatePresence>
-          {showStreak && (
-            <motion.div
-              initial={{ scale: 0, rotate: -180 }}
-              animate={{ scale: 1, rotate: 0 }}
-              exit={{ scale: 0, rotate: 180 }}
-              className={cn(
-                "relative flex flex-col items-center justify-center w-16 h-16 rounded-2xl border-2 transition-all duration-300",
-                isHotStreak 
-                  ? "border-orange-500/50 bg-gradient-to-br from-orange-500/20 to-red-500/20" 
-                  : "border-muted/30 bg-muted/10"
-              )}
-            >
-              <span className={cn(
-                "text-lg font-bold",
-                isHotStreak 
-                  ? "bg-gradient-to-r from-orange-500 to-red-500 bg-clip-text text-transparent" 
-                  : "text-foreground"
-              )}>
-                {currentStreak}
-              </span>
-              <span className="text-xs text-muted-foreground">days</span>
-              
-              {isHotStreak && (
-                <motion.div
-                  animate={{ rotate: 360 }}
-                  transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-                  className="absolute -top-1 -right-1 w-4 h-4 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center"
-                >
-                  <Zap className="h-2 w-2 text-white" />
-                </motion.div>
-              )}
-            </motion.div>
+        <div
+          className={cn(
+            "relative flex flex-col items-center justify-center w-16 h-16 rounded-2xl border-2 transition-all duration-300",
+            isHotStreak 
+              ? "border-orange-500/50 bg-gradient-to-br from-orange-500/20 to-red-500/20" 
+              : "border-muted/30 bg-muted/10"
           )}
-        </AnimatePresence>
+        >
+          <span className={cn(
+            "text-lg font-bold",
+            isHotStreak 
+              ? "bg-gradient-to-r from-orange-500 to-red-500 bg-clip-text text-transparent" 
+              : "text-foreground"
+          )}>
+            {currentStreak}
+          </span>
+          <span className="text-xs text-muted-foreground">days</span>
+          
+          {isHotStreak && (
+            <div className="absolute -top-1 -right-1 w-4 h-4 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center animate-spin">
+              <Zap className="h-2 w-2 text-white" />
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Activity Heatmap */}
@@ -148,11 +131,8 @@ export const PlayStreaks = memo(function PlayStreaks({
         
         <div className="grid grid-cols-7 gap-1">
           {dailyActivity.map((isActive, index) => (
-            <motion.div
+            <div
               key={index}
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: index * 0.1 }}
               className={cn(
                 "aspect-square rounded-lg border transition-all duration-200 flex items-center justify-center text-xs font-medium",
                 isActive 
@@ -161,16 +141,8 @@ export const PlayStreaks = memo(function PlayStreaks({
               )}
               title={`Day ${index + 1} - ${isActive ? "Active" : "Inactive"}`}
             >
-              {isActive && (
-                <motion.div
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  transition={{ delay: index * 0.1 + 0.2 }}
-                >
-                  <Flame className="h-3 w-3" />
-                </motion.div>
-              )}
-            </motion.div>
+              {isActive && <Flame className="h-3 w-3" />}
+            </div>
           ))}
         </div>
       </div>
@@ -200,16 +172,14 @@ export const PlayStreaks = memo(function PlayStreaks({
           <span>{currentStreak}/30 days</span>
         </div>
         <div className="relative h-2 bg-muted/30 rounded-full overflow-hidden">
-          <motion.div
-            initial={{ width: 0 }}
-            animate={{ width: `${streakPercentage}%` }}
-            transition={{ duration: 1, ease: "easeOut" }}
+          <div
             className={cn(
-              "absolute inset-y-0 left-0 rounded-full transition-all duration-300",
+              "absolute inset-y-0 left-0 rounded-full transition-all duration-1000 ease-out",
               isHotStreak 
                 ? "bg-gradient-to-r from-orange-400 via-red-500 to-pink-500 shadow-sm" 
                 : "bg-gradient-to-r from-orange-400 to-red-500"
             )}
+            style={{ width: `${streakPercentage}%` }}
           />
           {isHotStreak && (
             <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent rounded-full" />
@@ -220,11 +190,8 @@ export const PlayStreaks = memo(function PlayStreaks({
       {/* Milestone Indicators */}
       <div className="flex items-center justify-center gap-1 mt-3 pt-3 border-t border-border/30 flex-shrink-0">
         {[3, 7, 14, 21, 30].map((milestone) => (
-          <motion.div
+          <div
             key={milestone}
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ delay: milestone * 0.05 }}
             className={cn(
               "w-2 h-2 rounded-full transition-all duration-300",
               currentStreak >= milestone 
@@ -237,23 +204,16 @@ export const PlayStreaks = memo(function PlayStreaks({
       </div>
 
       {/* Motivational Message */}
-      <AnimatePresence>
-        {isHotStreak && containerSize.height > 300 && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="mt-2 p-2 rounded-lg bg-gradient-to-r from-orange-500/10 to-red-500/10 border border-orange-500/20 flex-shrink-0"
-          >
-            <div className="flex items-center gap-2 text-xs">
-              <TrendingUp className="h-3 w-3 text-orange-500" />
-              <span className="font-medium text-orange-600">
-                You're on fire! 🔥 {currentStreak} day streak!
-              </span>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {isHotStreak && containerSize.height > 300 && (
+        <div className="mt-2 p-2 rounded-lg bg-gradient-to-r from-orange-500/10 to-red-500/10 border border-orange-500/20 flex-shrink-0 opacity-0 animate-fade-in">
+          <div className="flex items-center gap-2 text-xs">
+            <TrendingUp className="h-3 w-3 text-orange-500" />
+            <span className="font-medium text-orange-600">
+              You're on fire! 🔥 {currentStreak} day streak!
+            </span>
+          </div>
+        </div>
+      )}
     </div>
   );
 });
@@ -280,11 +240,9 @@ const StatItem = memo(function StatItem({
       <p className="text-sm font-semibold text-foreground">{value}</p>
       <p className="text-xs text-muted-foreground mb-1">{label}</p>
       <div className="h-1 bg-muted/30 rounded-full overflow-hidden">
-        <motion.div
-          initial={{ width: 0 }}
-          animate={{ width: `${progress}%` }}
-          transition={{ delay: 0.5, duration: 0.8, ease: "easeOut" }}
-          className="h-full bg-gradient-to-r from-current to-current opacity-60 rounded-full"
+        <div
+          className="h-full bg-gradient-to-r from-current to-current opacity-60 rounded-full transition-all duration-800 ease-out"
+          style={{ width: `${progress}%` }}
         />
       </div>
     </div>
