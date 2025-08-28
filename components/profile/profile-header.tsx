@@ -310,6 +310,15 @@ export function ProfileHeader({
                       Active {new Date().getFullYear()}
                     </Badge>
                   )}
+                  
+                  {/* View All Achievements Link */}
+                  <a
+                    href="/achievements"
+                    className="inline-flex items-center gap-1 text-xs text-gray-400 hover:text-purple-400 transition-colors cursor-pointer ml-2"
+                  >
+                    <Trophy className="w-3 h-3" />
+                    View All
+                  </a>
                 </div>
               </div>
             )}

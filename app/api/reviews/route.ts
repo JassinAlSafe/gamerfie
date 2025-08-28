@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { authenticateRequest, isAuthResult } from "@/app/api/lib/auth";
 import { ReviewService } from "@/services/reviewService";
+import { OptimizedReviewService } from "@/services/optimizedReviewService";
 import { validateCreateReview, validateReviewsQuery } from "@/lib/validations/review";
 
 export async function GET(request: NextRequest) {
@@ -18,16 +19,32 @@ export async function GET(request: NextRequest) {
 
     const params = queryValidation.data;
 
-    // Use the optimized ReviewService instead of manual queries
-    const result = await ReviewService.getReviews({
-      limit: params.limit,
-      offset: params.offset,
-      gameId: params.gameId,
-      userId: params.userId,
-      isPublic: params.isPublic,
-      orderBy: params.orderBy,
-      orderDirection: params.orderDirection
-    });
+    // Use the optimized service to prevent N+1 queries
+    let result;
+    try {
+      // Try the fully optimized version first
+      result = await OptimizedReviewService.getReviewsFallback({
+        limit: params.limit,
+        offset: params.offset,
+        gameId: params.gameId,
+        userId: params.userId,
+        isPublic: params.isPublic,
+        orderBy: params.orderBy,
+        orderDirection: params.orderDirection
+      });
+    } catch (optimizedError) {
+      // Fallback to original service if optimized fails
+      console.warn('[REVIEWS GET] Optimized query failed, falling back to original:', optimizedError);
+      result = await ReviewService.getReviews({
+        limit: params.limit,
+        offset: params.offset,
+        gameId: params.gameId,
+        userId: params.userId,
+        isPublic: params.isPublic,
+        orderBy: params.orderBy,
+        orderDirection: params.orderDirection
+      });
+    }
 
     return NextResponse.json(result);
 

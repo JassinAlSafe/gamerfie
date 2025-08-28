@@ -22,6 +22,17 @@ import { memo } from "react";
 import Link from "next/link";
 import styles from "./ProfileCard.module.css";
 
+// Type-safe activity level configuration
+interface ActivityLevel {
+  readonly threshold: number;
+  readonly label: string;
+  readonly variant: "default" | "secondary" | "outline";
+  readonly icon: React.ComponentType<{ className?: string }>;
+  readonly color: string;
+}
+
+// Type-safe activity level configuration
+
 interface ProfileStats {
   totalGames: number;
   completedGames?: number;
@@ -35,18 +46,40 @@ interface Friend {
   avatar_url?: string;
 }
 
+// Better discriminated union for friends
+type FriendsData = 
+  | { type: 'count'; count: number }
+  | { type: 'list'; items: Friend[] };
+
 interface ProfileCardProps {
   user: User;
   stats?: ProfileStats;
-  friends: Friend[] | number;
+  friends: FriendsData;
   isLoading?: boolean;
 }
 
-// Helper function to format date consistently between server and client
+// Configuration constants - centralized and type-safe
+const ACTIVITY_LEVELS: readonly ActivityLevel[] = [
+  { threshold: 80, label: "Expert", variant: "default", icon: Award, color: "emerald" },
+  { threshold: 60, label: "Active", variant: "secondary", icon: Zap, color: "blue" },
+  { threshold: 30, label: "Rising", variant: "outline", icon: Target, color: "yellow" },
+  { threshold: 0, label: "Starter", variant: "outline", icon: Star, color: "purple" }
+] as const;
+
+const PROGRESS_BAR_STYLES = {
+  75: "bg-gradient-to-r from-green-500 to-emerald-600",
+  50: "bg-gradient-to-r from-blue-500 to-cyan-600",
+  25: "bg-gradient-to-r from-yellow-500 to-orange-600",
+  0: "bg-gradient-to-r from-purple-500 to-violet-600"
+} as const;
+
+
+const PROGRESS_MILESTONES = [25, 50, 75] as const;
+
+// Pure utility functions
 function formatMemberDate(dateString: string): string {
   try {
     const date = new Date(dateString);
-    // Use a consistent format that works the same on server and client
     const year = date.getFullYear();
     const month = date.getMonth() + 1;
     const day = date.getDate();
@@ -56,46 +89,46 @@ function formatMemberDate(dateString: string): string {
   }
 }
 
+function getActivityLevel(percentage: number): ActivityLevel {
+  return ACTIVITY_LEVELS.find(level => percentage >= level.threshold) ?? ACTIVITY_LEVELS[ACTIVITY_LEVELS.length - 1];
+}
+
+function getProgressBarStyle(percentage: number): string {
+  if (percentage >= 75) return PROGRESS_BAR_STYLES[75];
+  if (percentage >= 50) return PROGRESS_BAR_STYLES[50];
+  if (percentage >= 25) return PROGRESS_BAR_STYLES[25];
+  return PROGRESS_BAR_STYLES[0];
+}
+
+function calculateCompletionPercentage(completed: number, total: number): number {
+  return total > 0 ? Math.round((completed / total) * 100) : 0;
+}
+
+function getFriendsCount(friends: FriendsData): number {
+  return friends.type === 'list' ? friends.items.length : friends.count;
+}
+
 export const ProfileCard = memo(function ProfileCard({ 
   user, 
   stats, 
   friends, 
   isLoading = false 
 }: ProfileCardProps) {
-  // Ensure stats has default values
-  const safeStats = {
-    totalGames: stats?.totalGames || 0,
-    completedGames: stats?.completedGames || 0,
-    totalPlaytime: stats?.totalPlaytime || 0,
-    averageRating: stats?.averageRating || 0,
+  // Derive computed values - inevitable pattern using pure functions
+  const safeStats: Required<ProfileStats> = {
+    totalGames: stats?.totalGames ?? 0,
+    completedGames: stats?.completedGames ?? 0,
+    totalPlaytime: stats?.totalPlaytime ?? 0,
+    averageRating: stats?.averageRating ?? 0,
   };
 
-  // Handle friends being either array or number
-  const friendsCount = Array.isArray(friends) ? friends.length : friends;
-
-  // Calculate completion percentage
-  const completionPercentage = safeStats.totalGames > 0 
-    ? Math.round((safeStats.completedGames / safeStats.totalGames) * 100)
-    : 0;
-
-  // Determine progress bar style based on completion level
-  const getProgressBarStyle = (percentage: number) => {
-    if (percentage >= 75) return "bg-gradient-to-r from-green-500 to-emerald-600";
-    if (percentage >= 50) return "bg-gradient-to-r from-blue-500 to-cyan-600";
-    if (percentage >= 25) return "bg-gradient-to-r from-yellow-500 to-orange-600";
-    return "bg-gradient-to-r from-purple-500 to-violet-600";
-  };
-
-  // Activity status indicator
-  const getActivityBadge = () => {
-    if (completionPercentage >= 80) return { text: "Expert", variant: "default" as const, icon: Award };
-    if (completionPercentage >= 60) return { text: "Active", variant: "secondary" as const, icon: Zap };
-    if (completionPercentage >= 30) return { text: "Rising", variant: "outline" as const, icon: Target };
-    return { text: "Starter", variant: "outline" as const, icon: Star };
-  };
-
-  const activityBadge = getActivityBadge();
-  const ActivityIcon = activityBadge.icon;
+  const friendsCount = getFriendsCount(friends);
+  const completionPercentage = calculateCompletionPercentage(safeStats.completedGames, safeStats.totalGames);
+  const activityLevel = getActivityLevel(completionPercentage);
+  const progressBarStyle = getProgressBarStyle(completionPercentage);
+  
+  // Component reference - extracted once
+  const ActivityIcon = activityLevel.icon;
 
   if (isLoading) {
     return <ProfileCardSkeleton />;
@@ -131,9 +164,9 @@ export const ProfileCard = memo(function ProfileCard({
                     <h2 className="text-lg font-bold text-foreground truncate">
                       {user.user_metadata?.display_name || user.email?.split('@')[0] || 'Gamer'}
                     </h2>
-                    <Badge variant={activityBadge.variant} className="text-xs px-2 py-0.5">
+                    <Badge variant={activityLevel.variant} className="text-xs px-2 py-0.5">
                       <ActivityIcon className="h-3 w-3 mr-1" />
-                      {activityBadge.text}
+                      {activityLevel.label}
                     </Badge>
                   </div>
                   <p className="text-xs text-muted-foreground flex items-center gap-1">
@@ -183,7 +216,7 @@ export const ProfileCard = memo(function ProfileCard({
               </div>
             </div>
 
-            {/* Enhanced Stats Grid */}
+            {/* Enhanced Stats Grid - Configuration-driven rendering */}
             <div className={`grid mb-4 ${styles.statsGrid}`}>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -258,14 +291,14 @@ export const ProfileCard = memo(function ProfileCard({
                 <div className="relative">
                   <div className="h-2 bg-muted/30 rounded-full overflow-hidden">
                     <div 
-                      className={`h-full rounded-full transition-all duration-1000 ease-out ${getProgressBarStyle(completionPercentage)} ${styles.progressBar}`}
+                      className={`h-full rounded-full transition-all duration-1000 ease-out ${progressBarStyle} ${styles.progressBar}`}
                       style={{ width: `${completionPercentage}%` }}
                     />
                   </div>
                   
                   {/* Progress milestones */}
                   <div className="absolute inset-0 flex justify-between items-center px-1">
-                    {[25, 50, 75].map((milestone) => (
+                    {PROGRESS_MILESTONES.map((milestone) => (
                       <div
                         key={milestone}
                         className={`w-1 h-4 rounded-full transition-colors duration-300 ${

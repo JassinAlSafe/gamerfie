@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { validateReviewContent, sanitizeForStorage } from '@/lib/security/sanitizer';
 
 // Base review validation schema
 export const createReviewSchema = z.object({
@@ -13,7 +14,19 @@ export const createReviewSchema = z.object({
   
   review_text: z.string()
     .max(5000, 'Review text cannot exceed 5000 characters')
-    .optional(),
+    .optional()
+    .transform((text) => {
+      if (!text) return text;
+      const validation = validateReviewContent(text);
+      if (!validation.isValid) {
+        throw new z.ZodError([{
+          code: z.ZodIssueCode.custom,
+          message: `Review content validation failed: ${validation.errors.join(', ')}`,
+          path: ['review_text']
+        }]);
+      }
+      return sanitizeForStorage(validation.sanitized);
+    }),
   
   is_public: z.boolean()
     .default(true),
@@ -38,7 +51,19 @@ export const updateReviewSchema = z.object({
   
   review_text: z.string()
     .max(5000, 'Review text cannot exceed 5000 characters')
-    .optional(),
+    .optional()
+    .transform((text) => {
+      if (!text) return text;
+      const validation = validateReviewContent(text);
+      if (!validation.isValid) {
+        throw new z.ZodError([{
+          code: z.ZodIssueCode.custom,
+          message: `Review content validation failed: ${validation.errors.join(', ')}`,
+          path: ['review_text']
+        }]);
+      }
+      return sanitizeForStorage(validation.sanitized);
+    }),
   
   is_public: z.boolean()
     .optional(),
@@ -106,14 +131,17 @@ export const reportReviewSchema = z.object({
     .optional()
 });
 
-// Type exports for use in components and API routes
-export type CreateReviewData = z.infer<typeof createReviewSchema>;
-export type UpdateReviewData = z.infer<typeof updateReviewSchema>;
-export type ReviewsQueryParams = z.infer<typeof reviewsQuerySchema>;
-export type ReportReviewData = z.infer<typeof reportReviewSchema>;
+// Validation result types derived from schemas
+export type ValidatedCreateReview = z.infer<typeof createReviewSchema>;
+export type ValidatedUpdateReview = z.infer<typeof updateReviewSchema>;
+export type ValidatedReviewsQuery = z.infer<typeof reviewsQuerySchema>;
+export type ValidatedReportReview = z.infer<typeof reportReviewSchema>;
+
+// Re-export main types from single source of truth
+export type { CreateReviewInput, UpdateReviewInput } from '@/types/review';
 
 // Validation helper functions
-export function validateCreateReview(data: unknown): { success: true; data: CreateReviewData } | { success: false; error: string } {
+export function validateCreateReview(data: unknown): { success: true; data: ValidatedCreateReview } | { success: false; error: string } {
   try {
     const result = createReviewSchema.parse(data);
     return { success: true, data: result };
@@ -126,7 +154,7 @@ export function validateCreateReview(data: unknown): { success: true; data: Crea
   }
 }
 
-export function validateUpdateReview(data: unknown): { success: true; data: UpdateReviewData } | { success: false; error: string } {
+export function validateUpdateReview(data: unknown): { success: true; data: ValidatedUpdateReview } | { success: false; error: string } {
   try {
     const result = updateReviewSchema.parse(data);
     return { success: true, data: result };
@@ -139,7 +167,7 @@ export function validateUpdateReview(data: unknown): { success: true; data: Upda
   }
 }
 
-export function validateReviewsQuery(params: unknown): { success: true; data: ReviewsQueryParams } | { success: false; error: string } {
+export function validateReviewsQuery(params: unknown): { success: true; data: ValidatedReviewsQuery } | { success: false; error: string } {
   try {
     const result = reviewsQuerySchema.parse(params);
     return { success: true, data: result };
@@ -161,7 +189,7 @@ export function validateReviewId(id: unknown): { success: true; data: string } |
   }
 }
 
-export function validateReportReview(data: unknown): { success: true; data: ReportReviewData } | { success: false; error: string } {
+export function validateReportReview(data: unknown): { success: true; data: ValidatedReportReview } | { success: false; error: string } {
   try {
     const result = reportReviewSchema.parse(data);
     return { success: true, data: result };

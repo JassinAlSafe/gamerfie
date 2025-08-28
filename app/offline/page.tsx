@@ -2,11 +2,38 @@
  * Offline Page
  * Displayed when the user is offline and trying to access the app
  */
+"use client";
 
 import { AlertCircle, RefreshCw, Wifi, WifiOff } from 'lucide-react';
 import Link from 'next/link';
+import { useEffect } from 'react';
 
 export default function OfflinePage() {
+  // Handle network status changes
+  useEffect(() => {
+    const updateNetworkStatus = () => {
+      const statusEl = document.getElementById('network-status');
+      if (navigator.onLine && statusEl) {
+        statusEl.classList.remove('hidden');
+        setTimeout(() => {
+          window.location.href = '/';
+        }, 2000);
+      }
+    };
+    
+    // Listen for online/offline events
+    window.addEventListener('online', updateNetworkStatus);
+    window.addEventListener('load', updateNetworkStatus);
+    
+    // Check initial status
+    updateNetworkStatus();
+    
+    return () => {
+      window.removeEventListener('online', updateNetworkStatus);
+      window.removeEventListener('load', updateNetworkStatus);
+    };
+  }, []);
+
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="max-w-md w-full text-center space-y-6">
@@ -79,26 +106,6 @@ export default function OfflinePage() {
         </div>
       </div>
 
-      <script
-        dangerouslySetInnerHTML={{
-          __html: `
-            // Check connection status
-            function updateNetworkStatus() {
-              const statusEl = document.getElementById('network-status');
-              if (navigator.onLine && statusEl) {
-                statusEl.classList.remove('hidden');
-                setTimeout(() => {
-                  window.location.href = '/';
-                }, 2000);
-              }
-            }
-            
-            // Listen for online/offline events
-            window.addEventListener('online', updateNetworkStatus);
-            window.addEventListener('load', updateNetworkStatus);
-          `
-        }}
-      />
     </div>
   );
 }

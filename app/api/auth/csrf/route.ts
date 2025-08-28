@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { generateCSRFToken } from '@/lib/auth-security';
 
+// Force dynamic rendering for this route
+export const dynamic = 'force-dynamic';
+
 /**
  * CSRF Token API Endpoint
  * GET /api/auth/csrf - Returns a new CSRF token

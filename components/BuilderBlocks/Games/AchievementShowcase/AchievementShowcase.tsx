@@ -1,6 +1,7 @@
 "use client";
 
 import { memo, useEffect, useState, useRef } from "react";
+import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { Trophy, Star, Zap, Award, ChevronRight, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -182,12 +183,13 @@ export const AchievementShowcase = memo(function AchievementShowcase({
       </div>
 
       {/* View All Button */}
-      <button
+      <Link
+        href="/achievements"
         className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] text-sm font-medium text-muted-foreground hover:text-foreground flex-shrink-0"
       >
         View All Achievements
         <ChevronRight className="h-4 w-4" />
-      </button>
+      </Link>
 
       {/* Achievement Detail Modal */}
       <AnimatePresence>

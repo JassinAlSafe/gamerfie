@@ -90,19 +90,30 @@ export interface ReviewStats {
   topGenres: Array<{ genre: string; count: number }>;
 }
 
-// Form Types
-export interface CreateReviewData {
+// Form Input Types - Single Source of Truth
+export interface CreateReviewInput {
   game_id: string;
-  rating: number;
+  rating: number; // 1-10 scale
   review_text?: string;
   is_public?: boolean;
   playtime_at_review?: number;
   is_recommended?: boolean;
 }
 
-export interface UpdateReviewData extends Partial<CreateReviewData> {
+export interface UpdateReviewInput {
   id: string;
+  rating?: number;
+  review_text?: string;
+  is_public?: boolean;
+  playtime_at_review?: number;
+  is_recommended?: boolean;
 }
+
+// Legacy aliases for backward compatibility - DEPRECATED
+/** @deprecated Use CreateReviewInput instead */
+export type CreateReviewData = CreateReviewInput;
+/** @deprecated Use UpdateReviewInput instead */
+export type UpdateReviewData = UpdateReviewInput;
 
 // Legacy support for existing code (deprecated)
 export type GameReview = Review;

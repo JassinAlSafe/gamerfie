@@ -8,6 +8,7 @@ import {
   IconBrandLinkedin,
 } from "./ui/custom-icons";
 import { Icons } from "./ui/icons";
+import { Heart, Sparkles, ExternalLink } from "lucide-react";
 
 export function Footer() {
   return (
@@ -38,7 +39,7 @@ export function Footer() {
               {[
                 {
                   icon: IconBrandLinkedin,
-                  href: "https://www.linkedin.com/company/amedesign-swe/",
+                  href: "https://www.linkedin.com/company/zenit-digital-studios/",
                   label: "LinkedIn",
                 },
                 {
@@ -72,7 +73,7 @@ export function Footer() {
           </div>
 
           {/* Navigation Links */}
-          <div className="lg:col-span-6 grid grid-cols-2 md:grid-cols-3 gap-8">
+          <div className="lg:col-span-6 grid grid-cols-2 md:grid-cols-4 gap-8">
             {/* Platform */}
             <div>
               <h4 className="text-white font-semibold mb-6 text-sm uppercase tracking-wider">
@@ -84,7 +85,8 @@ export function Footer() {
                   { label: "Explore Games", href: "/explore" },
                   { label: "All Games", href: "/all-games" },
                   { label: "Reviews", href: "/reviews" },
-                  { label: "Community", href: "/community" },
+                  { label: "Achievements", href: "/achievements" },
+                  { label: "Forum", href: "/forum" },
                 ].map(({ label, href }) => (
                   <li key={label}>
                     <Link
@@ -153,6 +155,33 @@ export function Footer() {
                 ))}
               </ul>
             </div>
+
+            {/* Developer */}
+            <div>
+              <h4 className="text-white font-semibold mb-6 text-sm uppercase tracking-wider">
+                Developer
+              </h4>
+              <ul className="space-y-4">
+                {[
+                  { label: "Roadmap", href: "/info/roadmap" },
+                  { label: "API Docs", href: "/api/docs" },
+                  { label: "Status", href: "/status" },
+                  { label: "Changelog", href: "/changelog" },
+                ].map(({ label, href }) => (
+                  <li key={label}>
+                    <Link
+                      href={href}
+                      className="text-gray-400 hover:text-white transition-colors duration-300 text-sm group relative"
+                    >
+                      <span className="relative">
+                        {label}
+                        <span className="absolute bottom-0 left-0 w-0 h-px bg-purple-400 group-hover:w-full transition-all duration-300"></span>
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
 
           {/* Newsletter/CTA Section */}
@@ -178,10 +207,24 @@ export function Footer() {
         {/* Bottom Bar */}
         <div className="mt-16 pt-8 border-t border-gray-800/50">
           <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
-            <p className="text-gray-500 text-sm">
-              © {new Date().getFullYear()} Game Vault by AmeDesign. All rights
-              reserved.
-            </p>
+            <div className="flex flex-col md:flex-row items-center space-y-2 md:space-y-0 md:space-x-4">
+              <p className="text-gray-500 text-sm">
+                © {new Date().getFullYear()} Game Vault. All rights reserved.
+              </p>
+              <div className="flex items-center space-x-2 text-gray-500 text-sm">
+                <span>Built by</span>
+                <Link
+                  href="https://www.linkedin.com/company/zenit-digital-studios/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-purple-400 hover:text-purple-300 transition-colors duration-300 font-medium flex items-center gap-1 group"
+                >
+                  <Sparkles className="h-3 w-3 group-hover:rotate-12 transition-transform" />
+                  Zenit Digital Studios
+                  <ExternalLink className="h-3 w-3 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                </Link>
+              </div>
+            </div>
             <div className="flex items-center space-x-1 text-gray-500 text-sm">
               <span>Made with</span>
               <span className="text-purple-400 animate-pulse">♥</span>
