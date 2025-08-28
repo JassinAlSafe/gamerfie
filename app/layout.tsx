@@ -73,6 +73,18 @@ export default function RootLayout({
     // Initialize error monitoring
     initializeErrorMonitoring();
 
+    // Register service worker for PWA functionality and image caching
+    if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js', {
+        scope: '/',
+        updateViaCache: 'imports'
+      }).then((registration) => {
+        console.log('Service Worker registered successfully:', registration.scope);
+      }).catch((error) => {
+        console.error('Service Worker registration failed:', error);
+      });
+    }
+
     return cleanup;
   }, [initTheme]);
 
@@ -221,10 +233,11 @@ export default function RootLayout({
             </ThemeProvider>
           </SupabaseProvider>
         </QueryClientProvider>
-        <Analytics 
-          mode="production" 
-          debug={process.env.NODE_ENV === 'development'}
-        />
+        {process.env.NODE_ENV === 'production' && (
+          <Analytics 
+            mode="production"
+          />
+        )}
       </body>
     </html>
   );

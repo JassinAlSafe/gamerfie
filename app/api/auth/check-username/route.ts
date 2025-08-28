@@ -1,16 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
+import { withRateLimit, sanitizeInput } from '@/lib/auth-security';
 
-export async function POST(request: NextRequest) {
+async function checkUsernameHandler(request: NextRequest) {
   try {
-    const { username } = await request.json();
+    const { username: rawUsername } = await request.json();
 
-    if (!username || typeof username !== 'string') {
+    if (!rawUsername || typeof rawUsername !== 'string') {
       return NextResponse.json(
         { error: 'Username is required' },
         { status: 400 }
       );
     }
+
+    // Sanitize input to prevent injection attacks
+    const username = sanitizeInput(rawUsername.trim());
 
     // Validate username format
     if (username.length < 3 || username.length > 20) {
@@ -65,6 +69,11 @@ export async function POST(request: NextRequest) {
       available: isAvailable,
       username: username.toLowerCase(),
       reason: isAvailable ? undefined : 'Username is already taken'
+    }, {
+      headers: {
+        'Cache-Control': 'no-store, max-age=0',
+        'X-Content-Type-Options': 'nosniff'
+      }
     });
 
   } catch (error) {
@@ -75,3 +84,6 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
+// Export with rate limiting protection
+export const POST = withRateLimit(checkUsernameHandler);

@@ -12,10 +12,10 @@ function getCSPHeader() {
     `script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.youtube.com https://www.googletagmanager.com https://analytics.google.com https://ssl.google-analytics.com https://va.vercel-scripts.com https://vercel.live`,
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "font-src 'self' https://fonts.gstatic.com data:",
-    "img-src 'self' data: blob: https: http: https://*.googleusercontent.com https://googleusercontent.com",
+    "img-src 'self' data: blob: https: http: https://*.googleusercontent.com https://googleusercontent.com https://lh3.googleusercontent.com https://lh4.googleusercontent.com https://lh5.googleusercontent.com https://lh6.googleusercontent.com https://images.igdb.com",
     "media-src 'self' https://www.youtube.com https://youtube.com",
     "frame-src 'self' https://www.youtube.com https://youtube.com",
-    "connect-src 'self' https://api.rawg.io https://*.supabase.co wss://*.supabase.co https://analytics.google.com https://api.twitch.tv https://id.twitch.tv https://va.vercel-scripts.com https://vitals.vercel-insights.com https://vercel.live https://api.stripe.com https://images.igdb.com https://*.googleusercontent.com https://googleusercontent.com http://localhost:* ws://localhost:*",
+    "connect-src 'self' https://api.rawg.io https://*.supabase.co wss://*.supabase.co https://analytics.google.com https://api.twitch.tv https://id.twitch.tv https://va.vercel-scripts.com https://vitals.vercel-insights.com https://vercel.live https://api.stripe.com https://images.igdb.com https://*.googleusercontent.com https://googleusercontent.com https://lh3.googleusercontent.com https://lh4.googleusercontent.com https://lh5.googleusercontent.com https://lh6.googleusercontent.com http://localhost:* ws://localhost:*",
     "object-src 'none'",
     "frame-ancestors 'none'",
     "base-uri 'self'",
@@ -109,13 +109,15 @@ export async function middleware(request: NextRequest) {
     supabaseResponse.headers.set(key, value);
   });
 
-  // Special handling for service worker - allow it to fetch images
-  if (request.nextUrl.pathname === '/sw.js') {
+  // Special handling for service worker - allow it to fetch images and data
+  if (request.nextUrl.pathname === '/sw.js' || request.nextUrl.pathname.startsWith('/sw')) {
     supabaseResponse.headers.set('Content-Security-Policy', 
       "default-src 'self'; " +
-      "script-src 'self'; " +
-      "connect-src 'self' https://*.googleusercontent.com https://googleusercontent.com https://images.igdb.com; " +
-      "img-src 'self' data: blob: https: http: https://*.googleusercontent.com https://googleusercontent.com https://images.igdb.com"
+      "script-src 'self' 'unsafe-eval'; " +
+      "connect-src 'self' https://*.googleusercontent.com https://googleusercontent.com https://images.igdb.com https://lh3.googleusercontent.com https://lh4.googleusercontent.com https://lh5.googleusercontent.com https://lh6.googleusercontent.com; " +
+      "img-src 'self' data: blob: https: http: https://*.googleusercontent.com https://googleusercontent.com https://images.igdb.com https://lh3.googleusercontent.com https://lh4.googleusercontent.com https://lh5.googleusercontent.com https://lh6.googleusercontent.com; " +
+      "font-src 'self' data:; " +
+      "style-src 'self' 'unsafe-inline'"
     );
   }
 

@@ -1,0 +1,75 @@
+/* Mobile-first responsive styles for ProfileCard */
+
+.profileCard {
+  /* Base mobile styles */
+  @apply w-full;
+}
+
+.statsGrid {
+  /* Mobile: stack stats vertically on very small screens */
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.statItem {
+  @apply min-h-[4rem] flex flex-col justify-center;
+}
+
+.quickActions {
+  /* Hide quick actions on mobile to save space */
+  @apply opacity-100 sm:opacity-0;
+}
+
+/* Tablet and up */
+@media (min-width: 640px) {
+  .statsGrid {
+    gap: 1rem;
+  }
+  
+  .quickActions {
+    @apply group-hover:opacity-100;
+  }
+}
+
+/* Desktop */
+@media (min-width: 1024px) {
+  .profileCard {
+    @apply transition-transform hover:scale-[1.01];
+  }
+}
+
+/* Reduce motion for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+  .profileCard,
+  .statItem,
+  .progressBar {
+    @apply transition-none;
+  }
+  
+  .activityIndicator {
+    @apply animate-none;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .profileCard {
+    @apply border-2 border-foreground/20;
+  }
+  
+  .statItem {
+    @apply border-2;
+  }
+}
+
+/* Print styles */
+@media print {
+  .quickActions,
+  .activityIndicator {
+    @apply hidden;
+  }
+  
+  .profileCard {
+    @apply shadow-none border border-foreground/20;
+  }
+}

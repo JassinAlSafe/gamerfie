@@ -6,8 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { 
   BarChart3, 
   TrendingUp, 
-  Users, 
-  MessageSquare,
+  Users,
   Eye,
   Heart,
   Calendar,

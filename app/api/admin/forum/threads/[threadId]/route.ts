@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/utils/supabase/server";
 import { withAuthenticatedUser } from "@/app/api/lib/forum-helpers";
 
 export async function PATCH(
@@ -12,7 +11,7 @@ export async function PATCH(
       const body = await request.json();
       const { action } = body;
 
-      let updateData: any = {
+      const updateData: any = {
         updated_at: new Date().toISOString()
       };
 

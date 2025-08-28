@@ -4,6 +4,7 @@
  */
 
 import { createClient } from '@/utils/supabase/client';
+import type { Profile } from '@/types/auth.types';
 
 export interface UserDetectionResult {
   exists: boolean;
@@ -77,26 +78,26 @@ export function getAuthStrategy(detection: UserDetectionResult) {
  * Cache user profile data for faster subsequent loads
  */
 export class ProfileCache {
-  private static cache = new Map<string, any>();
+  private static cache = new Map<string, Profile>();
   private static expiry = new Map<string, number>();
   private static readonly CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
-  static set(userId: string, profile: any) {
+  static set(userId: string, profile: Profile): void {
     this.cache.set(userId, profile);
     this.expiry.set(userId, Date.now() + this.CACHE_DURATION);
   }
 
-  static get(userId: string) {
+  static get(userId: string): Profile | null {
     const expiry = this.expiry.get(userId);
     if (!expiry || Date.now() > expiry) {
       this.cache.delete(userId);
       this.expiry.delete(userId);
       return null;
     }
-    return this.cache.get(userId);
+    return this.cache.get(userId) ?? null;
   }
 
-  static clear() {
+  static clear(): void {
     this.cache.clear();
     this.expiry.clear();
   }
@@ -105,7 +106,7 @@ export class ProfileCache {
 /**
  * Optimized profile fetching with caching and auto-creation
  */
-export async function fetchUserProfileOptimized(userId: string) {
+export async function fetchUserProfileOptimized(userId: string): Promise<Profile | null> {
   // Check cache first
   const cached = ProfileCache.get(userId);
   if (cached) {
@@ -181,7 +182,11 @@ export async function fetchUserProfileOptimized(userId: string) {
 /**
  * Pre-warm authentication state on app load
  */
-export async function preWarmAuth() {
+export async function preWarmAuth(): Promise<{
+  isAuthenticated: boolean;
+  user: any | null;
+  needsProfileFetch: boolean;
+}> {
   const supabase = createClient();
   
   try {
@@ -216,14 +221,17 @@ export async function preWarmAuth() {
 /**
  * Smart redirect logic based on user state and intended destination
  */
-export function getSmartRedirect(user: any, intendedPath?: string) {
+export function getSmartRedirect(user: { profile?: Profile | null }, intendedPath?: string): string {
   if (!user) {
     return '/signin';
   }
   
   // Only send to welcome if user specifically hasn't completed onboarding
   // (not for missing profile data - that should be handled differently)
-  const onboardedStatus = user.profile?.settings?.onboarded;
+  const settings = user.profile?.settings;
+  const onboardedStatus = settings && typeof settings === 'object' && 'onboarded' in settings 
+    ? settings.onboarded 
+    : undefined;
   if (onboardedStatus === false) {
     return '/welcome?new=true';
   }
