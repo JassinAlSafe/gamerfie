@@ -152,7 +152,7 @@ export const STREAK_BADGES = {
 export const SPECIAL_BADGES = {
   ACTIVE_YEAR: {
     threshold: ACTIVITY_THRESHOLDS.ACTIVE_YEAR,
-    label: `Active ${new Date().getFullYear()}`,
+    label: `Active 2024`,
     icon: Calendar,
     className: "bg-gradient-to-r from-emerald-600/20 to-green-600/20 text-emerald-300 border-emerald-600/30 text-xs hover:from-emerald-600/30 hover:to-green-600/30 transition-colors"
   },

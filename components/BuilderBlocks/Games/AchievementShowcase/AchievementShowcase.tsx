@@ -78,9 +78,6 @@ export const AchievementShowcase = memo(function AchievementShowcase({
     return () => window.removeEventListener('resize', updateSize);
   }, [mounted]);
 
-  if (!mounted) {
-    return <AchievementShowcaseSkeleton className={className} />;
-  }
 
   const unlockedCount = achievements?.length || 0;
   const completionRate = totalAchievements > 0 ? (unlockedCount / totalAchievements) * 100 : 0;
@@ -168,6 +165,7 @@ export const AchievementShowcase = memo(function AchievementShowcase({
                 index={index}
                 onClick={() => setSelectedAchievement(achievement)}
                 isCompact={containerSize.height <= 350}
+                showAnimations={mounted}
               />
             ))
           ) : (
@@ -222,68 +220,19 @@ const AchievementItem = memo(function AchievementItem({
   achievement,
   index,
   onClick,
-  isCompact = false
+  isCompact = false,
+  showAnimations = true
 }: {
   achievement: Achievement;
   index: number;
   onClick: () => void;
   isCompact?: boolean;
+  showAnimations?: boolean;
 }) {
-  const [isMounted, setIsMounted] = useState(false);
-  
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
-  
   const RarityIcon = getRarityIcon(achievement.rarity);
   
-  // Render without animation on server/initial load
-  if (!isMounted) {
-    return (
-      <div
-        onClick={onClick}
-        className={cn(
-          "flex items-center gap-3 rounded-lg bg-muted/20 hover:bg-muted/40 transition-all duration-200 cursor-pointer group border border-transparent hover:border-border/50",
-          isCompact ? "p-2" : "p-3"
-        )}
-      >
-        <div className={cn(
-          "rounded-lg bg-gradient-to-br",
-          getRarityColor(achievement.rarity),
-          isCompact ? "p-1.5" : "p-2"
-        )}>
-          <RarityIcon className={cn("text-white", isCompact ? "h-3 w-3" : "h-4 w-4")} />
-        </div>
-        
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <p className={cn("font-medium text-foreground truncate", isCompact ? "text-xs" : "text-sm")}>
-              {achievement.name}
-            </p>
-            {achievement.isNew && (
-              <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-gradient-to-r from-yellow-400 to-orange-500 text-xs font-medium text-white">
-                <Sparkles className="h-3 w-3" />
-                NEW
-              </div>
-            )}
-          </div>
-          {!isCompact && (
-            <p className="text-xs text-muted-foreground truncate">
-              {achievement.description}
-            </p>
-          )}
-        </div>
-        
-        <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors" />
-      </div>
-    );
-  }
-  
-  return (
-    <motion.div
-      initial={{ opacity: 0, x: -20 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ delay: index * 0.1 }}
+  const content = (
+    <div
       onClick={onClick}
       className={cn(
         "flex items-center gap-3 rounded-lg bg-muted/20 hover:bg-muted/40 transition-all duration-200 cursor-pointer group border border-transparent hover:border-border/50",
@@ -318,6 +267,20 @@ const AchievementItem = memo(function AchievementItem({
       </div>
       
       <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors" />
+    </div>
+  );
+  
+  if (!showAnimations) {
+    return content;
+  }
+  
+  return (
+    <motion.div
+      initial={{ opacity: 0, x: -20 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ delay: index * 0.1 }}
+    >
+      {content}
     </motion.div>
   );
 });

@@ -22,15 +22,19 @@ interface HeroSectionProps {
 export function HeroSection({ stats }: HeroSectionProps) {
   const { isBetaBannerVisible } = useUIStore();
   const [mounted, setMounted] = useState(false);
+  const [clientBetaBannerVisible, setClientBetaBannerVisible] = useState(true); // Default to true for SSR consistency
   
   useEffect(() => {
     setMounted(true);
-  }, []);
+    setClientBetaBannerVisible(isBetaBannerVisible);
+  }, [isBetaBannerVisible]);
   
-  // Calculate viewport height minus header space
-  const minHeightClass = isBetaBannerVisible 
-    ? "min-h-[calc(100vh-108px)] sm:min-h-[calc(100vh-112px)]" 
-    : "min-h-[calc(100vh-64px)]";
+  // Calculate viewport height minus header space - use consistent value during SSR
+  const minHeightClass = mounted 
+    ? (clientBetaBannerVisible 
+        ? "min-h-[calc(100vh-108px)] sm:min-h-[calc(100vh-112px)]" 
+        : "min-h-[calc(100vh-64px)]")
+    : "min-h-[calc(100vh-108px)] sm:min-h-[calc(100vh-112px)]"; // Default to banner visible for SSR
     
   // Performance optimization: Only render floating elements on desktop
   const shouldRenderFloatingElements = useMemo(() => {

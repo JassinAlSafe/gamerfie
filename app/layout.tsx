@@ -66,8 +66,10 @@ export default function RootLayout({
   const pathname = usePathname();
   const isAuthPage = authPages.includes(pathname);
   const { initTheme, isBetaBannerVisible } = useUIStore();
+  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
+    setIsClient(true);
     const cleanup = initTheme();
 
     // Initialize error monitoring
@@ -194,7 +196,7 @@ export default function RootLayout({
         />
       </head>
       <body
-        className={`${inter.className} ${geistSans.variable} ${geistMono.variable} ${isBetaBannerVisible ? 'beta-banner-visible' : ''} ${isAuthPage ? 'auth-page' : ''}`}
+        className={`${inter.className} ${geistSans.variable} ${geistMono.variable} ${isClient && isBetaBannerVisible ? 'beta-banner-visible' : ''} ${isAuthPage ? 'auth-page' : ''}`}
       >
         <QueryClientProvider client={queryClient}>
           <SupabaseProvider initialSession={null}>

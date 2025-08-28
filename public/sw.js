@@ -3,8 +3,8 @@
  * Handles CSP-compliant image caching and basic PWA functionality
  */
 
-const CACHE_NAME = 'gamerfie-v1';
-const STATIC_CACHE = 'gamerfie-static-v1';
+const CACHE_NAME = 'gamerfie-v2';
+const STATIC_CACHE = 'gamerfie-static-v2';
 
 // URLs to cache on install
 const STATIC_URLS = [

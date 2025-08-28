@@ -10,6 +10,30 @@ import {
 import { Icons } from "./ui/icons";
 import { Heart, Sparkles, ExternalLink } from "lucide-react";
 
+// Define social links as a constant outside the component to prevent hydration issues
+const SOCIAL_LINKS = [
+  {
+    icon: IconBrandLinkedin,
+    href: "https://www.linkedin.com/company/zenit-digital-studios/",
+    label: "LinkedIn",
+  },
+  {
+    icon: IconBrandThreads,
+    href: "https://threads.net/@gamerfie",
+    label: "Threads",
+  },
+  {
+    icon: IconBrandInstagram,
+    href: "https://instagram.com/gamerfie",
+    label: "Instagram",
+  },
+  {
+    icon: IconBrandDiscord,
+    href: "https://discord.gg/gamerfie",
+    label: "Discord",
+  },
+] as const;
+
 export function Footer() {
   return (
     <footer className="relative bg-gradient-to-t from-gray-950 to-gray-900 border-t border-gray-800/50">
@@ -36,28 +60,7 @@ export function Footer() {
 
             {/* Social Links */}
             <div className="flex space-x-3">
-              {[
-                {
-                  icon: IconBrandLinkedin,
-                  href: "https://www.linkedin.com/company/zenit-digital-studios/",
-                  label: "LinkedIn",
-                },
-                {
-                  icon: IconBrandThreads,
-                  href: "https://threads.net/@gamerfie",
-                  label: "Threads",
-                },
-                {
-                  icon: IconBrandInstagram,
-                  href: "https://instagram.com/gamerfie",
-                  label: "Instagram",
-                },
-                {
-                  icon: IconBrandDiscord,
-                  href: "https://discord.gg/gamerfie",
-                  label: "Discord",
-                },
-              ].map(({ icon: Icon, href, label }) => (
+              {SOCIAL_LINKS.map(({ icon: Icon, href, label }) => (
                 <Link
                   key={label}
                   href={href}
