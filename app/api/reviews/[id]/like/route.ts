@@ -24,17 +24,55 @@ export async function POST(
     const { supabase } = authResult;
     const reviewId = reviewIdValidation.data;
 
-    // Use the enhanced toggle_review_like function
-    const { data: result, error } = await supabase.rpc('toggle_review_like', {
-      review_id: reviewId
-    });
+    // Use direct database queries instead of RPC to avoid auth context issues
+    const { user } = authResult;
+    
+    // Check if like already exists
+    const { data: existingLike, error: checkError } = await supabase
+      .from('review_likes')
+      .select('id')
+      .eq('review_id', reviewId)
+      .eq('user_id', user.id)
+      .single();
 
-    if (error) throw error;
+    if (checkError && checkError.code !== 'PGRST116') {
+      throw checkError;
+    }
+
+    let liked: boolean;
+    
+    if (existingLike) {
+      // Remove like
+      const { error: deleteError } = await supabase
+        .from('review_likes')
+        .delete()
+        .eq('review_id', reviewId)
+        .eq('user_id', user.id);
+      
+      if (deleteError) throw deleteError;
+      liked = false;
+    } else {
+      // Add like
+      const { error: insertError } = await supabase
+        .from('review_likes')
+        .insert({ review_id: reviewId, user_id: user.id });
+      
+      if (insertError) throw insertError;
+      liked = true;
+    }
+
+    // Get updated count
+    const { count, error: countError } = await supabase
+      .from('review_likes')
+      .select('*', { count: 'exact', head: true })
+      .eq('review_id', reviewId);
+
+    if (countError) throw countError;
     
     return NextResponse.json({
-      liked: result.liked,
-      count: result.likes_count,
-      message: result.liked ? "Review liked" : "Like removed"
+      liked,
+      count: count || 0,
+      message: liked ? "Review liked" : "Like removed"
     });
   } catch (error) {
     console.error("[LIKE POST] Error toggling like:", error);

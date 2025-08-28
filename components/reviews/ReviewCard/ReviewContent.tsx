@@ -1,5 +1,6 @@
 import React from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
+import { sanitizeReviewContent } from "@/lib/security/sanitizer";
 
 interface ReviewContentProps {
   reviewText: string;
@@ -15,9 +16,12 @@ export function ReviewContent({
   onToggleFullReview 
 }: ReviewContentProps) {
   const maxCharsCollapsed = 150;
+  
+  // Sanitize review text to prevent XSS
+  const sanitizedText = sanitizeReviewContent(reviewText || '');
   const displayText = showFullReview 
-    ? reviewText 
-    : reviewText?.slice(0, maxCharsCollapsed);
+    ? sanitizedText 
+    : sanitizedText?.slice(0, maxCharsCollapsed);
 
   return (
     <div className="h-full flex flex-col">
@@ -25,10 +29,10 @@ export function ReviewContent({
         {/* Text Content */}
         <div className={`flex-1 ${!showFullReview ? 'overflow-hidden' : ''} min-h-[60px] flex items-start`}>
           <div className={`relative w-full ${!showFullReview && isLongReview ? 'max-h-[120px] overflow-hidden' : ''}`}>
-            <p className="text-slate-200 leading-relaxed text-sm">
-              {displayText}
-              {isLongReview && !showFullReview && "..."}
-            </p>
+            <div 
+              className="text-slate-200 leading-relaxed text-sm prose prose-invert max-w-none"
+              dangerouslySetInnerHTML={{ __html: displayText + (isLongReview && !showFullReview ? "..." : "") }}
+            />
             
             {/* Gradient fade for long content */}
             {!showFullReview && isLongReview && (

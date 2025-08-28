@@ -40,7 +40,7 @@ export function InfoContent({
         </div>
       )}
       
-      <div className="max-w-5xl">
+      <div className="max-w-5xl mx-auto">
         {children}
       </div>
     </div>

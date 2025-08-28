@@ -1,5 +1,5 @@
 import { createClient } from '@/utils/supabase/client';
-import type { Review, CreateReviewData, UpdateReviewData, ReviewsResponse, ReviewStats } from '@/types/review';
+import type { Review, CreateReviewInput, UpdateReviewInput, ReviewsResponse, ReviewStats } from '@/types/review';
 
 export class ReviewService {
   private static supabase = createClient();
@@ -7,7 +7,7 @@ export class ReviewService {
   /**
    * Create a new review
    */
-  static async createReview(data: CreateReviewData): Promise<Review> {
+  static async createReview(data: CreateReviewInput): Promise<Review> {
     const { data: { user } } = await this.supabase.auth.getUser();
     if (!user) throw new Error('User not authenticated');
 
@@ -50,11 +50,11 @@ export class ReviewService {
   /**
    * Update an existing review
    */
-  static async updateReview(data: UpdateReviewData): Promise<Review> {
+  static async updateReview(data: UpdateReviewInput): Promise<Review> {
     const { data: { user } } = await this.supabase.auth.getUser();
     if (!user) throw new Error('User not authenticated');
 
-    const updateData: Partial<CreateReviewData> = {};
+    const updateData: Partial<CreateReviewInput> = {};
     if (data.rating !== undefined) updateData.rating = data.rating;
     if (data.review_text !== undefined) updateData.review_text = data.review_text;
     if (data.is_public !== undefined) updateData.is_public = data.is_public;
@@ -113,9 +113,9 @@ export class ReviewService {
   static async getReview(reviewId: string): Promise<Review | null> {
     const { data: { user: currentUser } } = await this.supabase.auth.getUser();
 
-    // Use the review_stats view for optimized single review fetch
+    // Use the individual_review_stats view for optimized single review fetch
     const { data: review, error } = await this.supabase
-      .from('review_stats')
+      .from('individual_review_stats')
       .select(`
         id, user_id, game_id, rating, review_text, is_public, 
         playtime_at_review, is_recommended, created_at, updated_at,
@@ -199,12 +199,12 @@ export class ReviewService {
     // Get current user for like/bookmark status
     const { data: { user: currentUser } } = await this.supabase.auth.getUser();
 
-    // Use the optimized review_stats view if ordering by likes_count
+    // Use the optimized individual_review_stats view if ordering by likes_count
     let fromTable = 'reviews';
     let selectFields = '*';
 
     if (orderBy === 'likes_count') {
-      fromTable = 'review_stats';
+      fromTable = 'individual_review_stats';
       selectFields = `
         id, user_id, game_id, rating, review_text, is_public, 
         playtime_at_review, is_recommended, created_at, updated_at,
@@ -255,9 +255,9 @@ export class ReviewService {
       
       // Only fetch stats if we're not using the stats view
       orderBy === 'likes_count' ? 
-        { data: null } : // Skip stats query since we have it from review_stats view
+        { data: null } : // Skip stats query since we have it from individual_review_stats view
         this.supabase
-          .from('review_stats')
+          .from('individual_review_stats')
           .select('id, likes_count, bookmarks_count, comments_count')
           .in('id', reviewIds),
       
@@ -299,8 +299,8 @@ export class ReviewService {
         : []
     );
 
-    // Transform reviews with optimized lookups
-    const transformedReviews = reviews.map((review: any) => {
+    // Transform reviews with optimized lookups - no casting to any
+    const transformedReviews = reviews.map((review) => {
       const stats = statsMap.get(review.id);
       const user = usersMap.get(review.user_id);
 

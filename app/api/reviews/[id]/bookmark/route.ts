@@ -24,17 +24,55 @@ export async function POST(
     const { supabase } = authResult;
     const reviewId = reviewIdValidation.data;
 
-    // Use the enhanced toggle_review_bookmark function
-    const { data: result, error } = await supabase.rpc('toggle_review_bookmark', {
-      review_id: reviewId
-    });
+    // Use direct database queries instead of RPC to avoid auth context issues
+    const { user } = authResult;
+    
+    // Check if bookmark already exists
+    const { data: existingBookmark, error: checkError } = await supabase
+      .from('review_bookmarks')
+      .select('id')
+      .eq('review_id', reviewId)
+      .eq('user_id', user.id)
+      .single();
 
-    if (error) throw error;
+    if (checkError && checkError.code !== 'PGRST116') {
+      throw checkError;
+    }
+
+    let bookmarked: boolean;
+    
+    if (existingBookmark) {
+      // Remove bookmark
+      const { error: deleteError } = await supabase
+        .from('review_bookmarks')
+        .delete()
+        .eq('review_id', reviewId)
+        .eq('user_id', user.id);
+      
+      if (deleteError) throw deleteError;
+      bookmarked = false;
+    } else {
+      // Add bookmark
+      const { error: insertError } = await supabase
+        .from('review_bookmarks')
+        .insert({ review_id: reviewId, user_id: user.id });
+      
+      if (insertError) throw insertError;
+      bookmarked = true;
+    }
+
+    // Get updated count
+    const { count, error: countError } = await supabase
+      .from('review_bookmarks')
+      .select('*', { count: 'exact', head: true })
+      .eq('review_id', reviewId);
+
+    if (countError) throw countError;
     
     return NextResponse.json({
-      bookmarked: result.bookmarked,
-      count: result.bookmarks_count,
-      message: result.bookmarked ? "Review bookmarked" : "Bookmark removed"
+      bookmarked,
+      count: count || 0,
+      message: bookmarked ? "Review bookmarked" : "Bookmark removed"
     });
   } catch (error) {
     console.error("[BOOKMARK POST] Error toggling bookmark:", error);

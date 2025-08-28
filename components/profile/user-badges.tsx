@@ -216,10 +216,17 @@ export default function UserBadges() {
           <h3 className="text-xl font-semibold text-white mb-2">
             No Badges Yet
           </h3>
-          <p className="text-gray-400 max-w-md">
+          <p className="text-gray-400 max-w-md mb-4">
             Complete challenges and achievements to earn badges and show off
             your gaming accomplishments!
           </p>
+          <a
+            href="/achievements"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-lg font-medium transition-colors"
+          >
+            <Medal className="w-4 h-4" />
+            View Achievements
+          </a>
         </div>
       )}
     </div>

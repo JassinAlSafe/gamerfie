@@ -66,12 +66,26 @@ export default function RootLayout({
   const pathname = usePathname();
   const isAuthPage = authPages.includes(pathname);
   const { initTheme, isBetaBannerVisible } = useUIStore();
+  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
+    setIsClient(true);
     const cleanup = initTheme();
 
     // Initialize error monitoring
     initializeErrorMonitoring();
+
+    // Register service worker for PWA functionality and image caching
+    if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js', {
+        scope: '/',
+        updateViaCache: 'imports'
+      }).then((registration) => {
+        console.log('Service Worker registered successfully:', registration.scope);
+      }).catch((error) => {
+        console.error('Service Worker registration failed:', error);
+      });
+    }
 
     return cleanup;
   }, [initTheme]);
@@ -182,7 +196,7 @@ export default function RootLayout({
         />
       </head>
       <body
-        className={`${inter.className} ${geistSans.variable} ${geistMono.variable} ${isBetaBannerVisible ? 'beta-banner-visible' : ''} ${isAuthPage ? 'auth-page' : ''}`}
+        className={`${inter.className} ${geistSans.variable} ${geistMono.variable} ${isClient && isBetaBannerVisible ? 'beta-banner-visible' : ''} ${isAuthPage ? 'auth-page' : ''}`}
       >
         <QueryClientProvider client={queryClient}>
           <SupabaseProvider initialSession={null}>
@@ -221,10 +235,11 @@ export default function RootLayout({
             </ThemeProvider>
           </SupabaseProvider>
         </QueryClientProvider>
-        <Analytics 
-          mode="production" 
-          debug={process.env.NODE_ENV === 'development'}
-        />
+        {process.env.NODE_ENV === 'production' && (
+          <Analytics 
+            mode="production"
+          />
+        )}
       </body>
     </html>
   );

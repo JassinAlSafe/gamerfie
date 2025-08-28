@@ -1,6 +1,17 @@
 import { createClient } from "@/utils/supabase/server";
 import { AuthenticatedHome } from "@/components/home/authenticated-home";
 import { UnauthenticatedHome } from "@/components/home/unauthenticated-home";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  metadataBase: new URL(
+    process.env.NODE_ENV === "production"
+      ? "https://gamerfie.vercel.app"
+      : "http://localhost:3000"
+  ),
+  title: "Game Vault - Ultimate Video Game Tracking Platform",
+  description: "Track your video game progress, discover new games, and connect with gamers worldwide. The ultimate gaming community platform for achievement tracking, game reviews, and gaming statistics.",
+};
 
 
 export default async function HomePage() {

@@ -6,21 +6,23 @@ import { fetchUserProfileOptimized, ProfileCache, preWarmAuth } from '@/lib/auth
 import type { 
   User, 
   Profile, 
-  GoogleAuthResponse
+  GoogleAuthResponse,
+  AuthErrorDetails
 } from '@/types/auth.types'
+import { createAuthError } from '@/lib/auth-errors'
 
 interface AuthState {
   user: User | null
   session: Session | null
   profile: Profile | null
   isLoading: boolean
-  error: string | null
+  error: AuthErrorDetails | null
   isInitialized: boolean
   
   // Auth Actions
   setUser: (_user: User | null) => void
   setLoading: (_isLoading: boolean) => void
-  setError: (_error: string | null) => void
+  setError: (_error: AuthErrorDetails | null) => void
   signIn: (_email: string, _password: string) => Promise<AuthResponse>
   signUp: (_email: string, _password: string, _username: string, _displayName?: string) => Promise<AuthResponse>
   signInWithGoogle: () => Promise<GoogleAuthResponse>
@@ -155,8 +157,8 @@ export const useAuthStore = create<AuthState>()(
             return response;
           } catch (error) {
             console.error('Auth store: Signin caught error:', error);
-            const message = error instanceof Error ? error.message : 'Failed to sign in';
-            set({ error: message });
+            const authError = createAuthError(error instanceof Error ? error : new Error('Failed to sign in'), 'signin');
+            set({ error: authError });
             throw error;
           } finally {
             set({ isLoading: false });
@@ -217,8 +219,8 @@ export const useAuthStore = create<AuthState>()(
 
             return response;
           } catch (error) {
-            const message = error instanceof Error ? error.message : 'Failed to sign up';
-            set({ error: message });
+            const authError = createAuthError(error instanceof Error ? error : new Error('Failed to sign up'), 'signup');
+            set({ error: authError });
             throw error;
           } finally {
             set({ isLoading: false });
@@ -252,8 +254,8 @@ export const useAuthStore = create<AuthState>()(
             }
             
           } catch (error) {
-            const message = error instanceof Error ? error.message : 'Failed to sign out';
-            set({ error: message });
+            const authError = createAuthError(error instanceof Error ? error : new Error('Failed to sign out'), 'reset');
+            set({ error: authError });
             throw error;
           } finally {
             set({ isLoading: false });
@@ -316,8 +318,8 @@ export const useAuthStore = create<AuthState>()(
             console.log('Auth store: Password reset email sent successfully');
           } catch (error) {
             console.error('Auth store: Password reset caught error:', error);
-            const message = error instanceof Error ? error.message : 'Failed to send reset email';
-            set({ error: message });
+            const authError = createAuthError(error instanceof Error ? error : new Error('Failed to send reset email'), 'reset');
+            set({ error: authError });
             throw error;
           } finally {
             set({ isLoading: false });
@@ -332,8 +334,8 @@ export const useAuthStore = create<AuthState>()(
             });
             if (error) throw error;
           } catch (error) {
-            const message = error instanceof Error ? error.message : 'Failed to update password';
-            set({ error: message });
+            const authError = createAuthError(error instanceof Error ? error : new Error('Failed to update password'), 'update');
+            set({ error: authError });
             throw error;
           } finally {
             set({ isLoading: false });
@@ -357,8 +359,8 @@ export const useAuthStore = create<AuthState>()(
               set({ user: null, error: null });
             }
           } catch (error) {
-            const message = error instanceof Error ? error.message : 'Failed to refresh session';
-            set({ error: message });
+            const authError = createAuthError(error instanceof Error ? error : new Error('Failed to refresh session'), 'signin');
+            set({ error: authError });
             throw error;
           } finally {
             set({ isLoading: false });
@@ -396,8 +398,8 @@ export const useAuthStore = create<AuthState>()(
               } 
             });
           } catch (error) {
-            const message = error instanceof Error ? error.message : 'Failed to update profile';
-            set({ error: message });
+            const authError = createAuthError(error instanceof Error ? error : new Error('Failed to update profile'), 'update');
+            set({ error: authError });
             throw error;
           } finally {
             set({ isLoading: false });
@@ -431,8 +433,8 @@ export const useAuthStore = create<AuthState>()(
 
             return publicUrl;
           } catch (error) {
-            const message = error instanceof Error ? error.message : 'Failed to upload avatar';
-            set({ error: message });
+            const authError = createAuthError(error instanceof Error ? error : new Error('Failed to upload avatar'), 'update');
+            set({ error: authError });
             throw error;
           } finally {
             set({ isLoading: false });
@@ -471,8 +473,8 @@ export const useAuthStore = create<AuthState>()(
             return response;
           } catch (error) {
             console.error('Auth store: Caught error:', error);
-            const message = error instanceof Error ? error.message : 'Failed to sign in with Google';
-            set({ error: message });
+            const authError = createAuthError(error instanceof Error ? error : new Error('Failed to sign in with Google'), 'oauth');
+            set({ error: authError });
             throw error;
           } finally {
             set({ isLoading: false });

@@ -1,18 +1,31 @@
-import { NextRequest } from 'next/server';
-import { getCsrfTokenHandler, addSecurityHeaders } from '@/lib/csrf-protection';
+import { NextRequest, NextResponse } from 'next/server';
+import { generateCSRFToken } from '@/lib/auth-security';
+
+// Force dynamic rendering for this route
+export const dynamic = 'force-dynamic';
 
 /**
  * CSRF Token API Endpoint
  * GET /api/auth/csrf - Returns a new CSRF token
  */
-
-export async function GET(_request: NextRequest) {
+export async function GET(request: NextRequest) {
   try {
-    const response = await getCsrfTokenHandler();
-    return addSecurityHeaders(response);
+    const token = await generateCSRFToken(request);
+    
+    return NextResponse.json({ 
+      success: true, 
+      token 
+    }, {
+      headers: {
+        'Cache-Control': 'no-store, max-age=0',
+        'Pragma': 'no-cache',
+        'X-Content-Type-Options': 'nosniff',
+        'X-Frame-Options': 'DENY'
+      }
+    });
   } catch (error) {
     console.error('CSRF token generation failed:', error);
-    return Response.json(
+    return NextResponse.json(
       { 
         success: false, 
         error: 'Failed to generate CSRF token' 

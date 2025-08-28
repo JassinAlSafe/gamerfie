@@ -68,6 +68,40 @@ export interface PasswordUpdateFormData {
 // Password reset flow types
 export type PasswordResetStep = 'email' | 'email_sent' | 'reset_form' | 'success' | 'error'
 
+// Enhanced error types for auth operations
+export interface AuthErrorDetails {
+  code: string;
+  message: string;
+  context?: 'signin' | 'signup' | 'reset' | 'update' | 'oauth';
+  field?: 'email' | 'password' | 'username' | 'general';
+  userMessage: string;
+}
+
+export type AuthErrorCode = 
+  | 'invalid_credentials'
+  | 'email_not_confirmed'
+  | 'user_not_found'
+  | 'email_already_exists'
+  | 'weak_password'
+  | 'invalid_email'
+  | 'rate_limit_exceeded'
+  | 'network_error'
+  | 'oauth_error'
+  | 'profile_creation_failed'
+  | 'unknown_error';
+
+// Result types for auth operations
+export interface AuthOperationResult<T = void> {
+  success: boolean;
+  data?: T;
+  error?: AuthErrorDetails;
+}
+
+// Type guards for auth errors
+export const isAuthError = (error: any): error is AuthErrorDetails => {
+  return error && typeof error === 'object' && 'code' in error && 'userMessage' in error;
+};
+
 // User metadata for profile creation
 export interface UserMetadata {
   username?: string

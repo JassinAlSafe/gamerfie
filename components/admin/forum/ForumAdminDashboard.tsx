@@ -9,15 +9,11 @@ import {
   MessageSquare, 
   Users, 
   TrendingUp, 
-  AlertTriangle, 
-  Plus,
+  AlertTriangle,
   Eye,
   Edit3,
-  Trash2,
   Lock,
-  Unlock,
-  Pin,
-  PinOff
+  Pin
 } from "lucide-react";
 import { ForumCategoryManager } from "./ForumCategoryManager";
 import { ForumThreadModeration } from "./ForumThreadModeration";

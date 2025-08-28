@@ -24,10 +24,17 @@ export function AchievementsTab({ game, profile }: AchievementsTabProps) {
             <Trophy className="w-8 h-8 text-gray-600" />
           </div>
           <h3 className="text-lg font-semibold text-white mb-2">No Achievements Available</h3>
-          <p className="text-gray-400 text-center max-w-md">
+          <p className="text-gray-400 text-center max-w-md mb-4">
             This game doesn't have achievement data available in our database yet. 
             Achievement tracking may be added in future updates.
           </p>
+          <a
+            href="/achievements"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
+          >
+            <Trophy className="w-4 h-4" />
+            View Your Achievements
+          </a>
         </div>
       </div>
     );

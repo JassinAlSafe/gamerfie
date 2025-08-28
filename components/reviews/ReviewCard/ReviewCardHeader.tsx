@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   MoreHorizontal,
   Flag,
@@ -29,9 +29,18 @@ interface ReviewCardHeaderProps {
 }
 
 export function ReviewCardHeader({ user, createdAt }: ReviewCardHeaderProps) {
+  const [mounted, setMounted] = useState(false);
+  const [daysSinceReview, setDaysSinceReview] = useState(0);
+  const [isRecent, setIsRecent] = useState(false);
+  
   const reviewDate = new Date(createdAt);
-  const daysSinceReview = differenceInDays(new Date(), reviewDate);
-  const isRecent = daysSinceReview <= 7;
+  
+  useEffect(() => {
+    setMounted(true);
+    const days = differenceInDays(new Date(), reviewDate);
+    setDaysSinceReview(days);
+    setIsRecent(days <= 7);
+  }, [reviewDate]);
 
   return (
     <div className="flex items-center justify-between mb-4">
@@ -53,7 +62,7 @@ export function ReviewCardHeader({ user, createdAt }: ReviewCardHeaderProps) {
             >
               {user.username}
             </Link>
-            {isRecent && (
+            {mounted && isRecent && (
               <Badge className="bg-gradient-to-r from-emerald-500/20 to-green-500/20 text-emerald-300 border-emerald-500/30 text-xs px-2 py-0.5 h-5">
                 <Clock className="w-3 h-3 mr-1" />
                 New
@@ -62,7 +71,7 @@ export function ReviewCardHeader({ user, createdAt }: ReviewCardHeaderProps) {
           </div>
           <div className="text-xs text-slate-400 mt-0.5">
             {format(reviewDate, "MMM d, yyyy")}
-            {isRecent && (
+            {mounted && isRecent && (
               <span className="text-emerald-400 ml-2">
                 ({daysSinceReview === 0 ? 'Today' : `${daysSinceReview} day${daysSinceReview === 1 ? '' : 's'} ago`})
               </span>

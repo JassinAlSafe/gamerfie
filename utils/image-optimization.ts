@@ -23,24 +23,24 @@ export const imageConfigs = {
     loading: "eager" as const,
   },
   
-  // Standard game card images
+  // Standard game card images  
   gameCard: {
-    quality: 90,
-    sizes: "(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 300px",
+    quality: 95, // Increased quality for better mobile experience
+    sizes: "(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 400px",
     loading: "lazy" as const,
   },
   
   // Small thumbnail images
   gameThumbnail: {
-    quality: 85,
-    sizes: "(max-width: 640px) 25vw, (max-width: 768px) 20vw, 150px",
+    quality: 90, // Improved quality for mobile
+    sizes: "(max-width: 640px) 50vw, (max-width: 768px) 33vw, 200px",
     loading: "lazy" as const,
   },
   
   // List view small images
   listView: {
-    quality: 85,
-    sizes: "80px",
+    quality: 90, // Improved quality for mobile
+    sizes: "(max-width: 640px) 120px, 80px",
     loading: "lazy" as const,
   },
   
@@ -77,6 +77,7 @@ export const imageConfigs = {
 /**
  * Generate optimized cover URL for IGDB images
  * Converts IGDB thumbnail URLs to higher quality versions
+ * Enhanced for mobile devices to ensure high quality
  */
 export function getOptimizedCoverUrl(
   originalUrl: string, 
@@ -86,7 +87,12 @@ export function getOptimizedCoverUrl(
   
   // Handle IGDB image URLs
   if (originalUrl.includes('images.igdb.com')) {
-    return originalUrl.replace(/t_[a-zA-Z0-9_]+/, `t_${size}`);
+    // For mobile devices, always use highest quality available
+    const isMobile = typeof window !== 'undefined' && 
+      /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    
+    const targetSize = isMobile ? 'cover_big_2x' : size;
+    return originalUrl.replace(/t_[a-zA-Z0-9_]+/, `t_${targetSize}`);
   }
   
   // Handle other image URLs (return as-is)
