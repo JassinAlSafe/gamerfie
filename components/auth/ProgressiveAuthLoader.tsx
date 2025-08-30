@@ -7,7 +7,7 @@
 
 import { useState, useEffect } from 'react';
 import { Loader2, User, Shield, CheckCircle } from 'lucide-react';
-import { useAuthStore } from '@/stores/useAuthStore';
+import { useAuthUser, useAuthStatus } from '@/stores/useAuthStoreOptimized';
 
 interface LoadingStage {
   icon: React.ReactNode;
@@ -45,7 +45,8 @@ interface ProgressiveAuthLoaderProps {
 
 export function ProgressiveAuthLoader({ show, className = "" }: ProgressiveAuthLoaderProps) {
   const [currentStage, setCurrentStage] = useState(0);
-  const { isLoading, user } = useAuthStore();
+  const { user } = useAuthUser();
+  const { isLoading } = useAuthStatus();
 
   useEffect(() => {
     if (!show || !isLoading) {

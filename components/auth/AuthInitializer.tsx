@@ -1,18 +1,22 @@
 "use client";
 
-import { useEffect } from 'react';
-import { useAuthStore } from '@/stores/useAuthStore';
+import { useEffect, useRef } from 'react';
+import { useAuthStatus, useAuthActions } from '@/stores/useAuthStoreOptimized';
 
 export function AuthInitializer() {
-  const initialize = useAuthStore((state) => state.initialize);
-  const isInitialized = useAuthStore((state) => state.isInitialized);
-  const checkUser = useAuthStore((state) => state.checkUser);
+  const { isInitialized } = useAuthStatus();
+  const { initialize, checkUser } = useAuthActions();
+  const hasInitialized = useRef(false);
 
   useEffect(() => {
-    if (!isInitialized) {
+    // Always initialize on mount, regardless of state
+    // This ensures we always check Supabase for the current auth state
+    if (!hasInitialized.current) {
+      hasInitialized.current = true;
+      console.log('🔄 AuthInitializer: Starting auth initialization...');
       initialize();
     }
-  }, [initialize, isInitialized]);
+  }, []); // Only run once on mount
 
   // Listen for auth state changes and refresh user data
   useEffect(() => {

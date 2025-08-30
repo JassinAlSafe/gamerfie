@@ -3,8 +3,8 @@
  * Handles CSP-compliant image caching and basic PWA functionality
  */
 
-const CACHE_NAME = 'gamerfie-v2';
-const STATIC_CACHE = 'gamerfie-static-v2';
+const CACHE_NAME = 'gamerfie-v3-auth-fix';
+const STATIC_CACHE = 'gamerfie-static-v3-auth-fix';
 
 // URLs to cache on install
 const STATIC_URLS = [
@@ -189,4 +189,28 @@ self.addEventListener('error', (event) => {
 self.addEventListener('unhandledrejection', (event) => {
   console.error('Service Worker: Unhandled promise rejection:', event.reason);
   event.preventDefault();
+});
+
+// Message handler for cache clearing on logout
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'CLEAR_AUTH_CACHE') {
+    console.log('Service Worker: Clearing auth caches on logout');
+    
+    event.waitUntil(
+      caches.keys().then((cacheNames) => {
+        return Promise.all(
+          cacheNames.map((cacheName) => {
+            console.log('Service Worker: Deleting cache on logout:', cacheName);
+            return caches.delete(cacheName);
+          })
+        );
+      }).then(() => {
+        // Notify the client that cache clearing is complete
+        event.ports[0]?.postMessage({ success: true });
+      }).catch((error) => {
+        console.error('Service Worker: Cache clearing failed:', error);
+        event.ports[0]?.postMessage({ success: false, error: error.message });
+      })
+    );
+  }
 });

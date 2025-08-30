@@ -22,9 +22,10 @@ type UserWithProfile = SupabaseUser & {
 interface ProfileDropdownProps {
   user: UserWithProfile;
   onSignOut: (scope?: 'global' | 'local' | 'others') => void;
+  isProfileLoading?: boolean;
 }
 
-export function ProfileDropdown({ user, onSignOut }: ProfileDropdownProps) {
+export function ProfileDropdown({ user, onSignOut, isProfileLoading }: ProfileDropdownProps) {
   const router = useRouter();
   const userInitial = user.profile?.username?.[0] || user.email?.[0] || "U";
   const displayName = user.profile?.username || user.email || "User";

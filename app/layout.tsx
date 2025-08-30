@@ -18,7 +18,7 @@ import { FloatingActions } from "@/components/home/FloatingActions";
 import { BetaBanner } from "@/components/ui/BetaBanner";
 import { CookieConsent } from "@/components/ui/CookieConsent";
 import AdminShortcuts from "@/components/admin/AdminShortcuts";
-import { useUIStore } from "@/stores/useUIStore";
+import { useSSRSafeUIState } from "@/components/layout/SSRSafeLayout";
 import { Toaster } from "sonner";
 import { initializeErrorMonitoring } from "@/utils/error-monitoring";
 import { Analytics } from "@vercel/analytics/next";
@@ -65,11 +65,9 @@ export default function RootLayout({
 
   const pathname = usePathname();
   const isAuthPage = authPages.includes(pathname);
-  const { initTheme, isBetaBannerVisible } = useUIStore();
-  const [isClient, setIsClient] = useState(false);
+  const { initTheme, isBetaBannerVisible } = useSSRSafeUIState();
 
   useEffect(() => {
-    setIsClient(true);
     const cleanup = initTheme();
 
     // Initialize error monitoring
@@ -196,7 +194,7 @@ export default function RootLayout({
         />
       </head>
       <body
-        className={`${inter.className} ${geistSans.variable} ${geistMono.variable} ${isClient && isBetaBannerVisible ? 'beta-banner-visible' : ''} ${isAuthPage ? 'auth-page' : ''}`}
+        className={`${inter.className} ${geistSans.variable} ${geistMono.variable} ${isBetaBannerVisible ? 'beta-banner-visible' : ''} ${isAuthPage ? 'auth-page' : ''}`}
       >
         <QueryClientProvider client={queryClient}>
           <SupabaseProvider initialSession={null}>
