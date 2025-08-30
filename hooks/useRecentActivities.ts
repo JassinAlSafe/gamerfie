@@ -1,21 +1,24 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useFriendsStore } from '@/stores/useFriendsStore';
+import { useAuthUser, useAuthStatus } from '@/stores/useAuthStoreOptimized';
 
 export function useRecentActivities(limit: number = 5) {
   const { activities, isLoadingActivities, error } = useFriendsStore();
+  const { user } = useAuthUser();
+  const { isInitialized } = useAuthStatus();
   const hasFetched = useRef(false);
   const [stableLoading, setStableLoading] = useState(true);
 
   useEffect(() => {
-    // Only fetch if we haven't fetched before
-    if (!hasFetched.current) {
+    // Only fetch if authenticated and we haven't fetched before
+    if (!hasFetched.current && isInitialized && user) {
       hasFetched.current = true;
       // Use direct store access to avoid dependency issues
       useFriendsStore.getState().fetchActivities().catch((error) => {
         console.warn('Activities feature not available:', error.message);
       });
     }
-  }, []); // Only run once on mount
+  }, [isInitialized, user]); // Re-run when auth state changes
 
   // Stable loading state - only set to false after initial fetch attempt
   useEffect(() => {

@@ -12,8 +12,7 @@ import { FloatingInput } from "@/components/ui/floating-input";
 import { FloatingPasswordInput } from "@/components/ui/floating-password-input";
 import { Loader2, Check, UserCheck } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
-import { useAuthActions } from "@/hooks/useAuthOptimized";
-import { useAuthStore } from "@/stores/useAuthStore";
+import { useAuthActions, useAuthStatus } from "@/stores/useAuthStoreOptimized";
 import { useFormValidation } from "@/hooks/useFormValidation";
 import { useUsernameCheck } from "@/hooks/useUsernameCheck";
 import { cn } from "@/lib/utils";
@@ -76,7 +75,7 @@ export function AuthForm({ mode, onSuccess }: AuthFormProps) {
   const router = useRouter();
   const { toast } = useToast();
   const { signIn, signUp, signInWithGoogle } = useAuthActions();
-  const checkUser = useAuthStore((state) => state.checkUser);
+  const { checkUser } = useAuthActions();
   const { validateField, validateForm } = useFormValidation({ mode });
   const { checkUsername, cleanup } = useUsernameCheck();
 

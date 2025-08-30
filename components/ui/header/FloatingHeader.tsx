@@ -3,11 +3,11 @@
 import React, { useEffect, useState, useMemo, useCallback } from "react";
 import Link from "next/link";
 import { Menu, X, Search } from "lucide-react";
-import { useAuthStore } from "@/stores/useAuthStore";
+import { useAuthStatus, useAuthActions, useAuthUser } from "@/stores/useAuthStoreOptimized";
 import { useUIStore } from "@/stores/useUIStore";
 import { AnimatedNav } from "../animated-nav";
 import { SearchDialog } from "@/components/ui/search/search-dialog";
-import { AuthButtons } from "./auth-buttons";
+import { AuthButtonsOptimized as AuthButtons } from "./auth-buttons-optimized";
 import { MobileMenu } from "./mobile-menu";
 import { Button } from "@/components/ui/button";
 import AdminShortcuts from "@/components/admin/AdminShortcuts";
@@ -16,7 +16,9 @@ import { HeaderSkeleton } from "./header-skeleton";
 import { Icons } from "@/components/ui/icons";
 
 export default function FloatingHeader() {
-  const { isInitialized, checkUser, user } = useAuthStore();
+  const { isInitialized } = useAuthStatus();
+  const { checkUser } = useAuthActions();
+  const { user } = useAuthUser();
   const { isMobileMenuOpen, toggleMobileMenu } = useUIStore();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
 

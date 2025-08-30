@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
-import { useAuthStore } from "@/stores/useAuthStore";
+import { useAuthUser, useAuthStatus } from "@/stores/useAuthStoreOptimized";
 
 interface FloatingActionsProps {
   className?: string;
@@ -24,7 +24,8 @@ interface FloatingActionsProps {
 export const FloatingActions = memo(function FloatingActions({
   className
 }: FloatingActionsProps) {
-  const { user, isInitialized } = useAuthStore();
+  const { user } = useAuthUser();
+  const { isInitialized } = useAuthStatus();
   const [isOpen, setIsOpen] = useState(false);
 
   // Only show for authenticated users

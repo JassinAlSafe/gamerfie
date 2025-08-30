@@ -3,13 +3,13 @@
 import React, { useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useAuthStore } from "@/stores/useAuthStore";
+import { useAuthUser } from "@/stores/useAuthStoreOptimized";
 import { useUIStore } from "@/stores/useUIStore";
 import { navigationItems } from "@/config/navigation";
 
 export const MobileMenu = React.memo(function MobileMenu() {
   const router = useRouter();
-  const { user } = useAuthStore();
+  const { user } = useAuthUser();
   const { closeAllMenus } = useUIStore();
   const menuRef = useRef<HTMLDivElement>(null);
 

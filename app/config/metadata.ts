@@ -1,8 +1,8 @@
 export const siteMetadata = {
   title: "Game Vault",
   description: "Track your gaming journey, discover new titles, and connect with fellow gamers in the ultimate gaming community platform.",
-  metadataBase: new URL('https://gamersvaultapp.com'),
-  authors: [{ name: "Game Vault Team", url: "https://gamersvaultapp.com" }],
+  metadataBase: new URL(process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:3002'),
+  authors: [{ name: "Game Vault Team", url: process.env.NEXT_PUBLIC_API_BASE || "http://localhost:3002" }],
   creator: "Game Vault",
   publisher: "Game Vault",
   category: "Gaming",
@@ -32,7 +32,7 @@ export const siteMetadata = {
   openGraph: {
     title: "Game Vault - Track Your Gaming Journey",
     description: "The ultimate platform for gamers to track their library, discover new games, create playlists, and connect with friends.",
-    url: "https://gamersvaultapp.com",
+    url: process.env.NEXT_PUBLIC_API_BASE || "http://localhost:3002",
     siteName: "Game Vault",
     images: [
       {
@@ -57,13 +57,13 @@ export const structuredData = {
   "@context": "https://schema.org",
   "@type": "WebSite",
   "name": "Game Vault",
-  "url": "https://gamersvaultapp.com",
+  "url": process.env.NEXT_PUBLIC_API_BASE || "http://localhost:3002",
   "description": "Ultimate video game tracker and gaming community platform",
   "potentialAction": {
     "@type": "SearchAction",
     "target": {
       "@type": "EntryPoint",
-      "urlTemplate": "https://gamersvaultapp.com/search?q={search_term_string}"
+      "urlTemplate": `${process.env.NEXT_PUBLIC_API_BASE || "http://localhost:3002"}/search?q={search_term_string}`
     },
     "query-input": "required name=search_term_string"
   },
@@ -78,13 +78,13 @@ export const organizationStructuredData = {
   "@context": "https://schema.org",
   "@type": "Organization",
   "name": "Game Vault",
-  "url": "https://gamersvaultapp.com",
-  "logo": "https://gamersvaultapp.com/logo.svg",
+  "url": process.env.NEXT_PUBLIC_API_BASE || "http://localhost:3002",
+  "logo": `${process.env.NEXT_PUBLIC_API_BASE || "http://localhost:3002"}/logo.svg`,
   "description": "Ultimate video game tracker and gaming community platform",
   "foundingDate": "2024",
   "contactPoint": {
     "@type": "ContactPoint",
     "contactType": "customer service",
-    "url": "https://gamersvaultapp.com/info/contact"
+    "url": `${process.env.NEXT_PUBLIC_API_BASE || "http://localhost:3002"}/info/contact`
   }
 };

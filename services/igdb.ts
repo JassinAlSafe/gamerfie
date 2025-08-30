@@ -73,7 +73,11 @@ export class IGDBService {
     if (isServer) {
       // For local development, use localhost with correct port
       if (process.env.NODE_ENV === 'development') {
-        const port = process.env.PORT || '3000';
+        // Use NEXT_PUBLIC_API_BASE if available, otherwise detect port
+        if (process.env.NEXT_PUBLIC_API_BASE) {
+          return `${process.env.NEXT_PUBLIC_API_BASE}/api/igdb-proxy`;
+        }
+        const port = process.env.PORT || '3002';
         return `http://localhost:${port}/api/igdb-proxy`;
       }
       
@@ -89,7 +93,7 @@ export class IGDBService {
       
       // Final fallback for local development
       if (!baseUrl) {
-        baseUrl = 'http://localhost:3000';
+        baseUrl = 'http://localhost:3002';
       }
       
       return `${baseUrl}/api/igdb-proxy`;

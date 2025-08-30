@@ -60,8 +60,34 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  // Refresh session if exists
-  await supabase.auth.getSession()
+  // Check if this is a logout route
+  const isLogoutRoute = request.nextUrl.pathname.includes('/logout') || 
+                        request.nextUrl.pathname.includes('/signout') ||
+                        request.nextUrl.pathname.includes('/api/auth/logout');
+  
+  if (!isLogoutRoute) {
+    try {
+      // Get session and log for debugging
+      const { data: { session }, error } = await supabase.auth.getSession();
+      
+      console.log('🔍 Middleware session check:', {
+        path: request.nextUrl.pathname,
+        hasSession: !!session,
+        hasUser: !!session?.user,
+        error: error?.message,
+        cookies: request.cookies.getAll().map(c => c.name)
+      });
+      
+      // If we have an error getting session, clear any auth cookies
+      if (error) {
+        console.log('🚨 Session error in middleware:', error.message);
+      }
+    } catch (error) {
+      console.error('🚨 Middleware session check failed:', error);
+    }
+  } else {
+    console.log('🚪 Skipping session check for logout route:', request.nextUrl.pathname);
+  }
 
   // Generate nonce for CSP (if needed in future)
   const nonce = generateNonce();
@@ -132,13 +158,14 @@ export const config = {
   matcher: [
     /*
      * Match all request paths except for the ones starting with:
-     * - api (API routes)
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
      * - public folder files
      * - sw.js (service worker)
+     * 
+     * Note: We INCLUDE api routes now to handle auth properly
      */
-    '/((?!api|_next/static|_next/image|favicon.ico|sw.js|workbox-.*|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|sw.js|workbox-.*|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 };

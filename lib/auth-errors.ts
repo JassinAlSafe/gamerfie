@@ -8,7 +8,7 @@ import type { AuthError } from '@supabase/supabase-js';
 export interface AuthErrorDetails {
   code: string;
   message: string;
-  context?: 'signin' | 'signup' | 'reset' | 'update' | 'oauth';
+  context?: 'signin' | 'signup' | 'reset' | 'update' | 'oauth' | 'signout' | 'refresh' | 'upload';
   field?: 'email' | 'password' | 'username' | 'general';
   userMessage: string;
 }

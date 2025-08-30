@@ -1,13 +1,12 @@
 import { createClient } from "@/utils/supabase/server";
-import { AuthenticatedHome } from "@/components/home/authenticated-home";
-import { UnauthenticatedHome } from "@/components/home/unauthenticated-home";
+import { HomePageWrapper } from "@/components/home/HomePageWrapper";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   metadataBase: new URL(
     process.env.NODE_ENV === "production"
       ? "https://gamerfie.vercel.app"
-      : "http://localhost:3000"
+      : (process.env.NEXT_PUBLIC_API_BASE || "http://localhost:3002")
   ),
   title: "Game Vault - Ultimate Video Game Tracking Platform",
   description: "Track your video game progress, discover new games, and connect with gamers worldwide. The ultimate gaming community platform for achievement tracking, game reviews, and gaming statistics.",
@@ -22,7 +21,7 @@ export default async function HomePage() {
       !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
     ) {
       console.warn("Supabase environment variables not available during build");
-      return <UnauthenticatedHome />;
+      return <HomePageWrapper serverUser={null} />;
     }
 
     const supabase = await createClient();
@@ -37,35 +36,14 @@ export default async function HomePage() {
     // Handle auth errors gracefully during build
     if (authError) {
       console.warn("Auth error during build:", authError.message);
-      return <UnauthenticatedHome />;
+      return <HomePageWrapper serverUser={null} />;
     }
 
-    if (user) {
-      try {
-        // Fetch the user's profile from the profiles table
-        const { error: profileError } = await supabase
-          .from("profiles")
-          .select("*")
-          .eq("id", user.id)
-          .single();
-
-        // Handle profile fetch errors gracefully
-        if (profileError) {
-          console.warn("Profile fetch error:", profileError.message);
-        }
-
-        return <AuthenticatedHome user={user} />;
-      } catch (profileError) {
-        console.warn("Error fetching user profile during build:", profileError);
-        // Still show authenticated home with user data, just without profile
-        return <AuthenticatedHome user={user} />;
-      }
-    }
-
-    return <UnauthenticatedHome />;
+    // Pass server user to client wrapper, which will override with client state if needed
+    return <HomePageWrapper serverUser={user} />;
   } catch (error) {
     // Catch any build-time errors and fall back to unauthenticated view
     console.warn("Build-time error in HomePage:", error);
-    return <UnauthenticatedHome />;
+    return <HomePageWrapper serverUser={null} />;
   }
 }

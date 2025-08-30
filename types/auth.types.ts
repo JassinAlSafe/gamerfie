@@ -72,7 +72,7 @@ export type PasswordResetStep = 'email' | 'email_sent' | 'reset_form' | 'success
 export interface AuthErrorDetails {
   code: string;
   message: string;
-  context?: 'signin' | 'signup' | 'reset' | 'update' | 'oauth';
+  context?: 'signin' | 'signup' | 'reset' | 'update' | 'oauth' | 'signout' | 'refresh' | 'upload';
   field?: 'email' | 'password' | 'username' | 'general';
   userMessage: string;
 }

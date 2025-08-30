@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useAuthUser } from '@/stores/useAuthStoreOptimized';
 
 interface UserStats {
   total_games: number;
@@ -18,8 +19,17 @@ export function useUserStats() {
   const [stats, setStats] = useState<UserStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { user } = useAuthUser();
 
   useEffect(() => {
+    // Don't fetch stats if user is not authenticated
+    if (!user) {
+      setStats(null);
+      setLoading(false);
+      setError(null);
+      return;
+    }
+
     const fetchStats = async () => {
       try {
         setLoading(true);
@@ -42,7 +52,7 @@ export function useUserStats() {
     };
 
     fetchStats();
-  }, []);
+  }, [user]); // Re-run when user authentication changes
 
   const refresh = async () => {
     const response = await fetch('/api/user/stats');
