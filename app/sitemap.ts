@@ -1,7 +1,7 @@
 import { MetadataRoute } from 'next'
  
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:3002'
+  const baseUrl = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:3000'
   
   const staticRoutes = [
     {

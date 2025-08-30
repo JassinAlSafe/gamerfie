@@ -4,9 +4,8 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   metadataBase: new URL(
-    process.env.NODE_ENV === "production"
-      ? "https://gamerfie.vercel.app"
-      : (process.env.NEXT_PUBLIC_API_BASE || "http://localhost:3002")
+    process.env.NEXT_PUBLIC_API_BASE || 
+    (process.env.NODE_ENV === "production" ? "https://gamersvaultapp.com" : "http://localhost:3000")
   ),
   title: "Game Vault - Ultimate Video Game Tracking Platform",
   description: "Track your video game progress, discover new games, and connect with gamers worldwide. The ultimate gaming community platform for achievement tracking, game reviews, and gaming statistics.",
