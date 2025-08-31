@@ -2,7 +2,7 @@
 
 import { Game } from "@/types";
 import Image from "next/image";
-import Link from "next/link";
+import { GameLink } from "@/components/ui/navigation/game-link";
 import { Star, Clock, Trophy } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -15,7 +15,7 @@ export function GridGameCard({ game }: { game: Game }) {
       exit={{ opacity: 0, y: -20 }}
       className="group relative"
     >
-      <Link href={`/game/${game.id}`}>
+      <GameLink gameId={game.id} className="block">
         <div className="aspect-[3/4] rounded-lg overflow-hidden bg-gray-900 relative">
           {game.cover && (
             <Image
@@ -48,7 +48,7 @@ export function GridGameCard({ game }: { game: Game }) {
             </div>
           )}
         </div>
-      </Link>
+      </GameLink>
     </motion.div>
   );
 }
@@ -61,7 +61,7 @@ export function ListGameCard({ game }: { game: Game }) {
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: 20 }}
     >
-      <Link href={`/game/${game.id}`}>
+      <GameLink gameId={game.id} className="block">
         <div className="bg-gray-900/50 rounded-lg p-4 flex items-center space-x-4 hover:bg-gray-900/70 transition-colors">
           {game.cover && (
             <div className="relative w-16 h-24 flex-shrink-0">
@@ -96,7 +96,7 @@ export function ListGameCard({ game }: { game: Game }) {
             </div>
           </div>
         </div>
-      </Link>
+      </GameLink>
     </motion.div>
   );
 } 

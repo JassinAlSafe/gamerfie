@@ -1,6 +1,5 @@
 import { createClient } from '@/utils/supabase/server';
 import { NextResponse } from 'next/server';
-import { getSession } from '@/lib/session';
 
 interface FriendData {
   id: string;
@@ -72,7 +71,12 @@ export async function GET() {
       };
     }) || [];
 
-    return NextResponse.json({ friends });
+    const response = NextResponse.json({ friends });
+    
+    // Add caching headers - 1 minute for friends (personal data, changes frequently)
+    response.headers.set('Cache-Control', 'private, s-maxage=60, stale-while-revalidate=300');
+    
+    return response;
   } catch (error) {
     console.error('Error in friends API:', error);
     return NextResponse.json(
@@ -158,8 +162,9 @@ export async function DELETE(
 ) {
   const supabase = await createClient();
   try {
-    const session = await getSession();
-    if (!session) {
+    // SECURITY FIX: Use getUser() directly instead of session helper for consistency
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -167,7 +172,7 @@ export async function DELETE(
       .from("friends")
       .delete()
       .eq("id", params.friendId)
-      .eq("user_id", session.user.id);
+      .eq("user_id", user.id);
 
     return NextResponse.json({ success: true });
   } catch (error) {

@@ -82,8 +82,9 @@ export const useJournalStore = create<JournalState>((set, get) => {
       try {
         set({ loading: true, error: null })
         const supabase = createClient()
-        const { data: { session } } = await supabase.auth.getSession()
-        if (!session?.user) throw new Error('No authenticated user')
+        // SECURITY FIX: Use getUser() not getSession() for database operations
+        const { data: { user }, error: authError } = await supabase.auth.getUser()
+        if (authError || !user) throw new Error('No authenticated user')
 
         // If there's a game, ensure it exists in the database
         if (entry.game?.id) {
@@ -121,7 +122,7 @@ export const useJournalStore = create<JournalState>((set, get) => {
         const { data: newEntry, error } = await supabase
           .from('journal_entries')
           .insert({
-            user_id: session.user.id,
+            user_id: user.id,
             type: entry.type,
             date: entry.date,
             title: entry.title,
@@ -171,7 +172,7 @@ export const useJournalStore = create<JournalState>((set, get) => {
             const { data: existingUserGame } = await supabase
               .from('user_games')
               .select('*')
-              .eq('user_id', session.user.id)
+              .eq('user_id', user.id)
               .eq('game_id', entry.game.id)
               .single()
 
@@ -179,7 +180,7 @@ export const useJournalStore = create<JournalState>((set, get) => {
             const { error: updateError } = await supabase
               .from('user_games')
               .upsert({
-                user_id: session.user.id,
+                user_id: user.id,
                 game_id: entry.game.id,
                 completion_percentage: entry.progress,
                 play_time: entry.hoursPlayed ?? existingUserGame?.play_time ?? 0,
@@ -199,7 +200,7 @@ export const useJournalStore = create<JournalState>((set, get) => {
             const { error: historyError } = await supabase
               .from('game_progress_history')
               .insert({
-                user_id: session.user.id,
+                user_id: user.id,
                 game_id: entry.game.id,
                 play_time: entry.hoursPlayed,
                 completion_percentage: entry.progress,
@@ -265,8 +266,9 @@ export const useJournalStore = create<JournalState>((set, get) => {
       try {
         set({ loading: true, error: null })
         const supabase = createClient()
-        const { data: { session } } = await supabase.auth.getSession()
-        if (!session?.user) throw new Error('No authenticated user')
+        // SECURITY FIX: Use getUser() not getSession() for database operations
+        const { data: { user }, error: authError } = await supabase.auth.getUser()
+        if (authError || !user) throw new Error('No authenticated user')
 
         // If there's a game, verify it exists first
         if (entry.game?.id) {
@@ -339,7 +341,7 @@ export const useJournalStore = create<JournalState>((set, get) => {
             const { data: currentUserGame } = await supabase
               .from('user_games')
               .select('*')
-              .eq('user_id', session.user.id)
+              .eq('user_id', user.id)
               .eq('game_id', entry.game.id)
               .single();
 
@@ -347,7 +349,7 @@ export const useJournalStore = create<JournalState>((set, get) => {
             const { error: updateError } = await supabase
               .from('user_games')
               .upsert({
-                user_id: session.user.id,
+                user_id: user.id,
                 game_id: entry.game.id,
                 completion_percentage: entry.progress,
                 play_time: entry.hoursPlayed ?? currentUserGame?.play_time,
@@ -367,7 +369,7 @@ export const useJournalStore = create<JournalState>((set, get) => {
             const { error: historyError } = await supabase
               .from('game_progress_history')
               .insert({
-                user_id: session.user.id,
+                user_id: user.id,
                 game_id: entry.game.id,
                 play_time: entry.hoursPlayed,
                 completion_percentage: entry.progress,
@@ -424,7 +426,7 @@ export const useJournalStore = create<JournalState>((set, get) => {
             await supabase
               .from('user_games')
               .update({ updated_at: timestamp })
-              .eq('user_id', session.user.id)
+              .eq('user_id', user.id)
               .eq('game_id', entry.game.id);
 
             // Update game_progress_history timestamp to trigger game-details refresh
@@ -432,7 +434,7 @@ export const useJournalStore = create<JournalState>((set, get) => {
               await supabase
                 .from('game_progress_history')
                 .update({ updated_at: timestamp })
-                .eq('user_id', session.user.id)
+                .eq('user_id', user.id)
                 .eq('game_id', entry.game.id)
                 .order('created_at', { ascending: false })
                 .limit(1);
@@ -455,8 +457,9 @@ export const useJournalStore = create<JournalState>((set, get) => {
       try {
         set({ loading: true, error: null })
         const supabase = createClient()
-        const { data: { session } } = await supabase.auth.getSession()
-        if (!session?.user) throw new Error('No authenticated user')
+        // SECURITY FIX: Use getUser() not getSession() for database operations
+        const { data: { user }, error: authError } = await supabase.auth.getUser()
+        if (authError || !user) throw new Error('No authenticated user')
 
         const { error } = await supabase
           .from('journal_entries')
@@ -492,9 +495,10 @@ export const useJournalStore = create<JournalState>((set, get) => {
         
         set({ loading: true, error: null, isLoading: true });
         const supabase = createClient();
-        const { data: { session } } = await supabase.auth.getSession();
+        // SECURITY FIX: Use getUser() not getSession() for database operations
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
         
-        if (!session?.user) {
+        if (authError || !user) {
           set({ loading: false, error: 'No authenticated user', isLoading: false });
           return;
         }
@@ -503,7 +507,7 @@ export const useJournalStore = create<JournalState>((set, get) => {
         const { data, error } = await supabase
           .from('journal_entries')
           .select('*')
-          .eq('user_id', session.user.id)
+          .eq('user_id', user.id)
           .order('created_at', { ascending: false })
           .limit(50); // Limit to most recent 50 entries for initial load
 

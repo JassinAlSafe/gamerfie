@@ -94,7 +94,7 @@ export default function AboutPage() {
               </span>
             </Link>
             <Link
-              href="/games"
+              href="/all-games"
               className="group px-8 py-4 bg-gray-800/80 hover:bg-gray-700/80 text-white font-semibold rounded-xl border border-gray-600 hover:border-gray-500 transition-all duration-300 hover:scale-105"
             >
               Explore Games

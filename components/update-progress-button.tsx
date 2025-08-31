@@ -3,7 +3,7 @@
 import React, { useCallback, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { useProgressStore } from "@/stores/useProgressStore";
-import { useAuthStore } from "@/stores/useAuthStore";
+import { useAuthUser } from "@/stores/useAuthStoreOptimized";
 import { checkGameInLibrary } from "@/utils/game-utils";
 import { CompletionDialog } from "@/components/game/dialogs/CompletionDialog";
 import { toast } from "sonner";
@@ -36,7 +36,7 @@ export function UpdateProgressButton({
   onSuccess,
 }: UpdateProgressButtonProps) {
   const [dialogOpen, setDialogOpen] = React.useState(false);
-  const { user } = useAuthStore();
+  const { user } = useAuthUser();
   const {
     updateProgress,
     updateGameStatus,

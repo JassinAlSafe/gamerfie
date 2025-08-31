@@ -56,16 +56,17 @@ export async function PUT(
     const supabase = await createClient();
     const { id } = params;
 
-    // Check if user is admin
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
+    // SECURITY FIX: Use getUser() not getSession() - follows Supabase 2025 best practices
+    // getUser() validates the token server-side, getSession() can be tampered with
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { data: profile } = await supabase
       .from('profiles')
       .select('role')
-      .eq('id', session.user.id)
+      .eq('id', user.id)
       .single();
 
     if (profile?.role !== 'admin') {
@@ -125,16 +126,17 @@ export async function DELETE(
     const supabase = await createClient();
     const { id } = params;
 
-    // Check if user is admin
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
+    // SECURITY FIX: Use getUser() not getSession() - follows Supabase 2025 best practices
+    // getUser() validates the token server-side, getSession() can be tampered with
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { data: profile } = await supabase
       .from('profiles')
       .select('role')
-      .eq('id', session.user.id)
+      .eq('id', user.id)
       .single();
 
     if (profile?.role !== 'admin') {

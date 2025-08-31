@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
 import { useFriendsStore } from "@/stores/useFriendsStore";
-import { useAuthStore } from "@/stores/useAuthStore";
+import { useAuthUser, useAuthStatus } from "@/stores/useAuthStoreOptimized";
 import { Friend, FriendStatus } from "@/types/friend";
 import { FriendSearchSection } from "./FriendSearchSection";
 import { FriendsGridSection } from "./FriendsGridSection";
@@ -18,7 +18,8 @@ import { Button } from "@/components/ui/button";
 import toast from "react-hot-toast";
 
 export function FriendsContent() {
-  const { user, isLoading: authLoading, isInitialized } = useAuthStore();
+  const { user } = useAuthUser();
+  const { isLoading: authLoading, isInitialized } = useAuthStatus();
   const {
     friends,
     fetchFriends,

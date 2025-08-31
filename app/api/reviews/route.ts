@@ -46,7 +46,12 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    return NextResponse.json(result);
+    const response = NextResponse.json(result);
+    
+    // Add caching headers - 5 minutes for reviews (they change more frequently)
+    response.headers.set('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=1800');
+    
+    return response;
 
   } catch (error) {
     console.error("[REVIEWS GET] Error fetching reviews:", error);

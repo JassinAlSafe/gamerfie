@@ -9,9 +9,9 @@ export async function PUT(
     const supabase = await createClient();
     const { commentId } = params;
 
-    // Check if user is authenticated
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
+    // SECURITY FIX: Use getUser() not getSession() for database operations
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -44,7 +44,7 @@ export async function PUT(
       return NextResponse.json({ error: 'Comment not found' }, { status: 404 });
     }
 
-    if (existingComment.author_id !== session.user.id) {
+    if (existingComment.author_id !== user.id) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -98,9 +98,9 @@ export async function DELETE(
     const supabase = await createClient();
     const { commentId } = params;
 
-    // Check if user is authenticated
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
+    // SECURITY FIX: Use getUser() not getSession() for database operations
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -116,14 +116,14 @@ export async function DELETE(
     }
 
     // Check if user is the author or an admin
-    const isAuthor = existingComment.author_id === session.user.id;
+    const isAuthor = existingComment.author_id === user.id;
     let isAdmin = false;
 
     if (!isAuthor) {
       const { data: profile } = await supabase
         .from('profiles')
         .select('role')
-        .eq('id', session.user.id)
+        .eq('id', user.id)
         .single();
 
       isAdmin = profile?.role === 'admin';

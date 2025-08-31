@@ -204,7 +204,7 @@ const AuthenticatedHomeComponent = memo(function AuthenticatedHome({
         <ProfileCard
           user={user}
           stats={profileStats}
-          friends={friends.length}
+          friends={{ type: 'count', count: friends.length }}
           isLoading={statsLoading}
         />
 

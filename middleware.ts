@@ -65,28 +65,65 @@ export async function middleware(request: NextRequest) {
                         request.nextUrl.pathname.includes('/signout') ||
                         request.nextUrl.pathname.includes('/api/auth/logout');
   
+  // Check if this is an admin route
+  const isAdminRoute = request.nextUrl.pathname.startsWith('/admin');
+  
   if (!isLogoutRoute) {
     try {
-      // Get session and log for debugging
-      const { data: { session }, error } = await supabase.auth.getSession();
+      // IMPORTANT: Use getUser() not getSession() for security
+      // getUser() sends a request to Supabase Auth to revalidate the token
+      // This also refreshes the session if needed
+      const { data: { user }, error } = await supabase.auth.getUser();
       
-      console.log('🔍 Middleware session check:', {
+      console.log('🔍 Middleware auth check:', {
         path: request.nextUrl.pathname,
-        hasSession: !!session,
-        hasUser: !!session?.user,
+        hasUser: !!user,
+        userId: user?.id,
+        isAdminRoute,
         error: error?.message,
-        cookies: request.cookies.getAll().map(c => c.name)
+        cookies: request.cookies.getAll().map(c => c.name).filter(n => n.includes('sb-'))
       });
       
-      // If we have an error getting session, clear any auth cookies
-      if (error) {
-        console.log('🚨 Session error in middleware:', error.message);
+      // If we have an error getting user but should have auth cookies, log warning
+      if (error && request.cookies.getAll().some(c => c.name.includes('sb-'))) {
+        console.log('⚠️ Auth error but cookies present:', error.message);
+      }
+      
+      // ADMIN ROUTE PROTECTION - Server-side validation
+      if (isAdminRoute) {
+        // No user? Redirect to home
+        if (!user) {
+          console.log('🚫 Admin route access denied - no user');
+          return NextResponse.redirect(new URL('/', request.url));
+        }
+        
+        // Check admin role in database
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', user.id)
+          .single();
+        
+        if (profileError || profile?.role !== 'admin') {
+          console.log('🚫 Admin route access denied - not admin role', {
+            userId: user.id,
+            role: profile?.role,
+            error: profileError?.message
+          });
+          return NextResponse.redirect(new URL('/', request.url));
+        }
+        
+        console.log('✅ Admin access granted for user:', user.id);
       }
     } catch (error) {
-      console.error('🚨 Middleware session check failed:', error);
+      console.error('🚨 Middleware auth check failed:', error);
+      // On error, deny access to admin routes
+      if (isAdminRoute) {
+        return NextResponse.redirect(new URL('/', request.url));
+      }
     }
   } else {
-    console.log('🚪 Skipping session check for logout route:', request.nextUrl.pathname);
+    console.log('🚪 Skipping auth check for logout route:', request.nextUrl.pathname);
   }
 
   // Generate nonce for CSP (if needed in future)

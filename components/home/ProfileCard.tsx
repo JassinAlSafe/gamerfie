@@ -186,7 +186,7 @@ export const ProfileCard = memo(function ProfileCard({
                       className="h-8 w-8 hover:bg-primary/10 hover:text-primary"
                       asChild
                     >
-                      <Link href="/games">
+                      <Link href="/all-games">
                         <Plus className="h-4 w-4" />
                       </Link>
                     </Button>
@@ -329,7 +329,7 @@ export const ProfileCard = memo(function ProfileCard({
                   className="gap-2 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
                   asChild
                 >
-                  <Link href="/games">
+                  <Link href="/all-games">
                     <Plus className="h-4 w-4" />
                     Add Your First Game
                   </Link>

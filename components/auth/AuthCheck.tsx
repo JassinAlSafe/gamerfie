@@ -11,7 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { useAuthStore } from "@/stores/useAuthStore";
+import { useAuthUser } from "@/stores/useAuthStoreOptimized";
 import { Gamepad2 } from "lucide-react";
 
 interface AuthCheckProps {
@@ -21,7 +21,7 @@ interface AuthCheckProps {
 }
 
 export function AuthCheck({ children, onAuth }: AuthCheckProps) {
-  const { user } = useAuthStore();
+  const { user } = useAuthUser();
   const [showDialog, setShowDialog] = useState(false);
   const router = useRouter();
 

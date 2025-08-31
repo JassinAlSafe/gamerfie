@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, MessageSquare, TrendingUp, Users, Hash, Search, Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useAuthStore } from "@/stores/useAuthStore";
+import { useAuthUser, useAuthStatus } from "@/stores/useAuthStoreOptimized";
 import { useAuthDialog } from "@/components/auth/AuthDialog";
 import { ForumSearchBar } from "@/components/forum/ForumSearchBar";
 import { ForumThreadCard } from "@/components/forum/ForumThreadCard";
@@ -22,7 +22,8 @@ interface CategoryPageClientProps {
 
 export function CategoryPageClient({ category, initialThreads }: CategoryPageClientProps) {
   const router = useRouter();
-  const { user, isInitialized } = useAuthStore();
+  const { user } = useAuthUser();
+  const { isInitialized } = useAuthStatus();
   const { openDialog, Dialog: AuthDialog } = useAuthDialog();
   const { fetchWithCsrf } = useCsrfProtectedFetch();
   const [threads] = useState(initialThreads);

@@ -2,6 +2,8 @@ import { NextRequest } from 'next/server';
 import { UnifiedGameService } from '@/services/unifiedGameService';
 import { Game } from '@/types';
 import { isMobileUserAgent } from '@/utils/server-timeout';
+import { withApiCache, createCacheKey, cacheApiResponse } from '@/lib/api-cache';
+import { CACHE_TAGS } from '@/lib/cache';
 
 // Force dynamic rendering due to search params
 export const dynamic = 'force-dynamic';

@@ -3,6 +3,7 @@ import { IGDBResponse, IGDBGame } from "@/types/igdb-types";
 import { IGDB_IMAGE_SIZES } from '@/utils/image-utils';
 import { igdbRateLimiter } from './igdb-rate-limiter';
 import { fetchWithTimeout, fetchWithRetry } from '@/utils/server-timeout';
+import { cacheGameDetails, cachePopularGames, cacheSearchResults } from '@/lib/cache';
 
 interface GameFilters {
   page: number;
@@ -426,6 +427,11 @@ export class IGDBService {
   }
 
   static async getPopularGames(limit: number = 10, page: number = 1): Promise<Game[]> {
+    const getCachedPopularGames = cachePopularGames(page, `${limit}`, () => this.fetchPopularGamesData(limit, page))
+    return getCachedPopularGames()
+  }
+
+  private static async fetchPopularGamesData(limit: number, page: number): Promise<Game[]> {
     try {
       const offset = (page - 1) * limit;
       const query = `
@@ -570,7 +576,8 @@ export class IGDBService {
   }
 
   static async fetchGameDetails(gameId: string) {
-    return igdbRateLimiter.enqueue(gameId, async () => {
+    const getCachedGameDetails = cacheGameDetails(gameId, () =>
+      igdbRateLimiter.enqueue(gameId, async () => {
       try {
         
         const query = `
@@ -681,7 +688,10 @@ export class IGDBService {
         console.error('Error in fetchGameDetails:', error);
         throw error;
       }
-    });
+    })
+    )
+    
+    return getCachedGameDetails()
   }
 
   static async fetchGameAchievements(gameId: string) {

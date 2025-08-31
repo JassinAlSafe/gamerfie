@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import Image from "next/image";
-import Link from "next/link";
+import { GameLink } from "@/components/ui/navigation/game-link";
 import { Star, MoreVertical, Trash2 } from "lucide-react";
 import { Game, GameStatus } from "@/types";
 import { getCoverImageUrl } from "@/utils/image-utils";
@@ -94,7 +94,7 @@ function LibraryGameCard({
         </DropdownMenu>
       </div>
 
-      <Link href={`/game/${game.id}`} className="block flex-grow">
+      <GameLink gameId={game.id} className="block flex-grow">
         <div className="relative flex flex-col h-full">
           <div className="relative aspect-[3/4] w-full overflow-hidden flex-shrink-0">
             <Image
@@ -145,7 +145,7 @@ function LibraryGameCard({
             </div>
           </div>
         </div>
-      </Link>
+      </GameLink>
     </div>
   );
 }

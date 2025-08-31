@@ -13,6 +13,7 @@ import type {
 import { createAuthError } from '@/lib/auth-errors';
 import { fetchUserProfileOptimized, ProfileCache } from '@/lib/auth-optimization';
 import { performLogout } from '@/lib/auth-logout';
+import { validateSession, getSafeUserData } from '@/lib/auth-session-validation';
 import { QueryClient } from '@tanstack/react-query';
 
 // =============================================================================
@@ -177,47 +178,60 @@ export const useAuthStoreOptimized = create<AuthStore>()(
               console.log(`🔒 Auth state change event: ${event}`, { 
                 hasSession: !!session, 
                 hasUser: !!session?.user,
-                timestamp: new Date().toISOString()
+                timestamp: new Date().toISOString(),
+                isInitialized: get().isInitialized
               });
 
-              switch (event) {
-                case AUTH_EVENTS.SIGNED_IN:
-                  if (session?.user) {
-                    await updateUserWithProfile(session.user);
-                    set({ session, error: null, isInitialized: true });
-                  }
-                  break;
+              // FIXED: Only process events after initialization to prevent race conditions
+              if (!get().isInitialized && event !== AUTH_EVENTS.SIGNED_OUT) {
+                console.log('🔄 Skipping auth event processing - not yet initialized');
+                return;
+              }
 
-                case AUTH_EVENTS.SIGNED_OUT:
-                  console.log(`🚪 SIGNED_OUT event received - clearing auth state`);
-                  set({ 
-                    user: null, 
-                    profile: null, 
-                    session: null, 
-                    error: null,
-                    isProfileLoading: false 
-                  });
-                  ProfileCache.clear();
-                  console.log(`✅ Auth state cleared after SIGNED_OUT`);
-                  break;
-
-                case AUTH_EVENTS.TOKEN_REFRESHED:
-                  if (session?.user) {
-                    const currentUser = get().user;
-                    // Only update if we need to refresh profile or don't have one
-                    if (shouldRefreshProfile(currentUser)) {
+              try {
+                switch (event) {
+                  case AUTH_EVENTS.SIGNED_IN:
+                    if (session?.user) {
                       await updateUserWithProfile(session.user);
+                      set({ session, error: null, isInitialized: true });
                     }
-                    set({ session });
-                  }
-                  break;
+                    break;
 
-                case AUTH_EVENTS.USER_UPDATED:
-                  if (session?.user) {
-                    await updateUserWithProfile(session.user);
-                    set({ session });
-                  }
-                  break;
+                  case AUTH_EVENTS.SIGNED_OUT:
+                    console.log(`🚪 SIGNED_OUT event received - clearing auth state`);
+                    set({ 
+                      user: null, 
+                      profile: null, 
+                      session: null, 
+                      error: null,
+                      isProfileLoading: false 
+                    });
+                    ProfileCache.clear();
+                    console.log(`✅ Auth state cleared after SIGNED_OUT`);
+                    break;
+
+                  case AUTH_EVENTS.TOKEN_REFRESHED:
+                    if (session?.user) {
+                      const currentUser = get().user;
+                      // Only update if we need to refresh profile or don't have one
+                      if (shouldRefreshProfile(currentUser)) {
+                        await updateUserWithProfile(session.user);
+                      }
+                      set({ session });
+                    }
+                    break;
+
+                  case AUTH_EVENTS.USER_UPDATED:
+                    if (session?.user) {
+                      await updateUserWithProfile(session.user);
+                      set({ session });
+                    }
+                    break;
+                }
+              } catch (error) {
+                console.error(`Auth event ${event} processing failed:`, error);
+                // Don't clear the entire state on event processing errors
+                // Just log the error for debugging
               }
             }
           );
@@ -244,27 +258,38 @@ export const useAuthStoreOptimized = create<AuthStore>()(
             set({ isLoading: true, error: null });
 
             try {
-              // Setup auth listener first
-              setupAuthListener();
-
-              // Get current session with timeout
-              const sessionPromise = supabase.auth.getSession();
+              // SECURITY FIX: Use getUser() instead of getSession() for proper server validation
+              // getUser() validates token with Supabase server, preventing tampered session data
+              console.log('🔐 Initializing with secure getUser() validation...');
+              
+              const userPromise = supabase.auth.getUser();
               const timeoutPromise = new Promise<never>((_, reject) => 
                 setTimeout(() => reject(new Error('Auth initialization timeout')), AUTH_CONFIG.INITIALIZATION_TIMEOUT)
               );
 
-              const { data: { session }, error } = await Promise.race([sessionPromise, timeoutPromise]);
+              const { data: { user }, error } = await Promise.race([userPromise, timeoutPromise]);
 
-              if (error) throw error;
+              if (error && !error.message?.includes('Auth session missing')) {
+                console.warn('Auth initialization error:', error);
+              }
 
-              if (session?.user) {
-                console.log('User session found, loading profile...');
-                await updateUserWithProfile(session.user);
+              // Set initial state based on validated user
+              if (user) {
+                console.log('✅ Valid user found via server validation, loading profile...');
+                await updateUserWithProfile(user);
+                
+                // Get session for storing (but user data comes from getUser validation)
+                const { data: { session } } = await supabase.auth.getSession();
                 set({ session });
               } else {
-                console.log('No active session found');
+                console.log('❌ No valid user found via server validation');
                 set({ user: null, session: null });
               }
+
+              // FIXED: Setup auth listener AFTER initial session check
+              // This ensures the listener doesn't override our initial state
+              setupAuthListener();
+
             } catch (error) {
               console.warn('Auth initialization error:', error);
               set({ user: null, session: null });
@@ -452,12 +477,18 @@ export const useAuthStoreOptimized = create<AuthStore>()(
           refreshSession: async () => {
             try {
               set({ isLoading: true, error: null });
-              const { data: { session }, error } = await supabase.auth.getSession();
               
-              if (error) throw error;
+              // SECURITY FIX: Use getUser() for server-side token validation instead of getSession()
+              const { data: { user }, error } = await supabase.auth.getUser();
+              
+              if (error && !error.message?.includes('Auth session missing')) {
+                throw error;
+              }
 
-              if (session?.user) {
-                await updateUserWithProfile(session.user);
+              if (user) {
+                await updateUserWithProfile(user);
+                // Get session for storing (but validation was done via getUser)
+                const { data: { session } } = await supabase.auth.getSession();
                 set({ session });
               } else {
                 set({ user: null, session: null });

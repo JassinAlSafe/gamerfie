@@ -1,42 +1,29 @@
-"use client";
-
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { useAuthStore } from "@/stores/useAuthStore";
+import { validateAdminPageAccess } from "@/app/api/lib/admin-auth";
 import { DatabaseHealth } from "@/components/admin/DatabaseHealth";
-import { Loader2 } from "lucide-react";
 
-export default function DatabaseAdminPage() {
-  const { user, isInitialized } = useAuthStore();
-  const router = useRouter();
+// Force dynamic rendering since we use cookies for auth
+export const dynamic = 'force-dynamic';
 
-  useEffect(() => {
-    if (isInitialized) {
-      // Check if user is admin
-      if (!user?.profile?.role || user.profile.role !== "admin") {
-        router.push("/");
-        return;
-      }
-    }
-  }, [user, isInitialized, router]);
-
-  // Show loading while checking authentication
-  if (!isInitialized) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="h-8 w-8 animate-spin text-purple-500" />
-      </div>
-    );
-  }
-
-  // Redirect if not admin
-  if (!user?.profile?.role || user.profile.role !== "admin") {
-    return null;
-  }
-
+/**
+ * Server Component for admin database page
+ * Uses server-side validation following Supabase 2025 best practices
+ */
+export default async function DatabaseAdminPage() {
+  // Server-side admin validation - redirects if not admin
+  const adminUser = await validateAdminPageAccess();
+  
+  // If we reach here, user is definitely admin
+  console.log('✅ Rendering admin database page for:', adminUser?.id);
+  
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-950 to-gray-900">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-white">Database Health</h1>
+          <p className="text-gray-400 mt-1">
+            Admin: {adminUser?.email || 'Unknown'}
+          </p>
+        </div>
         <DatabaseHealth />
       </div>
     </div>
