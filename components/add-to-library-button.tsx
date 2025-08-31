@@ -23,7 +23,7 @@ import { useRouter } from "next/navigation";
 import { LoadingSpinner } from "./loadingSpinner";
 import { useFriendsStore } from "@/stores/useFriendsStore";
 import { useLibraryStore } from "@/stores/useLibraryStore";
-import { useAuthStore } from "@/stores/useAuthStore";
+import { useAuthUser } from "@/stores/useAuthStoreOptimized";
 import { useErrorStore } from "@/stores/useErrorStore";
 import { useProgressStore } from "@/stores/useProgressStore";
 import { toast } from "sonner";
@@ -97,7 +97,7 @@ export function AddToLibraryButton({
   const [pendingStatus, setPendingStatus] = useState<GameStatus | null>(null);
 
   const router = useRouter();
-  const { user } = useAuthStore();
+  const { user } = useAuthUser();
   const { createActivity } = useFriendsStore();
   const { addGameToLibrary } = useLibraryStore();
   const { updateGameStatus, updateProgress } = useProgressStore();

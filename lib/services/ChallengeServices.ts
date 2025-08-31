@@ -70,8 +70,10 @@ export class ChallengeServices {
   }
 
   static async getUserChallenges(): Promise<Challenge[]> {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) throw new Error("No authenticated user");
+    // SECURITY FIX: Use getUser() not getSession() for database operations
+    // This validates the token server-side and prevents spoofing
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) throw new Error("No authenticated user");
 
     const { data, error } = await supabase
       .from("challenge_participants")
@@ -101,7 +103,7 @@ export class ChallengeServices {
           rules:challenge_rules(*)
         )
       `)
-      .eq("user_id", session.user.id);
+      .eq("user_id", user.id);
 
     if (error) throw error;
     return (data?.map(c => c.challenge) || []) as unknown as Challenge[];
@@ -142,8 +144,9 @@ export class ChallengeServices {
   }
 
   static async createChallenge(data: CreateChallengeInput): Promise<Challenge> {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) throw new Error("No authenticated user");
+    // SECURITY FIX: Use getUser() not getSession() for database operations
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) throw new Error("No authenticated user");
 
     // Start a transaction
     const { data: challenge, error: challengeError } = await supabase
@@ -154,7 +157,7 @@ export class ChallengeServices {
         type: data.type,
         start_date: data.start_date,
         end_date: data.end_date,
-        creator_id: session.user.id,
+        creator_id: user.id,
         status: "upcoming",
         requirements: data.requirements,
         min_participants: data.min_participants,
@@ -230,14 +233,15 @@ export class ChallengeServices {
   }
 
   static async joinChallenge(challengeId: string, teamId?: string): Promise<void> {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) throw new Error("No authenticated user");
+    // SECURITY FIX: Use getUser() not getSession() for database operations
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) throw new Error("No authenticated user");
 
     const { error } = await supabase
       .from("challenge_participants")
       .insert({
         challenge_id: challengeId,
-        user_id: session.user.id,
+        user_id: user.id,
         team_id: teamId,
         progress: 0,
         completed: false,
@@ -248,14 +252,15 @@ export class ChallengeServices {
   }
 
   static async leaveChallenge(challengeId: string): Promise<void> {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) throw new Error("No authenticated user");
+    // SECURITY FIX: Use getUser() not getSession() for database operations
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) throw new Error("No authenticated user");
 
     const { error } = await supabase
       .from("challenge_participants")
       .delete()
       .eq("challenge_id", challengeId)
-      .eq("user_id", session.user.id);
+      .eq("user_id", user.id);
 
     if (error) throw error;
   }
@@ -265,14 +270,15 @@ export class ChallengeServices {
     goalId: string, 
     progress: number
   ): Promise<void> {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) throw new Error("No authenticated user");
+    // SECURITY FIX: Use getUser() not getSession() for database operations
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) throw new Error("No authenticated user");
 
     // Update individual goal progress
     const { error: progressError } = await supabase
       .from("challenge_participant_progress")
       .upsert({
-        participant_id: session.user.id,
+        participant_id: user.id,
         goal_id: goalId,
         progress,
         updated_at: new Date().toISOString(),
@@ -284,7 +290,7 @@ export class ChallengeServices {
     const { data: totalProgress } = await supabase
       .rpc("calculate_challenge_progress", {
         p_challenge_id: challengeId,
-        p_participant_id: session.user.id,
+        p_participant_id: user.id,
       });
 
     const { error: updateError } = await supabase
@@ -295,7 +301,7 @@ export class ChallengeServices {
         updated_at: new Date().toISOString(),
       })
       .eq("challenge_id", challengeId)
-      .eq("user_id", session.user.id);
+      .eq("user_id", user.id);
 
     if (updateError) throw updateError;
   }
@@ -304,8 +310,9 @@ export class ChallengeServices {
     challengeId: string,
     name: string
   ): Promise<ChallengeTeam> {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) throw new Error("No authenticated user");
+    // SECURITY FIX: Use getUser() not getSession() for database operations
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) throw new Error("No authenticated user");
 
     const { data: team, error: teamError } = await supabase
       .from("challenge_teams")
@@ -328,27 +335,29 @@ export class ChallengeServices {
     challengeId: string,
     teamId: string
   ): Promise<void> {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) throw new Error("No authenticated user");
+    // SECURITY FIX: Use getUser() not getSession() for database operations
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) throw new Error("No authenticated user");
 
     const { error } = await supabase
       .from("challenge_participants")
       .update({ team_id: teamId })
       .eq("challenge_id", challengeId)
-      .eq("user_id", session.user.id);
+      .eq("user_id", user.id);
 
     if (error) throw error;
   }
 
   static async leaveTeam(challengeId: string): Promise<void> {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) throw new Error("No authenticated user");
+    // SECURITY FIX: Use getUser() not getSession() for database operations
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) throw new Error("No authenticated user");
 
     const { error } = await supabase
       .from("challenge_participants")
       .update({ team_id: null })
       .eq("challenge_id", challengeId)
-      .eq("user_id", session.user.id);
+      .eq("user_id", user.id);
 
     if (error) throw error;
   }

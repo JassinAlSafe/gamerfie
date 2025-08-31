@@ -23,7 +23,7 @@ import { Game } from "@/types";
 // Define GameStatus type directly to avoid import issues
 type GameStatus = "playing" | "completed" | "want_to_play" | "dropped";
 import { useProgressStore } from "@/stores/useProgressStore";
-import { useAuthStore } from "@/stores/useAuthStore";
+import { useAuthUser } from "@/stores/useAuthStoreOptimized";
 import { useLibraryStore } from "@/stores/useLibraryStore";
 import { toast } from "sonner";
 import { AddToLibraryButton } from "@/components/add-to-library-button";
@@ -44,7 +44,7 @@ export const GameActionsMenu = memo(
   ({ game, trigger }: GameActionsMenuProps) => {
     const [isOpen, setIsOpen] = useState(false);
     const [isInLibrary, setIsInLibrary] = useState(false);
-    const { user } = useAuthStore();
+    const { user } = useAuthUser();
     const updateGameStatus = useProgressStore(
       (state) => state.updateGameStatus
     );

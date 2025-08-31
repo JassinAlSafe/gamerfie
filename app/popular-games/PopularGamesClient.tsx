@@ -3,7 +3,7 @@
 import React, { useState, useMemo, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import Image from "next/image";
-import Link from "next/link";
+import { OptimizedLink } from "@/components/ui/navigation/optimized-link";
 import { motion } from "framer-motion";
 import {
   Star,
@@ -261,7 +261,7 @@ export default function PopularGamesClient() {
           {/* Header */}
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-4">
-              <Link href="/explore">
+              <OptimizedLink href="/explore">
                 <Button
                   variant="ghost"
                   size="icon"
@@ -269,7 +269,7 @@ export default function PopularGamesClient() {
                 >
                   <ArrowLeft className="h-5 w-5" />
                 </Button>
-              </Link>
+              </OptimizedLink>
               <h1 className="text-3xl font-bold text-white">Popular Games</h1>
             </div>
           </div>
@@ -429,7 +429,7 @@ export default function PopularGamesClient() {
             <>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
                 {currentGames.map((game: Game, index: number) => (
-                  <Link key={game.id} href={`/game/${game.id}`}>
+                  <OptimizedLink key={game.id} href={`/game/${game.id}`} prefetchOnHover>
                     <motion.div
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
@@ -482,7 +482,7 @@ export default function PopularGamesClient() {
                         </div>
                       </div>
                     </motion.div>
-                  </Link>
+                  </OptimizedLink>
                 ))}
               </div>
 

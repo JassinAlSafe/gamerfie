@@ -99,9 +99,9 @@ export async function POST(
     const supabase = await createClient();
     const { id: postId } = params;
 
-    // Check if user is authenticated
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
+    // SECURITY FIX: Use getUser() not getSession() for database operations
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -125,26 +125,26 @@ export async function POST(
     const { error: profileError } = await supabase
       .from('profiles')
       .select('id')
-      .eq('id', session.user.id)
+      .eq('id', user.id)
       .single();
 
     if (profileError && profileError.code === 'PGRST116') {
       // Profile doesn't exist, create one
-      const username = session.user.email?.split('@')[0] || `user_${session.user.id.slice(0, 8)}`;
-      const displayName = session.user.user_metadata?.full_name || 
-                         session.user.user_metadata?.name || 
-                         session.user.user_metadata?.display_name ||
+      const username = user.email?.split('@')[0] || `user_${user.id.slice(0, 8)}`;
+      const displayName = user.user_metadata?.full_name || 
+                         user.user_metadata?.name || 
+                         user.user_metadata?.display_name ||
                          username;
 
       const { error: createProfileError } = await supabase
         .from('profiles')
         .insert({
-          id: session.user.id,
+          id: user.id,
           username,
           display_name: displayName,
-          email: session.user.email || null,
-          avatar_url: session.user.user_metadata?.avatar_url || 
-                     session.user.user_metadata?.picture || null,
+          email: user.email || null,
+          avatar_url: user.user_metadata?.avatar_url || 
+                     user.user_metadata?.picture || null,
           role: 'user',
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
@@ -183,7 +183,7 @@ export async function POST(
 
     const newComment = {
       post_id: postId,
-      author_id: session.user.id,
+      author_id: user.id,
       content: content.trim(),
     };
 

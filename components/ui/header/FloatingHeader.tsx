@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useMemo, useCallback } from "react";
 import Link from "next/link";
 import { Menu, X, Search } from "lucide-react";
-import { useAuthStatus, useAuthActions, useAuthUser } from "@/stores/useAuthStoreOptimized";
+import { useAuthStatus, useAuthUser } from "@/stores/useAuthStoreOptimized";
 import { useUIStore } from "@/stores/useUIStore";
 import { AnimatedNav } from "../animated-nav";
 import { SearchDialog } from "@/components/ui/search/search-dialog";
@@ -17,28 +17,13 @@ import { Icons } from "@/components/ui/icons";
 
 export default function FloatingHeader() {
   const { isInitialized } = useAuthStatus();
-  const { checkUser } = useAuthActions();
   const { user } = useAuthUser();
   const { isMobileMenuOpen, toggleMobileMenu } = useUIStore();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   // Use isInitialized from store directly - AuthInitializer handles initialization
-
-  // Refresh user state periodically only if user is logged in and initialized
-  useEffect(() => {
-    if (!isInitialized || !user) return;
-
-    const interval = setInterval(async () => {
-      try {
-        await checkUser();
-      } catch (error) {
-        // Silently handle periodic check failures
-        console.debug("Periodic auth check failed:", error);
-      }
-    }, 10 * 60 * 1000); // Check every 10 minutes only for logged in users
-
-    return () => clearInterval(interval);
-  }, [checkUser, isInitialized, user]);
+  // Note: Token refresh is now handled server-side by middleware using getUser()
+  // This ensures proper security validation following Supabase 2025 best practices
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => {

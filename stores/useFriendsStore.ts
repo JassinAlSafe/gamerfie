@@ -29,12 +29,12 @@ type FriendsStore = Omit<FriendsState, 'setFilter'> & {
 export const useFriendsStore = create<FriendsStore>((set, get) => {
   const supabase = createClient();
 
-  // Helper function to get current user session
+  // SECURITY FIX: Helper function to get current user via server validation
   const getCurrentUser = async () => {
-    const { data: { session }, error } = await supabase.auth.getSession();
+    const { data: { user }, error } = await supabase.auth.getUser();
     if (error) throw error;
-    if (!session?.user) throw new Error('No authenticated user');
-    return session.user;
+    if (!user) throw new Error('No authenticated user');
+    return user;
   };
 
   return {

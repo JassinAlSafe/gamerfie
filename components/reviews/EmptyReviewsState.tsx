@@ -23,7 +23,7 @@ export function EmptyReviewsState() {
         Be the first to share your gaming experience! Write a review and help other gamers discover great games.
       </p>
       
-      <Link href="/games">
+      <Link href="/all-games">
         <Button className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500">
           <Plus className="w-4 h-4 mr-2" />
           Browse Games to Review

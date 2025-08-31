@@ -2,7 +2,7 @@
 
 import { memo, useCallback } from "react";
 import { Game } from "@/types";
-import { useAuthStore } from "@/stores/useAuthStore";
+import { useAuthUser } from "@/stores/useAuthStoreOptimized";
 import { useRouter } from "next/navigation";
 import { GameCard } from "../../shared/GameCard/GameCard";
 import { PlaylistHeader } from "./components/PlaylistHeader";
@@ -26,7 +26,7 @@ export const GameShowcase = memo(
     games = [],
     type = "featured",
   }: GameShowcaseProps) => {
-    const { user } = useAuthStore();
+    const { user } = useAuthUser();
     const router = useRouter();
     const isAdmin = user?.profile?.role === "admin";
 

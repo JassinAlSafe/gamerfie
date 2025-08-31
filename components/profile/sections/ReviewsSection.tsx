@@ -162,7 +162,7 @@ export const ReviewsSection = memo<ReviewsSectionProps>(({ reviews }) => {
             
             {/* Call-to-action */}
             <div className="pt-2">
-              <Link href="/games">
+              <Link href="/all-games">
                 <div className="inline-flex items-center text-xs text-yellow-400 hover:text-yellow-300 cursor-pointer transition-colors">
                   <Edit3 className="h-3 w-3 mr-1" />
                   Browse games to review

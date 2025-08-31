@@ -79,13 +79,18 @@ export async function GET(request: NextRequest) {
     const total = count || 0;
     const hasMore = offset + limit < total;
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       posts: posts || [],
       total,
       page,
       limit,
       hasMore
     });
+
+    // Add caching headers - 15 minutes for news content
+    response.headers.set('Cache-Control', 'public, s-maxage=900, stale-while-revalidate=3600');
+    
+    return response;
   } catch (error) {
     console.error('Error fetching news posts:', error);
     return NextResponse.json(
@@ -99,16 +104,16 @@ export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient();
     
-    // Check if user is admin
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
+    // SECURITY FIX: Use getUser() not getSession() for database operations
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { data: profile } = await supabase
       .from('profiles')
       .select('role')
-      .eq('id', session.user.id)
+      .eq('id', user.id)
       .single();
 
     if (profile?.role !== 'admin') {
@@ -136,7 +141,7 @@ export async function POST(request: NextRequest) {
       status: status || 'draft',
       badge,
       published_at: status === 'published' ? (published_at || new Date().toISOString()) : null,
-      author_id: session.user.id,
+      author_id: user.id,
       comments_enabled: comments_enabled ?? true,
     };
 

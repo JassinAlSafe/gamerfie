@@ -82,24 +82,19 @@ export function HomePageWrapper({ serverUser }: HomePageWrapperProps) {
     );
   }
 
-  // CRITICAL FIX: Enhanced client/server state synchronization with logout detection
-  // 1. If potential logout detected, ignore serverUser and show loading until client initializes
-  // 2. If client initialized, ALWAYS trust client state 
-  // 3. If client not initialized and no logout detected, use serverUser
-  // 4. Otherwise, show unauthenticated
+  // SIMPLIFIED: Enhanced client/server state synchronization
+  // Priority: Client state > Server state > Unauthenticated
+  // Always trust client state when initialized, fall back to server state when not
   let effectiveUser: User | null = null;
   
-  if (potentialLogout && !isInitialized) {
-    // Potential logout detected - don't trust serverUser, wait for client initialization
-    effectiveUser = null;
-  } else if (isInitialized) {
-    // Client is initialized - trust client state completely
+  if (isInitialized) {
+    // Client is initialized - always trust client state
     effectiveUser = user;
   } else if (serverUser && !potentialLogout) {
-    // Client not initialized, no logout detected - use serverUser
+    // Client not initialized, use server state if no logout detected
     effectiveUser = serverUser;
   } else {
-    // Default to unauthenticated
+    // Default to unauthenticated (client initializing or logout detected)
     effectiveUser = null;
   }
 
@@ -111,9 +106,8 @@ export function HomePageWrapper({ serverUser }: HomePageWrapperProps) {
     potentialLogout,
     hasEffectiveUser: !!effectiveUser,
     willShowAuthenticated: !!effectiveUser,
-    decision: potentialLogout && !isInitialized ? 'WAITING_FOR_CLIENT' : 
-             isInitialized ? 'USING_CLIENT_STATE' : 
-             serverUser && !potentialLogout ? 'USING_SERVER_STATE' : 'UNAUTHENTICATED'
+    decision: isInitialized ? 'CLIENT_STATE' : 
+             (serverUser && !potentialLogout) ? 'SERVER_STATE' : 'UNAUTHENTICATED'
   });
 
   if (effectiveUser) {
