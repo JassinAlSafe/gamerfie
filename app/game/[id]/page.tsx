@@ -3,6 +3,7 @@ import { GamePageClient } from "./GamePageClient";
 import { GamePageProps } from "@/types";
 import { createClient } from "@/utils/supabase/server";
 import { siteMetadata } from "@/app/config/metadata";
+import { getTrendingGamesFromDB } from "@/lib/react-cache";
 
 // Generate metadata for individual game pages
 export async function generateMetadata({ params }: GamePageProps): Promise<Metadata> {
@@ -89,6 +90,19 @@ export async function generateMetadata({ params }: GamePageProps): Promise<Metad
       description: "Explore game details, track your progress, and connect with the gaming community on Game Vault.",
       robots: { index: false, follow: false }
     };
+  }
+}
+
+// Generate static params for popular games to enable Full Route Cache
+export async function generateStaticParams() {
+  try {
+    const popularGames = await getTrendingGamesFromDB(50);
+    return popularGames.map((game) => ({
+      id: game.id.toString(),
+    }));
+  } catch (error) {
+    console.error('Error generating static params for games:', error);
+    return [];
   }
 }
 

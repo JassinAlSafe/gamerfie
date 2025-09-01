@@ -10,7 +10,6 @@ import {
 } from "@/components/ui/popover";
 import { FriendActivity } from "@/types/friend";
 import { ActivityReaction } from "@/types/activity";
-import { useFriendsStore } from "@/stores/useFriendsStore";
 import { createClient } from "@/utils/supabase/client";
 import { toast } from "react-hot-toast";
 import { cn } from "@/lib/utils";
@@ -18,6 +17,7 @@ import { useEffect, useState } from "react";
 
 interface ActivityReactionsProps {
   activity: FriendActivity;
+  onAddReaction?: (activityId: string, emoji: string) => void;
 }
 
 const reactionEmojis = {
@@ -28,11 +28,9 @@ const reactionEmojis = {
   "🎯": "bullseye",
 };
 
-export function ActivityReactions({ activity }: ActivityReactionsProps) {
+export function ActivityReactions({ activity, onAddReaction }: ActivityReactionsProps) {
   const supabase = createClient();
   const [userId, setUserId] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const { addReaction } = useFriendsStore();
   const [localReactions, setLocalReactions] = useState<ActivityReaction[]>(
     activity.reactions || []
   );
@@ -58,22 +56,13 @@ export function ActivityReactions({ activity }: ActivityReactionsProps) {
       return;
     }
 
-    if (isLoading) {
-      return;
-    }
-
     try {
-      setIsLoading(true);
-      
-      // The store now handles all reaction logic including duplicates and toggles
-      await addReaction(activity.id, emoji);
-      toast.success("Reaction updated");
+      if (onAddReaction) {
+        onAddReaction(activity.id, emoji);
+        toast.success("Reaction updated");
+      }
     } catch {
       toast.error("Failed to update reaction");
-      // Refresh local state to match server state
-      setLocalReactions(activity.reactions || []);
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -95,7 +84,7 @@ export function ActivityReactions({ activity }: ActivityReactionsProps) {
             variant="ghost"
             size="sm"
             className="text-gray-400 hover:text-purple-400 gap-2"
-            disabled={isLoading}
+            disabled={false}
           >
             <Heart className="w-4 h-4" />
             <span className="text-sm">React</span>
@@ -114,7 +103,7 @@ export function ActivityReactions({ activity }: ActivityReactionsProps) {
                   key={emoji}
                   variant="ghost"
                   size="sm"
-                  disabled={isLoading}
+                  disabled={false}
                   className={cn(isSelected && "bg-purple-500/20")}
                   onClick={() => handleReaction(emoji)}
                 >
@@ -139,7 +128,7 @@ export function ActivityReactions({ activity }: ActivityReactionsProps) {
                 variant="ghost"
                 size="sm"
                 onClick={() => handleReaction(emoji)}
-                disabled={isLoading}
+                disabled={false}
                 className={cn(
                   "h-6 px-2 gap-1 text-xs transition-all",
                   userHasReaction 

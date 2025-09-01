@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/utils/supabase/client";
+// Removed server-side cache import for client component
 import Image from "next/image";
 import { motion } from "framer-motion";
 import {
@@ -416,7 +417,7 @@ export default function GamesTab({ filters }: GamesTabProps) {
         // Only invalidate if component is still mounted and subscription is active
         if (isSubscribed) {
           queryClient.invalidateQueries({
-            queryKey: ["userGames", userId, "v2"],
+            queryKey: ["userGames", userId, "v3"],
           });
         }
       }, 500); // 500ms debounce to prevent excessive refetches
@@ -473,11 +474,11 @@ export default function GamesTab({ filters }: GamesTabProps) {
 
   const handleGameRemoval = useCallback(() => {
     // Invalidate the cache to trigger a refetch
-    queryClient.invalidateQueries({ queryKey: ["userGames", userId, "v2"] });
+    queryClient.invalidateQueries({ queryKey: ["userGames", userId, "v3"] });
   }, [queryClient, userId]);
 
   const { data: games, isLoading } = useQuery<GameWithUserData[]>({
-    queryKey: ["userGames", userId, "v2"],
+    queryKey: ["userGames", userId, "v3"],
     queryFn: async () => {
       if (!userId) return [];
 
@@ -668,7 +669,7 @@ const createHandleStatusChange = (
     try {
       // Optimistic update - update cache first for better UX
       queryClient.setQueryData(
-        ["userGames", userId, "v2"],
+        ["userGames", userId, "v3"],
         (oldData: GameWithUserData[] | undefined) => {
           if (!oldData) return oldData;
           return oldData.map(game => 
@@ -688,7 +689,7 @@ const createHandleStatusChange = (
       if (error) {
         // Revert optimistic update on error
         queryClient.invalidateQueries({
-          queryKey: ["userGames", userId, "v2"],
+          queryKey: ["userGames", userId, "v3"],
         });
         console.error("Failed to update game status:", error);
         throw new Error(`Failed to update game status: ${error.message}`);
@@ -696,7 +697,7 @@ const createHandleStatusChange = (
 
       // If successful, refresh data to ensure consistency
       queryClient.invalidateQueries({
-        queryKey: ["userGames", userId, "v2"],
+        queryKey: ["userGames", userId, "v3"],
       });
 
     } catch (error) {
@@ -704,7 +705,7 @@ const createHandleStatusChange = (
       
       // Revert optimistic update on any error
       queryClient.invalidateQueries({
-        queryKey: ["userGames", userId, "v2"],
+        queryKey: ["userGames", userId, "v3"],
       });
       
       // Re-throw for component-level error handling

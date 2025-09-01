@@ -1,7 +1,8 @@
 import React, { memo } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Activity, ArrowRight, Users } from "lucide-react";
+import { Activity, ArrowRight, Users, AlertCircle } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
 import Image from "next/image";
 import type { FriendActivity } from "@/types/activity";
@@ -11,9 +12,11 @@ import { cn } from "@/lib/utils";
 
 interface ActivitySectionProps {
   activities: FriendActivity[];
+  isLoading?: boolean;
+  error?: Error | null;
 }
 
-export const ActivitySection = memo<ActivitySectionProps>(({ activities }) => {
+export const ActivitySection = memo<ActivitySectionProps>(({ activities, isLoading = false, error = null }) => {
   const hasActivities = activities && activities.length > 0;
   const displayActivities = activities.slice(0, 3);
 
@@ -63,7 +66,35 @@ export const ActivitySection = memo<ActivitySectionProps>(({ activities }) => {
           </Link>
         </div>
         {/* Content */}
-        {hasActivities ? (
+        {isLoading ? (
+          /* Loading state */
+          <div className="space-y-3">
+            {Array(3).fill(0).map((_, index) => (
+              <div key={index} className="flex items-start space-x-3 p-3">
+                <Skeleton className="w-10 h-10 rounded-lg" />
+                <div className="flex-grow space-y-2">
+                  <Skeleton className="h-4 w-32" />
+                  <Skeleton className="h-3 w-20" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : error ? (
+          /* Error state */
+          <div className="text-center py-8 space-y-4">
+            <div className="w-16 h-16 bg-gray-700/30 rounded-full flex items-center justify-center mx-auto">
+              <AlertCircle className="h-6 w-6 text-red-400" />
+            </div>
+            <div className="space-y-2">
+              <h4 className="text-white font-medium tracking-tight">
+                Failed to Load Activities
+              </h4>
+              <p className="text-gray-400 text-sm leading-relaxed max-w-xs mx-auto">
+                Unable to fetch recent activities. Please try refreshing the page.
+              </p>
+            </div>
+          </div>
+        ) : hasActivities ? (
           <div className="space-y-3">
             {displayActivities.map((activity, index) => (
               isValidActivity(activity) && (

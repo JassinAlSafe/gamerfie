@@ -4,6 +4,8 @@ import { IGDB_IMAGE_SIZES } from '@/utils/image-utils';
 import { igdbRateLimiter } from './igdb-rate-limiter';
 import { fetchWithTimeout, fetchWithRetry } from '@/utils/server-timeout';
 import { cacheGameDetails, cachePopularGames, cacheSearchResults } from '@/lib/cache';
+import { fetchWithTags } from '@/lib/fetch-with-tags';
+import { CACHE_TAGS, CACHE_DURATIONS } from '@/lib/cache';
 
 interface GameFilters {
   page: number;
@@ -109,7 +111,7 @@ export class IGDBService {
 
   private static async makeIGDBRequest(endpoint: string, query: string): Promise<any> {
     try {
-      const response = await fetch(this.getProxyUrl(), {
+      const response = await fetchWithTags(this.getProxyUrl(), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -117,7 +119,9 @@ export class IGDBService {
         body: JSON.stringify({
           endpoint,
           query
-        })
+        }),
+        tags: [CACHE_TAGS.GAMES, `igdb-${endpoint}`],
+        revalidate: CACHE_DURATIONS.GAME_DETAILS
       });
 
       if (!response.ok) {
@@ -442,22 +446,7 @@ export class IGDBService {
         limit ${limit};
       `;
 
-      const response = await fetch(this.getProxyUrl(), {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          endpoint: 'games',
-          query: query.trim()
-        })
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Failed to fetch popular games: ${errorText}`);
-      }
-      const games = await response.json();
+      const games = await this.makeIGDBRequest('games', query.trim());
       return games.map(this.processGame);
     } catch (error) {
       console.error('Error fetching popular games:', error);
@@ -477,23 +466,7 @@ export class IGDBService {
         limit ${limit};
       `;
 
-      const response = await fetch(this.getProxyUrl(), {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          endpoint: 'games',
-          query: query.trim()
-        })
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Failed to fetch trending games: ${errorText}`);
-      }
-      
-      const games = await response.json();
+      const games = await this.makeIGDBRequest('games', query.trim());
       return games.map(this.processGame);
     } catch (error) {
       console.error('Error fetching trending games:', error);
@@ -514,23 +487,7 @@ export class IGDBService {
         limit ${limit};
       `;
 
-      const response = await fetch(this.getProxyUrl(), {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          endpoint: 'games',
-          query: query.trim()
-        })
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Failed to fetch upcoming games: ${errorText}`);
-      }
-
-      const games = await response.json();
+      const games = await this.makeIGDBRequest('games', query.trim());
       return games.map(this.processGame);
     } catch (error) {
       console.error("Error fetching upcoming games:", error);
@@ -551,23 +508,7 @@ export class IGDBService {
         limit ${limit};
       `;
 
-      const response = await fetch(this.getProxyUrl(), {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          endpoint: 'games',
-          query: query.trim()
-        })
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Failed to fetch recent games: ${errorText}`);
-      }
-
-      const games = await response.json();
+      const games = await this.makeIGDBRequest('games', query.trim());
       return games.map(this.processGame);
     } catch (error) {
       console.error("Error fetching recent games:", error);
@@ -588,38 +529,7 @@ export class IGDBService {
           where id = ${gameId};
         `;
 
-        const response = await fetch(this.getProxyUrl(), {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            endpoint: 'games',
-            query: query.trim()
-          })
-        });
-
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error('IGDB error:', errorText);
-          
-          // Parse error message to check for rate limiting
-          try {
-            const errorData = JSON.parse(errorText);
-            if (errorData.error && errorData.error.includes('Too Many Requests')) {
-              throw new Error('Too Many Requests');
-            }
-          } catch {
-            // If can't parse, check text content
-            if (errorText.includes('Too Many Requests') || errorText.includes('429')) {
-              throw new Error('Too Many Requests');
-            }
-          }
-          
-          throw new Error('Failed to fetch game details');
-        }
-
-        const games = await response.json();
+        const games = await this.makeIGDBRequest('games', query.trim());
         const [game] = games;
         if (!game) {
           console.log('No game found in IGDB response');
@@ -808,23 +718,7 @@ export class IGDBService {
         limit 40;
       `;
 
-      const response = await fetch(this.getProxyUrl(), {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          endpoint: 'platforms',
-          query: query.trim()
-        })
-      });
-
-      if (!response.ok) {
-        console.error('Failed to fetch platforms:', await response.text());
-        throw new Error('Failed to fetch platforms');
-      }
-
-      const platforms = await response.json();
+      const platforms = await this.makeIGDBRequest('platforms', query.trim());
       return platforms.map((platform: any) => ({
         id: platform.id.toString(),
         name: platform.name,
@@ -845,23 +739,7 @@ export class IGDBService {
         limit 50;
       `;
 
-      const response = await fetch(this.getProxyUrl(), {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          endpoint: 'genres',
-          query: query.trim()
-        })
-      });
-
-      if (!response.ok) {
-        console.error('Failed to fetch genres:', await response.text());
-        throw new Error('Failed to fetch genres');
-      }
-
-      const genres = await response.json();
+      const genres = await this.makeIGDBRequest('genres', query.trim());
       return genres.map((genre: any) => ({
         id: genre.id.toString(),
         name: genre.name,
@@ -881,23 +759,7 @@ export class IGDBService {
         limit 20;
       `;
 
-      const response = await fetch(this.getProxyUrl(), {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          endpoint: 'game_modes',
-          query: query.trim()
-        })
-      });
-
-      if (!response.ok) {
-        console.error('Failed to fetch game modes:', await response.text());
-        throw new Error('Failed to fetch game modes');
-      }
-
-      const gameModes = await response.json();
+      const gameModes = await this.makeIGDBRequest('game_modes', query.trim());
       return gameModes.map((mode: any) => ({
         id: mode.id.toString(),
         name: mode.name,
@@ -917,23 +779,7 @@ export class IGDBService {
         limit 30;
       `;
 
-      const response = await fetch(this.getProxyUrl(), {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          endpoint: 'themes',
-          query: query.trim()
-        })
-      });
-
-      if (!response.ok) {
-        console.error('Failed to fetch themes:', await response.text());
-        throw new Error('Failed to fetch themes');
-      }
-
-      const themes = await response.json();
+      const themes = await this.makeIGDBRequest('themes', query.trim());
       return themes.map((theme: any) => ({
         id: theme.id.toString(),
         name: theme.name,

@@ -119,6 +119,20 @@ export function GameFilters({ onFilterChange }: GameFiltersProps) {
     });
   }, [onFilterChange]);
 
+  const handleReset = useCallback(() => {
+    const resetFilters: GameFilters = {
+      status: "all",
+      sortBy: "recent",
+      sortOrder: "desc",
+      search: "",
+      platform: "all",
+      genre: "all",
+    };
+    setFilters(resetFilters);
+    setSearchQuery("");
+    onFilterChange(resetFilters);
+  }, [onFilterChange]);
+
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
       if (e.key === "Enter") {
@@ -406,19 +420,7 @@ export function GameFilters({ onFilterChange }: GameFiltersProps) {
                 variant="link"
                 size="sm"
                 className="text-gray-400 hover:text-white"
-                onClick={useCallback(() => {
-                  const resetFilters: GameFilters = {
-                    status: "all",
-                    sortBy: "recent",
-                    sortOrder: "desc",
-                    search: "",
-                    platform: "all",
-                    genre: "all",
-                  };
-                  setFilters(resetFilters);
-                  setSearchQuery("");
-                  onFilterChange(resetFilters);
-                }, [onFilterChange])}
+                onClick={handleReset}
               >
                 Clear All
               </Button>

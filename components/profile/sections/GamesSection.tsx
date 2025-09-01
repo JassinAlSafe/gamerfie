@@ -3,6 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Gamepad2, ArrowRight, Plus } from "lucide-react";
 import Link from "next/link";
+import { SmartPrefetchLink } from "@/components/ui/navigation/smart-prefetch-link";
 import { cn } from "@/lib/utils";
 
 interface GameStatsBreakdown {
@@ -38,7 +39,7 @@ export const GamesSection = memo<GamesSectionProps>(({ totalGames, gameStatsBrea
           </div>
           
           {/* Action button */}
-          <Link href="/profile/games">
+          <SmartPrefetchLink href="/profile/games" prefetchStrategy="hover" priority={true}>
             <Button
               variant="ghost"
               size="sm"
@@ -60,7 +61,7 @@ export const GamesSection = memo<GamesSectionProps>(({ totalGames, gameStatsBrea
                 </>
               )}
             </Button>
-          </Link>
+          </SmartPrefetchLink>
         </div>
 
         {/* Content */}

@@ -1,10 +1,11 @@
 "use client";
 
 import React from "react";
+import { useRouter } from "next/navigation";
 import { ProfileDropdown } from "../profile/profile-dropdown";
 import { AnimatedButton } from "../animated-button";
-import { useAuthUser, useAuthStatus, useAuthActions } from "@/stores/useAuthStoreOptimized";
-import { useRouter } from "next/navigation";
+import { useAuthUser, useAuthStatus } from "@/stores/useAuthStoreOptimized";
+import { useAuthWithNavigation } from "@/hooks/useAuthWithNavigation";
 import { useToast } from "@/components/ui/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -100,35 +101,17 @@ const UnauthenticatedButtons = React.memo(function UnauthenticatedButtons() {
 // =============================================================================
 
 export const AuthButtonsOptimized = React.memo(function AuthButtonsOptimized() {
-  const router = useRouter();
   const { toast } = useToast();
   
   // Use optimized selectors to prevent unnecessary re-renders
   const { user, isProfileLoading } = useAuthUser();
   const { isInitialized } = useAuthStatus();
-  const { signOut } = useAuthActions();
+  const { signOut } = useAuthWithNavigation();
 
   const handleSignOut = React.useCallback(async (scope: 'global' | 'local' | 'others' = 'local') => {
     try {
+      // Navigation is now handled by useAuthWithNavigation hook
       await signOut(scope);
-      
-      // Clear any additional client-side storage
-      if (typeof window !== 'undefined') {
-        localStorage.removeItem('supabase.auth.token');
-        localStorage.removeItem('gameVault.preferences');
-      }
-      
-      // Navigate to home and force a full refresh to clear all state
-      console.log('Logout completed, navigating to home and refreshing');
-      router.push("/");
-      router.refresh(); // Force refresh to ensure server-side rendering reflects logout
-      
-      // Additional page refresh after a brief delay to ensure everything is cleared
-      setTimeout(() => {
-        if (typeof window !== 'undefined') {
-          window.location.reload();
-        }
-      }, 100);
       
       toast({
         title: "Signed out",
@@ -142,7 +125,7 @@ export const AuthButtonsOptimized = React.memo(function AuthButtonsOptimized() {
         variant: "destructive",
       });
     }
-  }, [signOut, router, toast]);
+  }, [signOut, toast]);
 
   // Show skeleton while initializing
   if (!isInitialized) {

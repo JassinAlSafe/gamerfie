@@ -187,7 +187,9 @@ export const GameCard = memo(React.forwardRef<HTMLDivElement, GameCardProps>(({
   game, 
   variant = "grid", 
   className, 
-  animated = false, 
+  animated = false,
+  index,
+  priority = false,
   ...props 
 }, ref) => {
   const CardWrapper = animated ? motion.div : 'div';
@@ -205,6 +207,7 @@ export const GameCard = memo(React.forwardRef<HTMLDivElement, GameCardProps>(({
         href={`/game/${game.id}`}
         className="block w-full h-full focus:outline-none focus:ring-2 focus:ring-purple-500/50 rounded-xl"
         aria-label={`View details for ${game.name}`}
+        prefetch={(index !== undefined && index < 6) || priority} // Only prefetch first 6 games or priority games
       >
         <GameCardContent game={game} variant={variant} {...props} />
       </Link>

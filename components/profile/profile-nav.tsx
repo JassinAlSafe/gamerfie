@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { SmartPrefetchLink } from "@/components/ui/navigation/smart-prefetch-link";
 import { usePathname } from "next/navigation";
 import { memo } from "react";
 import { cn } from "@/lib/utils";
@@ -40,7 +41,7 @@ export const ProfileNav = memo(function ProfileNav() {
             const isActive = pathname === href;
             
             return (
-              <Link
+              <SmartPrefetchLink
                 key={href}
                 href={href}
                 className={cn(
@@ -49,10 +50,12 @@ export const ProfileNav = memo(function ProfileNav() {
                     ? "text-foreground border-b-2 border-foreground" 
                     : "text-muted-foreground hover:text-foreground"
                 )}
+                prefetchStrategy="hover"
+                priority={label === "Games" || label === "Overview"}
               >
                 <Icon className="h-5 w-5 mb-1" />
                 <span className="text-xs font-medium">{label}</span>
-              </Link>
+              </SmartPrefetchLink>
             );
           })}
         </div>
