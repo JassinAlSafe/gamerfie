@@ -1,7 +1,8 @@
 import React, { memo } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Users, ArrowRight, UserPlus } from "lucide-react";
+import { Users, ArrowRight, UserPlus, AlertCircle } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
 import Image from "next/image";
 import type { Friend } from "@/types/friend";
@@ -9,9 +10,11 @@ import { cn } from "@/lib/utils";
 
 interface FriendsSectionProps {
   friends: Friend[];
+  isLoading?: boolean;
+  error?: Error | null;
 }
 
-export const FriendsSection = memo<FriendsSectionProps>(({ friends }) => {
+export const FriendsSection = memo<FriendsSectionProps>(({ friends, isLoading = false, error = null }) => {
   const hasFriends = friends && friends.length > 0;
   const displayFriends = friends.slice(0, 3);
   const remainingCount = Math.max(0, friends.length - 3);
@@ -63,7 +66,35 @@ export const FriendsSection = memo<FriendsSectionProps>(({ friends }) => {
         </div>
 
         {/* Content */}
-        {hasFriends ? (
+        {isLoading ? (
+          /* Loading state */
+          <div className="space-y-3">
+            {Array(3).fill(0).map((_, index) => (
+              <div key={index} className="flex items-center space-x-3 p-3">
+                <Skeleton className="w-10 h-10 rounded-full" />
+                <div className="flex-grow space-y-2">
+                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-3 w-16" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : error ? (
+          /* Error state */
+          <div className="text-center py-8 space-y-4">
+            <div className="w-16 h-16 bg-gray-700/30 rounded-full flex items-center justify-center mx-auto">
+              <AlertCircle className="h-6 w-6 text-red-400" />
+            </div>
+            <div className="space-y-2">
+              <h4 className="text-white font-medium tracking-tight">
+                Failed to Load Friends
+              </h4>
+              <p className="text-gray-400 text-sm leading-relaxed max-w-xs mx-auto">
+                Unable to fetch your friends list. Please try refreshing the page.
+              </p>
+            </div>
+          </div>
+        ) : hasFriends ? (
           <div className="space-y-3">
             {displayFriends.map((friend, index) => (
               <div

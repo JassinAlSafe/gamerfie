@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, useMemo, useCallback } from "react";
 import Link from "next/link";
+import { SmartPrefetchLink } from "@/components/ui/navigation/smart-prefetch-link";
 import { Menu, X, Search } from "lucide-react";
 import { useAuthStatus, useAuthUser } from "@/stores/useAuthStoreOptimized";
 import { useUIStore } from "@/stores/useUIStore";
@@ -77,14 +78,16 @@ export default function FloatingHeader() {
       <div className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 header-backdrop">
         <div className="container mx-auto max-w-[1920px] header-container px-4 sm:px-6 md:px-6 lg:px-8">
           <div className="relative flex items-center justify-between" style={{height: 'var(--header-height)'}}>
-            <Link
+            <SmartPrefetchLink
               href="/"
               className="flex items-center gap-2 text-white/90 hover:text-white transition-colors duration-200 shrink-0"
+              prefetchStrategy="intent"
+              priority={true}
             >
               <Icons.logo className="h-8 w-8 sm:h-9 sm:w-9" />
               <span className="hidden xs:inline font-bold text-xl sm:text-xl md:text-2xl">GAME VAULT</span>
               <span className="inline xs:hidden font-bold text-xl">GV</span>
-            </Link>
+            </SmartPrefetchLink>
 
             {/* Desktop Layout */}
             <div className="hidden md:flex flex-1 items-center justify-end gap-6">

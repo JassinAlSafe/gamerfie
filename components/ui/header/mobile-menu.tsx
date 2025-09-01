@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef } from "react";
 import Link from "next/link";
+import { SmartPrefetchLink } from "@/components/ui/navigation/smart-prefetch-link";
 import { useRouter } from "next/navigation";
 import { useAuthUser } from "@/stores/useAuthStoreOptimized";
 import { useUIStore } from "@/stores/useUIStore";
@@ -41,14 +42,15 @@ export const MobileMenu = React.memo(function MobileMenu() {
     >
       <nav className="px-3 sm:px-4 pt-2 pb-4" role="navigation" aria-label="Mobile navigation">
         {navigationItems.map((item) => (
-          <Link
+          <SmartPrefetchLink
             key={item.href}
             href={item.href}
             className="block py-2.5 px-2 rounded-lg text-gray-300 hover:text-white hover:bg-white/10 transition-all duration-200"
             onClick={closeAllMenus}
+            prefetchStrategy="hover"
           >
             {item.label}
-          </Link>
+          </SmartPrefetchLink>
         ))}
         {user ? (
           <>

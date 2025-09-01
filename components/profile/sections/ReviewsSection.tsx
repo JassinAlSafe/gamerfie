@@ -1,8 +1,10 @@
 import React, { memo } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Star, ArrowRight, Edit3 } from "lucide-react";
+import { Star, ArrowRight, Edit3, AlertCircle } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
+import { SmartPrefetchLink } from "@/components/ui/navigation/smart-prefetch-link";
 import Image from "next/image";
 import type { JournalEntry } from "@/types/journal";
 import { formatDisplayDate } from "@/utils/date-formatting";
@@ -10,9 +12,11 @@ import { cn } from "@/lib/utils";
 
 interface ReviewsSectionProps {
   reviews: JournalEntry[];
+  isLoading?: boolean;
+  error?: Error | null;
 }
 
-export const ReviewsSection = memo<ReviewsSectionProps>(({ reviews }) => {
+export const ReviewsSection = memo<ReviewsSectionProps>(({ reviews, isLoading = false, error = null }) => {
   const hasReviews = reviews && reviews.length > 0;
   const displayReviews = reviews.slice(0, 3);
 
@@ -74,7 +78,43 @@ export const ReviewsSection = memo<ReviewsSectionProps>(({ reviews }) => {
           </Link>
         </div>
         {/* Content */}
-        {hasReviews ? (
+        {isLoading ? (
+          /* Loading state */
+          <div className="space-y-3">
+            {Array(3).fill(0).map((_, index) => (
+              <div key={index} className="flex items-start space-x-3 p-3">
+                <Skeleton className="w-10 h-10 rounded-lg" />
+                <div className="flex-grow space-y-2">
+                  <div className="flex items-center space-x-2">
+                    <div className="flex space-x-1">
+                      {Array(5).fill(0).map((_, i) => (
+                        <Skeleton key={i} className="w-3 h-3" />
+                      ))}
+                    </div>
+                    <Skeleton className="h-3 w-16" />
+                  </div>
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-3 w-20" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : error ? (
+          /* Error state */
+          <div className="text-center py-8 space-y-4">
+            <div className="w-16 h-16 bg-gray-700/30 rounded-full flex items-center justify-center mx-auto">
+              <AlertCircle className="h-6 w-6 text-red-400" />
+            </div>
+            <div className="space-y-2">
+              <h4 className="text-white font-medium tracking-tight">
+                Failed to Load Reviews
+              </h4>
+              <p className="text-gray-400 text-sm leading-relaxed max-w-xs mx-auto">
+                Unable to fetch your reviews. Please try refreshing the page.
+              </p>
+            </div>
+          </div>
+        ) : hasReviews ? (
           <div className="space-y-3">
             {displayReviews.map((review, index) => (
               <div
@@ -162,12 +202,12 @@ export const ReviewsSection = memo<ReviewsSectionProps>(({ reviews }) => {
             
             {/* Call-to-action */}
             <div className="pt-2">
-              <Link href="/all-games">
+              <SmartPrefetchLink href="/all-games" prefetchStrategy="hover">
                 <div className="inline-flex items-center text-xs text-yellow-400 hover:text-yellow-300 cursor-pointer transition-colors">
                   <Edit3 className="h-3 w-3 mr-1" />
                   Browse games to review
                 </div>
-              </Link>
+              </SmartPrefetchLink>
             </div>
           </div>
         )}

@@ -60,7 +60,7 @@ interface AuthActions {
   signIn: (email: string, password: string) => Promise<AuthResponse>;
   signUp: (email: string, password: string, username: string, displayName?: string) => Promise<AuthResponse>;
   signInWithGoogle: () => Promise<GoogleAuthResponse>;
-  signOut: (scope?: 'global' | 'local' | 'others', queryClient?: QueryClient) => Promise<void>;
+  signOut: (scope?: 'global' | 'local' | 'others', queryClient?: QueryClient, onNavigate?: () => void) => Promise<void>;
   
   // Session management
   refreshSession: () => Promise<void>;
@@ -332,7 +332,7 @@ export const useAuthStoreOptimized = create<AuthStore>()(
             }
           },
 
-          signOut: async (scope = 'local', queryClient?: QueryClient) => {
+          signOut: async (scope = 'local', queryClient?: QueryClient, onNavigate?: () => void) => {
             console.log('🔓 Starting comprehensive sign out with scope:', scope);
             console.log('🔓 Current auth state before logout:', { 
               hasUser: !!get().user, 
@@ -360,11 +360,15 @@ export const useAuthStoreOptimized = create<AuthStore>()(
 
               console.log('Comprehensive logout completed successfully');
               
-              // Force immediate navigation to home instead of reload
-              // This ensures the auth state is properly reset without refresh issues  
-              if (typeof window !== 'undefined') {
-                console.log('🔄 Navigating to home after logout...');
-                window.location.href = '/';
+              // Use Next.js 14 navigation best practices
+              // Call the navigation callback if provided (from useRouter)
+              if (onNavigate) {
+                console.log('🔄 Using Next.js router navigation...');
+                onNavigate();
+              } else if (typeof window !== 'undefined') {
+                // Fallback for cases where navigation callback isn't provided
+                console.log('🔄 Using fallback navigation to home...');
+                window.location.replace('/');
               }
               
             } catch (error) {

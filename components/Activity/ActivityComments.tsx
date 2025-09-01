@@ -14,7 +14,6 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { FriendActivity } from "@/types/friend";
-import { useFriendsStore } from "@/stores/useFriendsStore";
 import { createClient } from "@/utils/supabase/client";
 import { toast } from "react-hot-toast";
 import { format } from "date-fns";
@@ -22,15 +21,18 @@ import { format } from "date-fns";
 interface ActivityCommentsProps {
   activity: FriendActivity;
   showInline?: boolean;
+  onAddComment?: (activityId: string, content: string) => void;
+  onDeleteComment?: (commentId: string) => void;
 }
 
 export function ActivityComments({
   activity,
   showInline = false,
+  onAddComment,
+  onDeleteComment,
 }: ActivityCommentsProps) {
   const supabase = createClient();
   const [userId, setUserId] = useState<string | null>(null);
-  const { addComment, deleteComment } = useFriendsStore();
   const [isCommentDialogOpen, setIsCommentDialogOpen] = useState(false);
   const [commentContent, setCommentContent] = useState("");
   const [localComments, setLocalComments] = useState(activity.comments || []);
@@ -69,10 +71,12 @@ export function ActivityComments({
 
     try {
       setIsLoading(true);
-      await addComment(activity.id, commentContent.trim());
-      setCommentContent("");
-      setIsCommentDialogOpen(false);
-      toast.success("Comment added");
+      if (onAddComment) {
+        onAddComment(activity.id, commentContent.trim());
+        setCommentContent("");
+        setIsCommentDialogOpen(false);
+        toast.success("Comment added");
+      }
     } catch (error) {
       console.error("Comment error:", error);
       toast.error("Failed to add comment");
@@ -84,8 +88,10 @@ export function ActivityComments({
   const handleDeleteComment = async (commentId: string) => {
     try {
       setIsLoading(true);
-      await deleteComment(commentId);
-      toast.success("Comment deleted");
+      if (onDeleteComment) {
+        onDeleteComment(commentId);
+        toast.success("Comment deleted");
+      }
     } catch (error) {
       console.error("Delete comment error:", error);
       toast.error("Failed to delete comment");
