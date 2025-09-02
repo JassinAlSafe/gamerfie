@@ -1,13 +1,12 @@
 "use client";
 
-import React, { useEffect, useState, useMemo, useCallback } from "react";
+import React, { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/utils/supabase/client";
-// Removed server-side cache import for client component
 import Image from "next/image";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Gamepad2,
   Clock,
@@ -15,6 +14,12 @@ import {
   MoreVertical,
   Pencil,
   Trash2,
+  Search,
+  Filter,
+  X,
+  RefreshCw,
+  SortAsc,
+  SortDesc,
 } from "lucide-react";
 import { useSettingsStore } from "@/stores/useSettingsStore";
 import { getCoverImageUrl } from "@/utils/image-utils";
@@ -27,6 +32,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 
 // Import proper types from the types file
 import type { GameStatus } from "@/types";
@@ -68,6 +75,223 @@ interface GamesTabProps {
     genre?: string;
   };
 }
+
+// Enhanced Search and Filter Component
+const GamesSearchAndFilter = React.memo(({
+  searchQuery,
+  onSearchChange,
+  activeFilters,
+  onFilterChange,
+  gameStats,
+  isRefreshing,
+  onRefresh,
+}: {
+  searchQuery: string;
+  onSearchChange: (query: string) => void;
+  activeFilters: { status: string; sortBy: string; sortOrder: string };
+  onFilterChange: (filters: { status?: string; sortBy?: string; sortOrder?: string }) => void;
+  gameStats: { total: number; playing: number; completed: number; wantToPlay: number; dropped: number };
+  isRefreshing: boolean;
+  onRefresh: () => void;
+}) => {
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+
+  const statusOptions = [
+    { value: "all", label: "All Games", count: gameStats.total },
+    { value: "playing", label: "Playing", count: gameStats.playing },
+    { value: "completed", label: "Completed", count: gameStats.completed },
+    { value: "want_to_play", label: "Want to Play", count: gameStats.wantToPlay },
+    { value: "dropped", label: "Dropped", count: gameStats.dropped },
+  ];
+
+  const sortOptions = [
+    { value: "recent", label: "Recently Added" },
+    { value: "name", label: "Name" },
+    { value: "playtime", label: "Play Time" },
+    { value: "rating", label: "Rating" },
+  ];
+
+  const activeFilterCount = useMemo(() => {
+    let count = 0;
+    if (activeFilters.status !== "all") count++;
+    if (activeFilters.sortBy !== "recent") count++;
+    if (searchQuery.trim()) count++;
+    return count;
+  }, [activeFilters, searchQuery]);
+
+  return (
+    <div className="space-y-4">
+      {/* Search Bar with Refresh */}
+      <div className="flex items-center gap-3">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+          <Input
+            placeholder="Search your games..."
+            value={searchQuery}
+            onChange={(e) => onSearchChange(e.target.value)}
+            className="pl-10 pr-10 bg-gray-800/50 border-gray-700/50 text-white placeholder:text-gray-400 focus:border-purple-500/50 focus:ring-purple-500/20"
+          />
+          {searchQuery && (
+            <button
+              onClick={() => onSearchChange("")}
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={onRefresh}
+          disabled={isRefreshing}
+          className="border-gray-700/50 hover:border-purple-500/50 hover:bg-purple-500/10"
+        >
+          <RefreshCw className={`w-4 h-4 ${isRefreshing ? "animate-spin" : ""}`} />
+        </Button>
+        <Button
+          variant="outline"
+          onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+          className="border-gray-700/50 hover:border-purple-500/50 hover:bg-purple-500/10 relative"
+        >
+          <Filter className="w-4 h-4 mr-2" />
+          Filters
+          {activeFilterCount > 0 && (
+            <Badge variant="destructive" className="absolute -top-2 -right-2 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs">
+              {activeFilterCount}
+            </Badge>
+          )}
+        </Button>
+      </div>
+
+      {/* Quick Status Filters */}
+      <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-2">
+        {statusOptions.map((status) => (
+          <Button
+            key={status.value}
+            variant={activeFilters.status === status.value ? "default" : "outline"}
+            size="sm"
+            onClick={() => onFilterChange({ status: status.value })}
+            className={`whitespace-nowrap ${
+              activeFilters.status === status.value
+                ? "bg-purple-500 hover:bg-purple-600 border-purple-500"
+                : "border-gray-700/50 hover:border-purple-500/50 hover:bg-purple-500/10"
+            }`}
+          >
+            {status.label}
+            <Badge variant="secondary" className="ml-2 text-xs">
+              {status.count}
+            </Badge>
+          </Button>
+        ))}
+      </div>
+
+      {/* Advanced Filters Panel */}
+      <AnimatePresence>
+        {showAdvancedFilters && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            className="overflow-hidden"
+          >
+            <div className="bg-gray-800/30 rounded-lg p-4 border border-gray-700/30">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Sort By
+                  </label>
+                  <div className="flex gap-2">
+                    <select
+                      value={activeFilters.sortBy}
+                      onChange={(e) => onFilterChange({ sortBy: e.target.value })}
+                      className="flex-1 bg-gray-700/50 border border-gray-600/50 rounded-md px-3 py-2 text-white text-sm focus:border-purple-500/50 focus:ring-purple-500/20"
+                    >
+                      {sortOptions.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() =>
+                        onFilterChange({
+                          sortOrder: activeFilters.sortOrder === "asc" ? "desc" : "asc",
+                        })
+                      }
+                      className="border-gray-700/50 hover:border-purple-500/50"
+                    >
+                      {activeFilters.sortOrder === "asc" ? (
+                        <SortAsc className="w-4 h-4" />
+                      ) : (
+                        <SortDesc className="w-4 h-4" />
+                      )}
+                    </Button>
+                  </div>
+                </div>
+                <div className="flex items-end">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      onSearchChange("");
+                      onFilterChange({ status: "all", sortBy: "recent", sortOrder: "desc" });
+                    }}
+                    className="w-full border-gray-700/50 hover:border-red-500/50 hover:bg-red-500/10 hover:text-red-400"
+                  >
+                    Clear All Filters
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Active Filters Pills */}
+      {(activeFilterCount > 0 || searchQuery) && (
+        <div className="flex flex-wrap gap-2">
+          {searchQuery && (
+            <Badge variant="secondary" className="bg-purple-500/20 text-purple-300 border border-purple-500/30">
+              Search: "{searchQuery}"
+              <button
+                onClick={() => onSearchChange("")}
+                className="ml-1 hover:text-purple-200"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </Badge>
+          )}
+          {activeFilters.status !== "all" && (
+            <Badge variant="secondary" className="bg-blue-500/20 text-blue-300 border border-blue-500/30">
+              Status: {statusOptions.find(s => s.value === activeFilters.status)?.label}
+              <button
+                onClick={() => onFilterChange({ status: "all" })}
+                className="ml-1 hover:text-blue-200"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </Badge>
+          )}
+          {activeFilters.sortBy !== "recent" && (
+            <Badge variant="secondary" className="bg-green-500/20 text-green-300 border border-green-500/30">
+              Sort: {sortOptions.find(s => s.value === activeFilters.sortBy)?.label} ({activeFilters.sortOrder})
+              <button
+                onClick={() => onFilterChange({ sortBy: "recent", sortOrder: "desc" })}
+                className="ml-1 hover:text-green-200"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </Badge>
+          )}
+        </div>
+      )}
+    </div>
+  );
+});
+
+GamesSearchAndFilter.displayName = 'GamesSearchAndFilter';
 
 // List View Component
 const GameListItem = React.memo(({
@@ -388,6 +612,22 @@ export default function GamesTab({ filters }: GamesTabProps) {
   const { libraryView } = useSettingsStore();
   const queryClient = useQueryClient();
   
+  // Local state for search and filters
+  const [searchQuery, setSearchQuery] = useState("");
+  const [localFilters, setLocalFilters] = useState({
+    status: filters.status || "all",
+    sortBy: filters.sortBy || "recent",
+    sortOrder: filters.sortOrder || "desc",
+  });
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  
+  // Pull-to-refresh state
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [pullProgress, setPullProgress] = useState(0);
+  const [isPulling, setIsPulling] = useState(false);
+  const [pullStartY, setPullStartY] = useState(0);
+  const pullThreshold = 100;
+  
   // Create the status change handler with proper dependencies
   const handleStatusChange = useMemo(
     () => createHandleStatusChange(queryClient, userId),
@@ -403,6 +643,64 @@ export default function GamesTab({ filters }: GamesTabProps) {
     };
     checkSession();
   }, [supabase]);
+
+  // Handle manual refresh
+  const handleRefresh = useCallback(async () => {
+    if (!userId || isRefreshing) return;
+    
+    setIsRefreshing(true);
+    try {
+      await queryClient.invalidateQueries({
+        queryKey: ["userGames", userId, "v3"],
+      });
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [userId, isRefreshing, queryClient]);
+
+  // Pull-to-refresh handlers
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    if (containerRef.current?.scrollTop === 0) {
+      setPullStartY(e.touches[0].clientY);
+      setIsPulling(true);
+    }
+  }, []);
+
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    if (!isPulling || !containerRef.current) return;
+
+    const currentY = e.touches[0].clientY;
+    const pullDistance = Math.max(0, currentY - pullStartY);
+    const progress = Math.min(pullDistance / pullThreshold, 1);
+
+    setPullProgress(progress);
+
+    if (pullDistance > 20) {
+      e.preventDefault();
+    }
+  }, [isPulling, pullStartY, pullThreshold]);
+
+  const handleTouchEnd = useCallback(() => {
+    if (!isPulling) return;
+
+    setIsPulling(false);
+    
+    if (pullProgress >= 1) {
+      handleRefresh();
+    }
+    
+    setPullProgress(0);
+    setPullStartY(0);
+  }, [isPulling, pullProgress, handleRefresh]);
+
+  // Filter change handlers
+  const handleFilterChange = useCallback((newFilters: Partial<typeof localFilters>) => {
+    setLocalFilters(prev => ({ ...prev, ...newFilters }));
+  }, []);
+
+  const handleSearchChange = useCallback((query: string) => {
+    setSearchQuery(query);
+  }, []);
 
   // Subscribe to realtime changes with optimized filtering and debouncing
   useEffect(() => {
@@ -540,63 +838,69 @@ export default function GamesTab({ filters }: GamesTabProps) {
     let filtered = [...games];
 
     // Apply status filter
-    if (filters.status !== "all") {
-      filtered = filtered.filter((game) => game.status === filters.status);
+    if (localFilters.status !== "all") {
+      filtered = filtered.filter((game) => game.status === localFilters.status);
     }
 
     // Apply search filter
-    if (filters.search && filters.search.trim()) {
-      const searchTerm = filters.search.toLowerCase().trim();
+    if (searchQuery && searchQuery.trim()) {
+      const searchTerm = searchQuery.toLowerCase().trim();
       filtered = filtered.filter((game) => 
         game.games?.name?.toLowerCase().includes(searchTerm)
       );
     }
 
-    // Apply platform filter - type-safe access to extended data
-    if (filters.platform && filters.platform !== "all") {
-      filtered = filtered.filter(() => {
-        // Since platforms aren't in our current database schema, skip platform filtering for now
-        // This would require extending the games table or fetching from IGDB
-        return true;
-      });
-    }
-
-    // Apply genre filter - type-safe access to extended data  
-    if (filters.genre && filters.genre !== "all") {
-      filtered = filtered.filter(() => {
-        // Since genres aren't in our current database schema, skip genre filtering for now
-        // This would require extending the games table or fetching from IGDB
-        return true;
-      });
-    }
-
     // Apply sorting
     filtered.sort((a, b) => {
-      switch (filters.sortBy) {
+      switch (localFilters.sortBy) {
         case "name":
           const nameA = a.games?.name || "";
           const nameB = b.games?.name || "";
-          return filters.sortOrder === "asc"
+          return localFilters.sortOrder === "asc"
             ? nameA.localeCompare(nameB)
             : nameB.localeCompare(nameA);
         case "playtime":
           const timeA = a.playTime || 0;
           const timeB = b.playTime || 0;
-          return filters.sortOrder === "asc" ? timeA - timeB : timeB - timeA;
+          return localFilters.sortOrder === "asc" ? timeA - timeB : timeB - timeA;
         case "rating":
           const ratingA = a.userRating || 0;
           const ratingB = b.userRating || 0;
-          return filters.sortOrder === "asc" ? ratingA - ratingB : ratingB - ratingA;
+          return localFilters.sortOrder === "asc" ? ratingA - ratingB : ratingB - ratingA;
         case "recent":
         default:
           const dateA = new Date(a.created_at).getTime();
           const dateB = new Date(b.created_at).getTime();
-          return filters.sortOrder === "asc" ? dateA - dateB : dateB - dateA;
+          return localFilters.sortOrder === "asc" ? dateA - dateB : dateB - dateA;
       }
     });
 
     return filtered;
-  }, [games, filters]);
+  }, [games, localFilters, searchQuery]);
+
+  // Calculate game stats for the filter component
+  const gameStats = useMemo(() => {
+    if (!games?.length) return { total: 0, playing: 0, completed: 0, wantToPlay: 0, dropped: 0 };
+    
+    return games.reduce((stats, game) => {
+      stats.total++;
+      switch (game.status) {
+        case "playing":
+          stats.playing++;
+          break;
+        case "completed":
+          stats.completed++;
+          break;
+        case "want_to_play":
+          stats.wantToPlay++;
+          break;
+        case "dropped":
+          stats.dropped++;
+          break;
+      }
+      return stats;
+    }, { total: 0, playing: 0, completed: 0, wantToPlay: 0, dropped: 0 });
+  }, [games]);
 
   const renderGameItem = useCallback((game: GameWithUserData) => {
     if (libraryView === "list") {
@@ -621,17 +925,94 @@ export default function GamesTab({ filters }: GamesTabProps) {
 
   if (isLoading) return <LoadingState />;
   if (!userId) return <EmptyState router={router} />;
-  if (!games?.length) return <EmptyState router={router} />;
 
   return (
-    <div
-      className={
-        libraryView === "grid"
-          ? "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-2 sm:gap-3 md:gap-4"
-          : "space-y-2 sm:space-y-3"
-      }
-    >
-      {sortedGames.map(renderGameItem)}
+    <div className="space-y-6">
+      {/* Enhanced Search and Filter Section */}
+      <GamesSearchAndFilter
+        searchQuery={searchQuery}
+        onSearchChange={handleSearchChange}
+        activeFilters={localFilters}
+        onFilterChange={handleFilterChange}
+        gameStats={gameStats}
+        isRefreshing={isRefreshing}
+        onRefresh={handleRefresh}
+      />
+
+      {/* Pull-to-Refresh Indicator */}
+      <AnimatePresence>
+        {pullProgress > 0 && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.8 }}
+            className="flex justify-center py-4"
+          >
+            <div className="flex items-center gap-2 text-purple-400">
+              <RefreshCw 
+                className={`w-5 h-5 transition-transform duration-200 ${
+                  pullProgress >= 1 ? 'animate-spin' : ''
+                }`}
+                style={{ transform: `rotate(${pullProgress * 360}deg)` }}
+              />
+              <span className="text-sm font-medium">
+                {pullProgress >= 1 ? 'Release to refresh' : 'Pull to refresh'}
+              </span>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Games Content */}
+      <div
+        ref={containerRef}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        className="relative"
+      >
+        {!games?.length ? (
+          <EmptyState router={router} />
+        ) : !sortedGames.length ? (
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex flex-col items-center justify-center p-16 text-center bg-gradient-to-br from-gray-900/60 to-gray-800/40 rounded-2xl border border-gray-700/30 backdrop-blur-sm"
+          >
+            <div className="relative mb-8">
+              <div className="absolute inset-0 bg-orange-500/20 rounded-full blur-xl"></div>
+              <div className="relative w-24 h-24 rounded-full bg-gradient-to-br from-orange-500/30 to-yellow-500/30 border border-orange-500/30 flex items-center justify-center">
+                <Search className="w-12 h-12 text-orange-400" />
+              </div>
+            </div>
+            <h2 className="text-3xl font-bold mb-4 text-white">No Games Found</h2>
+            <p className="text-gray-400 mb-8 max-w-md leading-relaxed">
+              Your search didn't match any games in your library. Try adjusting your filters or search terms.
+            </p>
+            <Button
+              onClick={() => {
+                setSearchQuery("");
+                setLocalFilters({ status: "all", sortBy: "recent", sortOrder: "desc" });
+              }}
+              className="bg-gradient-to-r from-orange-500 to-yellow-500 hover:from-orange-600 hover:to-yellow-600 text-white transition-all duration-300 hover:scale-105 shadow-lg"
+            >
+              Clear Filters
+            </Button>
+          </motion.div>
+        ) : (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className={
+              libraryView === "grid"
+                ? "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-2 sm:gap-3 md:gap-4"
+                : "space-y-2 sm:space-y-3"
+            }
+          >
+            {sortedGames.map(renderGameItem)}
+          </motion.div>
+        )}
+      </div>
     </div>
   );
 }
