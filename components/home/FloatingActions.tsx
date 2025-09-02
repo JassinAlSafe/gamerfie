@@ -50,7 +50,7 @@ export const FloatingActions = memo(function FloatingActions({
     },
     {
       icon: Users,
-      label: "Find Friends",
+      label: "Social Hub",
       href: "/friends",
       color: "from-green-500 to-green-600",
       hoverColor: "hover:from-green-600 hover:to-green-700"

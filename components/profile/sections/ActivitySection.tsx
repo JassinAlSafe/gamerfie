@@ -186,7 +186,7 @@ export const ActivitySection = memo<ActivitySectionProps>(({ activities, isLoadi
               <Link href="/friends">
                 <div className="inline-flex items-center text-xs text-green-400 hover:text-green-300 cursor-pointer transition-colors">
                   <Users className="h-3 w-3 mr-1" />
-                  Find friends
+                  Go to Social Hub
                 </div>
               </Link>
             </div>

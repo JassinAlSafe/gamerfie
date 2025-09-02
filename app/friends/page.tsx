@@ -1,24 +1,52 @@
+"use client";
+
+import { useState, useCallback } from "react";
 import { Metadata } from "next";
-import { FriendsContent } from "@/components/friends/FriendsContent";
+import { SocialHub } from "@/components/friends/SocialHub";
 import { FriendsErrorBoundary } from "@/components/friends/FriendsErrorBoundary";
+import { ProfileCardModal } from "@/components/profile/ProfileCardModal";
+import { useProfile } from "@/hooks/Profile/use-profile";
+import { useFriendsHandlers } from "@/hooks/friends-page-handlers";
 
-export const metadata: Metadata = {
-  title: "Friends | Gamerfie",
-  description: "Connect with fellow gamers and build your gaming community",
-};
-
+// Note: metadata export moved to separate file due to "use client"
 export default function FriendsPage() {
+  const [profileModalOpen, setProfileModalOpen] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+
+  // Profile data hook for current user
+  const { profile } = useProfile();
+
+  // Friend action handlers
+  const { handleFollowUser, handleUnfollowUser, handleMessageUser, handleShareProfile } = useFriendsHandlers({
+    currentUserId: profile?.id
+  });
+
+  // Profile modal handlers
+  const handleOpenProfile = useCallback((userId: string) => {
+    setSelectedUserId(userId);
+    setProfileModalOpen(true);
+  }, []);
+
+  const handleCloseProfile = useCallback(() => {
+    setProfileModalOpen(false);
+    setSelectedUserId(null);
+  }, []);
+
   return (
     <FriendsErrorBoundary>
-      <div className="relative min-h-screen">
-        {/* Background gradient */}
-        <div className="absolute inset-0 bg-gradient-to-b from-purple-900/20 via-background to-background pointer-events-none" />
-        
-        {/* Main content */}
-        <div className="relative">
-          <FriendsContent />
-        </div>
-      </div>
+      <SocialHub onOpenProfile={handleOpenProfile} />
+      
+      {/* Profile Card Modal */}
+      <ProfileCardModal
+        isOpen={profileModalOpen}
+        userId={selectedUserId || ""}
+        onClose={handleCloseProfile}
+        onFollow={handleFollowUser}
+        onUnfollow={handleUnfollowUser}
+        onMessage={handleMessageUser}
+        onShare={handleShareProfile}
+        currentUserId={profile?.id}
+      />
     </FriendsErrorBoundary>
   );
 }
