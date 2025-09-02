@@ -1,18 +1,28 @@
 "use client";
 
+import { useState, useCallback } from "react";
 import { LoadingState } from "@/components/ui/loading-state";
 import { ErrorState } from "@/components/ui/error-state";
 import { ProfileHeader } from "@/components/profile/profile-header";
 import { ProfileNav } from "@/components/profile/profile-nav";
+import { ProfileCardModal } from "@/components/profile/ProfileCardModal";
 import { useProfile } from "@/hooks/Profile/use-profile";
 import { useFriendsPage } from "@/hooks/Profile/use-friends-page";
+import { useFriendsHandlers } from "@/hooks/friends-page-handlers";
+import { useFriendRequests } from "@/hooks/use-friend-requests";
 import { FriendsSearchAndFilter } from "@/components/friends/FriendsSearchAndFilter";
 import { FriendsList } from "@/components/friends/FriendsList";
+import { FriendRequestsSections } from "@/components/friends/FriendRequestsSections";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Users } from "lucide-react";
 
 export default function ProfileFriendsPage() {
+  
+  // Profile modal state
+  const [profileModalOpen, setProfileModalOpen] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+
   // Profile data hook
   const {
     profile,
@@ -42,6 +52,33 @@ export default function ProfileFriendsPage() {
     acceptFriendRequest,
     clearFilters,
   } = useFriendsPage();
+
+  // Friend requests hook
+  const {
+    sentRequests,
+    receivedRequests,
+    isLoading: requestsLoading,
+    fetchFriendRequests,
+    cancelSentRequest,
+    acceptReceivedRequest,
+    declineReceivedRequest,
+  } = useFriendRequests(profile?.id);
+
+  // New working handlers (replaces the old TODO functions)
+  const { handleFollowUser, handleUnfollowUser, handleMessageUser, handleShareProfile } = useFriendsHandlers({
+    currentUserId: profile?.id
+  });
+
+  // Profile modal handlers
+  const handleOpenProfile = useCallback((userId: string) => {
+    setSelectedUserId(userId);
+    setProfileModalOpen(true);
+  }, []);
+
+  const handleCloseProfile = useCallback(() => {
+    setProfileModalOpen(false);
+    setSelectedUserId(null);
+  }, []);
 
   // Loading state
   if (profileLoading || isSessionLoading) {
@@ -138,11 +175,13 @@ export default function ProfileFriendsPage() {
                 searchQuery={searchQuery}
                 friendsFilter={friendsFilter}
                 onClearFilters={clearFilters}
+                onProfileClick={handleOpenProfile}
               />
             </div>
 
-            {/* Right Column - Sidebar */}
+            {/* Right Column - Sidebar (Your Favorite Quick Actions + Friend Requests!) */}
             <div className="space-y-4 sm:space-y-6">
+              {/* Quick Actions Card */}
               <Card
                 className="glass-effect border-gray-700/30 bg-gray-900/20 backdrop-blur-xl hover:border-gray-600/40 transition-all duration-300 group animate-fade-in-up"
                 style={{ animationDelay: "0.3s" }}
@@ -174,6 +213,7 @@ export default function ProfileFriendsPage() {
                         Share your gaming journey with friends
                       </p>
                       <Button
+                        onClick={() => handleOpenProfile(profile.id)}
                         variant="outline"
                         size="sm"
                         className="border-purple-500/30 text-purple-400 hover:bg-purple-500/10"
@@ -184,10 +224,39 @@ export default function ProfileFriendsPage() {
                   </div>
                 </CardContent>
               </Card>
+
+              {/* Friend Requests Section */}
+              <div
+                className="animate-fade-in-up"
+                style={{ animationDelay: "0.5s" }}
+              >
+                <FriendRequestsSections
+                  sentRequests={sentRequests}
+                  receivedRequests={receivedRequests}
+                  isLoading={requestsLoading}
+                  onRefresh={fetchFriendRequests}
+                  onAcceptRequest={acceptReceivedRequest}
+                  onDeclineRequest={declineReceivedRequest}
+                  onCancelRequest={cancelSentRequest}
+                  onMessage={handleMessageUser}
+                />
+              </div>
             </div>
           </div>
         </div>
       </div>
+
+      {/* Profile Card Modal */}
+      <ProfileCardModal
+        isOpen={profileModalOpen}
+        userId={selectedUserId || ""}
+        onClose={handleCloseProfile}
+        onFollow={handleFollowUser}
+        onUnfollow={handleUnfollowUser}
+        onMessage={handleMessageUser}
+        onShare={handleShareProfile}
+        currentUserId={profile?.id}
+      />
     </div>
   );
 }

@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
-import { Star, Search, Filter, TrendingUp, BookOpen } from "lucide-react";
+import { Star, Search, Filter, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -19,6 +19,8 @@ import { ReviewCard } from "@/components/reviews/ReviewCard";
 import { ReviewSkeletons } from "@/components/reviews/ReviewCard/ReviewCardSkeleton";
 import { useValidatedGameDetails } from "@/hooks/useUnifiedGameDetails";
 import { createClient } from "@/utils/supabase/client";
+import { ImprovedEmptyState } from "./ImprovedEmptyState";
+import { ReviewStatsCard } from "./ReviewStatsCard";
 
 export function ProfileReviewsClient() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -162,45 +164,66 @@ export function ProfileReviewsClient() {
 
   return (
     <div className="space-y-8">
-      {/* Header with stats */}
-      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
-        <div>
-          <h1 className="text-3xl font-bold text-white mb-2">My Reviews</h1>
-          <div className="flex items-center gap-6 text-sm text-gray-400">
-            <div className="flex items-center gap-2">
-              <BookOpen className="w-4 h-4" />
-              <span>{stats.totalReviews} reviews</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Star className="w-4 h-4" />
-              <span>{stats.averageRating} avg rating</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <TrendingUp className="w-4 h-4" />
-              <span>{stats.highRatedCount} highly rated</span>
-            </div>
-          </div>
-        </div>
+      {/* Page Title and Stats */}
+      <div className="flex items-center justify-between mb-8">
+        <h1 className="text-3xl font-bold text-white">
+          My Reviews
+          <span className="ml-3 text-lg font-normal text-gray-400">
+            {stats.totalReviews === 0 
+              ? "Share your gaming experiences with the community"
+              : `Managing your ${stats.totalReviews} review${stats.totalReviews !== 1 ? 's' : ''}`
+            }
+          </span>
+        </h1>
       </div>
 
-      {/* Filters */}
-      <div className="bg-gray-800/30 rounded-lg p-6 border border-gray-700/50">
+      {/* Enhanced Stats Component */}
+      <div className="mb-8">
+        <ReviewStatsCard 
+          totalReviews={stats.totalReviews}
+          averageRating={stats.averageRating}
+          highRatedCount={stats.highRatedCount}
+          helpfulVotes={0} // TODO: Implement helpful votes system
+          reviewStreak={0} // TODO: Implement review streak tracking
+        />
+      </div>
+
+      {/* Main Content */}
+      <div className="space-y-8">
+        {/* Filters */}
+        <section 
+          className="bg-gray-800/30 rounded-lg p-6 border border-gray-700/50" 
+          aria-labelledby="filters-section"
+          role="search"
+        >
+          <h2 id="filters-section" className="sr-only">Filter and Search Reviews</h2>
         <div className="flex flex-col lg:flex-row gap-4">
           {/* Search */}
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+            <label htmlFor="review-search" className="sr-only">
+              Search your reviews by game name or review text
+            </label>
+            <Search 
+              className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" 
+              aria-hidden="true"
+            />
             <Input
+              id="review-search"
               placeholder="Search your reviews..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 bg-gray-800/50 border-gray-700/50 text-white placeholder:text-gray-400"
+              className="pl-10 bg-gray-800/50 border-gray-700/50 text-white placeholder:text-gray-400 min-h-[44px]"
+              aria-describedby="search-help"
             />
+            <div id="search-help" className="sr-only">
+              Search through your review text and game names
+            </div>
           </div>
 
           {/* Sort and Filter */}
           <div className="flex gap-4">
-            <Select value={sortBy} onValueChange={setSortBy}>
-              <SelectTrigger className="w-[180px] bg-gray-800/50 border-gray-700/50">
+            <Select value={sortBy} onValueChange={setSortBy} aria-label="Sort reviews by">
+              <SelectTrigger className="w-[180px] bg-gray-800/50 border-gray-700/50 min-h-[44px]">
                 <SelectValue placeholder="Sort by" />
               </SelectTrigger>
               <SelectContent>
@@ -212,9 +235,9 @@ export function ProfileReviewsClient() {
               </SelectContent>
             </Select>
 
-            <Select value={filterRating} onValueChange={setFilterRating}>
-              <SelectTrigger className="w-[140px] bg-gray-800/50 border-gray-700/50">
-                <Star className="w-4 h-4 mr-2" />
+            <Select value={filterRating} onValueChange={setFilterRating} aria-label="Filter by rating">
+              <SelectTrigger className="w-[140px] bg-gray-800/50 border-gray-700/50 min-h-[44px]">
+                <Star className="w-4 h-4 mr-2" aria-hidden="true" />
                 <SelectValue placeholder="Rating" />
               </SelectTrigger>
               <SelectContent>
@@ -231,7 +254,8 @@ export function ProfileReviewsClient() {
               <Button
                 variant="outline"
                 onClick={clearAllFilters}
-                className="border-gray-700/50 hover:bg-gray-800/50"
+                className="border-gray-700/50 hover:bg-gray-800/50 min-h-[44px]"
+                aria-label={`Clear ${activeFiltersCount} active filters`}
               >
                 Clear ({activeFiltersCount})
               </Button>
@@ -276,41 +300,57 @@ export function ProfileReviewsClient() {
             )}
           </div>
         )}
-      </div>
+      </section>
 
       {/* Results */}
-      <div className="text-gray-400 text-sm">
+      <div 
+        className="text-gray-400 text-sm"
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+      >
         Showing {filteredReviews.length} of {reviews.length} reviews
       </div>
 
       {/* Reviews List */}
-      {filteredReviews.length === 0 ? (
-        <div className="text-center py-24">
-          <div className="relative inline-block mb-8">
-            <div className="absolute inset-0 bg-purple-500/20 rounded-full blur-xl"></div>
-            <div className="relative bg-gray-900/80 backdrop-blur-sm rounded-full p-8 border border-purple-500/20">
-              <BookOpen className="w-16 h-16 text-purple-400" />
+      <section aria-labelledby="reviews-list-title">
+        <h2 id="reviews-list-title" className="sr-only">Your Reviews</h2>
+        {filteredReviews.length === 0 ? (
+        activeFiltersCount > 0 ? (
+          /* Filtered empty state */
+          <div className="text-center py-24">
+            <div className="relative inline-block mb-8">
+              <div className="absolute inset-0 bg-purple-500/20 rounded-full blur-xl"></div>
+              <div className="relative bg-gray-900/80 backdrop-blur-sm rounded-full p-8 border border-purple-500/20">
+                <BookOpen className="w-16 h-16 text-purple-400" />
+              </div>
             </div>
-          </div>
-          <h3 className="text-2xl font-bold text-white mb-4">
-            {activeFiltersCount > 0 ? "No reviews found" : "No reviews yet"}
-          </h3>
-          <p className="text-gray-400 mb-8 max-w-md mx-auto">
-            {activeFiltersCount > 0
-              ? "Try adjusting your filters to see more results."
-              : "Start writing reviews for games you've played to build your collection."}
-          </p>
-          {activeFiltersCount > 0 && (
+            <h3 className="text-2xl font-bold text-white mb-4">No reviews found</h3>
+            <p className="text-gray-400 mb-8 max-w-md mx-auto">
+              Try adjusting your filters to see more results.
+            </p>
             <Button
               onClick={clearAllFilters}
               className="bg-purple-600 hover:bg-purple-700"
             >
               Clear All Filters
             </Button>
-          )}
-        </div>
+          </div>
+        ) : (
+          /* Improved empty state for no reviews */
+          <ImprovedEmptyState 
+            userHasGames={false} // TODO: Integrate with actual user game data
+            completedGamesCount={0}
+            recentCompletedGames={[]}
+            className="py-8"
+          />
+        )
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 items-start">
+        <div 
+          className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 items-start"
+          role="list"
+          aria-label="Your reviews"
+        >
           {filteredReviews.map((review, index) => (
             <motion.div
               key={review.id}
@@ -318,6 +358,7 @@ export function ProfileReviewsClient() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.02 }}
               className="w-full"
+              role="listitem"
             >
               <ReviewCard
                 review={review}
@@ -328,6 +369,8 @@ export function ProfileReviewsClient() {
           ))}
         </div>
       )}
+      </section>
+      </div>
     </div>
   );
 }

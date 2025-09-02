@@ -47,6 +47,7 @@ export interface FriendsListProps {
   searchQuery: string;
   friendsFilter: string;
   onClearFilters: () => void;
+  onProfileClick?: (userId: string) => void;
 }
 
 export interface UserSearchDropdownProps {

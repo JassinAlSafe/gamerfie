@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React, { useMemo, useCallback } from "react";
 import { format } from "date-fns";
 import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -17,13 +17,15 @@ interface ActivityCardProps {
   onAddReaction?: (activityId: string, emoji: string) => void;
   onAddComment?: (activityId: string, content: string) => void;
   onDeleteComment?: (commentId: string) => void;
+  onProfileClick?: (userId: string) => void;
 }
 
 export const ActivityCard = React.memo<ActivityCardProps>(({ 
   activity, 
   onAddReaction, 
   onAddComment, 
-  onDeleteComment 
+  onDeleteComment,
+  onProfileClick 
 }) => {
   const { username, avatarUrl, userInitial, formattedDate } = useMemo(() => {
     const name = activity.user?.username || "Unknown User";
@@ -40,6 +42,13 @@ export const ActivityCard = React.memo<ActivityCardProps>(({
       formattedDate: date
     };
   }, [activity.user?.username, activity.user?.avatar_url, activity.created_at]);
+
+  const handleProfileClick = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    if (onProfileClick && activity.user?.id) {
+      onProfileClick(activity.user.id);
+    }
+  }, [onProfileClick, activity.user?.id]);
 
   const renderAchievementDetails = () => {
     if (activity.type === "achievement") {
@@ -78,24 +87,26 @@ export const ActivityCard = React.memo<ActivityCardProps>(({
       <div className="p-4 sm:p-5">
         <div className="flex items-start gap-3 sm:gap-4">
           <div className="flex-shrink-0">
-            <Avatar className="w-10 h-10 sm:w-11 sm:h-11 border-2 border-gray-600/50 hover:border-purple-500/40 transition-colors duration-200">
-              <AvatarImage src={avatarUrl || undefined} />
-              <AvatarFallback className="bg-gradient-to-br from-purple-500/20 to-blue-500/20 text-sm font-semibold text-white">
-                {userInitial}
-              </AvatarFallback>
-            </Avatar>
+            <button onClick={handleProfileClick} className="focus:outline-none focus:ring-2 focus:ring-purple-500/50 rounded-full">
+              <Avatar className="w-10 h-10 sm:w-11 sm:h-11 border-2 border-gray-600/50 hover:border-purple-500/40 transition-colors duration-200 cursor-pointer">
+                <AvatarImage src={avatarUrl || undefined} />
+                <AvatarFallback className="bg-gradient-to-br from-purple-500/20 to-blue-500/20 text-sm font-semibold text-white">
+                  {userInitial}
+                </AvatarFallback>
+              </Avatar>
+            </button>
           </div>
 
           <div className="flex-1 min-w-0">
             {/* Mobile-first responsive activity description */}
             <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 mb-2">
               <div className="flex items-center gap-2 flex-wrap">
-                <Link
-                  href={`/profile/${activity.user?.id || "#"}`}
-                  className="font-medium text-white hover:text-purple-300 transition-colors duration-200 hover:underline text-sm sm:text-base"
+                <button
+                  onClick={handleProfileClick}
+                  className="font-medium text-white hover:text-purple-300 transition-colors duration-200 hover:underline text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-purple-500/50 rounded px-1"
                 >
                   {username}
-                </Link>
+                </button>
                 <div className="flex items-center gap-1.5">
                   {activityIcons[activity.type]}
                   <span className="text-gray-400 text-sm">

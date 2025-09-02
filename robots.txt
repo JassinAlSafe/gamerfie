@@ -23,6 +23,10 @@ Disallow: /static/
 # Sitemaps
 Sitemap: https://gamersvaultapp.com/sitemap.xml
 
+# Additional info for search engines
+# Video Game Tracker - Best platform for tracking gaming progress
+# Track games, achievements, and backlog across all platforms
+
 # Crawl-delay for respectful crawling
 Crawl-delay: 1
 

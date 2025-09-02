@@ -1,7 +1,6 @@
 "use client";
 
-import React from "react";
-import Link from "next/link";
+import React, { useCallback } from "react";
 import { motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -14,13 +13,20 @@ import type {
   OnlineStatus 
 } from "@/types/friends-system.types";
 
-export const FriendsList: React.FC<FriendsListProps> = ({
+export const FriendsList: React.FC<FriendsListProps> = React.memo(({
   friends,
   filteredFriends,
   searchQuery,
   friendsFilter,
   onClearFilters,
+  onProfileClick,
 }) => {
+  // Optimized click handler - created once and reused
+  const handleFriendClick = useCallback((friendId: string) => {
+    if (onProfileClick) {
+      onProfileClick(friendId);
+    }
+  }, [onProfileClick]);
   // Empty friends state
   if (friends.length === 0) {
     return (
@@ -149,6 +155,7 @@ export const FriendsList: React.FC<FriendsListProps> = ({
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {filteredFriends.map((friend, index) => {
             const onlineStatus: OnlineStatus = friend.online_status || "offline";
+            
             return (
               <motion.div
                 key={friend.id}
@@ -156,9 +163,9 @@ export const FriendsList: React.FC<FriendsListProps> = ({
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.1 }}
               >
-                <Link
-                  href={`/profile/${friend.id}`}
-                  className="block group"
+                <button
+                  onClick={() => handleFriendClick(friend.id)}
+                  className="block w-full text-left group focus:outline-none focus:ring-2 focus:ring-purple-500/50 rounded-xl"
                 >
                   <Card className="p-5 bg-gray-900/50 border-gray-800 backdrop-blur-xl hover:bg-gray-800/70 hover:border-purple-500/30 transition-all duration-300 rounded-xl">
                     <div className="flex items-center gap-4">
@@ -203,7 +210,7 @@ export const FriendsList: React.FC<FriendsListProps> = ({
                       </div>
                     </div>
                   </Card>
-                </Link>
+                </button>
               </motion.div>
             );
           })}
@@ -211,4 +218,6 @@ export const FriendsList: React.FC<FriendsListProps> = ({
       </CardContent>
     </Card>
   );
-};
+});
+
+FriendsList.displayName = 'FriendsList';

@@ -7,8 +7,20 @@ export const metadata: Metadata = {
     process.env.NEXT_PUBLIC_API_BASE || 
     (process.env.NODE_ENV === "production" ? "https://gamersvaultapp.com" : "http://localhost:3000")
   ),
-  title: "Game Vault - Ultimate Video Game Tracking Platform",
-  description: "Track your video game progress, discover new games, and connect with gamers worldwide. The ultimate gaming community platform for achievement tracking, game reviews, and gaming statistics.",
+  title: "Best Video Game Tracker 2025 - Game Vault | Free Gaming App",
+  description: "The #1 rated video game tracker app. Track your gaming progress, achievements, and backlog across all platforms. Join 50,000+ gamers using the best free game tracker in 2025!",
+  keywords: ["best video game tracker", "video game tracker app", "free video game tracker 2025", "gaming progress tracker", "video game achievement tracker", "gaming backlog tracker", "track video games online", "game collection manager"],
+  openGraph: {
+    title: "Best Video Game Tracker 2025 - Game Vault",
+    description: "The #1 video game tracker app with 50k+ users. Track games, achievements & progress across all platforms. Free forever!",
+    type: "website",
+    siteName: "Game Vault"
+  },
+  twitter: {
+    title: "Best Video Game Tracker App - Game Vault",
+    description: "Track your gaming progress & achievements with the top-rated free video game tracker. Join 50k+ gamers!",
+    card: "summary_large_image"
+  }
 };
 
 
