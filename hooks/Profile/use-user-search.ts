@@ -1,8 +1,8 @@
 import { useState, useCallback } from 'react';
 import { createClient } from '@/utils/supabase/client';
-import type { Friend } from '@/types/friend';
+import type { Friend, UseUserSearchReturn } from '@/types/friends-system.types';
 
-export function useUserSearch() {
+export function useUserSearch(): UseUserSearchReturn {
   const [searchResults, setSearchResults] = useState<Friend[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);

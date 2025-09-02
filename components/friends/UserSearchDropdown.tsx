@@ -8,27 +8,13 @@ import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card } from "@/components/ui/card";
-import type { Friend, FriendStatus } from "@/types/friend";
+import type { 
+  UserSearchDropdownProps, 
+  SearchResultItemProps, 
+  Friend, 
+  FriendStatus 
+} from "@/types/friends-system.types";
 import toast from "react-hot-toast";
-
-interface UserSearchDropdownProps {
-  searchQuery: string;
-  onSearchChange: (query: string) => void;
-  searchResults: Friend[];
-  isSearching: boolean;
-  searchError: string | null;
-  onSendFriendRequest: (friendId: string, username: string) => Promise<void>;
-  onAcceptFriendRequest: (friendId: string) => Promise<void>;
-  currentUserId: string;
-  onClearSearch: () => void;
-}
-
-interface SearchResultItemProps {
-  user: Friend;
-  currentUserId: string;
-  onSendFriendRequest: (friendId: string, username: string) => Promise<void>;
-  onAcceptFriendRequest: (friendId: string) => Promise<void>;
-}
 
 // Helper function to determine friendship status
 function getFriendshipStatus(user: Friend, currentUserId: string): { status: FriendStatus; isSender: boolean } | null {

@@ -54,48 +54,41 @@ export default function ReviewsPageClient() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-950">
-      {/* Hero Section with Gradient */}
-      <div className="absolute inset-x-0 top-16 h-[300px] bg-gradient-to-b from-purple-900 via-indigo-900 to-gray-950" />
+    <div className="flex flex-col min-h-screen">
+      <div className="relative">
+        {/* Background Gradient */}
+        <div className="absolute inset-0 h-[300px] bg-gradient-to-b from-purple-900/50 via-gray-900/50 to-gray-950" />
 
-      {/* Main Content Container */}
-      <div className="relative flex flex-col flex-grow">
-        {/* Profile Header Section */}
-        <div className="pt-8">
+        {/* Profile Header */}
+        <div className="relative">
           <Toaster position="top-center" />
-          <div className="max-w-7xl mx-auto px-4">
-            <ProfileHeader
-              profile={profile}
-              stats={
-                (gameStats as any) ?? {
-                  total_played: 0,
-                  played_this_year: 0,
-                  backlog: 0,
-                  totalGames: 0,
-                  totalPlaytime: 0,
-                  recentlyPlayed: [],
-                  mostPlayed: [],
-                }
+          <ProfileHeader
+            profile={profile}
+            stats={
+              (gameStats as any) ?? {
+                total_played: 0,
+                played_this_year: 0,
+                backlog: 0,
+                totalGames: 0,
+                totalPlaytime: 0,
+                recentlyPlayed: [],
+                mostPlayed: [],
               }
-              onProfileUpdate={() => {}}
-            />
-          </div>
+            }
+            onProfileUpdate={() => {}}
+          />
         </div>
+      </div>
 
-        {/* Sticky Navigation */}
-        <div className="sticky top-16 z-40 bg-gray-950/80 backdrop-blur-md border-b border-white/5 mt-8">
-          <div className="max-w-7xl mx-auto px-4">
-            <ProfileNav />
-          </div>
-        </div>
+      {/* Profile Navigation */}
+      <div className="bg-gray-950/90 backdrop-blur-md border-b border-white/10">
+        <ProfileNav />
+      </div>
 
-        {/* Reviews Content */}
-        <div className="flex-grow">
-          <div className="max-w-7xl mx-auto px-4 py-8">
-            <div className="bg-gray-900/50 rounded-xl p-6 backdrop-blur-sm border border-white/5">
-              <ProfileReviewsClient />
-            </div>
-          </div>
+      {/* Reviews Content */}
+      <div className="flex-grow bg-gradient-to-b from-gray-950 to-gray-900">
+        <div className="max-w-7xl mx-auto px-4 py-12">
+          <ProfileReviewsClient />
         </div>
       </div>
     </div>

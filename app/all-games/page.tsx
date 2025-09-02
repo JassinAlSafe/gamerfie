@@ -4,42 +4,50 @@ import AllGamesClient from "@/components/allgames/all-games-client";
 import { Loader2 } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "All Games - Complete Video Game Database | Game Vault",
+  title: "Video Game Tracker - Browse & Track 50,000+ Games | Game Vault",
   description:
-    "Browse our complete collection of video games. Search, filter, and discover games by genre, platform, rating, and release year. The most comprehensive gaming database.",
+    "The ultimate video game tracker database with 50,000+ games. Track your gaming progress, achievements, and backlog across all platforms. Best free game tracker 2025!",
   keywords: [
-    "all games",
+    "video game tracker",
+    "best video game tracker",
+    "track video games",
+    "gaming progress tracker",
     "video game database",
-    "complete game list",
-    "browse games",
-    "game search",
-    "video game catalog",
-    "PC games",
-    "console games",
-    "mobile games",
-    "indie games",
-    "AAA games",
-    "game library",
-    "gaming collection",
-    "video game archive",
+    "game tracking app",
+    "all games tracker",
+    "gaming backlog tracker",
+    "video game collection manager",
+    "game completion tracker",
+    "achievement tracker",
+    "gaming library manager",
+    "track video game progress",
+    "video game tracking website",
+    "game tracker platform",
   ],
   openGraph: {
-    title: "All Games - Complete Video Game Database",
+    title: "Video Game Tracker - Track 50,000+ Games | Game Vault",
     description:
-      "Explore our comprehensive database of video games. Filter by platform, genre, and more to find your perfect game.",
+      "The best video game tracker with 50,000+ games. Track your gaming progress, achievements, and backlog across all platforms. Free forever!",
     type: "website",
-    url: "https://gamevault.app/all-games",
+    url: "https://gamersvaultapp.com/all-games",
     siteName: "Game Vault",
     locale: "en_US",
+    images: [{
+      url: "https://gamersvaultapp.com/og-all-games-tracker.png", 
+      width: 1200,
+      height: 630,
+      alt: "Game Vault - Best Video Game Tracker Database"
+    }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "All Games - Game Vault",
+    title: "Best Video Game Tracker - Track All Games",
     description:
-      "Browse our complete video game database with advanced search and filtering.",
+      "Track your gaming progress with 50,000+ games. The #1 free video game tracker platform.",
+    images: ["https://gamersvaultapp.com/twitter-all-games-tracker.png"],
   },
   alternates: {
-    canonical: "https://gamevault.app/all-games",
+    canonical: "https://gamersvaultapp.com/all-games",
   },
   robots: {
     index: true,

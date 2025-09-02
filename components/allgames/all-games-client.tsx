@@ -1,7 +1,9 @@
 "use client";
 
-import { useEffect, useCallback, useMemo } from "react";
+import { useEffect, useCallback, useMemo, useState, useRef } from "react";
 import { useInView } from "react-intersection-observer";
+import { motion, AnimatePresence } from "framer-motion";
+import { RefreshCw } from "lucide-react";
 import { useGamesInfinite } from "@/hooks/Games/useGames";
 import { GamesGrid } from "../games/sections/games-grid";
 import { GamesError } from "../games/GamesError";
@@ -22,7 +24,16 @@ export default function AllGamesClient() {
     hasNextPage,
     isFetchingNextPage,
     isError,
+    refetch,
   } = useGamesInfinite();
+
+  // Pull-to-refresh state
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [pullProgress, setPullProgress] = useState(0);
+  const [isPulling, setIsPulling] = useState(false);
+  const [pullStartY, setPullStartY] = useState(0);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const pullThreshold = 100;
 
   // Mobile-optimized intersection observer - load when user approaches the bottom
   const { ref: loadMoreRef, inView } = useInView(getMobileOptimizedIntersectionConfig());
@@ -38,6 +49,53 @@ export default function AllGamesClient() {
       fetchNextPage();
     }
   }, [hasNextPage, isFetchingNextPage, isLoading, fetchNextPage]);
+
+  // Handle manual refresh
+  const handleRefresh = useCallback(async () => {
+    if (isRefreshing) return;
+    
+    setIsRefreshing(true);
+    try {
+      await refetch();
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [isRefreshing, refetch]);
+
+  // Pull-to-refresh handlers
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    if (containerRef.current?.scrollTop === 0) {
+      setPullStartY(e.touches[0].clientY);
+      setIsPulling(true);
+    }
+  }, []);
+
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    if (!isPulling || !containerRef.current) return;
+
+    const currentY = e.touches[0].clientY;
+    const pullDistance = Math.max(0, currentY - pullStartY);
+    const progress = Math.min(pullDistance / pullThreshold, 1);
+
+    setPullProgress(progress);
+
+    if (pullDistance > 20) {
+      e.preventDefault();
+    }
+  }, [isPulling, pullStartY, pullThreshold]);
+
+  const handleTouchEnd = useCallback(() => {
+    if (!isPulling) return;
+
+    setIsPulling(false);
+    
+    if (pullProgress >= 1) {
+      handleRefresh();
+    }
+    
+    setPullProgress(0);
+    setPullStartY(0);
+  }, [isPulling, pullProgress, handleRefresh]);
 
   // Fetch metadata once on mount
   useEffect(() => {
@@ -67,8 +125,36 @@ export default function AllGamesClient() {
         <GamesHeader games={allGames} />
       </div>
 
-      {/* Main content - Direct content without wrapper */}
-      <div className="bg-gradient-to-b from-gray-900/50 via-gray-950 to-gray-950 min-h-screen">
+      {/* Pull-to-Refresh Indicator */}
+      <AnimatePresence>
+        {pullProgress > 0 && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.8 }}
+            className="fixed top-20 left-1/2 transform -translate-x-1/2 z-50 flex items-center gap-2 bg-gray-800/90 backdrop-blur-sm rounded-full px-6 py-3 border border-gray-700/50"
+          >
+            <RefreshCw 
+              className={`w-5 h-5 text-purple-400 transition-transform duration-200 ${
+                pullProgress >= 1 ? 'animate-spin' : ''
+              }`}
+              style={{ transform: `rotate(${pullProgress * 360}deg)` }}
+            />
+            <span className="text-sm font-medium text-white">
+              {pullProgress >= 1 ? 'Release to refresh' : 'Pull to refresh'}
+            </span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Main content with pull-to-refresh */}
+      <div 
+        ref={containerRef}
+        className="bg-gradient-to-b from-gray-900/50 via-gray-950 to-gray-950 min-h-screen overflow-auto"
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+      >
         <div className="container mx-auto max-w-7xl px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6">
 
           {/* Games Grid */}

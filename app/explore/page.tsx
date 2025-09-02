@@ -2,39 +2,49 @@ import type { Metadata } from "next";
 import { ExploreContent } from "@/components/explore/ExploreContent";
 
 export const metadata: Metadata = {
-  title: "Explore Games - Discover Your Next Gaming Adventure | Game Vault",
+  title: "Video Game Tracker - Explore & Track Games | Best Game Database 2025",
   description:
-    "Discover trending games, popular titles, and hidden gems. Explore our vast gaming database with advanced filters and personalized recommendations for every type of gamer.",
+    "The best video game tracker for exploring and discovering games. Track your gaming progress across 50,000+ games from all platforms. Join the ultimate gaming community!",
   keywords: [
+    "video game tracker",
+    "best video game tracker",
     "explore games",
-    "discover games",
-    "trending games",
+    "discover games", 
+    "game tracking website",
+    "gaming progress tracker",
+    "video game database",
+    "track video games",
+    "gaming community platform",
+    "game collection tracker",
+    "trending games 2025",
     "popular video games",
-    "game discovery",
+    "game discovery platform",
     "gaming recommendations",
-    "new games 2024",
-    "best games to play",
-    "indie games",
-    "AAA games",
-    "game finder",
-    "gaming database",
+    "video game library",
   ],
   openGraph: {
-    title: "Explore Games - Discover Your Next Gaming Adventure",
+    title: "Best Video Game Tracker - Explore & Track 50,000+ Games",
     description:
-      "Find your next favorite game from our extensive database. Filter by genre, platform, rating and more.",
+      "The #1 video game tracker platform. Explore, track, and manage your gaming library across all platforms. Join 50k+ gamers!",
     type: "website",
-    url: "https://gamevault.app/explore",
+    url: "https://gamersvaultapp.com/explore",
     siteName: "Game Vault",
     locale: "en_US",
+    images: [{
+      url: "https://gamersvaultapp.com/og-explore-games.png",
+      width: 1200,
+      height: 630,
+      alt: "Game Vault - Best Video Game Tracker Platform"
+    }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Explore Games - Game Vault",
-    description: "Discover trending games and find your next gaming adventure.",
+    title: "Best Video Game Tracker - Game Vault",
+    description: "Explore & track 50,000+ games with the top-rated video game tracker. Free forever!",
+    images: ["https://gamersvaultapp.com/twitter-explore-games.png"],
   },
   alternates: {
-    canonical: "https://gamevault.app/explore",
+    canonical: "https://gamersvaultapp.com/explore",
   },
   robots: {
     index: true,

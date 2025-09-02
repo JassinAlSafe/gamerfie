@@ -9,6 +9,7 @@ import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ActivityCard } from "@/components/Activity/ActivityCard";
+import { ProfileCardModal } from "@/components/profile/ProfileCardModal";
 import { motion, AnimatePresence } from "framer-motion";
 import { Calendar, Users, Trophy, MessageSquare, Filter, RefreshCw, Plus, Search, X } from "lucide-react";
 
@@ -66,6 +67,8 @@ export const FriendActivityFeed = React.memo(() => {
   const [showSearch, setShowSearch] = useState(false);
   const [isPulling, setIsPulling] = useState(false);
   const [pullDistance, setPullDistance] = useState(0);
+  const [profileModalOpen, setProfileModalOpen] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
 
   const handleRefresh = useCallback(async () => {
     refetch();
@@ -140,6 +143,39 @@ export const FriendActivityFeed = React.memo(() => {
     setIsPulling(false);
     setPullDistance(0);
   }, [isPulling, pullDistance, handleRefresh]);
+
+  // Profile modal handlers
+  const handleOpenProfile = useCallback((userId: string) => {
+    setSelectedUserId(userId);
+    setProfileModalOpen(true);
+  }, []);
+
+  const handleCloseProfile = useCallback(() => {
+    setProfileModalOpen(false);
+    setSelectedUserId(null);
+  }, []);
+
+  const handleFollowUser = useCallback((userId: string) => {
+    // TODO: Implement follow functionality
+    console.log('Following user:', userId);
+  }, []);
+
+  const handleUnfollowUser = useCallback((userId: string) => {
+    // TODO: Implement unfollow functionality
+    console.log('Unfollowing user:', userId);
+  }, []);
+
+  const handleMessageUser = useCallback((userId: string) => {
+    // TODO: Implement messaging functionality
+    console.log('Messaging user:', userId);
+    // Could navigate to messages page or open chat modal
+    router.push(`/messages?userId=${userId}`);
+  }, [router]);
+
+  const handleShareProfile = useCallback((userId: string, shareType: 'link' | 'twitter' | 'discord' | 'qr') => {
+    // TODO: Implement profile sharing functionality
+    console.log('Sharing profile:', userId, 'via', shareType);
+  }, []);
 
   const filteredActivities = useMemo(() => {
     let filtered = activities;
@@ -545,6 +581,7 @@ export const FriendActivityFeed = React.memo(() => {
                         onAddReaction={(activityId, emoji) => addReaction({ activityId, emoji })}
                         onAddComment={(activityId, content) => addComment({ activityId, content })}
                         onDeleteComment={(commentId) => deleteComment(commentId)}
+                        onProfileClick={handleOpenProfile}
                       />
                     </motion.div>
                   ))}
@@ -556,6 +593,17 @@ export const FriendActivityFeed = React.memo(() => {
         </div>
       )}
 
+      {/* Profile Card Modal */}
+      <ProfileCardModal
+        isOpen={profileModalOpen}
+        userId={selectedUserId || ""}
+        onClose={handleCloseProfile}
+        onFollow={handleFollowUser}
+        onUnfollow={handleUnfollowUser}
+        onMessage={handleMessageUser}
+        onShare={handleShareProfile}
+        currentUserId={undefined} // TODO: Get from auth context
+      />
     </div>
   );
 });

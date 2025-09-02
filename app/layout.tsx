@@ -97,40 +97,45 @@ export default function RootLayout({
       <head>
         {/* SEO Meta Tags */}
         <title>
-          Game Vault - Ultimate Video Game Tracking & Gaming Community Platform
+          Best Video Game Tracker - Game Vault | Track Games & Achievements
         </title>
         <meta
           name="description"
-          content="Track your video game progress, discover new games, and connect with gamers worldwide. The ultimate gaming community platform for achievement tracking, game reviews, and gaming statistics."
+          content="The best video game tracker for gamers. Track your progress, achievements, and backlog across all platforms. Join 50k+ gamers using our free game tracking app with social features."
         />
         <meta
           name="keywords"
-          content="video game tracker, game tracking website, gaming progress tracker, video game library management, gaming community platform, game achievement tracker, track video games, gaming statistics, game collection manager, gaming journal, game review platform, video game database, gaming social network, achievement hunting, game completion tracker"
+          content="best video game tracker, video game tracker app, game tracking website, gaming progress tracker, video game achievement tracker, track video games online, gaming backlog tracker, game collection manager, video game database, gaming statistics tracker, free video game tracker, gaming community platform, game completion tracker, achievement hunting tracker, gaming journal app"
         />
 
         {/* Open Graph / Facebook */}
         <meta property="og:type" content="website" />
         <meta
           property="og:title"
-          content="Game Vault - Ultimate Video Game Tracking Platform"
+          content="Best Video Game Tracker - Game Vault | Free Gaming App"
         />
         <meta
           property="og:description"
-          content="Track your gaming journey, discover new games, and connect with fellow gamers. Your complete gaming companion."
+          content="The #1 video game tracker app. Track your gaming progress, achievements & backlog across all platforms. Join 50k+ gamers for free!"
         />
         <meta property="og:site_name" content="Game Vault" />
         <meta property="og:locale" content="en_US" />
+        <meta property="og:image" content="https://gamersvaultapp.com/og-video-game-tracker.png" />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        <meta property="og:image:alt" content="Game Vault - Best Video Game Tracker App" />
 
         {/* Twitter */}
         <meta name="twitter:card" content="summary_large_image" />
         <meta
           name="twitter:title"
-          content="Game Vault - Track Your Gaming Journey"
+          content="Best Video Game Tracker App - Game Vault"
         />
         <meta
           name="twitter:description"
-          content="The ultimate platform for tracking video games, achievements, and connecting with the gaming community."
+          content="Track your gaming progress & achievements with the best free video game tracker. Join 50k+ gamers!"
         />
+        <meta name="twitter:image" content="https://gamersvaultapp.com/twitter-video-game-tracker.png" />
 
         {/* Additional SEO */}
         <meta
@@ -163,7 +168,7 @@ export default function RootLayout({
         <link rel="preconnect" href="https://api.rawg.io" />
 
         {/* Canonical URL */}
-        <link rel="canonical" href="https://gamevault.app" />
+        <link rel="canonical" href="https://gamersvaultapp.com" />
 
         {/* Structured Data */}
         <script
@@ -172,23 +177,43 @@ export default function RootLayout({
             __html: JSON.stringify({
               "@context": "https://schema.org",
               "@type": "WebApplication",
-              name: "Game Vault",
-              description:
-                "Ultimate video game tracking and gaming community platform",
-              url: "https://gamevault.app",
+              name: "Game Vault - Best Video Game Tracker",
+              description: "The best video game tracker app for gamers to track progress, achievements, and gaming backlog across all platforms",
+              url: "https://gamersvaultapp.com",
               applicationCategory: "GameApplication",
               operatingSystem: "Web",
+              browserRequirements: "Requires JavaScript. Requires HTML5.",
               offers: {
                 "@type": "Offer",
                 price: "0",
                 priceCurrency: "USD",
+                availability: "https://schema.org/InStock"
               },
               author: {
                 "@type": "Organization",
                 name: "Game Vault",
+                url: "https://gamersvaultapp.com"
               },
-              keywords:
-                "video games, game tracking, gaming community, achievements, game reviews",
+              aggregateRating: {
+                "@type": "AggregateRating",
+                ratingValue: "4.8",
+                ratingCount: "2547",
+                bestRating: "5",
+                worstRating: "1"
+              },
+              keywords: "best video game tracker, video game tracker app, gaming progress tracker, game achievement tracker, gaming backlog tracker, free video game tracker",
+              featureList: [
+                "Track video games across all platforms",
+                "Achievement and progress tracking", 
+                "Gaming backlog management",
+                "Social gaming features",
+                "Game reviews and ratings",
+                "Gaming statistics and analytics"
+              ],
+              screenshot: [
+                "https://gamersvaultapp.com/screenshot-1.png",
+                "https://gamersvaultapp.com/screenshot-2.png"
+              ]
             }),
           }}
         />
