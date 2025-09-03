@@ -41,6 +41,30 @@ export interface Database {
         Insert: Omit<ForumThreadLike, 'id' | 'created_at'>;
         Update: Partial<Omit<ForumThreadLike, 'id' | 'created_at'>>;
       };
+      user_profiles: {
+        Row: {
+          id: string;
+          username: string;
+          avatar_url?: string | null;
+          bio?: string | null;
+          role?: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id: string;
+          username: string;
+          avatar_url?: string | null;
+          bio?: string | null;
+          role?: string | null;
+        };
+        Update: {
+          username?: string;
+          avatar_url?: string | null;
+          bio?: string | null;
+          role?: string | null;
+        };
+      };
     };
     Views: {
       forum_categories_with_stats: {

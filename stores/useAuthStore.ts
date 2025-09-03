@@ -4,8 +4,7 @@
 import { 
   useAuthUser, 
   useAuthStatus, 
-  useAuthActions, 
-  useIsAuthenticated 
+  useAuthActions
 } from './useAuthStoreOptimized';
 
 // Legacy compatibility wrapper

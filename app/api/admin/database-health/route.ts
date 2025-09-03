@@ -14,7 +14,7 @@ export async function GET(request: Request) {
       return adminAuth.response;
     }
     
-    const { user, supabase } = adminAuth;
+    const { supabase } = adminAuth;
 
     const { searchParams } = new URL(request.url);
     const checkType = searchParams.get('type') || 'all';

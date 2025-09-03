@@ -100,7 +100,7 @@ async function deletePost(
  * GET /api/forum/posts/[postId] - Get a specific post
  */
 export async function GET(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: { postId: string } }
 ): Promise<NextResponse<PostResponse>> {
   try {
@@ -108,7 +108,7 @@ export async function GET(
     const { postId } = params;
 
     if (!postId) {
-      return ForumApiErrorHandler.validationError('Post ID is required');
+      return ForumApiErrorHandler.validationError('Post ID is required') as NextResponse<PostResponse>;
     }
 
     // Get post with author and thread details
@@ -121,19 +121,19 @@ export async function GET(
     );
 
     if (!result.success) {
-      return result.response;
+      return result.response as NextResponse<PostResponse>;
     }
 
     if (!result.data) {
-      return ForumApiErrorHandler.notFound('Post not found');
+      return ForumApiErrorHandler.notFound('Post not found') as NextResponse<PostResponse>;
     }
 
     return ForumApiResponse.success({
       post: result.data
-    });
+    }) as NextResponse<PostResponse>;
   } catch (error) {
     console.error("Unexpected error fetching post:", error);
-    return ForumApiErrorHandler.internalError('Failed to fetch post');
+    return ForumApiErrorHandler.internalError('Failed to fetch post') as NextResponse<PostResponse>;
   }
 }
 
@@ -151,16 +151,20 @@ export async function DELETE(
       const hardDelete = searchParams.get('hard') === 'true';
 
       if (!postId) {
-        return ForumApiErrorHandler.validationError('Post ID is required');
+        return ForumApiErrorHandler.validationError('Post ID is required') as NextResponse<PostResponse>;
       }
 
       // Ensure user profile exists
-      const profileResult = await ensureUserProfile(auth.user.id, auth.supabase);
-      if (!profileResult.success) {
-        return profileResult.response;
+      const profileResult = await ensureUserProfile(
+        auth.supabase,
+        auth.user.id,
+        { email: auth.user.email }
+      );
+      if (profileResult instanceof NextResponse) {
+        return profileResult as NextResponse<PostResponse>;
       }
 
-      const userProfile = profileResult.data;
+      const userProfile = profileResult;
 
       // Check if user can delete this post
       const { canDelete, post } = await canDeletePost(
@@ -171,11 +175,11 @@ export async function DELETE(
       );
 
       if (!canDelete) {
-        return ForumApiErrorHandler.forbidden('You do not have permission to delete this post');
+        return ForumApiErrorHandler.forbidden('You do not have permission to delete this post') as NextResponse<PostResponse>;
       }
 
       if (!post) {
-        return ForumApiErrorHandler.notFound('Post not found');
+        return ForumApiErrorHandler.notFound('Post not found') as NextResponse<PostResponse>;
       }
 
       // Only admins can perform hard deletes
@@ -186,7 +190,7 @@ export async function DELETE(
       
       if (!deleteResult.success) {
         console.error(`Failed to delete post ${postId}:`, deleteResult.error);
-        return ForumApiErrorHandler.internalError('Failed to delete post');
+        return ForumApiErrorHandler.internalError('Failed to delete post') as NextResponse<PostResponse>;
       }
 
       // Update thread reply count and last post info
@@ -205,10 +209,10 @@ export async function DELETE(
           ...post,
           content: performHardDelete ? undefined : '[This post has been deleted]'
         }
-      });
+      }) as NextResponse<PostResponse>;
     } catch (error) {
       console.error("Unexpected error deleting post:", error);
-      return ForumApiErrorHandler.internalError('Failed to delete post');
+      return ForumApiErrorHandler.internalError('Failed to delete post') as NextResponse<PostResponse>;
     }
   });
 }

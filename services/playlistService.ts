@@ -35,7 +35,7 @@ export class PlaylistService {
 
   static async createPlaylist(input: CreatePlaylistInput): Promise<Playlist> {
     try {
-      const user = useAuthStore.getState().user;
+      const user = useAuthStore().user;
       if (!user) {
         throw new Error('Not authenticated');
       }

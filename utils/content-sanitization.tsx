@@ -40,7 +40,6 @@ export function sanitizeHtml(
     const cleaned = DOMPurify.sanitize(content, {
       ALLOWED_TAGS: allowedTags,
       ALLOWED_ATTR: allowedAttributes,
-      FORBID_SCRIPT: true,
       FORBID_TAGS: ['script', 'object', 'embed', 'base', 'link', 'meta', 'style'],
       FORBID_ATTR: ['onerror', 'onload', 'onclick', 'onmouseover', 'onfocus', 'onblur'],
     });
@@ -70,8 +69,7 @@ export function sanitizePlainText(content: string): string {
 export function sanitizeForumContent(content: string): string {
   return sanitizeHtml(content, {
     allowedTags: ['p', 'br', 'strong', 'em', 'u', 'ol', 'ul', 'li', 'blockquote', 'code'],
-    allowedAttributes: [],
-    removeEmptyElements: true
+    allowedAttributes: []
   });
 }
 

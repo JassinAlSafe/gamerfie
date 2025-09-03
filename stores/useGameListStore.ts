@@ -285,18 +285,46 @@ export const useGameListStore = create<GameListStore>((set, get) => {
 
         if (error) throw error;
 
-        const transformedLists: GameList[] = (data || []).map(entry => ({
-          id: entry.id,
-          type: 'list',
-          title: entry.title,
-          content: entry.content || '',
-          games: Array.isArray(entry.game_list) ? entry.game_list : [],
-          date: entry.date,
-          createdAt: entry.created_at,
-          updatedAt: entry.updated_at,
-          isPublic: entry.is_public,
-          user_id: entry.user_id
-        }));
+        const transformedLists: GameList[] = (data || []).map(entry => {
+          let games: GameListItem[] = [];
+          
+          // Handle games parsing - check both game_list and content fields
+          if (Array.isArray(entry.game_list)) {
+            games = entry.game_list;
+          } else if (entry.game_list && typeof entry.game_list === 'string') {
+            try {
+              const parsed = JSON.parse(entry.game_list);
+              games = Array.isArray(parsed) ? parsed : [];
+            } catch (parseError) {
+              console.warn('Error parsing games from game_list field:', parseError);
+            }
+          }
+          
+          // If no games found in game_list, try content field
+          if (games.length === 0 && entry.content) {
+            try {
+              if (entry.content.startsWith('[')) {
+                const parsed = JSON.parse(entry.content);
+                games = Array.isArray(parsed) ? parsed : [];
+              }
+            } catch (parseError) {
+              console.warn('Error parsing games from content field:', parseError);
+            }
+          }
+          
+          return {
+            id: entry.id,
+            type: 'list',
+            title: entry.title,
+            content: entry.content || '',
+            games,
+            date: entry.date,
+            createdAt: entry.created_at,
+            updatedAt: entry.updated_at,
+            isPublic: entry.is_public,
+            user_id: entry.user_id
+          };
+        });
 
         set({ lists: transformedLists });
       } catch (error) {
@@ -335,7 +363,7 @@ export const useGameListStore = create<GameListStore>((set, get) => {
 
         let games: GameListItem[] = [];
         
-        // Handle game_list parsing
+        // Handle games parsing - check both game_list and content fields
         if (Array.isArray(listData.game_list)) {
           games = listData.game_list;
         } else if (listData.game_list && typeof listData.game_list === 'string') {
@@ -343,8 +371,19 @@ export const useGameListStore = create<GameListStore>((set, get) => {
             const parsed = JSON.parse(listData.game_list);
             games = Array.isArray(parsed) ? parsed : [];
           } catch (parseError) {
-            console.warn('Error parsing games list:', parseError);
-            games = [];
+            console.warn('Error parsing games from game_list field:', parseError);
+          }
+        }
+        
+        // If no games found in game_list, try content field
+        if (games.length === 0 && listData.content) {
+          try {
+            if (listData.content.startsWith('[')) {
+              const parsed = JSON.parse(listData.content);
+              games = Array.isArray(parsed) ? parsed : [];
+            }
+          } catch (parseError) {
+            console.warn('Error parsing games from content field:', parseError);
           }
         }
 
@@ -426,22 +465,50 @@ export const useGameListStore = create<GameListStore>((set, get) => {
 
         if (error) throw error;
 
-        const transformedLists: GameList[] = (data || []).map(entry => ({
-          id: entry.id,
-          type: 'list',
-          title: entry.title,
-          content: entry.content || '',
-          games: Array.isArray(entry.game_list) ? entry.game_list : [],
-          date: entry.date,
-          createdAt: entry.created_at,
-          updatedAt: entry.updated_at,
-          isPublic: entry.is_public,
-          user_id: entry.user_id,
-          user: {
-            username: (entry.profiles as any)?.username || 'Unknown User',
-            avatar_url: (entry.profiles as any)?.avatar_url || null
+        const transformedLists: GameList[] = (data || []).map(entry => {
+          let games: GameListItem[] = [];
+          
+          // Handle games parsing - check both game_list and content fields
+          if (Array.isArray(entry.game_list)) {
+            games = entry.game_list;
+          } else if (entry.game_list && typeof entry.game_list === 'string') {
+            try {
+              const parsed = JSON.parse(entry.game_list);
+              games = Array.isArray(parsed) ? parsed : [];
+            } catch (parseError) {
+              console.warn('Error parsing games from game_list field:', parseError);
+            }
           }
-        }));
+          
+          // If no games found in game_list, try content field
+          if (games.length === 0 && entry.content) {
+            try {
+              if (entry.content.startsWith('[')) {
+                const parsed = JSON.parse(entry.content);
+                games = Array.isArray(parsed) ? parsed : [];
+              }
+            } catch (parseError) {
+              console.warn('Error parsing games from content field:', parseError);
+            }
+          }
+          
+          return {
+            id: entry.id,
+            type: 'list',
+            title: entry.title,
+            content: entry.content || '',
+            games,
+            date: entry.date,
+            createdAt: entry.created_at,
+            updatedAt: entry.updated_at,
+            isPublic: entry.is_public,
+            user_id: entry.user_id,
+            user: {
+              username: (entry.profiles as any)?.username || 'Unknown User',
+              avatar_url: (entry.profiles as any)?.avatar_url || null
+            }
+          };
+        });
 
         set({ publicLists: transformedLists });
       } catch (error) {

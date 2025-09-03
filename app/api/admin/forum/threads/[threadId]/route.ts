@@ -62,7 +62,7 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: { threadId: string } }
 ) {
   return withAuthenticatedUser(async (auth) => {
