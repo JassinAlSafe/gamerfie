@@ -1,7 +1,7 @@
 import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { createClient } from '@/utils/supabase/server'
-import GameDetailWrapper from '@/components/game/GameDetailWrapper'
+import { GameDetails } from '@/components/game/GameDetails'
 import { UnifiedGameService } from '@/services/unifiedGameService'
 
 interface Props {
@@ -134,8 +134,8 @@ export default async function GamePage({ params }: Props) {
           }}
         />
         
-        {/* Game Detail Component */}
-        <GameDetailWrapper gameId={game.id.toString()} />
+        {/* Game Detail Component - Pass server-side fetched data directly */}
+        <GameDetails game={game} />
       </>
     )
   } catch (error) {
