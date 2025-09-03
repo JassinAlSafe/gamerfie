@@ -144,18 +144,10 @@ export async function generateMetadata({ params }: GamePageProps): Promise<Metad
   }
 }
 
-// Generate static params for popular games to enable Full Route Cache
-export async function generateStaticParams() {
-  try {
-    const popularGames = await getTrendingGamesFromDB(50);
-    return popularGames.map((game) => ({
-      id: game.id.toString(),
-    }));
-  } catch (error) {
-    console.error('Error generating static params for games:', error);
-    return [];
-  }
-}
+// Disable static generation for game pages to fix production issues
+// These pages need dynamic data fetching and shouldn't be pre-rendered
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
 
 export default async function GamePage({ params }: GamePageProps) {
   // Fetch game data server-side where IGDB OAuth credentials are available
