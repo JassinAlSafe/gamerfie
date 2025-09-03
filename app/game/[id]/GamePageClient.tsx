@@ -2,7 +2,6 @@
 
 import React, { Suspense, useMemo } from "react";
 import { GameDetails } from "@/components/game/GameDetails";
-import { useGameDetails } from "@/hooks/Games/use-game-details";
 import { LoadingSpinner } from "@/components/loadingSpinner";
 import { GamePageProps } from "@/types";
 import { motion } from "framer-motion";
@@ -58,9 +57,10 @@ function LoadingFallback() {
   );
 }
 
-function GameContent({ id }: { id: string }) {
-  const { game, error } = useGameDetails(id);
-  const isError = !!error;
+function GameContent({ gameData }: { gameData: any }) {
+  // Use pre-fetched server-side data instead of client-side hook
+  const game = gameData;
+  const isError = !!(gameData?.error && gameData?.dataSource === 'error-fallback');
 
   // Must call all hooks before any conditional returns (Rules of Hooks)
   const structuredData = useMemo(() => {
@@ -118,9 +118,7 @@ function GameContent({ id }: { id: string }) {
           </div>
           <h1 className="text-3xl font-bold text-white mb-2">Game Not Found</h1>
           <p className="text-gray-400 mb-6">
-            {error && typeof error === "object" && "message" in error
-              ? (error as { message: string }).message
-              : "Failed to load game"}
+            {gameData?.error || "Failed to load game"}
           </p>
           <Link
             href="/all-games"
@@ -153,10 +151,10 @@ function GameContent({ id }: { id: string }) {
   );
 }
 
-export function GamePageClient({ params }: GamePageProps) {
+export function GamePageClient({ gameData, params }: GamePageProps & { gameData: any }) {
   return (
     <Suspense fallback={<LoadingFallback />}>
-      <GameContent id={params.id} />
+      <GameContent gameData={gameData} />
     </Suspense>
   );
 }

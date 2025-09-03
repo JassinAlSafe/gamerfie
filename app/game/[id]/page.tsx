@@ -5,6 +5,57 @@ import { createClient } from "@/utils/supabase/server";
 import { siteMetadata } from "@/app/config/metadata";
 import { getTrendingGamesFromDB } from "@/lib/react-cache";
 
+// Server-side game data fetching - use API route instead of direct service calls
+async function fetchGameDataServerSide(gameId: string) {
+  try {
+    console.log('🎮 Server-side game fetch for ID:', gameId);
+    
+    // Use fetch to call our own API route server-side
+    // This ensures consistent behavior and avoids import issues
+    const baseUrl = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:3000';
+    const response = await fetch(`${baseUrl}/api/games/${gameId}`, {
+      // Add headers to indicate this is a server-side request
+      headers: {
+        'User-Agent': 'GameVault-Server/1.0',
+        'X-Requested-With': 'server-side'
+      }
+    });
+    
+    if (!response.ok) {
+      console.error(`Server-side API call failed: ${response.status} ${response.statusText}`);
+      throw new Error(`API call failed: ${response.status}`);
+    }
+    
+    const gameData = await response.json();
+    console.log('✅ Server-side game data fetched via API:', {
+      gameId: gameData.id,
+      name: gameData.name,
+      dataSource: gameData.dataSource
+    });
+    
+    return gameData;
+  } catch (error) {
+    console.error('Server-side game fetch error:', error);
+    
+    // Return fallback data
+    return {
+      id: gameId,
+      name: `Game ${gameId.replace(/^(igdb_|rawg_)/, '')}`,
+      summary: 'Unable to load game details at this time. Please try again later.',
+      dataSource: 'server-fallback',
+      error: error instanceof Error ? error.message : 'Server-side fetch failed',
+      cover_url: null,
+      first_release_date: null,
+      genres: [],
+      platforms: [],
+      screenshots: [],
+      videos: [],
+      rating: null,
+      total_rating: null
+    };
+  }
+}
+
 // Generate metadata for individual game pages
 export async function generateMetadata({ params }: GamePageProps): Promise<Metadata> {
   try {
@@ -106,6 +157,10 @@ export async function generateStaticParams() {
   }
 }
 
-export default function GamePage({ params }: GamePageProps) {
-  return <GamePageClient params={params} />;
+export default async function GamePage({ params }: GamePageProps) {
+  // Fetch game data server-side where IGDB OAuth credentials are available
+  const gameData = await fetchGameDataServerSide(params.id);
+  
+  // Pass pre-fetched data to client component
+  return <GamePageClient gameData={gameData} params={params} />;
 }
