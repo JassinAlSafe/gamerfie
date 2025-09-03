@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { useAuthUser } from "@/stores/useAuthStoreOptimized";
 import { useUIStore } from "@/stores/useUIStore";
 import { navigationItems } from "@/config/navigation";
+import { performLogout } from "@/lib/auth-logout";
 
 export const MobileMenu = React.memo(function MobileMenu() {
   const router = useRouter();
@@ -33,6 +34,18 @@ export const MobileMenu = React.memo(function MobileMenu() {
   const handleNavigation = (path: string) => {
     router.push(path);
     closeAllMenus();
+  };
+
+  const handleLogout = async () => {
+    try {
+      closeAllMenus();
+      await performLogout('local');
+      router.push('/');
+    } catch (error) {
+      console.error('Logout failed:', error);
+      // If logout fails, still close menu and redirect
+      router.push('/');
+    }
   };
 
   return (
@@ -62,7 +75,7 @@ export const MobileMenu = React.memo(function MobileMenu() {
               Profile
             </Link>
             <button
-              onClick={() => handleNavigation("/signout")}
+              onClick={handleLogout}
               className="block w-full text-left py-2.5 px-2 rounded-lg text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-all duration-200"
             >
               Sign Out

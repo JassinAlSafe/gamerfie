@@ -28,8 +28,9 @@ export default function GameDetailWrapper({ gameId }: GameDetailWrapperProps) {
         setLoading(true);
         setError(null);
 
-        const igdbService = new IGDBService();
-        const gameData = await igdbService.getGameById(parseInt(gameId));
+        // Extract numeric ID from the gameId (remove 'igdb_' prefix if present)
+        const numericGameId = gameId.replace('igdb_', '');
+        const gameData = await IGDBService.fetchGameDetails(numericGameId);
 
         if (!gameData) {
           setError('Game not found');
@@ -39,20 +40,20 @@ export default function GameDetailWrapper({ gameId }: GameDetailWrapperProps) {
 
         // Transform IGDB data to our Game interface
         const transformedGame: Game = {
-          id: gameData.id.toString(),
+          id: gameData.id,
           name: gameData.name || 'Unknown Game',
           summary: gameData.summary || '',
-          cover: gameData.cover ? {
-            id: gameData.cover.id?.toString() || gameData.id.toString(),
-            url: gameData.cover.url || ''
+          cover: gameData.cover_url ? {
+            id: gameData.id.replace('igdb_', ''),
+            url: gameData.cover_url
           } : undefined,
           screenshots: gameData.screenshots || [],
           videos: gameData.videos || [],
-          genres: gameData.genres || [],
-          platforms: gameData.platforms || [],
+          genres: gameData.genres?.map((name: string) => ({ name })) || [],
+          platforms: gameData.platforms?.map((name: string) => ({ name })) || [],
           first_release_date: gameData.first_release_date,
-          total_rating: gameData.total_rating,
-          total_rating_count: gameData.total_rating_count,
+          total_rating: gameData.rating,
+          total_rating_count: 0, // Not provided by fetchGameDetails
           involved_companies: gameData.involved_companies || [],
           achievements: { total: 0, completed: 0 }, // Default achievements
         };
