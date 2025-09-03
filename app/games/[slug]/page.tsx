@@ -2,7 +2,7 @@ import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { createClient } from '@/utils/supabase/server'
 import GameDetailWrapper from '@/components/game/GameDetailWrapper'
-import { IGDBService } from '@/services/igdb'
+import { UnifiedGameService } from '@/services/unifiedGameService'
 
 interface Props {
   params: { slug: string }
@@ -16,9 +16,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     // Convert slug back to search term (replace hyphens with spaces)
     const searchTerm = slug.replace(/-/g, ' ')
     
-    // Search for the game
-    const igdbService = new IGDBService()
-    const searchResults = await igdbService.searchGames(searchTerm, 1)
+    // Search for the game using UnifiedGameService (prioritizes IGDB)
+    const searchResult = await UnifiedGameService.searchGames(searchTerm, 1, 1, {
+      source: 'igdb', // Force IGDB as primary source
+      strategy: 'igdb_first'
+    })
+    const searchResults = searchResult.games
     
     if (!searchResults || searchResults.length === 0) {
       return {
@@ -80,9 +83,12 @@ export default async function GamePage({ params }: Props) {
     // Convert slug back to search term
     const searchTerm = slug.replace(/-/g, ' ')
     
-    // Search for the game
-    const igdbService = new IGDBService()
-    const searchResults = await igdbService.searchGames(searchTerm, 1)
+    // Search for the game using UnifiedGameService (prioritizes IGDB)
+    const searchResult = await UnifiedGameService.searchGames(searchTerm, 1, 1, {
+      source: 'igdb', // Force IGDB as primary source
+      strategy: 'igdb_first'
+    })
+    const searchResults = searchResult.games
     
     if (!searchResults || searchResults.length === 0) {
       notFound()
