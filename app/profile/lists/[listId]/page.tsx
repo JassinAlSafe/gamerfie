@@ -1,4 +1,4 @@
-import { GameListDetails } from "@/components/GameList/GameListDetails";
+import { GameListDetails } from "@/components/GameList/GameListDetails.improved";
 import { Metadata } from "next";
 import { createClient } from "@/utils/supabase/server";
 
@@ -11,22 +11,23 @@ interface PageProps {
   params: Promise<{ listId: string }>;
 }
 
-// Generate static params for popular playlists to enable Full Route Cache
+// Generate static params for popular game lists to enable Full Route Cache
 export async function generateStaticParams() {
   try {
     const supabase = await createClient();
-    const { data: playlists } = await supabase
-      .from('playlists')
+    const { data: lists } = await supabase
+      .from('journal_entries')
       .select('id')
-      .eq('is_published', true)
-      .order('likes_count', { ascending: false })
+      .eq('type', 'list')
+      .eq('is_public', true)
+      .order('updated_at', { ascending: false })
       .limit(20);
     
-    return playlists?.map((playlist) => ({
-      listId: playlist.id.toString(),
+    return lists?.map((list) => ({
+      listId: list.id.toString(),
     })) || [];
   } catch (error) {
-    console.error('Error generating static params for playlists:', error);
+    console.error('Error generating static params for game lists:', error);
     return [];
   }
 }

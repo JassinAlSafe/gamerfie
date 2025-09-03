@@ -4,14 +4,13 @@ import { useState, useCallback } from "react";
 import { motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { LoadingState } from "@/components/ui/loading-state";
+import { FriendAvatar, StatCard } from "@/components/ui/friends";
 import { useProfile } from "@/hooks/Profile/use-profile";
 import { useFriendsPage } from "@/hooks/Profile/use-friends-page";
 import Link from "next/link";
 import {
   Users,
-  Calendar,
   ArrowUpRight,
   Trophy,
   ExternalLink,
@@ -19,49 +18,7 @@ import {
   Zap
 } from "lucide-react";
 
-// Minimal Friend Avatar for Profile Context
-function MinimalFriendAvatar({ 
-  friend, 
-  onViewProfile,
-  index = 0
-}: { 
-  friend: any;
-  onViewProfile: (id: string) => void;
-  index?: number;
-}) {
-  const getStatusColor = () => {
-    if (friend.online_status === "online") return "ring-green-500";
-    if (friend.online_status === "gaming") return "ring-purple-500";
-    return "ring-gray-600";
-  };
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.8 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ delay: index * 0.1 }}
-      className="group cursor-pointer"
-      onClick={() => onViewProfile(friend.id)}
-    >
-      <div className={`relative p-1 rounded-full transition-all duration-300 ring-2 ${getStatusColor()} group-hover:ring-purple-400`}>
-        <Avatar className="w-16 h-16 transition-transform duration-300 group-hover:scale-105">
-          <AvatarImage src={friend.avatar_url} alt={friend.username} />
-          <AvatarFallback className="bg-gradient-to-br from-purple-600 to-indigo-600 text-white font-semibold">
-            {friend.username[0]?.toUpperCase()}
-          </AvatarFallback>
-        </Avatar>
-        {friend.online_status === "online" && (
-          <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full border-2 border-gray-900 flex items-center justify-center">
-            <div className="w-2 h-2 bg-white rounded-full animate-pulse" />
-          </div>
-        )}
-      </div>
-      <p className="text-xs text-center text-gray-400 mt-2 group-hover:text-white transition-colors truncate max-w-[80px]">
-        {friend.display_name?.split(' ')[0] || friend.username}
-      </p>
-    </motion.div>
-  );
-}
+// Main Social Connections Component
 
 // Main Social Connections Component
 export function SocialConnections({ 
@@ -147,11 +104,13 @@ export function SocialConnections({
           </div>
           <div className="flex flex-wrap gap-4">
             {onlineFriends.map((friend, index) => (
-              <MinimalFriendAvatar 
+              <FriendAvatar 
                 key={friend.id}
                 friend={friend}
                 onViewProfile={onOpenProfile}
                 index={index}
+                size="sm"
+                showGameStatus={true}
               />
             ))}
           </div>
@@ -183,11 +142,12 @@ export function SocialConnections({
         {displayFriends.length > 0 ? (
           <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4">
             {displayFriends.map((friend, index) => (
-              <MinimalFriendAvatar 
+              <FriendAvatar 
                 key={friend.id}
                 friend={friend}
                 onViewProfile={onOpenProfile}
                 index={index}
+                size="sm"
               />
             ))}
           </div>

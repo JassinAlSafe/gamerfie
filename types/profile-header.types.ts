@@ -12,7 +12,6 @@ import type {
   CompletionBadgeKey,
   StreakBadgeKey,
   SpecialBadgeKey,
-  StatsCardKey,
   ActionButtonKey
 } from "@/config/profile-header-config";
 

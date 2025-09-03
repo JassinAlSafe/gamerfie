@@ -7,7 +7,7 @@ import {
   withDatabaseErrorHandling,
   validateRequestBody
 } from "@/app/api/lib/forum-helpers";
-import { createCategorySchema } from "@/lib/validations/forum";
+import { validateCreateCategory } from "@/lib/validations/forum";
 import type { CategoriesResponse, CategoryResponse, CategoriesWithStatsResult } from "@/types/forum";
 import type { AuthResult } from "@/app/api/lib/auth";
 
@@ -39,9 +39,9 @@ export async function POST(request: NextRequest): Promise<NextResponse<CategoryR
   return withAuthenticatedUser(async (auth: AuthResult) => {
     try {
       // Validate request body
-      const validation = await validateRequestBody(request, createCategorySchema);
+      const validation = await validateRequestBody(request, validateCreateCategory);
       if (!validation.success) {
-        return validation.response;
+        return validation.response as NextResponse<CategoryResponse>;
       }
 
       const categoryData = validation.data;
@@ -56,15 +56,15 @@ export async function POST(request: NextRequest): Promise<NextResponse<CategoryR
       );
 
       if (!result.success) {
-        return result.response;
+        return result.response as NextResponse<CategoryResponse>;
       }
 
       return ForumApiResponse.created({
         category: result.data
-      });
+      }) as NextResponse<CategoryResponse>;
     } catch (error) {
       console.error("Unexpected error creating forum category:", error);
-      return ForumApiErrorHandler.internalError('Failed to create category');
+      return ForumApiErrorHandler.internalError('Failed to create category') as NextResponse<CategoryResponse>;
     }
   });
 }

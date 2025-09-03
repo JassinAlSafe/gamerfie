@@ -230,7 +230,7 @@ export class ReviewService {
     const { data: reviews, error, count } = await query;
 
     if (error) throw error;
-    if (!reviews) throw new Error('No reviews data returned');
+    if (!reviews || !Array.isArray(reviews)) throw new Error('No reviews data returned');
 
     if (reviews.length === 0) {
       return {

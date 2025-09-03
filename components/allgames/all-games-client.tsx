@@ -84,23 +84,47 @@ export default function AllGamesClient() {
     }
   }, [isPulling, pullStartY, pullThreshold]);
 
-  const handleTouchEnd = useCallback(() => {
+  const handleTouchEnd = useCallback(async () => {
     if (!isPulling) return;
 
+    const shouldRefresh = pullProgress >= 1;
+    
+    // Always reset the pulling state first
     setIsPulling(false);
     
-    if (pullProgress >= 1) {
-      handleRefresh();
+    if (shouldRefresh) {
+      // Keep the indicator visible during refresh
+      await handleRefresh();
     }
     
+    // Reset progress and position
     setPullProgress(0);
     setPullStartY(0);
   }, [isPulling, pullProgress, handleRefresh]);
+
+  // Reset pull state when refresh completes
+  useEffect(() => {
+    if (!isRefreshing) {
+      setPullProgress(0);
+      setIsPulling(false);
+      setPullStartY(0);
+    }
+  }, [isRefreshing]);
 
   // Fetch metadata once on mount
   useEffect(() => {
     fetchMetadata();
   }, [fetchMetadata]);
+
+  // Cleanup function to reset pull state on unmount/navigation
+  useEffect(() => {
+    return () => {
+      setPullProgress(0);
+      setIsPulling(false);
+      setIsRefreshing(false);
+      setPullStartY(0);
+    };
+  }, []);
 
   // Trigger load more when intersection observer detects visibility
   useEffect(() => {
@@ -127,21 +151,26 @@ export default function AllGamesClient() {
 
       {/* Pull-to-Refresh Indicator */}
       <AnimatePresence>
-        {pullProgress > 0 && (
+        {(pullProgress > 0 || isRefreshing) && (
           <motion.div
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.8 }}
+            exit={{ opacity: 0, scale: 0.8, transition: { duration: 0.2 } }}
             className="fixed top-20 left-1/2 transform -translate-x-1/2 z-50 flex items-center gap-2 bg-gray-800/90 backdrop-blur-sm rounded-full px-6 py-3 border border-gray-700/50"
           >
             <RefreshCw 
               className={`w-5 h-5 text-purple-400 transition-transform duration-200 ${
-                pullProgress >= 1 ? 'animate-spin' : ''
+                pullProgress >= 1 || isRefreshing ? 'animate-spin' : ''
               }`}
               style={{ transform: `rotate(${pullProgress * 360}deg)` }}
             />
             <span className="text-sm font-medium text-white">
-              {pullProgress >= 1 ? 'Release to refresh' : 'Pull to refresh'}
+              {isRefreshing 
+                ? 'Refreshing...' 
+                : pullProgress >= 1 
+                  ? 'Release to refresh' 
+                  : 'Pull to refresh'
+              }
             </span>
           </motion.div>
         )}

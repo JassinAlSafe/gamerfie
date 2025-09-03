@@ -9,159 +9,21 @@ import { useAuthUser, useAuthStatus } from "@/stores/useAuthStoreOptimized";
 import { useFriendRequests } from "@/hooks/use-friend-requests";
 import { Friend } from "@/types/friend";
 import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { FriendAvatar, FriendRequestCard, SearchResultCard, StatCard, ActionButton } from "@/components/ui/friends";
 import LoadingSpinner from "@/components/loadingSpinner";
 import toast from "react-hot-toast";
 import { 
   Users, 
-  UserPlus, 
   Search,
-  Clock, 
-  Check, 
-  X, 
   Gamepad2,
-  MessageCircle,
-  Activity,
   Zap,
   ArrowUpRight,
   RefreshCw,
   Inbox,
-  Send
+  Send,
+  X
 } from "lucide-react";
-
-// Minimal Friend Avatar for Social Hub
-function MinimalFriendAvatar({ 
-  friend, 
-  onViewProfile,
-  index = 0,
-  showGameStatus = false
-}: { 
-  friend: Friend & { currentGame?: string; lastSeen?: string };
-  onViewProfile: (id: string) => void;
-  index?: number;
-  showGameStatus?: boolean;
-}) {
-  const getStatusColor = () => {
-    if (friend.currentGame) return "ring-blue-500";
-    if (friend.online_status === "online") return "ring-green-500";
-    return "ring-gray-600";
-  };
-
-  const getStatusBadge = () => {
-    if (friend.currentGame) return (
-      <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-blue-500 rounded-full border-2 border-gray-900 flex items-center justify-center">
-        <Gamepad2 className="w-3 h-3 text-white" />
-      </div>
-    );
-    if (friend.online_status === "online") return (
-      <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full border-2 border-gray-900 flex items-center justify-center">
-        <div className="w-2 h-2 bg-white rounded-full animate-pulse" />
-      </div>
-    );
-    return null;
-  };
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.8 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ delay: index * 0.05 }}
-      className="group cursor-pointer"
-      onClick={() => onViewProfile(friend.id)}
-    >
-      <div className={`relative p-1 rounded-full transition-all duration-300 ring-2 ${getStatusColor()} group-hover:ring-purple-400`}>
-        <Avatar className="w-16 h-16 transition-transform duration-300 group-hover:scale-105">
-          <AvatarImage src={friend.avatar_url} alt={friend.username} />
-          <AvatarFallback className="bg-gradient-to-br from-purple-600 to-indigo-600 text-white font-semibold">
-            {friend.username[0]?.toUpperCase()}
-          </AvatarFallback>
-        </Avatar>
-        {getStatusBadge()}
-      </div>
-      <div className="mt-2 text-center">
-        <p className="text-xs text-gray-400 group-hover:text-white transition-colors truncate max-w-[80px]">
-          {friend.display_name?.split(' ')[0] || friend.username}
-        </p>
-        {showGameStatus && friend.currentGame && (
-          <p className="text-xs text-blue-400 truncate max-w-[80px]">
-            Playing
-          </p>
-        )}
-      </div>
-    </motion.div>
-  );
-}
-
-// Minimal Request Card
-function MinimalRequestCard({
-  request,
-  type,
-  onAccept,
-  onDecline,
-  onCancel
-}: {
-  request: any;
-  type: 'received' | 'sent';
-  onAccept?: (id: string) => void;
-  onDecline?: (id: string) => void;
-  onCancel?: (id: string) => void;
-}) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, x: -20 }}
-      animate={{ opacity: 1, x: 0 }}
-      className="flex items-center justify-between p-3 bg-gray-900/30 rounded-lg border border-gray-700/30 hover:border-gray-600/40 transition-all duration-200"
-    >
-      <div className="flex items-center gap-3">
-        <Avatar className="w-10 h-10">
-          <AvatarImage src={request.avatar_url} />
-          <AvatarFallback className="bg-gradient-to-br from-purple-600 to-indigo-600 text-white">
-            {request.username[0]?.toUpperCase()}
-          </AvatarFallback>
-        </Avatar>
-        <div>
-          <p className="font-medium text-white">{request.username}</p>
-          <p className="text-xs text-gray-400">
-            {type === 'received' ? 'Wants to be friends' : 'Request pending'}
-          </p>
-        </div>
-      </div>
-      
-      <div className="flex gap-2">
-        {type === 'received' ? (
-          <>
-            <Button
-              size="sm"
-              onClick={() => onAccept?.(request.id)}
-              className="h-8 w-8 p-0 bg-green-600 hover:bg-green-700"
-            >
-              <Check className="w-4 h-4" />
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => onDecline?.(request.id)}
-              className="h-8 w-8 p-0 border-gray-600 hover:bg-red-500/20"
-            >
-              <X className="w-4 h-4" />
-            </Button>
-          </>
-        ) : (
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => onCancel?.(request.id)}
-            className="h-8 px-3 border-gray-600 hover:bg-red-500/20 text-xs"
-          >
-            Cancel
-          </Button>
-        )}
-      </div>
-    </motion.div>
-  );
-}
 
 // Main Minimal Social Hub Component
 export function SocialHub({ onOpenProfile }: { onOpenProfile?: (userId: string) => void }) {
@@ -171,22 +33,24 @@ export function SocialHub({ onOpenProfile }: { onOpenProfile?: (userId: string) 
     friends,
     fetchFriends,
     addFriend,
-    isLoading: friendsLoading,
   } = useFriendsStore();
 
   const {
     sentRequests,
     receivedRequests,
-    isLoading: requestsLoading,
     fetchFriendRequests,
     cancelSentRequest,
     acceptReceivedRequest,
     declineReceivedRequest,
   } = useFriendRequests(user?.id);
 
-  const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<Friend[]>([]);
-  const [isSearching, setIsSearching] = useState(false);
+  // Optimized state using single object (Next.js 14 pattern)
+  const [searchState, setSearchState] = useState({
+    query: "",
+    results: [] as Friend[],
+    isSearching: false
+  });
+  
   const [activeSection, setActiveSection] = useState<'overview' | 'requests' | 'search'>('overview');
   const supabase = createClient();
   const router = useRouter();
@@ -218,27 +82,28 @@ export function SocialHub({ onOpenProfile }: { onOpenProfile?: (userId: string) 
     }
   }, [user, fetchFriends, fetchFriendRequests]);
 
-  // Search functionality
+  // Optimized search functionality with debouncing (Next.js 14 pattern)
   const searchUsers = useCallback(async (query: string) => {
     if (!query.trim() || !user) {
-      setSearchResults([]);
+      setSearchState(prev => ({ ...prev, results: [], query }));
       setActiveSection('overview');
       return;
     }
 
     setActiveSection('search');
-    setIsSearching(true);
+    setSearchState(prev => ({ ...prev, isSearching: true, query }));
+    
     try {
       const { data: profilesData, error } = await supabase
         .from("profiles")
-        .select("*")
+        .select("id, username, display_name, avatar_url, bio") // Specific fields only
         .ilike("username", `%${query}%`)
         .neq("id", user.id)
         .limit(10);
 
       if (error) throw error;
 
-      const transformedResults = (profilesData || []).map(profile => ({
+      const transformedResults: Friend[] = (profilesData || []).map(profile => ({
         id: profile.id,
         username: profile.username,
         display_name: profile.display_name,
@@ -249,25 +114,30 @@ export function SocialHub({ onOpenProfile }: { onOpenProfile?: (userId: string) 
         online_status: "offline" as const,
       }));
 
-      setSearchResults(transformedResults);
+      setSearchState(prev => ({ 
+        ...prev, 
+        results: transformedResults, 
+        isSearching: false 
+      }));
     } catch (error) {
       console.error("Search error:", error);
       toast.error("Failed to search users");
-    } finally {
-      setIsSearching(false);
+      setSearchState(prev => ({ ...prev, isSearching: false }));
     }
   }, [user, supabase]);
 
   // Actions
-  const handleSendRequest = async (friendId: string) => {
+  // Optimized actions with better error handling (Next.js 14 pattern)
+  const handleSendRequest = useCallback(async (friendId: string) => {
     try {
       await addFriend({ friendId });
       toast.success("Friend request sent!");
-      searchUsers(searchQuery);
+      searchUsers(searchState.query);
     } catch (error) {
+      console.error("Friend request error:", error);
       toast.error("Failed to send friend request");
     }
-  };
+  }, [addFriend, searchUsers, searchState.query]);
 
   const handleViewProfile = (userId: string) => {
     if (onOpenProfile) {
@@ -310,35 +180,38 @@ export function SocialHub({ onOpenProfile }: { onOpenProfile?: (userId: string) 
               <h1 className="text-3xl font-bold text-white">Social Hub</h1>
               <p className="text-gray-400 mt-1">Connect and play with {stats.totalFriends} friends</p>
             </div>
-            <Button
+            <ActionButton
               onClick={handleRefresh}
-              variant="outline"
-              size="sm"
-              className="border-purple-500/30 text-purple-400 hover:bg-purple-500/10"
+              color="purple"
+              icon={<RefreshCw />}
             >
-              <RefreshCw className="w-4 h-4 mr-2" />
               Refresh
-            </Button>
+            </ActionButton>
           </div>
 
           {/* Minimal Stats Row */}
           <div className="flex gap-8 mb-6">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-white">{stats.totalFriends}</div>
-              <div className="text-sm text-gray-400">Friends</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-green-400">{stats.onlineNow}</div>
-              <div className="text-sm text-gray-400">Online</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-blue-400">{stats.gaming}</div>
-              <div className="text-sm text-gray-400">Gaming</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-amber-400">{stats.pendingRequests}</div>
-              <div className="text-sm text-gray-400">Requests</div>
-            </div>
+            <StatCard 
+              value={stats.totalFriends} 
+              label="Friends" 
+              color="default" 
+            />
+            <StatCard 
+              value={stats.onlineNow} 
+              label="Online" 
+              color="green" 
+            />
+            <StatCard 
+              value={stats.gaming} 
+              label="Gaming" 
+              color="blue" 
+            />
+            <StatCard 
+              value={stats.pendingRequests} 
+              label="Requests" 
+              color="amber"
+              onClick={() => setActiveSection('requests')}
+            />
           </div>
         </motion.div>
 
@@ -352,10 +225,11 @@ export function SocialHub({ onOpenProfile }: { onOpenProfile?: (userId: string) 
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
             <Input
-              value={searchQuery}
+              value={searchState.query}
               onChange={(e) => {
-                setSearchQuery(e.target.value);
-                searchUsers(e.target.value);
+                const newQuery = e.target.value;
+                setSearchState(prev => ({ ...prev, query: newQuery }));
+                searchUsers(newQuery);
               }}
               placeholder="Search for friends by username..."
               className="pl-10 bg-gray-900/50 border-gray-700/50 focus:border-purple-500 text-white h-12"
@@ -365,7 +239,7 @@ export function SocialHub({ onOpenProfile }: { onOpenProfile?: (userId: string) 
 
         {/* Dynamic Content */}
         <AnimatePresence mode="wait">
-          {activeSection === 'search' && searchResults.length > 0 && (
+          {activeSection === 'search' && searchState.results.length > 0 && (
             <motion.div
               key="search"
               initial={{ opacity: 0, y: 20 }}
@@ -375,31 +249,17 @@ export function SocialHub({ onOpenProfile }: { onOpenProfile?: (userId: string) 
             >
               <h3 className="text-lg font-semibold text-white flex items-center gap-2">
                 <Search className="w-5 h-5 text-purple-400" />
-                Search Results ({searchResults.length})
+                Search Results ({searchState.results.length})
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {searchResults.map(user => (
-                  <div key={user.id} className="flex items-center justify-between p-3 bg-gray-900/30 rounded-lg border border-gray-700/30">
-                    <div className="flex items-center gap-3">
-                      <Avatar className="w-10 h-10">
-                        <AvatarImage src={user.avatar_url} />
-                        <AvatarFallback className="bg-gradient-to-br from-purple-600 to-indigo-600 text-white">
-                          {user.username[0]?.toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <p className="text-white font-medium">{user.username}</p>
-                        {user.bio && <p className="text-xs text-gray-400 truncate">{user.bio}</p>}
-                      </div>
-                    </div>
-                    <Button
-                      size="sm"
-                      onClick={() => handleSendRequest(user.id)}
-                      className="bg-purple-600 hover:bg-purple-700 h-8 w-8 p-0"
-                    >
-                      <UserPlus className="w-4 h-4" />
-                    </Button>
-                  </div>
+                {searchState.results.map(user => (
+                  <SearchResultCard
+                    key={user.id}
+                    user={user}
+                    onSendRequest={handleSendRequest}
+                    onViewProfile={handleViewProfile}
+                    variant="compact"
+                  />
                 ))}
               </div>
             </motion.div>
@@ -447,7 +307,7 @@ export function SocialHub({ onOpenProfile }: { onOpenProfile?: (userId: string) 
                   </div>
                   <div className="flex flex-wrap gap-4">
                     {categorizedFriends.gaming.map((friend, index) => (
-                      <MinimalFriendAvatar 
+                      <FriendAvatar
                         key={friend.id}
                         friend={{...friend, currentGame: "Cyberpunk 2077"}}
                         onViewProfile={handleViewProfile}
@@ -468,15 +328,20 @@ export function SocialHub({ onOpenProfile }: { onOpenProfile?: (userId: string) 
                       <h3 className="text-lg font-semibold text-white">Online Now</h3>
                     </div>
                     {categorizedFriends.online.length > 8 && (
-                      <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white">
+                      <ActionButton
+                        variant="ghost"
+                        size="sm"
+                        className="text-gray-400 hover:text-white"
+                        icon={<ArrowUpRight />}
+                        iconPosition="right"
+                      >
                         View all {categorizedFriends.online.length}
-                        <ArrowUpRight className="w-4 h-4 ml-1" />
-                      </Button>
+                      </ActionButton>
                     )}
                   </div>
                   <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4">
                     {categorizedFriends.online.slice(0, 8).map((friend, index) => (
-                      <MinimalFriendAvatar 
+                      <FriendAvatar
                         key={friend.id}
                         friend={friend}
                         onViewProfile={handleViewProfile}
@@ -495,17 +360,22 @@ export function SocialHub({ onOpenProfile }: { onOpenProfile?: (userId: string) 
                     <h3 className="text-lg font-semibold text-white">All Friends</h3>
                   </div>
                   {categorizedFriends.all.length > 12 && (
-                    <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white">
+                    <ActionButton
+                      variant="ghost"
+                      size="sm"
+                      className="text-gray-400 hover:text-white"
+                      icon={<ArrowUpRight />}
+                      iconPosition="right"
+                    >
                       View all {categorizedFriends.all.length}
-                      <ArrowUpRight className="w-4 h-4 ml-1" />
-                    </Button>
+                    </ActionButton>
                   )}
                 </div>
                 
                 {categorizedFriends.all.length > 0 ? (
                   <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-4">
                     {categorizedFriends.all.slice(0, 20).map((friend, index) => (
-                      <MinimalFriendAvatar 
+                      <FriendAvatar
                         key={friend.id}
                         friend={friend}
                         onViewProfile={handleViewProfile}
@@ -544,14 +414,12 @@ export function SocialHub({ onOpenProfile }: { onOpenProfile?: (userId: string) 
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between mb-6">
                     <h3 className="text-xl font-bold text-white">Friend Requests</h3>
-                    <Button
+                    <ActionButton
                       variant="ghost"
-                      size="sm"
                       onClick={() => setActiveSection('overview')}
+                      icon={<X />}
                       className="text-gray-400 hover:text-white"
-                    >
-                      <X className="w-5 h-5" />
-                    </Button>
+                    />
                   </div>
 
                   <div className="space-y-6 overflow-y-auto max-h-96">
@@ -563,7 +431,7 @@ export function SocialHub({ onOpenProfile }: { onOpenProfile?: (userId: string) 
                           Received ({receivedRequests.length})
                         </h4>
                         {receivedRequests.map(request => (
-                          <MinimalRequestCard
+                          <FriendRequestCard
                             key={request.id}
                             request={request}
                             type="received"
@@ -582,7 +450,7 @@ export function SocialHub({ onOpenProfile }: { onOpenProfile?: (userId: string) 
                           Sent ({sentRequests.length})
                         </h4>
                         {sentRequests.map(request => (
-                          <MinimalRequestCard
+                          <FriendRequestCard
                             key={request.id}
                             request={request}
                             type="sent"

@@ -3,7 +3,7 @@
  * Provides URL validation, sanitization, and security measures for video embeds
  */
 
-import type { ValidatedVideoUrl, MediaProvider, VideoSecurityConfig, MediaError } from '@/types/media.types';
+import type { ValidatedVideoUrl, MediaProvider, VideoSecurityConfig } from '@/types/media.types';
 import { VIDEO_PROVIDERS } from '@/types/media.types';
 
 /**

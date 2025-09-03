@@ -28,10 +28,10 @@ export async function GET(request: NextRequest): Promise<NextResponse<PostsRespo
     // Validate query parameters
     const validation = validateSearchParams(searchParams, validatePostQuery);
     if (!validation.success) {
-      return validation.response;
+      return validation.response as NextResponse<PostsResponse>;
     }
     
-    const { page, limit, thread_id } = validation.data;
+    const { page = 1, limit = 20, thread_id } = validation.data;
     const offset = (page - 1) * limit;
 
     // Fetch posts for the thread using RPC
@@ -44,7 +44,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<PostsRespo
     );
 
     if (!result.success) {
-      return result.response;
+      return result.response as NextResponse<PostsResponse>;
     }
 
     // Increment view count (fire and forget - don't wait for result)
@@ -55,10 +55,10 @@ export async function GET(request: NextRequest): Promise<NextResponse<PostsRespo
     return ForumApiResponse.paginated(
       { posts: result.data },
       pagination
-    );
+    ) as NextResponse<PostsResponse>;
   } catch (error) {
     console.error("Unexpected error fetching forum posts:", error);
-    return ForumApiErrorHandler.internalError('Failed to fetch posts');
+    return ForumApiErrorHandler.internalError('Failed to fetch posts') as NextResponse<PostsResponse>;
   }
 }
 
@@ -68,7 +68,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<PostRespo
       // Validate request body
       const validation = await validateRequestBody(request, validateCreatePost);
       if (!validation.success) {
-        return validation.response;
+        return validation.response as NextResponse<PostResponse>;
       }
 
       const postData = validation.data;
@@ -82,11 +82,11 @@ export async function POST(request: NextRequest): Promise<NextResponse<PostRespo
       );
 
       if (permissionCheck instanceof NextResponse) {
-        return permissionCheck;
+        return permissionCheck as NextResponse<PostResponse>;
       }
 
       if (!permissionCheck.allowed) {
-        return ForumApiErrorHandler.forbiddenError('Thread is locked');
+        return ForumApiErrorHandler.forbiddenError('Thread is locked') as NextResponse<PostResponse>;
       }
 
       // Ensure user profile exists
@@ -97,12 +97,12 @@ export async function POST(request: NextRequest): Promise<NextResponse<PostRespo
       );
       
       if (profileResult instanceof NextResponse) {
-        return profileResult;
+        return profileResult as NextResponse<PostResponse>;
       }
 
       // Create post in database
       const result = await withDatabaseErrorHandling<ForumPost>(
-        () => auth.supabase
+        async () => await auth.supabase
           .from('forum_posts')
           .insert({
             ...postData,
@@ -113,15 +113,15 @@ export async function POST(request: NextRequest): Promise<NextResponse<PostRespo
       );
 
       if (!result.success) {
-        return result.response;
+        return result.response as NextResponse<PostResponse>;
       }
 
       return ForumApiResponse.created({
         post: result.data
-      });
+      }) as NextResponse<PostResponse>;
     } catch (error) {
       console.error("Unexpected error creating forum post:", error);
-      return ForumApiErrorHandler.internalError('Failed to create post');
+      return ForumApiErrorHandler.internalError('Failed to create post') as NextResponse<PostResponse>;
     }
   });
 }

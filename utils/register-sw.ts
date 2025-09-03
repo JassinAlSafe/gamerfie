@@ -3,7 +3,7 @@
  * Handles service worker registration with proper error handling
  */
 
-export async function registerServiceWorker(): Promise<void> {
+export async function registerServiceWorker(): Promise<ServiceWorkerRegistration | void> {
   if (typeof window === 'undefined') {
     return; // Server-side rendering
   }

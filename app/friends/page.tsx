@@ -1,52 +1,79 @@
 "use client";
 
-import { useState, useCallback } from "react";
-import { Metadata } from "next";
+import { useState, useCallback, useMemo, type ComponentProps } from "react";
+import dynamic from "next/dynamic";
 import { SocialHub } from "@/components/friends/SocialHub";
 import { FriendsErrorBoundary } from "@/components/friends/FriendsErrorBoundary";
-import { ProfileCardModal } from "@/components/profile/ProfileCardModal";
 import { useProfile } from "@/hooks/Profile/use-profile";
 import { useFriendsHandlers } from "@/hooks/friends-page-handlers";
 
-// Note: metadata export moved to separate file due to "use client"
+// Dynamic import for ProfileCardModal (code splitting optimization)
+const ProfileCardModal = dynamic(
+  () => import("@/components/profile/ProfileCardModal").then(mod => ({ default: mod.ProfileCardModal })),
+  {
+    loading: () => <div className="fixed inset-0 bg-black/20 animate-pulse" />,
+    ssr: false // Modal doesn't need SSR
+  }
+);
+
+// Modal state type for better TypeScript
+interface ModalState {
+  isOpen: boolean;
+  userId: string | null;
+}
+
 export default function FriendsPage() {
-  const [profileModalOpen, setProfileModalOpen] = useState(false);
-  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
-
-  // Profile data hook for current user
-  const { profile } = useProfile();
-
-  // Friend action handlers
-  const { handleFollowUser, handleUnfollowUser, handleMessageUser, handleShareProfile } = useFriendsHandlers({
-    currentUserId: profile?.id
+  // Optimized modal state using single object (Next.js 14 pattern)
+  const [modalState, setModalState] = useState<ModalState>({
+    isOpen: false,
+    userId: null
   });
 
-  // Profile modal handlers
+  const { profile } = useProfile();
+
+  // Memoize handlers configuration (performance optimization)
+  const handlersConfig = useMemo(
+    () => ({ currentUserId: profile?.id }),
+    [profile?.id]
+  );
+  
+  const { handleFollowUser, handleUnfollowUser, handleMessageUser, handleShareProfile } = useFriendsHandlers(handlersConfig);
+
+  // Optimized modal handlers (Next.js 14 state pattern)
   const handleOpenProfile = useCallback((userId: string) => {
-    setSelectedUserId(userId);
-    setProfileModalOpen(true);
+    setModalState({ isOpen: true, userId });
   }, []);
 
   const handleCloseProfile = useCallback(() => {
-    setProfileModalOpen(false);
-    setSelectedUserId(null);
+    setModalState({ isOpen: false, userId: null });
   }, []);
+
+  // Memoized modal props (performance optimization)
+  const modalProps: ComponentProps<typeof ProfileCardModal> = useMemo(() => ({
+    isOpen: modalState.isOpen,
+    userId: modalState.userId || "",
+    onClose: handleCloseProfile,
+    onFollow: handleFollowUser,
+    onUnfollow: handleUnfollowUser,
+    onMessage: handleMessageUser,
+    onShare: handleShareProfile,
+    currentUserId: profile?.id,
+  }), [
+    modalState,
+    handleCloseProfile,
+    handleFollowUser,
+    handleUnfollowUser,
+    handleMessageUser,
+    handleShareProfile,
+    profile?.id
+  ]);
 
   return (
     <FriendsErrorBoundary>
       <SocialHub onOpenProfile={handleOpenProfile} />
       
-      {/* Profile Card Modal */}
-      <ProfileCardModal
-        isOpen={profileModalOpen}
-        userId={selectedUserId || ""}
-        onClose={handleCloseProfile}
-        onFollow={handleFollowUser}
-        onUnfollow={handleUnfollowUser}
-        onMessage={handleMessageUser}
-        onShare={handleShareProfile}
-        currentUserId={profile?.id}
-      />
+      {/* Conditionally render modal (Next.js 14 optimization) */}
+      {modalState.isOpen && <ProfileCardModal {...modalProps} />}
     </FriendsErrorBoundary>
   );
 }

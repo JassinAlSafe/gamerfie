@@ -4,7 +4,7 @@
  */
 
 import { createClient } from '@/utils/supabase/client';
-import type { Review, CreateReviewInput, UpdateReviewInput, ReviewsResponse } from '@/types/review';
+import type { Review, ReviewsResponse } from '@/types/review';
 
 export class OptimizedReviewService {
   private static supabase = createClient();
