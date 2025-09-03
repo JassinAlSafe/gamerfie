@@ -144,23 +144,7 @@ export default async function GamePage({ params }: Props) {
   }
 }
 
-// Generate static params for popular games (for better performance)
-export async function generateStaticParams() {
-  // Popular games that we want to pre-generate
-  const popularGameSlugs = [
-    'cyberpunk-2077',
-    'the-witcher-3-wild-hunt',
-    'elden-ring',
-    'baldurs-gate-3',
-    'grand-theft-auto-v',
-    'red-dead-redemption-2',
-    'the-legend-of-zelda-breath-of-the-wild',
-    'god-of-war',
-    'horizon-zero-dawn',
-    'assassins-creed-valhalla'
-  ]
-
-  return popularGameSlugs.map((slug) => ({
-    slug: slug,
-  }))
-}
+// Disable static generation for game pages to fix production issues
+// These pages need dynamic data fetching and shouldn't be pre-rendered
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
