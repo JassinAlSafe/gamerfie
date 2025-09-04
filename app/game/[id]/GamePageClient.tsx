@@ -94,10 +94,10 @@ function GameContent({ gameData }: { gameData: any }) {
       },
       "aggregateRating": (gameData.rating || gameData.total_rating) ? {
         "@type": "AggregateRating",
-        "ratingValue": gameData.rating || gameData.total_rating || 0,
+        "ratingValue": Math.min(Math.max((gameData.rating || gameData.total_rating || 0) / 20, 1), 5).toFixed(1),
         "ratingCount": gameData.rating_count || gameData.total_rating_count || 1,
-        "bestRating": 100,
-        "worstRating": 0
+        "bestRating": 5,
+        "worstRating": 1
       } : undefined
     };
 

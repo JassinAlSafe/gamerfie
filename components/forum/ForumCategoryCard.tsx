@@ -40,7 +40,7 @@ export function ForumCategoryCard({
   return (
     <Link href={`/forum/category/${category.id}`} className="block group">
       <Card className={cn(
-        "bg-white/60 dark:bg-slate-900/60 backdrop-blur-sm border-slate-200/60 dark:border-slate-700/60 hover:bg-white/80 dark:hover:bg-slate-900/80 transition-all duration-300 hover:shadow-xl hover:shadow-slate-200/50 dark:hover:shadow-slate-900/50 hover:-translate-y-1 cursor-pointer",
+        "bg-gray-900/30 border-gray-700/30 hover:bg-gray-900/50 hover:border-gray-600/50 transition-all duration-200 cursor-pointer",
         className
       )}>
         <CardHeader className="pb-4">
@@ -65,11 +65,11 @@ export function ForumCategoryCard({
             <div className="flex-1 min-w-0">
               <div className="flex items-start justify-between mb-2">
                 <div className="flex-1">
-                  <CardTitle className="text-xl font-bold text-slate-900 dark:text-slate-100 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors line-clamp-1">
+                  <CardTitle className="text-lg font-semibold text-white group-hover:text-purple-400 transition-colors line-clamp-1">
                     {category.name}
                   </CardTitle>
                   {category.description && (
-                    <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed mt-1 line-clamp-2">
+                    <p className="text-gray-400 text-sm mt-1 line-clamp-2">
                       {category.description}
                     </p>
                   )}
@@ -84,25 +84,21 @@ export function ForumCategoryCard({
               </div>
 
               {/* Stats Row */}
-              <div className="flex items-center gap-4 text-sm">
-                <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-slate-100 dark:bg-slate-800">
-                  <MessageSquare className="w-3 h-3 text-slate-500" />
-                  <span className="text-slate-700 dark:text-slate-300 font-medium">
+              <div className="flex items-center gap-6 text-sm">
+                <div className="flex items-center gap-1">
+                  <MessageSquare className="w-3 h-3 text-gray-500" />
+                  <span className="text-gray-300 font-medium">
                     {category.threads_count}
                   </span>
+                  <span className="text-gray-500 text-xs">threads</span>
                 </div>
-                <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-slate-100 dark:bg-slate-800">
-                  <Users className="w-3 h-3 text-slate-500" />
-                  <span className="text-slate-700 dark:text-slate-300 font-medium">
+                <div className="flex items-center gap-1">
+                  <Users className="w-3 h-3 text-gray-500" />
+                  <span className="text-gray-300 font-medium">
                     {category.posts_count}
                   </span>
+                  <span className="text-gray-500 text-xs">posts</span>
                 </div>
-                {category.threads_count > 0 && (
-                  <div className="flex items-center gap-1 text-slate-500">
-                    <TrendingUp className="w-3 h-3" />
-                    <span className="text-xs">Active</span>
-                  </div>
-                )}
               </div>
             </div>
           </div>
@@ -111,22 +107,22 @@ export function ForumCategoryCard({
         {/* Last Activity */}
         {showActivity && category.last_post_user && category.last_post_at && (
           <CardContent className="pt-0">
-            <div className="flex items-center justify-between text-sm border-t border-slate-200/50 dark:border-slate-700/50 pt-4">
+            <div className="flex items-center justify-between text-sm border-t border-gray-700/30 pt-4">
               <div className="flex items-center gap-2">
-                <Avatar className="w-6 h-6">
+                <Avatar className="w-5 h-5">
                   <AvatarImage src={category.last_post_user.avatar_url || undefined} />
-                  <AvatarFallback className="text-xs bg-gradient-to-br from-purple-500 to-indigo-600 text-white">
+                  <AvatarFallback className="text-xs bg-purple-600 text-white">
                     {getAvatarFallback(category.last_post_user.username)}
                   </AvatarFallback>
                 </Avatar>
-                <span className="text-slate-600 dark:text-slate-400">
-                  Latest by{" "}
-                  <span className="text-purple-600 dark:text-purple-400 font-medium">
+                <span className="text-gray-400 text-xs">
+                  by{" "}
+                  <span className="text-purple-400 font-medium">
                     {category.last_post_user.username}
                   </span>
                 </span>
               </div>
-              <div className="flex items-center gap-1 text-slate-500">
+              <div className="flex items-center gap-1 text-gray-500">
                 <Clock className="w-3 h-3" />
                 <span className="text-xs">
                   {formatDisplayDate(category.last_post_at)}

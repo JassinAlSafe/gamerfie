@@ -63,7 +63,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<PostsRespo
 }
 
 export async function POST(request: NextRequest): Promise<NextResponse<PostResponse>> {
-  return withAuthenticatedUser(async (auth: AuthResult) => {
+  const result = await withAuthenticatedUser(async (auth: AuthResult): Promise<NextResponse<PostResponse>> => {
     try {
       // Validate request body
       const validation = await validateRequestBody(request, validateCreatePost);
@@ -101,27 +101,42 @@ export async function POST(request: NextRequest): Promise<NextResponse<PostRespo
       }
 
       // Create post in database
-      const result = await withDatabaseErrorHandling<ForumPost>(
+      const insertResult = await withDatabaseErrorHandling<ForumPost>(
         async () => await auth.supabase
           .from('forum_posts')
           .insert({
             ...postData,
             author_id: auth.user.id
           })
-          .select()
+          .select('id')
           .single()
       );
 
-      if (!result.success) {
-        return result.response as NextResponse<PostResponse>;
+      if (!insertResult.success) {
+        return insertResult.response as NextResponse<PostResponse>;
+      }
+
+      // Fetch the created post with author details
+      const postResult = await withDatabaseErrorHandling<PostsWithDetailsResult>(
+        async () => await auth.supabase
+          .from('forum_posts_with_details')
+          .select('*')
+          .eq('id', insertResult.data.id)
+          .single()
+      );
+
+      if (!postResult.success) {
+        return postResult.response as NextResponse<PostResponse>;
       }
 
       return ForumApiResponse.created({
-        post: result.data
+        post: postResult.data
       }) as NextResponse<PostResponse>;
     } catch (error) {
       console.error("Unexpected error creating forum post:", error);
       return ForumApiErrorHandler.internalError('Failed to create post') as NextResponse<PostResponse>;
     }
   });
+  
+  return result as NextResponse<PostResponse>;
 }

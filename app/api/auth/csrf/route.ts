@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
     
     return NextResponse.json({ 
       success: true, 
-      token 
+      csrfToken: token 
     }, {
       headers: {
         'Cache-Control': 'no-store, max-age=0',

@@ -38,6 +38,25 @@ const nextConfig = {
         : false,
   },
 
+  // Redirects to fix duplicate content and indexing issues
+  async redirects() {
+    return [
+      // Redirect old /game/[id] routes to SEO-friendly /games/[slug] routes
+      // This requires a middleware or API call to convert ID to slug
+      {
+        source: '/game/:id(\\d+)',
+        destination: '/api/game-redirect/:id',
+        permanent: false,
+      },
+      // Redirect trailing slashes
+      {
+        source: '/((?!.*\\..*|_next).*?)/',
+        destination: '/$1',
+        permanent: true,
+      },
+    ]
+  },
+
   // Headers configuration for security and Vercel Analytics
   async headers() {
     return [

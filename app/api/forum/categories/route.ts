@@ -26,9 +26,14 @@ export async function GET(): Promise<NextResponse<CategoriesResponse>> {
       return result.response as NextResponse<CategoriesResponse>;
     }
 
-    return ForumApiResponse.success({
+    const response = ForumApiResponse.success({
       categories: result.data
     }) as NextResponse<CategoriesResponse>;
+    
+    // Add caching headers for performance (5 min cache, 10 min stale)
+    response.headers.set('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600');
+    
+    return response;
   } catch (error) {
     console.error("Unexpected error fetching forum categories:", error);
     return ForumApiErrorHandler.internalError('Failed to fetch categories') as NextResponse<CategoriesResponse>;
@@ -36,7 +41,7 @@ export async function GET(): Promise<NextResponse<CategoriesResponse>> {
 }
 
 export async function POST(request: NextRequest): Promise<NextResponse<CategoryResponse>> {
-  return withAuthenticatedUser(async (auth: AuthResult) => {
+  const result = await withAuthenticatedUser(async (auth: AuthResult): Promise<NextResponse<CategoryResponse>> => {
     try {
       // Validate request body
       const validation = await validateRequestBody(request, validateCreateCategory);
@@ -67,4 +72,6 @@ export async function POST(request: NextRequest): Promise<NextResponse<CategoryR
       return ForumApiErrorHandler.internalError('Failed to create category') as NextResponse<CategoryResponse>;
     }
   });
+  
+  return result as NextResponse<CategoryResponse>;
 }

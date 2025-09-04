@@ -171,7 +171,7 @@ export async function DELETE(
         auth.supabase,
         postId,
         auth.user.id,
-        userProfile.role
+        userProfile.role ?? undefined
       );
 
       if (!canDelete) {

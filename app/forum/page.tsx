@@ -3,6 +3,7 @@ import { ForumPageClient } from "./ForumPageClient";
 import { createClient } from "@/utils/supabase/server";
 import { Suspense } from "react";
 import { ForumSkeleton } from "@/components/forum/ForumSkeleton";
+import { unstable_cache } from "next/cache";
 
 export const dynamic = 'force-dynamic';
 
@@ -47,7 +48,7 @@ export const metadata: Metadata = {
   },
 };
 
-async function getForumData() {
+async function getForumDataInternal() {
   try {
     const supabase = await createClient();
 
@@ -62,6 +63,8 @@ async function getForumData() {
       return { categories: [], stats: { total_threads: 0, total_posts: 0, total_users: 0, active_users_today: 0 } };
     }
 
+    console.log("✅ Categories fetched successfully:", categories?.length || 0);
+
     // Fetch forum stats
     const { data: stats, error: statsError } = await supabase
       .rpc('get_forum_stats');
@@ -75,12 +78,18 @@ async function getForumData() {
       };
     }
 
+    console.log("✅ Forum stats fetched:", stats);
+    console.log("🎯 Final result - categories:", categories?.length, "threads:", stats?.total_threads);
+
     return { categories: categories || [], stats: stats || { total_threads: 0, total_posts: 0, total_users: 0, active_users_today: 0 } };
   } catch (error) {
     console.error("Error fetching forum data:", error);
     return { categories: [], stats: { total_threads: 0, total_posts: 0, total_users: 0, active_users_today: 0 } };
   }
 }
+
+// Temporarily disable cache for debugging
+const getForumData = getForumDataInternal;
 
 function ForumLoading() {
   return <ForumSkeleton />;

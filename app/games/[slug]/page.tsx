@@ -49,10 +49,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         'game tracking',
         'achievement tracker'
       ],
+      alternates: {
+        canonical: `https://gamersvaultapp.com/games/${slug}`,
+      },
       openGraph: {
         title: `${gameTitle} - Video Game Tracker`,
         description,
         type: 'article',
+        url: `https://gamersvaultapp.com/games/${slug}`,
         images: game.cover?.url ? [{
           url: game.cover.url.replace('t_thumb', 't_1080p'),
           width: 1080,
@@ -110,9 +114,9 @@ export default async function GamePage({ params }: Props) {
       "developer": game.involved_companies?.find((c: any) => c.developer)?.company?.name,
       "aggregateRating": game.total_rating ? {
         "@type": "AggregateRating",
-        "ratingValue": (game.total_rating / 10).toFixed(1),
-        "bestRating": "10",
-        "worstRating": "0",
+        "ratingValue": Math.min(Math.max((game.total_rating / 10), 1), 5).toFixed(1),
+        "bestRating": "5",
+        "worstRating": "1",
         "ratingCount": game.total_rating_count || 1
       } : undefined,
       "offers": {

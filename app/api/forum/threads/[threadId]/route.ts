@@ -112,7 +112,7 @@ async function deleteThread(
  * GET /api/forum/threads/[threadId] - Get a specific thread
  */
 export async function GET(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: { threadId: string } }
 ): Promise<NextResponse<ThreadResponse>> {
   try {
@@ -145,8 +145,10 @@ export async function GET(
       .from('forum_threads')
       .update({ views_count: result.data.views_count + 1 })
       .eq('id', threadId)
-      .then()
-      .catch((error) => {
+      .then(() => {
+        // View count updated successfully
+      })
+      .catch((error: any) => {
         console.warn('Failed to increment thread view count:', error);
       });
 
@@ -166,7 +168,7 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: { threadId: string } }
 ): Promise<NextResponse<ThreadResponse>> {
-  return withAuthenticatedUser(async (auth: AuthResult) => {
+  const result = await withAuthenticatedUser(async (auth: AuthResult): Promise<NextResponse<ThreadResponse>> => {
     try {
       const { threadId } = params;
       const { searchParams } = new URL(request.url);

@@ -10,10 +10,14 @@ export const metadata: Metadata = {
   title: "Best Video Game Tracker 2025 - Game Vault | Free Gaming App",
   description: "The #1 rated video game tracker app. Track your gaming progress, achievements, and backlog across all platforms. Join 50,000+ gamers using the best free game tracker in 2025!",
   keywords: ["best video game tracker", "video game tracker app", "free video game tracker 2025", "gaming progress tracker", "video game achievement tracker", "gaming backlog tracker", "track video games online", "game collection manager"],
+  alternates: {
+    canonical: "https://gamersvaultapp.com",
+  },
   openGraph: {
     title: "Best Video Game Tracker 2025 - Game Vault",
     description: "The #1 video game tracker app with 50k+ users. Track games, achievements & progress across all platforms. Free forever!",
     type: "website",
+    url: "https://gamersvaultapp.com",
     siteName: "Game Vault"
   },
   twitter: {

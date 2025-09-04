@@ -829,3 +829,89 @@ export function getServerTimeout(userAgent: string | null): number {
 - **Cache Hit Rate**: 85-95% cache hit rate for game data
 
 This implementation represents the gold standard for Supabase applications in 2025, combining security, performance, and developer experience best practices.
+
+## Production Static Generation Issues (Fixed - Jan 2025)
+
+### Critical Issue: Game Detail Pages 500/404 Errors in Production Only
+
+#### Problem Description
+Game detail pages (`/game/[id]` and `/games/[slug]`) were returning 500 Internal Server Error and 404 Not Found errors in production, while working perfectly in localhost. The explore and all-games pages worked fine in production, making this a confusing issue.
+
+#### Root Cause Analysis
+The issue was caused by **Next.js Static Site Generation (SSG) vs Server-Side Rendering (SSR) conflicts**:
+
+1. **Game Detail Pages**: Had `generateStaticParams()` functions that triggered static generation during build time
+2. **Build-Time Data Fetching**: Pages attempted to fetch data during the build process using server-side API calls
+3. **Self-Referential API Calls**: Server tried to call its own API routes during build time, causing timeouts/failures
+4. **Static Generation Failure**: When build-time data fetching failed, Next.js generated 500/404 errors for those routes
+
+#### Why Other Pages Worked
+- **Explore/All-Games Pages**: Used `"use client"` directive and made API calls **after** page load in browser
+- **Development Environment**: Next.js doesn't pre-render pages in dev mode, everything happens on-demand
+- **Client-Side vs Build-Time**: The API routes worked fine when called from browser, but failed during build process
+
+#### The Fix
+Added to both game detail page files (`/app/game/[id]/page.tsx` and `/app/games/[slug]/page.tsx`):
+
+```typescript
+// Disable static generation for game pages to fix production issues
+// These pages need dynamic data fetching and shouldn't be pre-rendered
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+```
+
+Removed the problematic `generateStaticParams()` functions that were causing build-time failures.
+
+#### Files Modified
+- `/app/game/[id]/page.tsx`: Removed `generateStaticParams()`, added `dynamic = 'force-dynamic'`
+- `/app/games/[slug]/page.tsx`: Removed `generateStaticParams()`, added `dynamic = 'force-dynamic'`
+
+#### Prevention Guidelines
+
+##### When to Use SSG vs SSR
+- **Use SSG (Static Site Generation)** for:
+  - Content that rarely changes (marketing pages, blog posts)
+  - Pages that can be pre-rendered without external API calls
+  - When you have reliable build-time data sources
+
+- **Use SSR (Server-Side Rendering)** for:
+  - Dynamic content that requires real-time data fetching
+  - Pages that depend on external APIs (IGDB, RAWG)
+  - User-specific content that can't be pre-rendered
+
+##### Warning Signs to Watch For
+🚨 **Red Flags that indicate you should use SSR instead of SSG:**
+- Page makes API calls to external services during render
+- Build process includes `generateStaticParams()` with API dependencies
+- Server-side data fetching in page components with dynamic routes
+- Self-referential API calls (server calling its own API during build)
+- Timeouts or failures during `npm run build`
+
+##### Best Practices
+1. **Test Build Process**: Always run `npm run build` locally before deploying
+2. **Check Build Logs**: Look for errors during static generation phase
+3. **Monitor Production Errors**: Set up error tracking for 500/404 issues on dynamic routes
+4. **Use Dynamic Rendering**: For data-dependent pages, prefer `dynamic = 'force-dynamic'`
+5. **Separate Static from Dynamic**: Keep marketing pages static, make data pages dynamic
+
+##### Architecture Decision Tree
+```
+Does your page need external API data at render time?
+├── YES → Use SSR (`export const dynamic = 'force-dynamic'`)
+├── NO → Can the data be fetched at build time reliably?
+    ├── YES → Use SSG with `generateStaticParams()`
+    └── NO → Use SSR (`export const dynamic = 'force-dynamic'`)
+```
+
+#### Key Lesson Learned
+**Static Generation + External API Dependencies = Production Failures**
+
+Never combine `generateStaticParams()` with pages that depend on external APIs or server-side data fetching. The build process can't reliably fetch this data, leading to production-only failures that don't occur in development.
+
+#### Testing Strategy
+1. **Local Build Test**: Run `npm run build && npm run start` locally
+2. **Production Environment**: Test actual deployed URLs for 500/404 errors
+3. **Error Monitoring**: Use tools to catch build-time vs runtime failures
+4. **Lighthouse**: Check for rendering performance after switching to SSR
+
+This fix completely resolved the production issues and established clear guidelines for preventing similar problems in the future.

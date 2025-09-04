@@ -167,8 +167,7 @@ export default function RootLayout({
         <link rel="preconnect" href="https://api.igdb.com" />
         <link rel="preconnect" href="https://api.rawg.io" />
 
-        {/* Canonical URL */}
-        <link rel="canonical" href="https://gamersvaultapp.com" />
+        {/* Canonical URL is handled by individual pages */}
 
         {/* Structured Data */}
         <script
