@@ -25,73 +25,59 @@ export async function POST(request: NextRequest) {
     }
 
     if (type === 'post') {
-      // Toggle post like
-      const { data: existingLike } = await supabase
-        .from('forum_post_likes')
-        .select()
-        .eq('post_id', id)
-        .eq('user_id', user.id)
-        .single();
+      // Use the database function to toggle post like
+      const { data, error } = await supabase.rpc('toggle_post_like', {
+        p_post_id: id
+      });
 
-      if (existingLike) {
-        // Unlike
-        await supabase
-          .from('forum_post_likes')
-          .delete()
-          .eq('post_id', id)
-          .eq('user_id', user.id);
-
-        return NextResponse.json({ liked: false });
-      } else {
-        // Like
-        const { error } = await supabase
-          .from('forum_post_likes')
-          .insert({ post_id: id, user_id: user.id });
-
-        if (error) {
-          console.error("Error creating post like:", error);
-          return NextResponse.json(
-            { error: "Failed to like post" },
-            { status: 500 }
-          );
-        }
-
-        return NextResponse.json({ liked: true });
+      if (error) {
+        console.error("Error toggling post like:", error);
+        return NextResponse.json(
+          { error: "Failed to like post" },
+          { status: 500 }
+        );
       }
+
+      // Check if the function returned success
+      if (!data?.success) {
+        return NextResponse.json(
+          { error: data?.message || "Failed to like post" },
+          { status: 500 }
+        );
+      }
+
+      // Return only the needed fields for the frontend
+      return NextResponse.json({
+        liked: data.liked,
+        likes_count: data.likes_count
+      });
     } else if (type === 'thread') {
-      // Toggle thread like
-      const { data: existingLike } = await supabase
-        .from('forum_thread_likes')
-        .select()
-        .eq('thread_id', id)
-        .eq('user_id', user.id)
-        .single();
+      // Use the database function to toggle thread like
+      const { data, error } = await supabase.rpc('toggle_thread_like', {
+        p_thread_id: id
+      });
 
-      if (existingLike) {
-        // Unlike
-        await supabase
-          .from('forum_thread_likes')
-          .delete()
-          .eq('thread_id', id)
-          .eq('user_id', user.id);
-
-        return NextResponse.json({ liked: false });
-      } else {
-        // Like
-        const { error } = await supabase
-          .from('forum_thread_likes')
-          .insert({ thread_id: id, user_id: user.id });
-
-        if (error) {
-          console.error("Error creating thread like:", error);
-          return NextResponse.json(
-            { error: "Failed to like thread" },
-            { status: 500 }
-          );
-        }
-
-        return NextResponse.json({ liked: true });
+      if (error) {
+        console.error("Error toggling thread like:", error);
+        return NextResponse.json(
+          { error: "Failed to like thread" },
+          { status: 500 }
+        );
       }
+
+      // Check if the function returned success
+      if (!data?.success) {
+        return NextResponse.json(
+          { error: data?.message || "Failed to like thread" },
+          { status: 500 }
+        );
+      }
+
+      // Return only the needed fields for the frontend
+      return NextResponse.json({
+        liked: data.liked,
+        likes_count: data.likes_count
+      });
     }
 
     return NextResponse.json({ error: 'Invalid type' }, { status: 400 });

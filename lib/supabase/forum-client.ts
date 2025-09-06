@@ -17,19 +17,83 @@ export interface Database {
   public: {
     Tables: {
       forum_categories: {
-        Row: ForumCategory;
-        Insert: Omit<ForumCategory, 'id' | 'threads_count' | 'posts_count' | 'last_post_at' | 'last_post_user_id' | 'last_post_user' | 'created_at' | 'updated_at'>;
-        Update: Partial<Omit<ForumCategory, 'id' | 'created_at' | 'updated_at'>>;
+        Row: {
+          id: string;
+          name: string;
+          description?: string | null;
+          icon?: string | null;
+          color?: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          name: string;
+          description?: string | null;
+          icon?: string | null;
+          color?: string | null;
+        };
+        Update: Partial<{
+          name: string;
+          description?: string | null;
+          icon?: string | null;
+          color?: string | null;
+        }>;
       };
       forum_threads: {
-        Row: ForumThread;
-        Insert: Omit<ForumThread, 'id' | 'category' | 'author' | 'views_count' | 'replies_count' | 'likes_count' | 'last_post_at' | 'last_post_user_id' | 'last_post_user' | 'created_at' | 'updated_at'>;
-        Update: Partial<Omit<ForumThread, 'id' | 'created_at' | 'updated_at'>>;
+        Row: {
+          id: string;
+          category_id: string;
+          title: string;
+          content: string;
+          author_id: string;
+          is_pinned: boolean;
+          is_locked: boolean;
+          views_count: number;
+          replies_count: number;
+          likes_count: number;
+          last_post_at?: string | null;
+          last_post_user_id?: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          category_id: string;
+          title: string;
+          content: string;
+          author_id: string;
+          is_pinned?: boolean;
+          is_locked?: boolean;
+        };
+        Update: Partial<{
+          category_id: string;
+          title: string;
+          content: string;
+          is_pinned: boolean;
+          is_locked: boolean;
+        }>;
       };
       forum_posts: {
-        Row: ForumPost;
-        Insert: Omit<ForumPost, 'id' | 'thread' | 'author' | 'likes_count' | 'is_liked' | 'parent_post' | 'replies' | 'replies_count' | 'depth' | 'created_at' | 'updated_at'>;
-        Update: Partial<Omit<ForumPost, 'id' | 'created_at' | 'updated_at'>>;
+        Row: {
+          id: string;
+          thread_id: string;
+          content: string;
+          author_id: string;
+          parent_post_id?: string | null;
+          depth: number;
+          likes_count: number;
+          replies_count: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          thread_id: string;
+          content: string;
+          author_id: string;
+          parent_post_id?: string | null;
+        };
+        Update: Partial<{
+          content: string;
+        }>;
       };
       forum_post_likes: {
         Row: ForumPostLike;
@@ -77,7 +141,36 @@ export interface Database {
         Row: PostsWithDetailsResult;
       };
     };
-    Functions: ForumRpcFunctions;
+    Functions: {
+      get_thread_posts_hierarchical: {
+        Args: { p_thread_id: string; p_limit: number };
+        Returns: PostsWithDetailsResult[];
+      };
+      create_forum_post_nested: {
+        Args: { p_thread_id: string; p_content: string; p_author_id: string; p_parent_post_id?: string };
+        Returns: PostsWithDetailsResult[];
+      };
+      get_post_context: {
+        Args: { p_post_id: string };
+        Returns: (PostsWithDetailsResult & { context_type: string })[];
+      };
+      get_posts_by_depth: {
+        Args: { p_thread_id: string; p_parent_id?: string; p_max_depth: number; p_limit: number };
+        Returns: (PostsWithDetailsResult & { has_children: boolean })[];
+      };
+      toggle_thread_like: {
+        Args: { p_thread_id: string; p_user_id: string };
+        Returns: { liked: boolean; likes_count: number };
+      };
+      toggle_post_like: {
+        Args: { p_post_id: string; p_user_id: string };
+        Returns: { liked: boolean; likes_count: number };
+      };
+      search_forum_content: {
+        Args: { p_query: string; p_type?: 'all' | 'threads' | 'posts'; p_category_id?: string; p_limit: number; p_offset: number };
+        Returns: SearchResult[];
+      };
+    };
   };
 }
 
@@ -206,6 +299,53 @@ export class ForumSupabaseClient {
       p_thread_id: threadId,
       p_limit: limit,
       p_offset: offset
+    });
+  }
+
+  // New hierarchical post operations
+  async getThreadPostsHierarchical(threadId: string, options: {
+    limit?: number;
+  } = {}) {
+    const { limit = 100 } = options;
+    
+    return this.supabase.rpc('get_thread_posts_hierarchical', {
+      p_thread_id: threadId,
+      p_limit: limit
+    });
+  }
+
+  async createPostNested(data: {
+    thread_id: string;
+    content: string;
+    author_id: string;
+    parent_post_id?: string;
+  }) {
+    return this.supabase.rpc('create_forum_post_nested', {
+      p_thread_id: data.thread_id,
+      p_content: data.content,
+      p_author_id: data.author_id,
+      p_parent_post_id: data.parent_post_id || null
+    });
+  }
+
+  async getPostContext(postId: string) {
+    return this.supabase.rpc('get_post_context', {
+      p_post_id: postId
+    });
+  }
+
+  async getPostsByDepth(threadId: string, options: {
+    parentId?: string;
+    maxDepth?: number;
+    limit?: number;
+  } = {}) {
+    const { parentId, maxDepth = 2, limit = 50 } = options;
+    
+    return this.supabase.rpc('get_posts_by_depth', {
+      p_thread_id: threadId,
+      p_parent_id: parentId || null,
+      p_max_depth: maxDepth,
+      p_limit: limit
     });
   }
 

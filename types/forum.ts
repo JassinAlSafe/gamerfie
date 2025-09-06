@@ -82,6 +82,12 @@ export interface ForumPost {
   depth: number;
   created_at: string;
   updated_at: string;
+  // New fields for hierarchical display
+  has_children?: boolean;
+  is_expanded?: boolean;
+  children_loaded?: boolean;
+  level_path?: number[];
+  path?: string;
 }
 
 // Post with additional computed fields (from database view)
@@ -258,6 +264,10 @@ export interface PostsWithDetailsResult {
   category_id?: string;
   created_at: string;
   updated_at: string;
+  // New fields for hierarchical structure
+  path?: string;
+  level_path?: number[];
+  has_children?: boolean;
 }
 
 export interface CategoriesWithStatsResult {
@@ -291,6 +301,29 @@ export interface ForumRpcFunctions {
     p_limit: number;
     p_offset: number;
   }) => PostsWithDetailsResult[];
+  
+  get_thread_posts_hierarchical: (args: {
+    p_thread_id: string;
+    p_limit: number;
+  }) => PostsWithDetailsResult[];
+  
+  create_forum_post_nested: (args: {
+    p_thread_id: string;
+    p_content: string;
+    p_author_id: string;
+    p_parent_post_id?: string;
+  }) => PostsWithDetailsResult[];
+  
+  get_post_context: (args: {
+    p_post_id: string;
+  }) => (PostsWithDetailsResult & { context_type: string })[];
+  
+  get_posts_by_depth: (args: {
+    p_thread_id: string;
+    p_parent_id?: string;
+    p_max_depth: number;
+    p_limit: number;
+  }) => (PostsWithDetailsResult & { has_children: boolean })[];
   
   increment_thread_views: (args: {
     thread_uuid: string;
